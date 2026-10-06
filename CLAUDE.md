@@ -837,6 +837,15 @@ Until merchant billing is decided (section 16), new stores register on the plan 
 - Every tenant database is backed up on a schedule, in its own region, and backups are encrypted.
 - It must be possible to restore **one store** without touching any other store. One database per tenant makes this possible, so keep it that way.
 - The restore procedure is written down and tested regularly. An untested backup doesn't count as a backup.
+- **Automatic purging stays switched off in production until per-region encrypted backups exist and a restore has been tested** (`tenancy.purge_enabled`, off by default). Until then a purge is the one thing in the system that can't be undone. Purge never makes its own ad-hoc backup.
+
+**Closing, restoring, exporting and purging stores (Step 5c)**
+- **Statuses:** Closed, Purging and Purged join the store statuses. Closed stores still have a database and keep being migrated; Purging and Purged stores are skipped. None of the three is served.
+- **Closing** works on Active, Suspended and ProvisioningFailed stores, by a platform admin (`stores.manage`) or by the owner (password plus a 2FA code when they have 2FA). It records the status before closing, revokes every sign-in in the store (staff, customers and drivers) through a Shared contract, and sets a purge date from config (90 days). The owner is emailed the purge date, told how to export first, and reminded 7 days before.
+- **Restoring** is done by a platform admin, only from Closed, and returns the store to the status it had before closing, so closing and restoring can never lift a suspension. Restore and purge take the same row lock; once a store is Purging, restore answers 409.
+- **Purge** is resumable and safe to run twice: lock, re-check, mark Purging and commit; drop the database; delete the store's files and exports; delete its domains and hold its subdomain (365 days, from config) so nobody can take over its old links; clear the owner's personal data on the tenant row (a database check constraint allows null owner details only on Purged stores); mark Purged. Subscriptions and legal acceptances are kept as business and contract records. Personal data about the store in central activity and audit logs follows its retention period.
+- **Export** is a ZIP of JSON Lines files plus a manifest, built in chunks on the `bulk` queue, one export at a time per store, stored privately on the store's regional disk and deleted after 7 days. It's downloadable only by the person who requested it, while signed in, and every download is logged. Platform admins need `stores.export` (separate from `stores.view`, because an export holds every customer's personal data); the owner can export their own store.
+- **Export contents are decided column by column, failing closed.** Every column of every store table is either explicitly included or explicitly excluded (with a reason), and a test fails when any column is unclassified, so a new column is never exported by accident. Secrets are never exported: password and PIN hashes, tokens, 2FA secrets, recovery codes, gateway credentials, and secret values inside audit and activity log records. Uploaded files (images and documents) are part of the export once domains have them.
 
 ---
 
@@ -871,6 +880,7 @@ There are four guards, all on Sanctum. Each guard has its own model, provider, l
 - **Current-password checks** (password change, 2FA settings) lock after 5 wrong tries and return 429 `too_many_incorrect_attempts`, so a stolen token can't be used to guess the password behind it.
 - **Staff join only by invitation:** an emailed one-time link that expires after 7 days (only its hash is stored); the person chooses their own password when accepting. Invitations can be resent (the old link stops working) or cancelled. Nobody ever sets another person's password.
 - **No self-promotion:** nobody can grant a permission they don't hold (through a role or an invitation), edit a role or manage a person that has permissions they lack, change their own roles, or deactivate themselves. The owner and the Owner role can't be changed or given through staff management; ownership transfer is its own flow (Step 5).
+- **Ownership transfer** has two steps. The current owner starts it (current password, plus a 2FA code when they have 2FA) and chooses which roles they keep afterwards (required; may be none). The chosen person must be active staff, and **accepts while signed in** within 72 hours, accepting Sellora's current terms of service as they do, because the contract with Sellora moves to them. Nothing changes until they accept; the owner can cancel before then. Only one transfer can be pending per store. On acceptance the new owner gets the Owner role, the platform's owner contact is updated through a Shared contract, both people are emailed, and the change goes in the store's activity log.
 - **Role names** are unique per guard ignoring case, enforced by a functional unique index on `lower(name)` as well as validation. A role still in use can't be deleted.
 - **The staff limit** counts active staff plus pending invitations; deactivated staff don't count.
 - **Platform admins** are authorized with `spatie/laravel-permission` roles and permissions on the `platform` guard (central database). Their actions (granting roles, suspending stores, feature grants) are written to the central activity log and audited.
@@ -1141,6 +1151,8 @@ If you notice a security problem anywhere, in the legacy project, in this reposi
 - Before creating any class, check that its name and location follow sections 5 and 12.
 - If something is ambiguous, ask rather than guess. Wrong guesses on structure are expensive to undo.
 - Commit in small, focused commits with clear messages that say what changed and why. Never commit secrets, `.env` files or generated files.
+- **Every commit must pass on its own.** Before each commit, clear Larastan's result cache and run Larastan plus that commit's tests with only that commit's changes in place. A test may never depend on code from a later commit.
+- Claude Code never edits this `CLAUDE.md` itself; proposed changes go in the report (section 2.3).
 - A CI pipeline (for example GitHub Actions) runs Pint, Larastan, Pest (including architecture and tenant-isolation tests) and `composer audit` on every push. Nothing is merged while CI fails.
 
 ## 16. Decisions still open
