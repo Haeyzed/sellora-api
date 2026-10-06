@@ -137,7 +137,9 @@ Publish every package's config file and review it against this guide: tenant-awa
 
 ### 2.3 Laravel Boost and which rules win
 
-This project uses **Laravel Boost**. Its guidelines are in the `<laravel-boost-guidelines>` block at the end of this file. **Never edit or delete that block by hand**; Boost regenerates it when it updates.
+This project uses **Laravel Boost**. Its guidelines are in the Boost guidelines block at the end of this file. **Never edit or delete that block by hand**; Boost regenerates it when it updates.
+
+**Never write Boost's opening or closing tag name anywhere else in this file**, not even inside backticks. `boost:update` treats any copy of its tag as the start of its block and replaces everything after it, which deletes the rest of this guide. Always say "the Boost guidelines block" instead.
 
 **PHP version:** Boost writes whichever PHP version runs it into its block. Always run `php artisan boost:update` with the project's PHP 8.4 CLI, never a newer global PHP. If the block ever states a different version, section 2.2 is correct.
 
@@ -226,6 +228,7 @@ This platform targets merchants and shoppers worldwide. **Never hard-code anythi
 - Support many gateways side by side, each as an integration implementing `PaymentGateway` (for example Stripe, PayPal, Paystack, Flutterwave). Different regions need different gateways.
 - A store can enable several gateways. `PaymentGatewayResolver` picks the right one for each checkout based on the store's enabled gateways, the order currency and the customer's country.
 - Each gateway declares which currencies, countries and payment methods it supports.
+- **Gateway amount formats belong to the integration.** Some gateways don't follow ISO 4217 decimals for every currency (for example Stripe's handling of some zero-decimal currencies). Each gateway integration converts `Money` into its own format and back, with tests. `Money` itself always follows ISO 4217.
 - **Never store or log card data.** Use the gateway's hosted checkout or tokenisation, so card details never touch our servers (this keeps PCI compliance simple).
 - Every payment call and every webhook is **idempotent**. Use idempotency keys and record processed webhook event IDs, so retries never charge twice or mark an order paid twice.
 - Refunds, partial refunds and failed payments are first-class flows, not afterthoughts.
@@ -387,14 +390,17 @@ app/
 │
 ├── Shared/                           # Infrastructure used by all zones. No business rules.
 │   ├── Features/                     # plan gating (see 5.6)
-│   ├── Tenancy/                      # glue around the tenancy package (middleware, helpers)
+│   ├── Tenancy/                      # glue around the tenancy package; TenantRoutes.php is the single definition of how store routes are served (core and modules)
 │   ├── Geography/                    # thin read-only access to nnjeim/world reference data
 │   ├── Idempotency/                  # Idempotency-Key middleware and stored replay responses
 │   ├── Privacy/                      # privacy registry: export and erase handlers per kind of person
 │   ├── Retention/                    # retention periods and the scheduled per-tenant purge
 │   ├── Money/
 │   │   ├── Money.php                 # value object wrapping brick/money: minor units + currency
-│   │   └── MoneyCast.php
+│   │   ├── MoneyCast.php             # stores amount + currency columns (currency column may be shared)
+│   │   ├── Decimal.php               # high-precision internal numbers (exchange rates, unit costs)
+│   │   ├── DecimalCast.php           # fixed-scale column; refuses values with too many decimals
+│   │   └── MoneyResource.php         # {amount, currency, formatted} in every API response
 │   ├── Http/
 │   │   ├── Controller.php            # abstract base controller
 │   │   └── Middleware/               # app-wide middleware only, e.g. ForceJsonResponse
@@ -645,17 +651,26 @@ Payment gateway integrations follow the same shape. The main class is `<Provider
 
 ```
 app/Shared/Features/
-├── Features.php                      # the one place that answers "does this tenant have X?"
+├── Features.php                      # the one place that answers "may this store use X?" (states + limits)
+├── FeatureState.php                  # Enabled, Locked, Suspended, Disabled, Unavailable
+├── FeatureRegistry.php               # every registered module/integration key, dependencies, wind-down routes
+├── FeatureSnapshot.php               # cached per-tenant plan data (plain array in the cache)
 ├── Contracts/
 │   └── FeatureSource.php             # implemented by Landlord\Subscriptions; Shared never imports Landlord
+├── FeatureServiceProvider.php        # abstract parent of the two providers below
 ├── ModuleServiceProvider.php         # abstract base for module providers
 ├── IntegrationServiceProvider.php    # abstract base for integration providers
+├── Jobs/
+│   └── RunOnlyWhenFeatureIsEnabled.php # job middleware: re-checks the plan when a queued job runs
 ├── Http/Middleware/
+│   ├── EnsureFeatureIsUsable.php     # abstract parent: Locked = read-only, wind-down routes stay open
 │   ├── EnsureModuleIsEnabled.php     # alias: module
 │   └── EnsureIntegrationIsEnabled.php  # alias: integration
 └── Exceptions/
     └── FeatureNotEnabledException.php
 ```
+
+Settings such as the unpaid-subscription grace period (`past_due_grace_period_in_days`) live in `config/features.php`.
 
 ### 5.7 Autoloading
 
@@ -742,6 +757,11 @@ If a change needs to break a rule, stop and explain why instead of working aroun
   - queued jobs and listeners. Check again at execution time, because the plan may have changed since dispatch.
 - **Gate access, not schema.** Run every module's migrations for every tenant, whatever their plan. Upgrades are instant, and downgrades keep the tenant's data.
 - Feature results may be cached per tenant. Clear the cache whenever a subscription changes.
+- **Locked is recorded at the moment a plan change removes a feature**, not worked out later from the current plan. That way, adding a feature to a plan in future never turns a downgraded store's data from read-only into hidden.
+- **A dependent feature takes its requirement's state.** If HR is Locked, Payroll is Locked too (read-only), not Disabled.
+- Features on a store's plan start Enabled; the merchant can switch them off (Disabled).
+- A limit missing from a plan means **zero**, never unlimited. Limits may overshoot by one under exact concurrency; that's acceptable for plan limits, because it never loses data.
+- **Feature grants:** platform admins can grant or revoke a feature for one store, optionally until a date (for example "Loyalty free for 30 days"). Built with the platform-admin store management in Step 5, through `Features`, never by editing plans.
 
 **Feature states.** A feature is not just on or off. `Features` returns one of these states, and every gate respects it:
 
@@ -847,7 +867,8 @@ Every endpoint behaves the same way, so frontends and API consumers can rely on 
 - **Pagination:** every list endpoint is paginated, never unbounded. Use cursor pagination for large or fast-growing lists (orders, products, activity) and a maximum page size.
 - **Public identifiers:** never expose sequential database IDs in URLs or responses. Use ULIDs for public identifiers, so nobody can guess or count records. Orders also get a human-friendly order number per store (`#1042`), which is display-only and never used for lookups that bypass authorization.
 - **Idempotency:** endpoints that create money-related records (checkout, payments, refunds) accept an `Idempotency-Key` header, so a retried request never creates a duplicate.
-- **Dates** are ISO 8601 with offset; **money** is returned as minor units, currency code and a formatted string.
+- **Dates** are ISO 8601 with offset.
+- **Money in and out uses integer minor units.** Responses use `MoneyResource` (`{"amount": 1999, "currency": "USD", "formatted": "$19.99"}`). Requests send amounts as integers in minor units (`1999`, never `"19.99"` or `19.99`), validated as integers in Form Requests. Floats are rejected everywhere.
 - **Success responses have no custom wrapper.** Return API Resources in Laravel's standard shape (`data`, plus `links` and `meta` for paginated lists). Never wrap them in an envelope such as `{success, message, data}`: it hides each Resource's real shape from Scramble and duplicates what HTTP status codes already say. Only errors use the shared error format above.
 
 ### Strong typing
@@ -1150,7 +1171,7 @@ These decisions came out of the legacy review. Follow them, and don't build anyt
 
 ## Foundational Context
 
-This application is a Laravel application running on PHP 8.5. Always use the APIs that match the installed major version of each package — do not assume a version.
+This application is a Laravel application running on PHP 8.4. Always use the APIs that match the installed major version of each package — do not assume a version.
 
 Before relying on a package's API, confirm its installed version:
 - PHP packages: run `composer show --direct` to list direct dependencies with versions, or `composer show <vendor/package>` for a single package.
@@ -1243,6 +1264,16 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Laravel can be deployed using [Laravel Cloud](https://cloud.laravel.com/), which is the fastest way to deploy and scale production Laravel applications.
 - Activate the `deploying-to-cloud` skill whenever deploying to Laravel Cloud, configuring Cloud environments or resources, using the Cloud CLI, or troubleshooting Cloud deployments.
 
+=== tests rules ===
+
+# Test Enforcement
+
+- Add or update tests for behavior and logic changes when a test provides meaningful regression coverage.
+- Pure copy, styling, and layout-only changes do not require new or updated tests.
+- When test coverage applies, run the affected tests and ensure they pass.
+- Test the changed behavior and its important failure modes, but do not add tests beyond them.
+- Read the `testing-best-practices` skill before writing tests.
+
 === laravel/core rules ===
 
 # Do Things the Laravel Way
@@ -1291,5 +1322,184 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Rerun a test after each change to it.
 - Run `vendor/bin/pest` to call the test runner directly. It accepts the same file path and `--filter=testName` arguments.
 - After the feature tests pass, ask the user to run the complete suite with `php artisan test --compact`.
+
+=== dedoc/scramble/core rules ===
+
+## Scramble
+
+This project uses `dedoc/scramble` to generate OpenAPI documentation from application code. Prefer inference over redundant annotations.
+
+Follow the `scramble-development` skill when changing API endpoints or the resources, FormRequests, shared types, and authentication they use, or when configuring or troubleshooting Scramble documentation.
+
+=== maatwebsite/excel/core rules ===
+
+# Laravel Excel
+
+- Use `maatwebsite/excel` for spreadsheet exports, imports, queued spreadsheet work, CSV handling, and PhpSpreadsheet integration in Laravel applications.
+- Prefer explicit export/import classes with package concerns over ad-hoc spreadsheet generation in controllers, jobs, or commands.
+- Activate the `laravel-excel` skill when working with `Excel::download()`, `Excel::store()`, `Excel::queue()`, `Excel::raw()`, `Excel::import()`, `Excel::toArray()`, `Excel::toCollection()`, export/import concerns, queued imports/exports, validation, CSV settings, styling, events, formulas, charts, drawings, multiple sheets, mapped cells, macros, config, cache, transactions, temporary files, or `Excel::fake()`.
+- For broad docs, all-feature tasks, or missing-feature audits, use the skill's `references/package.md` feature matrix before answering.
+- For large datasets, prefer `FromQuery` with queued exports or `WithChunkReading` and `WithBatchInserts` for imports.
+- Test spreadsheet behavior with `Excel::fake()` when asserting dispatch/download/store/import intent, and inspect generated files only when cell contents, formatting, sheets, or writer behavior must be proven.
+
+=== spatie/laravel-activitylog/core rules ===
+
+# spatie/laravel-activitylog
+
+Activity logging package for Laravel. Logs model events and manual activities to a database table.
+
+## Key Concepts
+
+- **Activity**: An Eloquent model (`Spatie\Activitylog\Models\Activity`) storing log entries with subject, causer, event, attribute_changes, and properties.
+- **Subject**: The model being acted upon (polymorphic `subject_type`/`subject_id`).
+- **Causer**: The model that caused the action, typically the authenticated user (polymorphic `causer_type`/`causer_id`).
+- **LogOptions**: Fluent configuration object returned by `getActivitylogOptions()` on models using the `LogsActivity` trait.
+- **ActivityEvent**: Enum with cases `Created`, `Updated`, `Deleted`, `Restored`.
+- **`attribute_changes`** column: stores `{"attributes": {...}, "old": {...}}` for tracked model changes.
+- **`properties`** column: stores custom user data set via `withProperties()`.
+
+## Traits
+
+### `LogsActivity`
+
+Add to models to automatically log create/update/delete events. Optionally implement `getActivitylogOptions()` to configure which attributes to track (defaults to logging events without attribute changes).
+
+```php
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
+
+class Article extends Model
+{
+    use LogsActivity;
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logFillable()
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges();
+    }
+}
+```
+
+### `CausesActivity`
+
+Add to user/causer models. Provides `activitiesAsCauser()` relationship.
+
+### `HasActivity`
+
+Combines `LogsActivity` and `CausesActivity`. Provides `activities()`, `activitiesAsSubject()`, and `activitiesAsCauser()`.
+
+## Manual Logging
+
+```php
+activity()
+    ->performedOn($article)
+    ->causedBy($user)
+    ->event(ActivityEvent::Updated)
+    ->withProperties(['key' => 'value'])
+    ->log('Article was updated');
+```
+
+## LogOptions Methods
+
+| Method | Description |
+|--------|-------------|
+| `logFillable()` | Log all fillable attributes |
+| `logAll()` | Log all attributes |
+| `logOnly(array)` | Log specific attributes |
+| `logExcept(array)` | Exclude attributes |
+| `logOnlyDirty()` | Only log changed attributes |
+| `dontLogEmptyChanges()` | Skip logging when no tracked attributes changed |
+| `dontLogIfAttributesChangedOnly(array)` | Ignore updates that only change these attributes |
+| `useLogName(string)` | Set custom log name |
+| `setDescriptionForEvent(Closure)` | Custom description per event |
+| `useAttributeRawValues(array)` | Store raw (uncast) values |
+
+## Querying Activities
+
+```php
+use Spatie\Activitylog\Models\Activity;
+use Spatie\Activitylog\Enums\ActivityEvent;
+
+Activity::forEvent(ActivityEvent::Created)->get();
+Activity::causedBy($user)->get();
+Activity::forSubject($article)->get();
+Activity::inLog('orders')->get();
+```
+
+## Setting the causer
+
+Override the causer for a block of code:
+
+```php
+use Spatie\Activitylog\Facades\Activity;
+
+Activity::defaultCauser($admin, function () {
+    // all activities here are caused by $admin
+});
+
+// or set globally for the rest of the request
+Activity::defaultCauser($admin);
+```
+
+## Disabling Logging
+
+```php
+activity()->withoutLogging(function () {
+    // no activities logged here
+});
+```
+
+## Accessing Changes and Properties
+
+```php
+$activity = Activity::latest()->first();
+
+// Tracked model changes (set automatically by LogsActivity)
+$activity->attribute_changes; // Collection: {"attributes": {...}, "old": {...}}
+
+// Custom user data (set via withProperties)
+$activity->properties; // Collection
+$activity->getProperty('key'); // single value
+```
+
+## Custom Activity Model
+
+Set `activity_model` in `config/activitylog.php` to a class that extends `Model` and implements `Spatie\Activitylog\Contracts\Activity`. Use a custom model for custom table names or database connections.
+
+## Customizing Actions
+
+The package uses action classes (`LogActivityAction`, `CleanActivityLogAction`) that can be extended and swapped via config:
+
+```php
+// config/activitylog.php
+'actions' => [
+    'log_activity' => \App\Actions\CustomLogActivityAction::class,
+    'clean_log' => \App\Actions\CustomCleanAction::class,
+],
+```
+
+Custom action classes must extend the originals. Override protected methods (`save()`, `beforeActivityLogged()`, `resolveDescription()`, etc.) to customize behavior.
+
+## Configuration
+
+Key config options in `config/activitylog.php`:
+- `enabled`: Master on/off switch (env: `ACTIVITYLOG_ENABLED`)
+- `clean_after_days`: Days to keep records for `activitylog:clean` command
+- `default_log_name`: Default log name (string)
+- `default_auth_driver`: Auth driver for causer resolution
+- `include_soft_deleted_subjects`: Include soft-deleted subjects
+- `activity_model`: Custom Activity model class
+- `default_except_attributes`: Globally excluded attributes
+- `actions.log_activity`: Action class for logging activities
+- `actions.clean_log`: Action class for cleaning old activities
+
+=== spatie/laravel-medialibrary/core rules ===
+
+## Media Library
+
+- `spatie/laravel-medialibrary` associates files with Eloquent models, with support for collections, conversions, and responsive images.
+- Always activate the `medialibrary-development` skill when working with media uploads, conversions, collections, responsive images, or any code that uses the `HasMedia` interface or `InteractsWithMedia` trait.
 
 </laravel-boost-guidelines>
