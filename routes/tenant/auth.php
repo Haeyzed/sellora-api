@@ -15,6 +15,7 @@ use App\Tenant\Customers\Http\Controllers\SignInController as CustomerSignInCont
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Identity\Http\Controllers\CurrentStaffMemberController;
 use App\Tenant\Identity\Http\Controllers\SignInController as StaffSignInController;
+use App\Tenant\Identity\Http\Controllers\StaffInvitationAcceptanceController;
 use App\Tenant\Identity\Http\Controllers\TwoFactorChallengeController as StaffTwoFactorChallengeController;
 use App\Tenant\Identity\Models\StaffMember;
 use Illuminate\Support\Facades\Route;
@@ -27,7 +28,10 @@ Route::prefix('staff/auth')->name('staff.auth.')->group(static function (): void
     Route::middleware('throttle:login')->group(static function (): void {
         Route::post('tokens', StaffSignInController::class)->name('tokens.store');
         Route::post('two-factor-challenges', StaffTwoFactorChallengeController::class)->name('two-factor-challenges.store');
+        Route::post('invitation-previews', [StaffInvitationAcceptanceController::class, 'show'])->name('invitation-previews.store');
     });
+
+    Route::post('invitation-acceptances', [StaffInvitationAcceptanceController::class, 'store'])->middleware('throttle:registration')->name('invitation-acceptances.store');
 
     Route::middleware('throttle:password-reset')->group(static function (): void {
         Route::post('password-reset-links', [PasswordResetLinkController::class, 'store'])->defaults('broker', StaffMember::PASSWORD_BROKER)->name('password-reset-links.store');

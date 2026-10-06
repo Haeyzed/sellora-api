@@ -8,6 +8,7 @@ use App\Landlord\Identity\Enums\PlatformRole;
 use App\Landlord\Identity\Models\PlatformAdmin;
 use App\Landlord\Subscriptions\SubscriptionFeatureSource;
 use App\Shared\Auth\ExpiredPasswordResetTokenRetention;
+use App\Shared\Auth\Models\Role;
 use App\Shared\Auth\TwoFactor\TwoFactorChallenges;
 use App\Shared\Exceptions\ApiErrorResponseDocumentation;
 use App\Shared\Features\Contracts\FeatureSource;
@@ -20,8 +21,12 @@ use App\Shared\Retention\Policies\ExpiredAccessTokenRetention;
 use App\Shared\Retention\RetentionRegistry;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Delivery\Models\Driver;
+use App\Tenant\Identity\Enums\StaffPermission;
 use App\Tenant\Identity\Enums\StaffRole;
+use App\Tenant\Identity\Models\StaffInvitation;
 use App\Tenant\Identity\Models\StaffMember;
+use App\Tenant\Identity\StaffInvitationRetention;
+use App\Tenant\Identity\StaffPermissionCatalogue;
 use Dedoc\Scramble\Scramble;
 use Illuminate\Auth\Events\Authenticated;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -57,6 +62,20 @@ final class AppServiceProvider extends ServiceProvider
         $this->registerPlanGating();
         $this->registerBreachedPasswordCheck();
         $this->app->singleton(TwoFactorChallenges::class);
+        $this->registerStaffPermissions();
+    }
+
+    /**
+     * The permissions a store's roles can grant. Each domain adds its permission enum here as it is built; modules will add theirs from their service providers.
+     */
+    private function registerStaffPermissions(): void
+    {
+        $this->app->singleton(StaffPermissionCatalogue::class, static function (): StaffPermissionCatalogue {
+            $catalogue = new StaffPermissionCatalogue;
+            $catalogue->register(StaffPermission::class);
+
+            return $catalogue;
+        });
     }
 
     /**
@@ -112,6 +131,7 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(ExpiredPasswordResetTokenRetention::class);
             $registry->register(ActivityLogRetention::class);
             $registry->register(AuditRetention::class);
+            $registry->register(StaffInvitationRetention::class);
 
             return $registry;
         });
@@ -130,6 +150,8 @@ final class AppServiceProvider extends ServiceProvider
             'staff_member' => StaffMember::class,
             'customer' => Customer::class,
             'driver' => Driver::class,
+            'staff_invitation' => StaffInvitation::class,
+            'role' => Role::class,
         ]);
     }
 

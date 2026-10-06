@@ -139,6 +139,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Staff Invitations
+    |--------------------------------------------------------------------------
+    |
+    | The emailed link to join a store's team, into the store dashboard.
+    | {token} is filled in and {domain} becomes the store domain the invite
+    | was sent from. Links work once and expire after this many days.
+    |
+    */
+
+    'staff_invitations' => [
+        'accept_url' => env('STAFF_INVITATION_URL', 'https://{domain}/admin/accept-invitation?token={token}'),
+        'expire_days' => (int) env('STAFF_INVITATION_EXPIRE_DAYS', 7),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Password Confirmation Timeout
     |--------------------------------------------------------------------------
     |
