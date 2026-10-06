@@ -195,5 +195,7 @@ return [
     |
     */
 
-    'console' => false,
+    // On, so changes made by queued jobs and artisan commands are audited too;
+    // otherwise anything that runs outside a web request would leave no trail.
+    'console' => true,
 ];

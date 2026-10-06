@@ -3,12 +3,12 @@
 declare(strict_types=1);
 
 use App\Landlord\Tenancy\Models\Tenant;
+use App\Shared\Auth\Models\Role;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 /*

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Landlord\Identity\Enums\PlatformRole;
 use App\Landlord\Identity\Models\PlatformAdmin;
 use App\Shared\Auth\AccessTokenIssuer;
+use App\Shared\Auth\Models\Role;
 use App\Shared\Auth\PasswordResetLinkNotification;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -12,7 +13,6 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
 use PragmaRX\Google2FA\Google2FA;
 use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 
 uses(LazilyRefreshDatabase::class);
 

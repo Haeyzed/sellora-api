@@ -7,9 +7,9 @@ namespace App\Landlord\Identity\Actions;
 use App\Landlord\Identity\CreatedPlatformAdmin;
 use App\Landlord\Identity\Enums\PlatformRole;
 use App\Landlord\Identity\Models\PlatformAdmin;
+use App\Shared\Auth\Models\Role;
 use App\Shared\Auth\TwoFactor\TwoFactorAuthenticator;
 use Carbon\CarbonImmutable;
-use Spatie\Permission\Models\Role;
 
 /**
  * Adds a member of Sellora's team who can sign in to the platform admin app, with two-factor authentication already on.
