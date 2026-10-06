@@ -13,7 +13,8 @@
         "maatwebsite/excel",
         "spatie/laravel-medialibrary",
         "spatie/laravel-permission",
-        "spatie/laravel-sluggable"
+        "spatie/laravel-sluggable",
+        "spatie/laravel-activitylog"
     ],
     "sail": false,
     "skills": [
