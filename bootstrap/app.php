@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Landlord\Identity\CreatePlatformAdminCommand;
 use App\Shared\Exceptions\ApiErrorRenderer;
 use App\Shared\Features\Http\Middleware\EnsureIntegrationIsEnabled;
 use App\Shared\Features\Http\Middleware\EnsureModuleIsEnabled;
@@ -39,6 +40,7 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withCommands([
+        CreatePlatformAdminCommand::class,
         PurgeExpiredRecordsCommand::class,
     ])
     ->withMiddleware(static function (Middleware $middleware): void {

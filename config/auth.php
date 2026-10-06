@@ -96,8 +96,17 @@ return [
     | Resetting Passwords
     |--------------------------------------------------------------------------
     |
-    | One broker per identity, each with its own token table: the platform
-    | table in the central database, the others in each store's database.
+    | One broker per identity that signs in with an email, each with its own
+    | token table: the platform table in the central database, the others in
+    | each store's database. Drivers have no broker: staff reset their PINs.
+    |
+    | "reset_url" is the link emailed to the person, into the frontend app
+    | they use. {token} and {email} are filled in; {domain} becomes the store
+    | domain the request came from, so each store's links point to itself.
+    |
+    | A broker with a "connection" lives in the central database; one without
+    | uses the current store's database. The daily retention purge relies on
+    | this to clean each table in the right place.
     |
     */
 
@@ -105,8 +114,10 @@ return [
         'platform_admins' => [
             'provider' => 'platform_admins',
             'table' => 'platform_admin_password_reset_tokens',
+            'connection' => env('DB_CONNECTION', 'central'),
             'expire' => 60,
             'throttle' => 60,
+            'reset_url' => env('PLATFORM_ADMIN_PASSWORD_RESET_URL', 'http://localhost:3000/reset-password?token={token}&email={email}'),
         ],
 
         'staff_members' => [
@@ -114,6 +125,7 @@ return [
             'table' => 'staff_member_password_reset_tokens',
             'expire' => 60,
             'throttle' => 60,
+            'reset_url' => env('STAFF_PASSWORD_RESET_URL', 'https://{domain}/admin/reset-password?token={token}&email={email}'),
         ],
 
         'customers' => [
@@ -121,13 +133,7 @@ return [
             'table' => 'customer_password_reset_tokens',
             'expire' => 60,
             'throttle' => 60,
-        ],
-
-        'drivers' => [
-            'provider' => 'drivers',
-            'table' => 'driver_password_reset_tokens',
-            'expire' => 60,
-            'throttle' => 60,
+            'reset_url' => env('CUSTOMER_PASSWORD_RESET_URL', 'https://{domain}/reset-password?token={token}&email={email}'),
         ],
     ],
 

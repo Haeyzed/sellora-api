@@ -16,5 +16,8 @@ final class DatabaseSeeder extends Seeder
     /**
      * Seeds a store database.
      */
-    public function run(): void {}
+    public function run(): void
+    {
+        $this->call(StaffRoleSeeder::class);
+    }
 }

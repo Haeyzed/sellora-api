@@ -31,6 +31,12 @@ return [
     'idempotency_key_reused' => 'This Idempotency-Key was already used for a different request.',
     'idempotent_request_in_progress' => 'A request with this Idempotency-Key is still being processed. Try again shortly.',
 
+    'invalid_credentials' => 'These sign-in details are incorrect.',
+    'sign_in_temporarily_locked' => 'Too many incorrect attempts. Try again in :minutes minutes.',
+    'account_deactivated' => 'This account has been deactivated.',
+    'password_reset_invalid' => 'This password reset link is invalid or has expired. Request a new one.',
+    'current_password_incorrect' => 'The current password is incorrect.',
+
     'feature_unavailable' => 'Your plan does not include this feature.',
     'feature_locked' => 'Your plan no longer includes this feature. Its existing data is read-only.',
     'feature_suspended' => 'This store is suspended, so this feature is unavailable.',

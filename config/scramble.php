@@ -188,6 +188,6 @@ return [
      *     ],
      * ],
      */
-    // 'security_strategy' => \Dedoc\Scramble\SecurityDocumentation\MiddlewareAuthSecurityStrategy::class,
-    'security_strategy' => null,
+    // Every guard (auth:platform, auth:staff, auth:customer, auth:driver) is a Sanctum bearer token.
+    'security_strategy' => Dedoc\Scramble\SecurityDocumentation\MiddlewareAuthSecurityStrategy::class,
 ];

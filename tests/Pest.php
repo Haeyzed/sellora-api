@@ -50,6 +50,15 @@ function createStoreRecord(): Tenant
 }
 
 /**
+ * Forgets who is signed in, as a real new request would. Laravel's test client
+ * otherwise keeps a guard's user between requests, which hides revoked tokens.
+ */
+function forgetSignIns(): void
+{
+    app('auth')->forgetGuards();
+}
+
+/**
  * The full URL of a path on a store's domain.
  */
 function storeUrl(string $subdomain, string $path): string

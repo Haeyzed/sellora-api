@@ -58,4 +58,37 @@ return [
         'tenant_bulk_jobs' => (int) env('RATE_LIMIT_TENANT_BULK_JOBS', 60),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Sign-in Lockout
+    |--------------------------------------------------------------------------
+    |
+    | After this many wrong passwords or PINs for one email or phone in a
+    | store, from any IP address, sign-in for it pauses. This stops slow
+    | guessing spread over many addresses, which the per-minute "login" limit
+    | alone can't, and matters most for short driver PINs.
+    |
+    */
+
+    'sign_in_lockout' => [
+        'max_failed_attempts' => (int) env('SIGN_IN_LOCKOUT_MAX_FAILED_ATTEMPTS', 5),
+        'lockout_minutes' => (int) env('SIGN_IN_LOCKOUT_MINUTES', 15),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Breached Password Check
+    |--------------------------------------------------------------------------
+    |
+    | New passwords are checked against known data breaches (Have I Been
+    | Pwned); only the first 5 characters of the password's hash are sent.
+    | If the service is slow or down, the check is skipped after this many
+    | seconds rather than blocking sign-up or password changes.
+    |
+    */
+
+    'breached_password_check' => [
+        'timeout_in_seconds' => (int) env('BREACHED_PASSWORD_CHECK_TIMEOUT_SECONDS', 5),
+    ],
+
 ];

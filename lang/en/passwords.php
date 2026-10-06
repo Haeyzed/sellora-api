@@ -21,4 +21,12 @@ return [
     'token' => 'This password reset token is invalid.',
     'user' => "We can't find a user with that email address.",
 
+    'notification' => [
+        'subject' => 'Reset your :app password',
+        'reason' => 'You are receiving this email because we received a password reset request for your account.',
+        'action' => 'Choose a new password',
+        'expiry' => 'This link expires in :minutes minutes.',
+        'ignore' => 'If you did not ask to reset your password, you can ignore this email; your password stays the same.',
+    ],
+
 ];

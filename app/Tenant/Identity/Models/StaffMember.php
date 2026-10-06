@@ -1,0 +1,92 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Tenant\Identity\Models;
+
+use App\Shared\Auth\PasswordResetLinkNotification;
+use App\Shared\Concerns\HasNormalisedEmail;
+use App\Shared\Concerns\HasPublicId;
+use Carbon\CarbonImmutable;
+use Database\Factories\Tenant\StaffMemberFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\Contracts\HasApiTokens as HasApiTokensContract;
+use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Traits\HasRoles;
+
+/**
+ * Someone who works for a store, such as its owner, a manager or a cashier, and signs in to the store's dashboard.
+ *
+ * Lives in the store's own database and signs in with the "staff" guard.
+ * What they may do is decided by the store's roles and permissions.
+ *
+ * @property int $id
+ * @property string $public_id
+ * @property string $name
+ * @property string $email
+ * @property string $password
+ * @property bool $is_active
+ * @property CarbonImmutable|null $last_signed_in_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
+ */
+final class StaffMember extends User implements HasApiTokensContract
+{
+    use HasApiTokens;
+
+    /** @use HasFactory<StaffMemberFactory> */
+    use HasFactory;
+
+    use HasNormalisedEmail;
+    use HasPublicId;
+    use HasRoles;
+    use Notifiable;
+
+    public const string GUARD = 'staff';
+
+    public const string PASSWORD_BROKER = 'staff_members';
+
+    protected string $guard_name = self::GUARD;
+
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+        'is_active',
+    ];
+
+    protected $hidden = [
+        'password',
+    ];
+
+    /**
+     * Emails a link into the store dashboard to choose a new password.
+     *
+     * @param  string  $token
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(PasswordResetLinkNotification::forBroker(self::PASSWORD_BROKER, $token, $this->email));
+    }
+
+    protected static function newFactory(): StaffMemberFactory
+    {
+        return StaffMemberFactory::new();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'password' => 'hashed',
+            'is_active' => 'boolean',
+            'last_signed_in_at' => 'immutable_datetime',
+            'created_at' => 'immutable_datetime',
+            'updated_at' => 'immutable_datetime',
+        ];
+    }
+}

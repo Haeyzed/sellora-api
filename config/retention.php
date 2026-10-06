@@ -19,6 +19,7 @@ return [
     'periods' => [
         'idempotency_keys' => (int) env('RETENTION_IDEMPOTENCY_KEYS_DAYS', 1),
         'expired_tokens' => (int) env('RETENTION_EXPIRED_TOKENS_DAYS', 7),
+        'expired_password_reset_tokens' => (int) env('RETENTION_EXPIRED_PASSWORD_RESET_TOKENS_DAYS', 1),
         'activity_log' => (int) env('RETENTION_ACTIVITY_LOG_DAYS', 365),
         'audits' => (int) env('RETENTION_AUDITS_DAYS', 730),
     ],
