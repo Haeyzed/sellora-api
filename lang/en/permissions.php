@@ -15,8 +15,9 @@ return [
 
     'stores' => [
         'view' => 'See every store, its status, plan, feature grants and limit overrides.',
-        'manage' => 'Suspend and reactivate stores, and retry setting up a store whose setup failed.',
+        'manage' => 'Suspend, reactivate, close and restore stores, and retry setting up a store whose setup failed.',
         'grant' => 'Give stores modules and integrations outside their plan, and change their usage limits.',
+        'export' => 'Export all of a store\'s data, including every customer\'s personal data.',
     ],
 
     'staff' => [

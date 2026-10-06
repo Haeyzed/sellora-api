@@ -8,6 +8,7 @@ use App\Landlord\Tenancy\Http\Controllers\LimitOverrideController;
 use App\Landlord\Tenancy\Http\Controllers\ManagedStoreClosureController;
 use App\Landlord\Tenancy\Http\Controllers\ManagedStoreController;
 use App\Landlord\Tenancy\Http\Controllers\RetryStoreProvisioningController;
+use App\Landlord\Tenancy\Http\Controllers\StoreExportController;
 use App\Landlord\Tenancy\Http\Controllers\StoreSuspensionController;
 use App\Landlord\Tenancy\Models\Tenant;
 use App\Shared\Auth\Http\Middleware\EnsureTwoFactorIsEnabled;
@@ -32,6 +33,11 @@ Route::prefix('stores')
         Route::post('{store}/provisioning-retries', RetryStoreProvisioningController::class)->name('provisioning-retries.store');
         Route::post('{store}/closure', [ManagedStoreClosureController::class, 'store'])->name('closure.store');
         Route::delete('{store}/closure', [ManagedStoreClosureController::class, 'destroy'])->name('closure.destroy');
+
+        Route::get('{store}/exports', [StoreExportController::class, 'index'])->name('exports.index');
+        Route::post('{store}/exports', [StoreExportController::class, 'store'])->name('exports.store');
+        Route::get('{store}/exports/{storeExport}', [StoreExportController::class, 'show'])->name('exports.show')->whereUlid('storeExport');
+        Route::get('{store}/exports/{storeExport}/download', [StoreExportController::class, 'download'])->name('exports.download')->whereUlid('storeExport');
 
         Route::scopeBindings()->group(static function (): void {
             Route::get('{store}/feature-grants', [FeatureGrantController::class, 'index'])->name('feature-grants.index');

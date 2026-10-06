@@ -81,6 +81,9 @@ return [
     'platform_role_protected' => 'The Super Admin role cannot be changed or deleted.',
     'platform_role_in_use' => 'This role is still given to platform admins or pending invitations. Remove it from them first.',
     'store_status_conflict' => 'This cannot be done while the store is in its current status.',
+    'store_export_in_progress' => 'An export of this store is already being prepared. Wait for it to finish.',
+    'store_export_not_found' => 'This export doesn\'t exist, or you didn\'t request it.',
+    'store_export_not_ready' => 'This export can\'t be downloaded: it isn\'t ready yet, it failed, or it has expired.',
     'feature_already_granted' => 'This store already has this feature granted. Revoke the grant first to change it.',
     'feature_grant_not_active' => 'This grant has already ended.',
 

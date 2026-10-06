@@ -187,6 +187,19 @@ return [
     'purge_reminder_days' => (int) env('PURGE_REMINDER_DAYS', 7),
 
     /**
+     * Full store exports (section 9.1), built on the bulk queue and kept
+     * privately on the store's regional disk. "disks" maps a hosting region
+     * to a private disk in that region (in production, a bucket there);
+     * regions not listed use "default_disk". How long a file is kept is
+     * retention.periods.store_exports.
+     */
+    'store_exports' => [
+        'queue' => env('STORE_EXPORT_QUEUE', 'bulk'),
+        'default_disk' => env('STORE_EXPORT_DISK', 'store_exports'),
+        'disks' => [],
+    ],
+
+    /**
      * Parameters used by the tenants:migrate command.
      */
     'migration_parameters' => [

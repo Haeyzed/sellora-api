@@ -22,6 +22,7 @@ return [
         'expired_password_reset_tokens' => (int) env('RETENTION_EXPIRED_PASSWORD_RESET_TOKENS_DAYS', 1),
         'staff_invitations' => (int) env('RETENTION_STAFF_INVITATIONS_DAYS', 30),
         'store_registrations' => (int) env('RETENTION_STORE_REGISTRATIONS_DAYS', 7),
+        'store_exports' => (int) env('RETENTION_STORE_EXPORTS_DAYS', 7),
         'activity_log' => (int) env('RETENTION_ACTIVITY_LOG_DAYS', 365),
         'audits' => (int) env('RETENTION_AUDITS_DAYS', 730),
     ],

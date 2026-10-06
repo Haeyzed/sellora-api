@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Settings\Http\Controllers\StoreClosureController;
+use App\Tenant\Settings\Http\Controllers\StoreExportController;
 use Illuminate\Support\Facades\Route;
 
 /*
 | The store as a whole (Tenant\Settings), under /api/v1/staff/store.
-| Closing the store is for its owner only.
+| Closing the store and exporting all of its data are for its owner only.
 */
 
 Route::prefix('staff/store')
@@ -16,4 +17,8 @@ Route::prefix('staff/store')
     ->middleware(['auth:'.StaffMember::GUARD, 'throttle:api'])
     ->group(static function (): void {
         Route::post('closure', [StoreClosureController::class, 'store'])->name('closure.store');
+
+        Route::post('exports', [StoreExportController::class, 'store'])->name('exports.store');
+        Route::get('exports/{storeExport}', [StoreExportController::class, 'show'])->name('exports.show')->whereUlid('storeExport');
+        Route::get('exports/{storeExport}/download', [StoreExportController::class, 'download'])->name('exports.download')->whereUlid('storeExport');
     });

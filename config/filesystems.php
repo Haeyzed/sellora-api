@@ -49,6 +49,17 @@ return [
             'report' => false,
         ],
 
+        // Full store exports on a developer's machine: private, never served by URL, and not
+        // suffixed per store by tenancy (the exports are written by platform-side jobs).
+        'store_exports' => [
+            'driver' => 'local',
+            'root' => storage_path('app/store-exports'),
+            'visibility' => 'private',
+            'serve' => false,
+            'throw' => true,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

@@ -17,7 +17,9 @@ use App\Landlord\Subscriptions\SubscriptionFeatureSource;
 use App\Landlord\Tenancy\Models\DatabaseServer;
 use App\Landlord\Tenancy\Models\Tenant;
 use App\Landlord\Tenancy\PlatformStoreClosure;
+use App\Landlord\Tenancy\PlatformStoreExports;
 use App\Landlord\Tenancy\PlatformStoreOwnership;
+use App\Landlord\Tenancy\StoreExportRetention;
 use App\Landlord\Tenancy\StoreRegistrationRetention;
 use App\Shared\Auth\ExpiredPasswordResetTokenRetention;
 use App\Shared\Auth\Models\Role;
@@ -27,18 +29,24 @@ use App\Shared\Features\Contracts\FeatureSource;
 use App\Shared\Features\FeatureRegistry;
 use App\Shared\Idempotency\IdempotencyKeyRetention;
 use App\Shared\Privacy\PersonalDataRegistry;
+use App\Shared\Privacy\SharedStoreTables;
+use App\Shared\Privacy\StoreExportRegistry;
 use App\Shared\Retention\Policies\ActivityLogRetention;
 use App\Shared\Retention\Policies\AuditRetention;
 use App\Shared\Retention\Policies\ExpiredAccessTokenRetention;
 use App\Shared\Retention\RetentionRegistry;
 use App\Shared\Tenancy\Contracts\StoreClosure;
+use App\Shared\Tenancy\Contracts\StoreExports;
 use App\Shared\Tenancy\Contracts\StoreOwnerAccounts;
 use App\Shared\Tenancy\Contracts\StoreOwnership;
 use App\Shared\Tenancy\Contracts\StoreSessions;
+use App\Tenant\Customers\CustomerStoreTables;
 use App\Tenant\Customers\Models\Customer;
+use App\Tenant\Delivery\DeliveryStoreTables;
 use App\Tenant\Delivery\Models\Driver;
 use App\Tenant\Identity\Enums\StaffPermission;
 use App\Tenant\Identity\Enums\StaffRole;
+use App\Tenant\Identity\IdentityStoreTables;
 use App\Tenant\Identity\Models\OwnershipTransfer;
 use App\Tenant\Identity\Models\StaffInvitation;
 use App\Tenant\Identity\Models\StaffMember;
@@ -88,6 +96,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(StoreOwnership::class, PlatformStoreOwnership::class);
         $this->app->bind(StoreSessions::class, StoreSignOut::class);
         $this->app->bind(StoreClosure::class, PlatformStoreClosure::class);
+        $this->app->bind(StoreExports::class, PlatformStoreExports::class);
     }
 
     /**
@@ -157,11 +166,12 @@ final class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * One privacy registry and one retention registry for the whole application, which every domain and module adds to.
+     * One privacy registry, one retention registry and one store export registry for the whole application, which every domain and module adds to.
      *
      * The retention policies for platform-wide records (tokens, idempotency
      * keys, activity and audit logs) are registered here; each domain
-     * registers its own as it is built.
+     * registers its own as it is built. Every store table is classified for
+     * exports by the domain that owns it.
      */
     private function registerSharedRegistries(): void
     {
@@ -176,6 +186,17 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(AuditRetention::class);
             $registry->register(StaffInvitationRetention::class);
             $registry->register(StoreRegistrationRetention::class);
+            $registry->register(StoreExportRetention::class);
+
+            return $registry;
+        });
+
+        $this->app->singleton(StoreExportRegistry::class, static function (Application $app): StoreExportRegistry {
+            $registry = new StoreExportRegistry;
+
+            foreach ([SharedStoreTables::class, IdentityStoreTables::class, CustomerStoreTables::class, DeliveryStoreTables::class] as $storeTables) {
+                $app->make($storeTables)->classify($registry);
+            }
 
             return $registry;
         });
@@ -267,11 +288,12 @@ final class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Abilities over the store as a whole, which belong to no model: only its owner may close it.
+     * Abilities over the store as a whole, which belong to no model: only its owner may close it or export all of its data.
      */
     private function defineStoreLifecycleAbilities(): void
     {
         Gate::define('closeStore', [StoreLifecyclePolicy::class, 'close']);
+        Gate::define('exportStore', [StoreLifecyclePolicy::class, 'export']);
     }
 
     /**

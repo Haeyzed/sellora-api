@@ -9,7 +9,7 @@ use App\Landlord\Identity\Models\PlatformAdmin;
 use App\Landlord\Tenancy\Models\Tenant;
 
 /**
- * Who on Sellora's team may see stores, suspend them, and give them features or limits outside their plan.
+ * Who on Sellora's team may see stores, suspend or close them, give them features or limits outside their plan, and export their data.
  */
 final class TenantPolicy
 {
@@ -37,5 +37,13 @@ final class TenantPolicy
     public function grant(PlatformAdmin $actor, Tenant $store): bool
     {
         return $actor->can(PlatformPermission::StoresGrant->value);
+    }
+
+    /**
+     * Export all of the store's data, which holds every customer's personal data.
+     */
+    public function export(PlatformAdmin $actor, Tenant $store): bool
+    {
+        return $actor->can(PlatformPermission::StoresExport->value);
     }
 }

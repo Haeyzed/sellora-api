@@ -18,4 +18,9 @@ final class StoreLifecyclePolicy
     {
         return $actor->hasRole(StaffRole::Owner->value);
     }
+
+    public function export(StaffMember $actor): bool
+    {
+        return $actor->hasRole(StaffRole::Owner->value);
+    }
 }

@@ -19,9 +19,12 @@ enum PlatformPermission: string
     /** See every store, its status, plan, grants and limit overrides. */
     case StoresView = 'stores.view';
 
-    /** Suspend and reactivate stores, and retry setting up a store whose setup failed. */
+    /** Suspend, reactivate, close and restore stores, and retry setting up a store whose setup failed. */
     case StoresManage = 'stores.manage';
 
     /** Give stores modules and integrations outside their plan, and change their usage limits. */
     case StoresGrant = 'stores.grant';
+
+    /** Export all of a store's data. Separate from viewing stores, because an export holds every customer's personal data. */
+    case StoresExport = 'stores.export';
 }
