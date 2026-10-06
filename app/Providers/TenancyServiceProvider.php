@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Landlord\Tenancy\StoreDomainResolver;
 use App\Shared\Tenancy\Listeners\RemoveTenantTagFromErrorReportsWhenTenancyEnds;
 use App\Shared\Tenancy\Listeners\RestoreCentralPermissionCacheWhenTenancyEnds;
 use App\Shared\Tenancy\Listeners\ScopePermissionCacheToTenantWhenTenancyBootstraps;
@@ -18,6 +19,7 @@ use Stancl\Tenancy\Events;
 use Stancl\Tenancy\Jobs;
 use Stancl\Tenancy\Listeners;
 use Stancl\Tenancy\Middleware;
+use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 
 /**
  * Wires multi-tenancy: what happens when a store is created or deleted, and what switches when a store's request starts or ends.
@@ -34,14 +36,9 @@ final class TenancyServiceProvider extends ServiceProvider
     public function events(): array
     {
         return [
-            Events\TenantCreated::class => [
-                JobPipeline::make([
-                    Jobs\CreateDatabase::class,
-                    Jobs\MigrateDatabase::class,
-                    Jobs\SeedDatabase::class,
-                ])->send(static fn (Events\TenantCreated $event): Tenant => $event->tenant)
-                    ->shouldBeQueued(false),
-            ],
+            // Nothing runs on TenantCreated: a new store's database is created by
+            // Landlord\Tenancy\Jobs\ProvisionStore on the queue, on a server in the
+            // store's region, never inside the registration request.
             Events\TenantDeleted::class => [
                 JobPipeline::make([
                     Jobs\DeleteDatabase::class,
@@ -65,6 +62,14 @@ final class TenancyServiceProvider extends ServiceProvider
                 RemoveTenantTagFromErrorReportsWhenTenancyEnds::class,
             ],
         ];
+    }
+
+    /**
+     * Stores are found from their domain only while they are serving requests.
+     */
+    public function register(): void
+    {
+        $this->app->bind(DomainTenantResolver::class, StoreDomainResolver::class);
     }
 
     /**

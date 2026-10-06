@@ -6,7 +6,10 @@ namespace App\Providers;
 
 use App\Landlord\Identity\Enums\PlatformRole;
 use App\Landlord\Identity\Models\PlatformAdmin;
+use App\Landlord\Legal\Models\LegalDocument;
 use App\Landlord\Subscriptions\SubscriptionFeatureSource;
+use App\Landlord\Tenancy\Models\Tenant;
+use App\Landlord\Tenancy\StoreRegistrationRetention;
 use App\Shared\Auth\ExpiredPasswordResetTokenRetention;
 use App\Shared\Auth\Models\Role;
 use App\Shared\Auth\TwoFactor\TwoFactorChallenges;
@@ -19,6 +22,7 @@ use App\Shared\Retention\Policies\ActivityLogRetention;
 use App\Shared\Retention\Policies\AuditRetention;
 use App\Shared\Retention\Policies\ExpiredAccessTokenRetention;
 use App\Shared\Retention\RetentionRegistry;
+use App\Shared\Tenancy\Contracts\StoreOwnerAccounts;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Delivery\Models\Driver;
 use App\Tenant\Identity\Enums\StaffPermission;
@@ -27,6 +31,7 @@ use App\Tenant\Identity\Models\StaffInvitation;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Identity\StaffInvitationRetention;
 use App\Tenant\Identity\StaffPermissionCatalogue;
+use App\Tenant\Identity\StaffStoreOwnerAccounts;
 use Dedoc\Scramble\Scramble;
 use Illuminate\Auth\Events\Authenticated;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -35,6 +40,7 @@ use Illuminate\Contracts\Validation\UncompromisedVerifier;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Client\Factory as HttpFactory;
+use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -63,6 +69,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->registerBreachedPasswordCheck();
         $this->app->singleton(TwoFactorChallenges::class);
         $this->registerStaffPermissions();
+        $this->app->bind(StoreOwnerAccounts::class, StaffStoreOwnerAccounts::class);
     }
 
     /**
@@ -93,14 +100,26 @@ final class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Documents the platform admin API separately from the store API, because they serve different audiences.
+     * Documents the platform admin API and the store registration API separately from the store API, because they serve different audiences.
      *
      * The store API is Scramble's default API, configured in config/scramble.php.
-     * Both document errors in the shape the API really returns.
+     * Registration shares its /api/v1 prefix, so it is told apart by route
+     * name. All document errors in the shape the API really returns.
      */
     private function registerApiDocumentation(): void
     {
         Scramble::registerExtension(ApiErrorResponseDocumentation::class);
+
+        Scramble::registerApi('registration', [
+            'api_path' => 'api/v1',
+            'info' => [
+                'description' => 'Endpoints for merchants registering a new store, served on the central domain only.',
+            ],
+            'ui' => [
+                'title' => config('app.name').' Store Registration API',
+            ],
+        ])->routes(static fn (Route $route): bool => str_starts_with((string) $route->getName(), 'registration.'))
+            ->expose(ui: 'docs/registration', document: 'docs/registration.json');
 
         Scramble::registerApi('platform', [
             'api_path' => 'api/v1/platform',
@@ -111,6 +130,11 @@ final class AppServiceProvider extends ServiceProvider
                 'title' => config('app.name').' Platform API',
             ],
         ])->expose(ui: 'docs/platform', document: 'docs/platform.json');
+
+        // Last: registering an API copies the store API's settings, and this filter is the store API's alone.
+        $storeApi = Scramble::configure();
+        $storeApi->routes(static fn (Route $route): bool => $storeApi->apiPath()->matches($route->uri)
+            && ! str_starts_with((string) $route->getName(), 'registration.'));
     }
 
     /**
@@ -132,6 +156,7 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(ActivityLogRetention::class);
             $registry->register(AuditRetention::class);
             $registry->register(StaffInvitationRetention::class);
+            $registry->register(StoreRegistrationRetention::class);
 
             return $registry;
         });
@@ -152,6 +177,8 @@ final class AppServiceProvider extends ServiceProvider
             'driver' => Driver::class,
             'staff_invitation' => StaffInvitation::class,
             'role' => Role::class,
+            'store' => Tenant::class,
+            'legal_document' => LegalDocument::class,
         ]);
     }
 

@@ -17,3 +17,4 @@ require __DIR__.'/landlord/auth.php';
 require __DIR__.'/landlord/tenants.php';
 require __DIR__.'/landlord/plans.php';
 require __DIR__.'/landlord/subscriptions.php';
+require __DIR__.'/landlord/legal.php';

@@ -65,15 +65,23 @@ it('deletes sign-in tokens only after they have been expired for the whole reten
     expect(PersonalAccessToken::query()->pluck('name')->all())->toBe(['issued-five-days-ago']);
 });
 
-it('only runs store-level policies inside a store, never on the central database', function (): void {
-    $centralPolicies = array_map(
+it('runs each policy only on the databases it belongs to', function (): void {
+    $policiesFor = static fn (bool $isTenantContext): array => array_map(
         static fn (object $policy): string => $policy::class,
-        app(RetentionRegistry::class)->policiesFor(isTenantContext: false),
+        app(RetentionRegistry::class)->policiesFor($isTenantContext),
     );
+    $centralPolicies = $policiesFor(false);
+    $storePolicies = $policiesFor(true);
 
-    expect($centralPolicies)->not->toContain(App\Shared\Retention\Policies\ActivityLogRetention::class)
-        ->and($centralPolicies)->not->toContain(App\Shared\Retention\Policies\AuditRetention::class)
-        ->and($centralPolicies)->toContain(App\Shared\Idempotency\IdempotencyKeyRetention::class);
+    expect($centralPolicies)->not->toContain(App\Tenant\Identity\StaffInvitationRetention::class)
+        ->and($centralPolicies)->toContain(App\Landlord\Tenancy\StoreRegistrationRetention::class)
+        ->and($storePolicies)->not->toContain(App\Landlord\Tenancy\StoreRegistrationRetention::class)
+        ->and($storePolicies)->toContain(App\Tenant\Identity\StaffInvitationRetention::class);
+
+    // Both have their own activity log and audit history.
+    foreach ([App\Shared\Retention\Policies\ActivityLogRetention::class, App\Shared\Retention\Policies\AuditRetention::class] as $policy) {
+        expect($centralPolicies)->toContain($policy)->and($storePolicies)->toContain($policy);
+    }
 });
 
 it('fails loudly instead of keeping data forever when a retention period is missing', function (): void {

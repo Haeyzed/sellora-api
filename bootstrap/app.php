@@ -30,6 +30,11 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->group(base_path('routes/landlord.php'));
 
             Route::middleware(['api', EnsureCentralDomain::class])
+                ->prefix('api/v1')
+                ->name('registration.')
+                ->group(base_path('routes/registration.php'));
+
+            Route::middleware(['api', EnsureCentralDomain::class])
                 ->prefix('webhooks')
                 ->name('webhooks.')
                 ->group(base_path('routes/webhooks.php'));

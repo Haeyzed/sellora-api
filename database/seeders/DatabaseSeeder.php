@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use Database\Seeders\Landlord\FreePlanSeeder;
+use Database\Seeders\Landlord\PlatformPermissionSeeder;
 use Database\Seeders\Landlord\WorldSeeder;
 use Illuminate\Database\Seeder;
 
@@ -21,6 +23,8 @@ final class DatabaseSeeder extends Seeder
     {
         $this->call([
             WorldSeeder::class,
+            PlatformPermissionSeeder::class,
+            FreePlanSeeder::class,
         ]);
     }
 }

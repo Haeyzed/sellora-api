@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Landlord\Tenancy\Models\Tenant;
 use App\Shared\Auth\Models\Role;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\Cache;
@@ -19,13 +18,11 @@ use Spatie\Permission\PermissionRegistrar;
 uses(DatabaseTruncation::class);
 
 afterEach(function (): void {
-    tenancy()->end();
-
-    Tenant::query()->get()->each(static fn (Tenant $tenant): ?bool => $tenant->delete());
+    deleteAllStores();
 });
 
-it('creates a dedicated database holding only tenant tables when a store is created', function (): void {
-    $store = Tenant::query()->create();
+it('creates a dedicated database holding only tenant tables when a store is set up', function (): void {
+    $store = createStore('only-store');
 
     $store->run(function () use ($store): void {
         expect(DB::connection()->getDatabaseName())->toBe(config('tenancy.database.prefix').$store->getTenantKey())
@@ -40,8 +37,8 @@ it('creates a dedicated database holding only tenant tables when a store is crea
 });
 
 it('does not show one store\'s staff roles to another store', function (): void {
-    $firstStore = Tenant::query()->create();
-    $secondStore = Tenant::query()->create();
+    $firstStore = createStore('first-store');
+    $secondStore = createStore('second-store');
 
     $firstStore->run(static fn (): Role => Role::create(['name' => 'Manager', 'guard_name' => 'staff']));
 
@@ -51,8 +48,8 @@ it('does not show one store\'s staff roles to another store', function (): void 
 });
 
 it('does not serve one store\'s cached permissions to another store', function (): void {
-    $firstStore = Tenant::query()->create();
-    $secondStore = Tenant::query()->create();
+    $firstStore = createStore('first-store');
+    $secondStore = createStore('second-store');
 
     $firstStore->run(function (): void {
         Permission::create(['name' => 'edit products', 'guard_name' => 'staff']);
@@ -68,8 +65,8 @@ it('does not serve one store\'s cached permissions to another store', function (
 });
 
 it('does not show one store\'s cache entries to another store or to the platform', function (): void {
-    $firstStore = Tenant::query()->create();
-    $secondStore = Tenant::query()->create();
+    $firstStore = createStore('first-store');
+    $secondStore = createStore('second-store');
 
     $firstStore->run(static fn (): bool => Cache::put('greeting', 'hello from the first store'));
 

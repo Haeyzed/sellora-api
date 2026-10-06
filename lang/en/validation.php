@@ -183,8 +183,16 @@ return [
     */
 
     'custom' => [
-        'attribute-name' => [
-            'rule-name' => 'custom-message',
+        'subdomain' => [
+            'regex' => 'The store address may only contain lower-case letters, numbers and single hyphens, and cannot start or end with a hyphen.',
+            'reserved' => 'This store address is reserved. Choose another.',
+        ],
+        'country_code' => [
+            'unknown' => 'Stores cannot be registered in this country.',
+        ],
+        'timezone' => [
+            'required_for_country' => 'This country has several timezones. Choose the store\'s timezone.',
+            'not_in_country' => 'Choose one of the country\'s timezones.',
         ],
     ],
 
