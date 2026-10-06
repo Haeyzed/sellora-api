@@ -58,4 +58,8 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(static function (Exceptions $exceptions): void {
         $exceptions->render(static fn (Throwable $exception): Response => app(ApiErrorRenderer::class)->render($exception));
-    })->create();
+    })->create()
+    // Every config file in config/ is complete. Merging Laravel's defaults would
+    // silently add a "web" guard, a "users" provider pointing to a User model
+    // that doesn't exist, and database connections this app never uses.
+    ->dontMergeFrameworkConfiguration();

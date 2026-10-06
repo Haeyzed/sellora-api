@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use Illuminate\Support\Facades\Facade;
+use Illuminate\Support\ServiceProvider;
+
 return [
 
     /*
@@ -55,6 +58,10 @@ return [
     */
 
     'url' => env('APP_URL', 'http://localhost'),
+
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:3000'),
+
+    'asset_url' => env('ASSET_URL'),
 
     /*
     |--------------------------------------------------------------------------
@@ -124,5 +131,20 @@ return [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Autoloaded Service Providers and Class Aliases
+    |--------------------------------------------------------------------------
+    |
+    | Laravel's own service providers and facade aliases. This app doesn't
+    | merge in the framework's default config (bootstrap/app.php), so they
+    | must be listed here. Application providers go in bootstrap/providers.php.
+    |
+    */
+
+    'providers' => ServiceProvider::defaultProviders()->toArray(),
+
+    'aliases' => Facade::defaultAliases()->toArray(),
 
 ];
