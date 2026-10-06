@@ -107,7 +107,7 @@ final readonly class SubscriptionFeatureSource implements FeatureSource
 
         foreach ($limitOverrides as $limitOverride) {
             if ($limitOverride->expires_at === null || $limitOverride->expires_at->greaterThan($now)) {
-                $limits[$limitOverride->limit_key] = $limitOverride->limit_value;
+                $limits[$limitOverride->limit_key] = $limitOverride->effectiveLimit();
             }
         }
 

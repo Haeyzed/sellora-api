@@ -14,7 +14,8 @@ use Stancl\Tenancy\Database\Concerns\CentralConnection;
  * @property int $id
  * @property string $tenant_id
  * @property string $limit_key One of the keys in config/features.php.
- * @property int|null $limit_value Null means unlimited.
+ * @property int|null $limit_value Null only when unlimited.
+ * @property bool $is_unlimited Set on purpose; a missing value never means unlimited.
  * @property CarbonImmutable|null $expires_at After this, the plan's limit applies again.
  * @property string|null $reason
  * @property CarbonImmutable|null $created_at
@@ -28,9 +29,22 @@ final class TenantLimitOverride extends Model
         'tenant_id',
         'limit_key',
         'limit_value',
+        'is_unlimited',
         'expires_at',
         'reason',
     ];
+
+    /**
+     * The limit this override sets: null only when it is unlimited on purpose. A value missing without the unlimited flag (which the database refuses) counts as zero, never unlimited.
+     */
+    public function effectiveLimit(): ?int
+    {
+        if ($this->is_unlimited) {
+            return null;
+        }
+
+        return $this->limit_value ?? 0;
+    }
 
     /**
      * @return array<string, string>
@@ -39,6 +53,7 @@ final class TenantLimitOverride extends Model
     {
         return [
             'limit_value' => 'integer',
+            'is_unlimited' => 'boolean',
             'expires_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',

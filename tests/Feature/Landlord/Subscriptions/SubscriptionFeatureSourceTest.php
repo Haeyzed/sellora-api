@@ -14,6 +14,7 @@ use App\Shared\Features\FeatureRegistry;
 use App\Shared\Features\Features;
 use App\Shared\Features\FeatureState;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 
 uses(LazilyRefreshDatabase::class);
@@ -116,6 +117,27 @@ it('applies a store\'s own limit instead of its plan\'s until the override expir
     expect(limitOf('products'))->toBe(250);
 });
 
+it('never stores an override whose value is missing without the unlimited flag', function (): void {
+    subscribe($this->starterPlan);
+
+    // Its own transaction, so the refused insert doesn't abort the test's.
+    $insertWithoutValue = fn () => TenantLimitOverride::query()->getConnection()->transaction(fn (): TenantLimitOverride => TenantLimitOverride::query()->create([
+        'tenant_id' => $this->store->id,
+        'limit_key' => 'products',
+        'limit_value' => null,
+    ]));
+
+    expect($insertWithoutValue)->toThrow(QueryException::class, 'tenant_limit_overrides_unlimited_is_explicit')
+        ->and(limitOf('products'))->toBe(250);
+});
+
+it('reads an override missing its value as zero, never unlimited, if one ever got past the database', function (): void {
+    $override = new TenantLimitOverride(['limit_key' => 'products', 'limit_value' => null, 'is_unlimited' => false]);
+
+    expect($override->effectiveLimit())->toBe(0)
+        ->and((new TenantLimitOverride(['limit_key' => 'products', 'limit_value' => null, 'is_unlimited' => true]))->effectiveLimit())->toBeNull();
+});
+
 it('decides whether an unpaid or cancelled store keeps access', function (array $subscriptionAttributes, FeatureState $expectedState): void {
     subscribe($this->growthPlan, $subscriptionAttributes);
 
@@ -141,7 +163,7 @@ it('suspends a store as soon as its grace period ends, even with its plan cached
 
 it('never lets one store\'s plan or overrides affect another store', function (): void {
     subscribe($this->growthPlan);
-    TenantLimitOverride::query()->create(['tenant_id' => $this->store->id, 'limit_key' => 'products', 'limit_value' => null]);
+    TenantLimitOverride::query()->create(['tenant_id' => $this->store->id, 'limit_key' => 'products', 'limit_value' => null, 'is_unlimited' => true]);
     $otherStore = createStoreRecord();
     Subscription::factory()->create(['tenant_id' => $otherStore->id, 'plan_id' => $this->starterPlan->id]);
 
