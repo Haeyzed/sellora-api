@@ -341,6 +341,7 @@ sellora-api/
 │   │   ├── returns.php
 │   │   ├── storefront.php
 │   │   └── delivery.php              # driver app endpoints + staff delivery management
+│   ├── registration.php              # central domain, no sign-in: hosting regions, legal documents, store sign-up (docs at /docs/registration)
 │   ├── webhooks.php                  # central domain; shared webhook entry points
 │   ├── channels.php                  # Reverb channel authorization, tenant- and guard-aware
 │   └── console.php
@@ -803,7 +804,16 @@ At registration the merchant chooses:
 - **Country:** sets sensible defaults for currency, timezone, language, tax mode and address format (section 3.3). The merchant can change these later.
 - **Hosting region** (see below).
 
-Until merchant billing is decided (section 16), new stores register on a free or trial plan.
+Until merchant billing is decided (section 16), new stores register on the plan with code `free`. A landlord seeder creates it with starter limits I approve; platform admins can change plans later. Registration stays closed (503) if no `free` plan exists.
+
+**How sign-up works (built in Step 5a):**
+- The merchant submits their details and accepts the current **terms of service and privacy policy**; a 6-digit code is emailed. No store or database exists until the code is confirmed, so spam sign-ups cost one row.
+- Codes last 60 minutes; 5 wrong codes require a new code. Abandoned sign-ups are deleted 7 days after expiry, together with their legal acceptances (no contract was formed). A real store's acceptances are kept as evidence of the contract.
+- Confirming the code creates the store (status `provisioning`), its subdomain and its `free` subscription, then queues setup. Setup is retry-safe (5 tries with growing waits) before the store becomes `provisioning_failed`. The owner's password hash is held only until their account exists, then deleted.
+- The owner is created through a Shared contract (Landlord never writes to a store database itself), and **the owner does not count toward the staff limit**; the limit covers additional staff.
+- A store that isn't `active` answers every request with 503 `store_unavailable`, checked when the store is identified from its domain.
+- Published legal document versions never change. A version published for a future date doesn't replace the current one until it takes effect.
+- **Running tenant migrations across all stores skips only stores that have no database yet** (`provisioning` before its database exists, and `provisioning_failed`). Suspended and closed-but-not-purged stores still have databases and must stay migrated, or reactivating them would break.
 
 **Store domains**
 - Every store gets a subdomain on the platform domain at registration.
