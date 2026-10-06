@@ -256,6 +256,7 @@ This platform targets merchants and shoppers worldwide. **Never hard-code anythi
 
 **Timezones and dates**
 - Store every timestamp in UTC. Convert to the store's or customer's timezone only for display.
+- **Every database connection runs in UTC** (the `timezone` option on the connection, central and tenant alike). Never rely on the database server's local timezone, or stored times silently shift.
 - Return dates in the API as ISO 8601 with offset.
 - "Today's sales", report periods and scheduled promotions use the store's timezone, not the server's.
 
@@ -392,6 +393,7 @@ app/
 │   ├── Features/                     # plan gating (see 5.6)
 │   ├── Tenancy/                      # glue around the tenancy package; TenantRoutes.php is the single definition of how store routes are served (core and modules)
 │   ├── Geography/                    # thin read-only access to nnjeim/world reference data
+│   ├── Auth/                         # shared sign-in pieces for all four guards: token issuing, credential check with lockout, password change and reset
 │   ├── Idempotency/                  # Idempotency-Key middleware and stored replay responses
 │   ├── Privacy/                      # privacy registry: export and erase handlers per kind of person
 │   ├── Retention/                    # retention periods and the scheduled per-tenant purge
@@ -405,8 +407,9 @@ app/
 │   │   ├── Controller.php            # abstract base controller
 │   │   └── Middleware/               # app-wide middleware only, e.g. ForceJsonResponse
 │   ├── Exceptions/
-│   │   └── DomainException.php       # abstract parent of all business exceptions
-│   └── Concerns/                     # traits used across zones
+│   │   ├── DomainException.php       # abstract parent of all business exceptions
+│   │   └── ApiErrorResponseDocumentation.php  # documents the {message, code, errors} shape in Scramble
+│   └── Concerns/                     # traits used across zones, e.g. HasPublicId, HasNormalisedEmail
 │
 └── Providers/
     ├── AppServiceProvider.php
@@ -831,6 +834,13 @@ There are four guards, all on Sanctum. Each guard has its own model, provider, l
 | `driver` | A store's delivery drivers | `Tenant\Delivery` | tenant | `routes/tenant/delivery.php` |
 
 - **Never let one guard's tokens authorize another guard's routes.** Test this for every guard pair.
+- **Passwords:** at least 12 characters, no forced symbol or number rules (length protects better), and checked against known data breaches with Laravel's `uncompromised()` rule. It sends only a 5-character hash prefix, never the password. Applies to platform admins, staff and customers.
+- **Sign-in lockout:** after 5 wrong attempts, sign-in for that email or phone **in that store** pauses for 15 minutes, from any IP address, for every guard (settings in `config/api.php`). Unknown accounts lock the same way, so a lockout reveals nothing.
+- **Sign-in responses:** checks take the same time whether or not the account exists; deactivated accounts are refused only after a correct password; sign-in returns only the token, and every guard uses `/me` for the profile.
+- **Sessions:** signing out ends only that device; changing a password ends every other device; a password reset ends all devices. **Deactivated accounts' tokens are rejected on the very next request.**
+- **Polymorphic names** (tokens, roles, media, activity) come from the morph map in `AppServiceProvider`, never PHP class names. Every polymorphic model must be listed there.
+- The first platform admin is created with `php artisan platform:create-admin --super-admin`. Built-in roles: Super Admin (platform) and Owner (store, seeded into every new store).
+- Customer sign-up may say an email is already taken (standard in e-commerce, and rate-limited).
 - Always name the guard in route middleware (`auth:platform`, `auth:staff`, `auth:customer`, `auth:driver`). Never use a bare `auth:sanctum` or `auth`; an architecture test enforces this.
 - **Two-factor authentication** (`pragmarx/google2fa`) is available for platform admins and staff: TOTP codes, hashed one-time recovery codes, and a 2FA challenge before a token is issued. Platform admins must use it; for staff, it's a store setting the owner can require.
 - **Platform admins** are authorized with `spatie/laravel-permission` roles and permissions on the `platform` guard (central database).
