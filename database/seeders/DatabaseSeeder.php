@@ -1,25 +1,26 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Seeders;
 
-use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Database\Seeders\Landlord\WorldSeeder;
 use Illuminate\Database\Seeder;
 
-class DatabaseSeeder extends Seeder
+/**
+ * Fills the central (platform) database with the data every installation needs.
+ *
+ * Store databases are seeded separately by Database\Seeders\Tenant\DatabaseSeeder.
+ */
+final class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
     /**
-     * Seed the application's database.
+     * Seeds the central database.
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        $this->call([
+            WorldSeeder::class,
         ]);
     }
 }

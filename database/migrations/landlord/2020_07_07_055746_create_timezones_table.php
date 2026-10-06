@@ -1,0 +1,30 @@
+<?php
+
+declare(strict_types=1);
+
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+use Nnjeim\World\Database\Migrations\BaseMigration;
+
+return new class extends BaseMigration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create(config('world.migrations.timezones.table_name'), function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('country_id');
+            $table->string('name');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists(config('world.migrations.timezones.table_name'));
+    }
+};
