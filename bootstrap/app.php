@@ -1,21 +1,36 @@
 <?php
 
+declare(strict_types=1);
+
+use App\Shared\Tenancy\Http\Middleware\EnsureCentralDomain;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
+use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__.'/../routes/web.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
+        then: static function (): void {
+            Route::middleware(['api', EnsureCentralDomain::class])
+                ->prefix('api/v1/platform')
+                ->name('platform.')
+                ->group(base_path('routes/landlord.php'));
+
+            Route::middleware(['api', EnsureCentralDomain::class])
+                ->prefix('webhooks')
+                ->name('webhooks.')
+                ->group(base_path('routes/webhooks.php'));
+
+            Route::middleware(['api', InitializeTenancyByDomain::class, PreventAccessFromCentralDomains::class])
+                ->prefix('api/v1')
+                ->group(base_path('routes/tenant.php'));
+        },
     )
-    ->withMiddleware(function (Middleware $middleware): void {
-        //
-    })
-    ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
-        );
+    ->withMiddleware(static function (Middleware $middleware): void {})
+    ->withExceptions(static function (Exceptions $exceptions): void {
+        $exceptions->shouldRenderJsonWhen(static fn (): bool => true);
     })->create();
