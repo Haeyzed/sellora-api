@@ -7,9 +7,12 @@ namespace App\Landlord\Subscriptions;
 use App\Landlord\Plans\Models\PlanFeature;
 use App\Landlord\Plans\Models\PlanLimit;
 use App\Landlord\Subscriptions\Enums\SubscriptionStatus;
+use App\Landlord\Subscriptions\Models\FeatureGrant;
 use App\Landlord\Subscriptions\Models\Subscription;
 use App\Landlord\Subscriptions\Models\TenantFeature;
 use App\Landlord\Subscriptions\Models\TenantLimitOverride;
+use App\Landlord\Tenancy\Enums\TenantStatus;
+use App\Landlord\Tenancy\Models\Tenant;
 use App\Shared\Features\Contracts\FeatureSource;
 use App\Shared\Features\FeatureSnapshot;
 use Carbon\CarbonImmutable;
@@ -18,7 +21,7 @@ use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
- * Tells Features what a store's subscription gives it: the plan's modules, integrations and limits, the store's overrides, and whether it is suspended.
+ * Tells Features what a store's subscription gives it: the plan's modules, integrations and limits, the store's feature grants and limit overrides, and whether it is suspended.
  */
 final readonly class SubscriptionFeatureSource implements FeatureSource
 {
@@ -41,19 +44,38 @@ final readonly class SubscriptionFeatureSource implements FeatureSource
         $now = CarbonImmutable::now();
         $tenantFeatures = TenantFeature::query()->where('tenant_id', $tenantId)->get();
         $limitOverrides = TenantLimitOverride::query()->where('tenant_id', $tenantId)->get();
+        $featureGrants = FeatureGrant::query()->where('tenant_id', $tenantId)->get();
+        $activeGrants = $featureGrants->filter(static fn (FeatureGrant $featureGrant): bool => $featureGrant->isActive());
+        $endedGrants = $featureGrants->reject(static fn (FeatureGrant $featureGrant): bool => $featureGrant->isActive());
         $accessEndsAt = $this->accessEndsAt($subscription);
 
         return new FeatureSnapshot(
-            isStoreSuspended: $this->isSuspended($subscription, $accessEndsAt, $now),
-            entitledFeatureKeys: array_values($subscription->plan->features->map(static fn (PlanFeature $feature): string => $feature->feature_key)->all()),
-            removedFeatureKeys: $this->featureKeysWhere($tenantFeatures, static fn (TenantFeature $feature): bool => $feature->removed_from_plan_at !== null),
+            isStoreSuspended: $this->isSuspended($subscription, $accessEndsAt, $now) || $this->isSuspendedByPlatform($tenantId),
+            entitledFeatureKeys: array_values(array_unique([
+                ...$subscription->plan->features->map(static fn (PlanFeature $feature): string => $feature->feature_key)->all(),
+                ...$activeGrants->map(static fn (FeatureGrant $featureGrant): string => $featureGrant->feature_key)->all(),
+            ])),
+            // A grant that ended locks its feature like a downgrade does, unless the plan includes it.
+            removedFeatureKeys: array_values(array_unique([
+                ...$this->featureKeysWhere($tenantFeatures, static fn (TenantFeature $feature): bool => $feature->removed_from_plan_at !== null),
+                ...$endedGrants->map(static fn (FeatureGrant $featureGrant): string => $featureGrant->feature_key)->all(),
+            ])),
             merchantDisabledFeatureKeys: $this->featureKeysWhere($tenantFeatures, static fn (TenantFeature $feature): bool => $feature->disabled_by_merchant_at !== null),
             limits: $this->limits($subscription, $limitOverrides, $now),
             changesAt: $this->earliestUpcoming([
                 $accessEndsAt,
                 ...$limitOverrides->map(static fn (TenantLimitOverride $override): ?CarbonImmutable => $override->expires_at)->all(),
+                ...$activeGrants->map(static fn (FeatureGrant $featureGrant): ?CarbonImmutable => $featureGrant->expires_at)->all(),
             ], $now),
         );
+    }
+
+    /**
+     * A platform admin can suspend a store whatever its subscription, for example for fraud. Paying doesn't lift it.
+     */
+    private function isSuspendedByPlatform(string $tenantId): bool
+    {
+        return Tenant::query()->whereKey($tenantId)->where('status', TenantStatus::Suspended)->exists();
     }
 
     /**

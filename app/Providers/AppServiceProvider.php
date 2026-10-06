@@ -8,6 +8,11 @@ use App\Landlord\Identity\Enums\PlatformRole;
 use App\Landlord\Identity\Models\PlatformAdmin;
 use App\Landlord\Identity\Models\PlatformAdminInvitation;
 use App\Landlord\Legal\Models\LegalDocument;
+use App\Landlord\Plans\Models\Plan;
+use App\Landlord\Plans\Models\PlanFeature;
+use App\Landlord\Plans\Models\PlanLimit;
+use App\Landlord\Subscriptions\Models\FeatureGrant;
+use App\Landlord\Subscriptions\Models\TenantLimitOverride;
 use App\Landlord\Subscriptions\SubscriptionFeatureSource;
 use App\Landlord\Tenancy\Models\DatabaseServer;
 use App\Landlord\Tenancy\Models\Tenant;
@@ -183,6 +188,11 @@ final class AppServiceProvider extends ServiceProvider
             'legal_document' => LegalDocument::class,
             'database_server' => DatabaseServer::class,
             'platform_admin_invitation' => PlatformAdminInvitation::class,
+            'feature_grant' => FeatureGrant::class,
+            'limit_override' => TenantLimitOverride::class,
+            'plan' => Plan::class,
+            'plan_feature' => PlanFeature::class,
+            'plan_limit' => PlanLimit::class,
         ]);
     }
 

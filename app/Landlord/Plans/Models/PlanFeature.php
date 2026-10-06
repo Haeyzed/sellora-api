@@ -6,6 +6,8 @@ namespace App\Landlord\Plans\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use OwenIt\Auditing\Auditable;
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 use Stancl\Tenancy\Database\Concerns\CentralConnection;
 
 /**
@@ -16,11 +18,17 @@ use Stancl\Tenancy\Database\Concerns\CentralConnection;
  * @property string $feature_key
  * @property-read Plan $plan
  */
-final class PlanFeature extends Model
+final class PlanFeature extends Model implements AuditableContract
 {
+    use Auditable;
     use CentralConnection;
 
     public $timestamps = false;
+
+    /**
+     * @var list<string>
+     */
+    protected $auditInclude = ['feature_key'];
 
     protected $fillable = [
         'feature_key',

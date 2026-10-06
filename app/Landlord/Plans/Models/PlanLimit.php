@@ -6,6 +6,8 @@ namespace App\Landlord\Plans\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use OwenIt\Auditing\Auditable;
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 use Stancl\Tenancy\Database\Concerns\CentralConnection;
 
 /**
@@ -17,11 +19,17 @@ use Stancl\Tenancy\Database\Concerns\CentralConnection;
  * @property int|null $limit_value
  * @property-read Plan $plan
  */
-final class PlanLimit extends Model
+final class PlanLimit extends Model implements AuditableContract
 {
+    use Auditable;
     use CentralConnection;
 
     public $timestamps = false;
+
+    /**
+     * @var list<string>
+     */
+    protected $auditInclude = ['limit_key', 'limit_value'];
 
     protected $fillable = [
         'limit_key',

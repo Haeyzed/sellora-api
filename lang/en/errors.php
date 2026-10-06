@@ -75,6 +75,9 @@ return [
     'last_super_admin' => 'At least one active super admin must remain.',
     'platform_role_protected' => 'The Super Admin role cannot be changed or deleted.',
     'platform_role_in_use' => 'This role is still given to platform admins or pending invitations. Remove it from them first.',
+    'store_status_conflict' => 'This cannot be done while the store is in its current status.',
+    'feature_already_granted' => 'This store already has this feature granted. Revoke the grant first to change it.',
+    'feature_grant_not_active' => 'This grant has already ended.',
 
     'feature_unavailable' => 'Your plan does not include this feature.',
     'feature_locked' => 'Your plan no longer includes this feature. Its existing data is read-only.',

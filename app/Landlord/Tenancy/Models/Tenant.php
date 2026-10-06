@@ -4,13 +4,19 @@ declare(strict_types=1);
 
 namespace App\Landlord\Tenancy\Models;
 
+use App\Landlord\Subscriptions\Models\FeatureGrant;
+use App\Landlord\Subscriptions\Models\Subscription;
+use App\Landlord\Subscriptions\Models\TenantLimitOverride;
 use App\Landlord\Tenancy\Enums\TenantStatus;
 use App\Landlord\Tenancy\TenantDatabaseConfig;
 use App\Shared\Concerns\HasPublicId;
 use Carbon\CarbonImmutable;
 use Database\Factories\Landlord\TenantFactory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDomains;
@@ -37,10 +43,16 @@ use Stancl\Tenancy\DatabaseConfig;
  * @property string $timezone
  * @property string $locale
  * @property CarbonImmutable|null $provisioned_at
+ * @property CarbonImmutable|null $suspended_at When a platform admin suspended it.
+ * @property string|null $suspension_reason Why, for the platform team; never shown to the store's customers.
  * @property array<string, mixed>|null $data
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
+ * @property-read Collection<int, Domain> $domains
  * @property-read DatabaseServer|null $databaseServer
+ * @property-read Subscription|null $subscription
+ * @property-read Collection<int, FeatureGrant> $featureGrants
+ * @property-read Collection<int, TenantLimitOverride> $limitOverrides
  */
 final class Tenant extends BaseTenant implements TenantWithDatabase
 {
@@ -73,6 +85,8 @@ final class Tenant extends BaseTenant implements TenantWithDatabase
             'timezone',
             'locale',
             'provisioned_at',
+            'suspended_at',
+            'suspension_reason',
         ];
     }
 
@@ -85,11 +99,45 @@ final class Tenant extends BaseTenant implements TenantWithDatabase
     }
 
     /**
+     * The web addresses that open the store. The package's own relation, with its types.
+     *
+     * @return HasMany<Domain, $this>
+     */
+    public function domains(): HasMany
+    {
+        return $this->hasMany(Domain::class, 'tenant_id');
+    }
+
+    /**
      * @return BelongsTo<DatabaseServer, $this>
      */
     public function databaseServer(): BelongsTo
     {
         return $this->belongsTo(DatabaseServer::class);
+    }
+
+    /**
+     * @return HasOne<Subscription, $this>
+     */
+    public function subscription(): HasOne
+    {
+        return $this->hasOne(Subscription::class);
+    }
+
+    /**
+     * @return HasMany<FeatureGrant, $this>
+     */
+    public function featureGrants(): HasMany
+    {
+        return $this->hasMany(FeatureGrant::class);
+    }
+
+    /**
+     * @return HasMany<TenantLimitOverride, $this>
+     */
+    public function limitOverrides(): HasMany
+    {
+        return $this->hasMany(TenantLimitOverride::class);
     }
 
     /**
@@ -113,6 +161,7 @@ final class Tenant extends BaseTenant implements TenantWithDatabase
         return [
             'status' => TenantStatus::class,
             'provisioned_at' => 'immutable_datetime',
+            'suspended_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];

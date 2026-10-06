@@ -6,6 +6,8 @@ namespace App\Landlord\Subscriptions\Models;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
+use OwenIt\Auditing\Auditable;
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 use Stancl\Tenancy\Database\Concerns\CentralConnection;
 
 /**
@@ -21,8 +23,9 @@ use Stancl\Tenancy\Database\Concerns\CentralConnection;
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  */
-final class TenantLimitOverride extends Model
+final class TenantLimitOverride extends Model implements AuditableContract
 {
+    use Auditable;
     use CentralConnection;
 
     protected $fillable = [
@@ -33,6 +36,19 @@ final class TenantLimitOverride extends Model
         'expires_at',
         'reason',
     ];
+
+    /**
+     * @var list<string>
+     */
+    protected $auditInclude = ['limit_key', 'limit_value', 'is_unlimited', 'expires_at', 'reason'];
+
+    /**
+     * Whether it applies now; after its date the plan's limit applies again.
+     */
+    public function isActive(): bool
+    {
+        return $this->expires_at === null || $this->expires_at->isFuture();
+    }
 
     /**
      * The limit this override sets: null only when it is unlimited on purpose. A value missing without the unlimited flag (which the database refuses) counts as zero, never unlimited.

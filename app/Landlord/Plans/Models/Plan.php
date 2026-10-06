@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use OwenIt\Auditing\Auditable;
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 use Stancl\Tenancy\Database\Concerns\CentralConnection;
 
 /**
@@ -28,14 +30,20 @@ use Stancl\Tenancy\Database\Concerns\CentralConnection;
  * @property-read Collection<int, PlanFeature> $features
  * @property-read Collection<int, PlanLimit> $limits
  */
-final class Plan extends Model
+final class Plan extends Model implements AuditableContract
 {
+    use Auditable;
     use CentralConnection;
 
     /** @use HasFactory<PlanFactory> */
     use HasFactory;
 
     use HasPublicId;
+
+    /**
+     * @var list<string>
+     */
+    protected $auditInclude = ['code', 'name', 'is_active', 'is_public'];
 
     protected $fillable = [
         'code',
