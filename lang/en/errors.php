@@ -31,4 +31,12 @@ return [
     'idempotency_key_reused' => 'This Idempotency-Key was already used for a different request.',
     'idempotent_request_in_progress' => 'A request with this Idempotency-Key is still being processed. Try again shortly.',
 
+    'feature_unavailable' => 'Your plan does not include this feature.',
+    'feature_locked' => 'Your plan no longer includes this feature. Its existing data is read-only.',
+    'feature_suspended' => 'This store is suspended, so this feature is unavailable.',
+    'feature_disabled' => 'This feature is switched off for this store.',
+    'usage_limit_reached' => 'Your plan allows up to :limit of these. Upgrade your plan to add more.',
+    'subscription_already_exists' => 'This store already has a subscription. Change its plan instead.',
+    'plan_not_available' => 'The ":plan" plan is not available.',
+
 ];

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Landlord\Tenancy\Models\Tenant;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /*
@@ -38,6 +39,14 @@ function createStore(string $subdomain): Tenant
     $store->domains()->create(['domain' => $subdomain.'.'.config('platform.domain')]);
 
     return $store;
+}
+
+/**
+ * Creates only a store's row in the central database, without provisioning its database, for tests of platform-side logic.
+ */
+function createStoreRecord(): Tenant
+{
+    return Tenant::withoutEvents(static fn (): Tenant => Tenant::query()->create(['id' => (string) Str::uuid()]));
 }
 
 /**

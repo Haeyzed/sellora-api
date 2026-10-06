@@ -3,18 +3,19 @@
 declare(strict_types=1);
 
 use App\Shared\Exceptions\ApiErrorRenderer;
+use App\Shared\Features\Http\Middleware\EnsureIntegrationIsEnabled;
+use App\Shared\Features\Http\Middleware\EnsureModuleIsEnabled;
 use App\Shared\Http\Middleware\AddSecurityHeaders;
 use App\Shared\Http\Middleware\ForceJsonResponse;
 use App\Shared\Idempotency\EnsureRequestIsIdempotent;
 use App\Shared\Retention\PurgeExpiredRecordsCommand;
 use App\Shared\Tenancy\Http\Middleware\EnsureCentralDomain;
+use App\Shared\Tenancy\TenantRoutes;
 use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Support\Facades\Route;
-use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
-use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 use Symfony\Component\HttpFoundation\Response;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -32,8 +33,8 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->name('webhooks.')
                 ->group(base_path('routes/webhooks.php'));
 
-            Route::middleware(['api', InitializeTenancyByDomain::class, PreventAccessFromCentralDomains::class])
-                ->prefix('api/v1')
+            Route::middleware(TenantRoutes::MIDDLEWARE)
+                ->prefix(TenantRoutes::PREFIX)
                 ->group(base_path('routes/tenant.php'));
         },
     )
@@ -46,6 +47,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'idempotent' => EnsureRequestIsIdempotent::class,
+            'module' => EnsureModuleIsEnabled::class,
+            'integration' => EnsureIntegrationIsEnabled::class,
         ]);
         $middleware->appendToPriorityList(Authenticate::class, EnsureRequestIsIdempotent::class);
 

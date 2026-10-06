@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Landlord\Subscriptions\SubscriptionFeatureSource;
+use App\Shared\Features\Contracts\FeatureSource;
+use App\Shared\Features\FeatureRegistry;
 use App\Shared\Idempotency\IdempotencyKeyRetention;
 use App\Shared\Privacy\PersonalDataRegistry;
 use App\Shared\Retention\Policies\ActivityLogRetention;
@@ -32,6 +35,7 @@ final class AppServiceProvider extends ServiceProvider
     {
         $this->registerTelescopeLocally();
         $this->registerSharedRegistries();
+        $this->registerPlanGating();
     }
 
     /**
@@ -82,6 +86,18 @@ final class AppServiceProvider extends ServiceProvider
 
             return $registry;
         });
+    }
+
+    /**
+     * Plan gating: one list of installed modules and integrations, and the platform's subscriptions as the source of each store's plan.
+     *
+     * Shared never imports Landlord, so the subscriptions are connected to
+     * Features here, through the FeatureSource contract.
+     */
+    private function registerPlanGating(): void
+    {
+        $this->app->singleton(FeatureRegistry::class);
+        $this->app->bind(FeatureSource::class, SubscriptionFeatureSource::class);
     }
 
     /**
