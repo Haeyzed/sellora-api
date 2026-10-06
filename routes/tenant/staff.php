@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Shared\Auth\Models\Role;
+use App\Tenant\Identity\Http\Controllers\OwnershipTransferController;
 use App\Tenant\Identity\Http\Controllers\StaffInvitationController;
 use App\Tenant\Identity\Http\Controllers\StaffRoleController;
 use App\Tenant\Identity\Http\Controllers\TeamMemberController;
@@ -11,7 +12,8 @@ use Illuminate\Support\Facades\Route;
 
 /*
 | The store's team (Tenant\Identity), under /api/v1/staff/team: members,
-| invitations, roles and permissions. Each endpoint checks its own permission.
+| invitations, roles, permissions and ownership transfers. Each endpoint
+| checks its own permission.
 */
 
 Route::bind('staffRole', static fn (string $publicId): Role => Role::query()
@@ -41,4 +43,9 @@ Route::prefix('staff/team')
         Route::delete('roles/{staffRole}', [StaffRoleController::class, 'destroy'])->name('roles.destroy');
 
         Route::get('permissions', [StaffRoleController::class, 'permissions'])->name('permissions.index');
+
+        Route::get('ownership-transfers/pending', [OwnershipTransferController::class, 'pending'])->name('ownership-transfers.pending');
+        Route::post('ownership-transfers', [OwnershipTransferController::class, 'store'])->name('ownership-transfers.store');
+        Route::delete('ownership-transfers/{ownershipTransfer}', [OwnershipTransferController::class, 'destroy'])->name('ownership-transfers.destroy');
+        Route::post('ownership-transfers/{ownershipTransfer}/acceptance', [OwnershipTransferController::class, 'accept'])->name('ownership-transfers.accept');
     });

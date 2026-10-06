@@ -16,6 +16,7 @@ use App\Landlord\Subscriptions\Models\TenantLimitOverride;
 use App\Landlord\Subscriptions\SubscriptionFeatureSource;
 use App\Landlord\Tenancy\Models\DatabaseServer;
 use App\Landlord\Tenancy\Models\Tenant;
+use App\Landlord\Tenancy\PlatformStoreOwnership;
 use App\Landlord\Tenancy\StoreRegistrationRetention;
 use App\Shared\Auth\ExpiredPasswordResetTokenRetention;
 use App\Shared\Auth\Models\Role;
@@ -30,10 +31,12 @@ use App\Shared\Retention\Policies\AuditRetention;
 use App\Shared\Retention\Policies\ExpiredAccessTokenRetention;
 use App\Shared\Retention\RetentionRegistry;
 use App\Shared\Tenancy\Contracts\StoreOwnerAccounts;
+use App\Shared\Tenancy\Contracts\StoreOwnership;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Delivery\Models\Driver;
 use App\Tenant\Identity\Enums\StaffPermission;
 use App\Tenant\Identity\Enums\StaffRole;
+use App\Tenant\Identity\Models\OwnershipTransfer;
 use App\Tenant\Identity\Models\StaffInvitation;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Identity\StaffInvitationRetention;
@@ -77,6 +80,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->singleton(TwoFactorChallenges::class);
         $this->registerStaffPermissions();
         $this->app->bind(StoreOwnerAccounts::class, StaffStoreOwnerAccounts::class);
+        $this->app->bind(StoreOwnership::class, PlatformStoreOwnership::class);
     }
 
     /**
@@ -193,6 +197,7 @@ final class AppServiceProvider extends ServiceProvider
             'plan' => Plan::class,
             'plan_feature' => PlanFeature::class,
             'plan_limit' => PlanLimit::class,
+            'ownership_transfer' => OwnershipTransfer::class,
         ]);
     }
 

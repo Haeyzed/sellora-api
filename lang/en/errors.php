@@ -54,6 +54,11 @@ return [
     'staff_invitation_already_pending' => 'This person already has a pending invitation. Resend it instead.',
     'staff_invitation_not_pending' => 'This invitation was already accepted or cancelled.',
     'staff_invitation_invalid' => 'This invitation link is invalid, has expired or was already used. Ask for a new one.',
+    'ownership_transfer_already_pending' => 'An ownership transfer is already waiting to be accepted. Cancel it before starting another.',
+    'ownership_transfer_not_pending' => 'This ownership transfer was already accepted, cancelled or has expired.',
+    'ownership_transfer_not_found' => 'There is no pending ownership transfer for you.',
+    'ownership_transfer_recipient_invalid' => 'The store can only be handed to another active member of the team.',
+    'terms_of_service_not_accepted' => 'Please accept the current terms of service.',
 
     'store_unavailable' => 'This store is not available right now. Please try again later.',
     'store_registration_closed' => 'New stores cannot be registered right now. Please try again later.',

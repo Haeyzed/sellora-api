@@ -155,6 +155,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Ownership Transfers
+    |--------------------------------------------------------------------------
+    |
+    | The emailed link to a store owner's offer to hand the store to a staff
+    | member, into the store dashboard, where they accept while signed in.
+    | {transfer} is filled in and {domain} becomes the store domain the offer
+    | was made from. Offers expire after this many hours.
+    |
+    */
+
+    'ownership_transfers' => [
+        'accept_url' => env('OWNERSHIP_TRANSFER_URL', 'https://{domain}/admin/ownership-transfer?transfer={transfer}'),
+        'expire_hours' => (int) env('OWNERSHIP_TRANSFER_EXPIRE_HOURS', 72),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Platform Admin Invitations
     |--------------------------------------------------------------------------
     |
