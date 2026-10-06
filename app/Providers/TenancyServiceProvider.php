@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Landlord\Tenancy\Console\MigrateStoreDatabasesCommand;
+use App\Landlord\Tenancy\Console\RollbackStoreDatabasesCommand;
+use App\Landlord\Tenancy\Console\RunInStoresCommand;
+use App\Landlord\Tenancy\Console\SeedStoreDatabasesCommand;
 use App\Landlord\Tenancy\StoreDomainResolver;
 use App\Shared\Tenancy\Listeners\RemoveTenantTagFromErrorReportsWhenTenancyEnds;
 use App\Shared\Tenancy\Listeners\RestoreCentralPermissionCacheWhenTenancyEnds;
@@ -77,8 +81,24 @@ final class TenancyServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->replaceStoreCommands();
         $this->bootEvents();
         $this->makeTenancyMiddlewareHighestPriority();
+    }
+
+    /**
+     * The package's commands that run across every store, replaced by versions that skip stores without a database yet. Same names, so deploy scripts don't change.
+     */
+    private function replaceStoreCommands(): void
+    {
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                MigrateStoreDatabasesCommand::class,
+                SeedStoreDatabasesCommand::class,
+                RollbackStoreDatabasesCommand::class,
+                RunInStoresCommand::class,
+            ]);
+        }
     }
 
     private function bootEvents(): void

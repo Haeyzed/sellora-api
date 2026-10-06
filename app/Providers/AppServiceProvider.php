@@ -8,6 +8,7 @@ use App\Landlord\Identity\Enums\PlatformRole;
 use App\Landlord\Identity\Models\PlatformAdmin;
 use App\Landlord\Legal\Models\LegalDocument;
 use App\Landlord\Subscriptions\SubscriptionFeatureSource;
+use App\Landlord\Tenancy\Models\DatabaseServer;
 use App\Landlord\Tenancy\Models\Tenant;
 use App\Landlord\Tenancy\StoreRegistrationRetention;
 use App\Shared\Auth\ExpiredPasswordResetTokenRetention;
@@ -179,6 +180,7 @@ final class AppServiceProvider extends ServiceProvider
             'role' => Role::class,
             'store' => Tenant::class,
             'legal_document' => LegalDocument::class,
+            'database_server' => DatabaseServer::class,
         ]);
     }
 
