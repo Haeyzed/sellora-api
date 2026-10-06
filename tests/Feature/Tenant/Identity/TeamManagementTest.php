@@ -207,8 +207,9 @@ it('refuses to invite a current staff member or someone already invited, and res
     team('POST', 'auth/invitation-previews', ['token' => $firstToken])->assertUnprocessable()->assertJsonPath('code', 'staff_invitation_invalid');
 });
 
-it('counts active staff and pending invitations towards the plan\'s staff limit, but not deactivated staff', function (): void {
-    allowStaffAccounts($this->store->getTenantKey(), 2);
+it('counts active staff and pending invitations towards the plan\'s staff limit, but not the owner or deactivated staff', function (): void {
+    // One place beyond the owner, who never counts.
+    allowStaffAccounts($this->store->getTenantKey(), 1);
 
     team('POST', 'team/invitations', ['email' => 'first@example.com', 'roles' => []], $this->owner)->assertCreated();
     team('POST', 'team/invitations', ['email' => 'second@example.com', 'roles' => []], $this->owner)

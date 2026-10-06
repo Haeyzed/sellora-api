@@ -6,13 +6,14 @@ namespace App\Tenant\Identity\Services;
 
 use App\Shared\Features\Exceptions\UsageLimitReachedException;
 use App\Shared\Features\Features;
+use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffInvitation;
 use App\Tenant\Identity\Models\StaffMember;
 use Illuminate\Database\DatabaseManager;
 use LogicException;
 
 /**
- * The plan's limit on staff accounts. Active staff members and pending invitations both count, so a store can't invite past its limit.
+ * The plan's limit on staff accounts beyond the owner. Active staff members and pending invitations both count, so a store can't invite past its limit.
  */
 final readonly class StaffAccountLimit
 {
@@ -51,7 +52,13 @@ final readonly class StaffAccountLimit
             $pendingInvitations->whereKeyNot($replacing->getKey());
         }
 
-        $usage = StaffMember::query()->where('is_active', true)->count() + $pendingInvitations->count();
+        // The owner comes with every store, so the limit only covers additional staff.
+        $additionalStaff = StaffMember::query()
+            ->where('is_active', true)
+            ->withoutRole(StaffRole::Owner->value, StaffMember::GUARD)
+            ->count();
+
+        $usage = $additionalStaff + $pendingInvitations->count();
 
         $this->features->ensureWithinLimit(self::LIMIT_KEY, $usage);
     }
