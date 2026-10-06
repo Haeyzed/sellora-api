@@ -8,12 +8,26 @@
     "guidelines": true,
     "mcp": true,
     "nightwatch": false,
+    "packages": [
+        "dedoc/scramble",
+        "maatwebsite/excel",
+        "spatie/laravel-medialibrary",
+        "spatie/laravel-permission",
+        "spatie/laravel-sluggable"
+    ],
     "sail": false,
     "skills": [
         "infer-conventions",
         "deploying-to-cloud",
         "laravel-best-practices",
         "testing-best-practices",
-        "tailwindcss-development"
+        "scout-development",
+        "telescope-debugging",
+        "tailwindcss-development",
+        "scramble-development",
+        "laravel-excel",
+        "medialibrary-development",
+        "laravel-permission-development",
+        "sluggable-development"
     ]
 }
