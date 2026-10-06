@@ -5,7 +5,10 @@ declare(strict_types=1);
 use App\Shared\Exceptions\ApiErrorRenderer;
 use App\Shared\Http\Middleware\AddSecurityHeaders;
 use App\Shared\Http\Middleware\ForceJsonResponse;
+use App\Shared\Idempotency\EnsureRequestIsIdempotent;
+use App\Shared\Retention\PurgeExpiredRecordsCommand;
 use App\Shared\Tenancy\Http\Middleware\EnsureCentralDomain;
+use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -34,9 +37,17 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->group(base_path('routes/tenant.php'));
         },
     )
+    ->withCommands([
+        PurgeExpiredRecordsCommand::class,
+    ])
     ->withMiddleware(static function (Middleware $middleware): void {
         $middleware->prepend(ForceJsonResponse::class);
         $middleware->append(AddSecurityHeaders::class);
+
+        $middleware->alias([
+            'idempotent' => EnsureRequestIsIdempotent::class,
+        ]);
+        $middleware->appendToPriorityList(Authenticate::class, EnsureRequestIsIdempotent::class);
 
         $middleware->redirectGuestsTo(null);
     })

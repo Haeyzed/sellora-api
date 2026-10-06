@@ -4,8 +4,15 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Shared\Idempotency\IdempotencyKeyRetention;
+use App\Shared\Privacy\PersonalDataRegistry;
+use App\Shared\Retention\Policies\ActivityLogRetention;
+use App\Shared\Retention\Policies\AuditRetention;
+use App\Shared\Retention\Policies\ExpiredAccessTokenRetention;
+use App\Shared\Retention\RetentionRegistry;
 use Dedoc\Scramble\Scramble;
 use Illuminate\Auth\Events\Authenticated;
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Telescope\TelescopeServiceProvider as TelescopePackageServiceProvider;
@@ -24,6 +31,7 @@ final class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->registerTelescopeLocally();
+        $this->registerSharedRegistries();
     }
 
     /**
@@ -52,6 +60,28 @@ final class AppServiceProvider extends ServiceProvider
                 'title' => config('app.name').' Platform API',
             ],
         ])->expose(ui: 'docs/platform', document: 'docs/platform.json');
+    }
+
+    /**
+     * One privacy registry and one retention registry for the whole application, which every domain and module adds to.
+     *
+     * The retention policies for platform-wide records (tokens, idempotency
+     * keys, activity and audit logs) are registered here; each domain
+     * registers its own as it is built.
+     */
+    private function registerSharedRegistries(): void
+    {
+        $this->app->singleton(PersonalDataRegistry::class);
+
+        $this->app->singleton(RetentionRegistry::class, static function (Application $app): RetentionRegistry {
+            $registry = new RetentionRegistry($app);
+            $registry->register(IdempotencyKeyRetention::class);
+            $registry->register(ExpiredAccessTokenRetention::class);
+            $registry->register(ActivityLogRetention::class);
+            $registry->register(AuditRetention::class);
+
+            return $registry;
+        });
     }
 
     /**
