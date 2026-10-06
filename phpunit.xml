@@ -5,6 +5,9 @@
          colors="true"
 >
     <testsuites>
+        <testsuite name="Architecture">
+            <directory>tests/Architecture</directory>
+        </testsuite>
         <testsuite name="Unit">
             <directory>tests/Unit</directory>
         </testsuite>
@@ -15,6 +18,8 @@
     <source>
         <include>
             <directory>app</directory>
+            <directory>modules</directory>
+            <directory>integrations</directory>
         </include>
     </source>
     <php>
@@ -23,12 +28,16 @@
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array"/>
-        <env name="DB_CONNECTION" value="sqlite"/>
-        <env name="DB_DATABASE" value=":memory:"/>
+        <env name="DB_CONNECTION" value="central"/>
+        <env name="DB_DATABASE" value="sellora_central_testing"/>
         <env name="DB_URL" value=""/>
+        <env name="TENANT_DATABASE_PREFIX" value="sellora_testing_tenant_"/>
+        <env name="PLATFORM_CENTRAL_DOMAINS" value="localhost"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
+        <env name="SCOUT_DRIVER" value="null"/>
+        <env name="SENTRY_LARAVEL_DSN" value=""/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
