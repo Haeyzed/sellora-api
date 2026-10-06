@@ -192,6 +192,6 @@ return [
      */
     'seeder_parameters' => [
         '--class' => Database\Seeders\Tenant\DatabaseSeeder::class, // root seeder class
-        // '--force' => true, // This needs to be true to seed tenant databases in production
+        '--force' => true, // Without it, seeding (and so every new store's built-in roles) is skipped in production.
     ],
 ];
