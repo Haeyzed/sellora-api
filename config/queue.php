@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 return [
 
     /*
@@ -37,7 +39,7 @@ return [
 
         'database' => [
             'driver' => 'database',
-            'connection' => env('DB_QUEUE_CONNECTION'),
+            'connection' => env('DB_QUEUE_CONNECTION', 'central'),
             'table' => env('DB_QUEUE_TABLE', 'jobs'),
             'queue' => env('DB_QUEUE', 'default'),
             'retry_after' => (int) env('DB_QUEUE_RETRY_AFTER', 90),
@@ -66,7 +68,7 @@ return [
 
         'redis' => [
             'driver' => 'redis',
-            'connection' => env('REDIS_QUEUE_CONNECTION', 'default'),
+            'connection' => env('REDIS_QUEUE_CONNECTION', 'queue'),
             'queue' => env('REDIS_QUEUE', 'default'),
             'retry_after' => (int) env('REDIS_QUEUE_RETRY_AFTER', 90),
             'block_for' => null,
@@ -103,7 +105,7 @@ return [
     */
 
     'batching' => [
-        'database' => env('DB_CONNECTION', 'sqlite'),
+        'database' => env('DB_CONNECTION', 'central'),
         'table' => 'job_batches',
     ],
 
@@ -122,7 +124,7 @@ return [
 
     'failed' => [
         'driver' => env('QUEUE_FAILED_DRIVER', 'database-uuids'),
-        'database' => env('DB_CONNECTION', 'sqlite'),
+        'database' => env('DB_CONNECTION', 'central'),
         'table' => 'failed_jobs',
     ],
 
