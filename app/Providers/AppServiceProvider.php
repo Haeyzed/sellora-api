@@ -16,6 +16,7 @@ use App\Landlord\Subscriptions\Models\TenantLimitOverride;
 use App\Landlord\Subscriptions\SubscriptionFeatureSource;
 use App\Landlord\Tenancy\Models\DatabaseServer;
 use App\Landlord\Tenancy\Models\Tenant;
+use App\Landlord\Tenancy\PlatformStoreClosure;
 use App\Landlord\Tenancy\PlatformStoreOwnership;
 use App\Landlord\Tenancy\StoreRegistrationRetention;
 use App\Shared\Auth\ExpiredPasswordResetTokenRetention;
@@ -30,8 +31,10 @@ use App\Shared\Retention\Policies\ActivityLogRetention;
 use App\Shared\Retention\Policies\AuditRetention;
 use App\Shared\Retention\Policies\ExpiredAccessTokenRetention;
 use App\Shared\Retention\RetentionRegistry;
+use App\Shared\Tenancy\Contracts\StoreClosure;
 use App\Shared\Tenancy\Contracts\StoreOwnerAccounts;
 use App\Shared\Tenancy\Contracts\StoreOwnership;
+use App\Shared\Tenancy\Contracts\StoreSessions;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Delivery\Models\Driver;
 use App\Tenant\Identity\Enums\StaffPermission;
@@ -42,6 +45,8 @@ use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Identity\StaffInvitationRetention;
 use App\Tenant\Identity\StaffPermissionCatalogue;
 use App\Tenant\Identity\StaffStoreOwnerAccounts;
+use App\Tenant\Identity\StoreSignOut;
+use App\Tenant\Settings\Policies\StoreLifecyclePolicy;
 use Dedoc\Scramble\Scramble;
 use Illuminate\Auth\Events\Authenticated;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -81,6 +86,8 @@ final class AppServiceProvider extends ServiceProvider
         $this->registerStaffPermissions();
         $this->app->bind(StoreOwnerAccounts::class, StaffStoreOwnerAccounts::class);
         $this->app->bind(StoreOwnership::class, PlatformStoreOwnership::class);
+        $this->app->bind(StoreSessions::class, StoreSignOut::class);
+        $this->app->bind(StoreClosure::class, PlatformStoreClosure::class);
     }
 
     /**
@@ -106,6 +113,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->definePasswordRules();
         $this->rejectTokensOfDeactivatedAccounts();
         $this->grantFullAccessRoles();
+        $this->defineStoreLifecycleAbilities();
         $this->tagErrorReportsWithGuard();
         $this->registerApiDocumentation();
     }
@@ -256,6 +264,14 @@ final class AppServiceProvider extends ServiceProvider
 
             return $hasFullAccess ? true : null;
         });
+    }
+
+    /**
+     * Abilities over the store as a whole, which belong to no model: only its owner may close it.
+     */
+    private function defineStoreLifecycleAbilities(): void
+    {
+        Gate::define('closeStore', [StoreLifecyclePolicy::class, 'close']);
     }
 
     /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Landlord\Identity\CreatePlatformAdminCommand;
 use App\Landlord\Tenancy\AddDatabaseServerCommand;
+use App\Landlord\Tenancy\Console\SendPurgeRemindersCommand;
 use App\Shared\Exceptions\ApiErrorRenderer;
 use App\Shared\Features\Http\Middleware\EnsureIntegrationIsEnabled;
 use App\Shared\Features\Http\Middleware\EnsureModuleIsEnabled;
@@ -48,6 +49,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withCommands([
         CreatePlatformAdminCommand::class,
         AddDatabaseServerCommand::class,
+        SendPurgeRemindersCommand::class,
         PurgeExpiredRecordsCommand::class,
     ])
     ->withMiddleware(static function (Middleware $middleware): void {

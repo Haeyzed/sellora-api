@@ -45,6 +45,13 @@ use Stancl\Tenancy\DatabaseConfig;
  * @property CarbonImmutable|null $provisioned_at
  * @property CarbonImmutable|null $suspended_at When a platform admin suspended it.
  * @property string|null $suspension_reason Why, for the platform team; never shown to the store's customers.
+ * @property CarbonImmutable|null $closed_at
+ * @property string|null $closure_reason
+ * @property string|null $closed_by_type The kind of account that closed it: "platform_admin" or "staff_member".
+ * @property string|null $closed_by_id That account's public ID.
+ * @property TenantStatus|null $status_before_closing Where a restore returns it to, so closing never lifts a suspension.
+ * @property CarbonImmutable|null $purge_after When its data may be deleted for good, if it is still closed.
+ * @property CarbonImmutable|null $purge_reminder_sent_at
  * @property array<string, mixed>|null $data
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
@@ -87,6 +94,13 @@ final class Tenant extends BaseTenant implements TenantWithDatabase
             'provisioned_at',
             'suspended_at',
             'suspension_reason',
+            'closed_at',
+            'closure_reason',
+            'closed_by_type',
+            'closed_by_id',
+            'status_before_closing',
+            'purge_after',
+            'purge_reminder_sent_at',
         ];
     }
 
@@ -162,6 +176,10 @@ final class Tenant extends BaseTenant implements TenantWithDatabase
             'status' => TenantStatus::class,
             'provisioned_at' => 'immutable_datetime',
             'suspended_at' => 'immutable_datetime',
+            'closed_at' => 'immutable_datetime',
+            'status_before_closing' => TenantStatus::class,
+            'purge_after' => 'immutable_datetime',
+            'purge_reminder_sent_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];

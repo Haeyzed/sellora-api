@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Artisan;
 
 /*
  * Section 9.1: running store migrations across every store skips only stores
- * with no database yet; suspended stores stay migrated. Database servers are
+ * with no database yet; suspended and closed stores stay migrated. Database servers are
  * added to the pool from the command line, only once they answer.
  */
 uses(DatabaseTruncation::class);
@@ -19,10 +19,12 @@ afterEach(function (): void {
     deleteAllStores();
 });
 
-it('migrates every store with a database, suspended ones included, and skips stores still being set up or failed', function (): void {
+it('migrates every store with a database, suspended and closed ones included, and skips stores still being set up or failed', function (): void {
     $active = createStore('active-store');
     $suspended = createStore('suspended-store');
     $suspended->update(['status' => TenantStatus::Suspended]);
+    $closed = createStore('closed-store');
+    $closed->update(['status' => TenantStatus::Closed, 'status_before_closing' => TenantStatus::Active, 'closed_at' => now(), 'purge_after' => now()->addDays(90)]);
     $provisioning = Tenant::factory()->provisioning()->create();
     $failed = Tenant::factory()->create(['status' => TenantStatus::ProvisioningFailed]);
 
@@ -31,6 +33,7 @@ it('migrates every store with a database, suspended ones included, and skips sto
 
     expect($output)->toContain($active->id)
         ->toContain($suspended->id)
+        ->toContain($closed->id)
         ->not->toContain($provisioning->id)
         ->not->toContain($failed->id);
 });

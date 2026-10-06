@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Landlord\Identity\Models\PlatformAdmin;
 use App\Landlord\Tenancy\Http\Controllers\FeatureGrantController;
 use App\Landlord\Tenancy\Http\Controllers\LimitOverrideController;
+use App\Landlord\Tenancy\Http\Controllers\ManagedStoreClosureController;
 use App\Landlord\Tenancy\Http\Controllers\ManagedStoreController;
 use App\Landlord\Tenancy\Http\Controllers\RetryStoreProvisioningController;
 use App\Landlord\Tenancy\Http\Controllers\StoreSuspensionController;
@@ -29,6 +30,8 @@ Route::prefix('stores')
         Route::post('{store}/suspension', [StoreSuspensionController::class, 'store'])->name('suspension.store');
         Route::delete('{store}/suspension', [StoreSuspensionController::class, 'destroy'])->name('suspension.destroy');
         Route::post('{store}/provisioning-retries', RetryStoreProvisioningController::class)->name('provisioning-retries.store');
+        Route::post('{store}/closure', [ManagedStoreClosureController::class, 'store'])->name('closure.store');
+        Route::delete('{store}/closure', [ManagedStoreClosureController::class, 'destroy'])->name('closure.destroy');
 
         Route::scopeBindings()->group(static function (): void {
             Route::get('{store}/feature-grants', [FeatureGrantController::class, 'index'])->name('feature-grants.index');

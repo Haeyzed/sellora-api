@@ -179,6 +179,14 @@ return [
     'routes' => true,
 
     /**
+     * Closed stores (section 9.1): how many days a closed store's data is
+     * kept before it may be purged, and how many days before that the owner
+     * is reminded. A platform admin can restore the store until then.
+     */
+    'closed_store_retention_days' => (int) env('CLOSED_STORE_RETENTION_DAYS', 90),
+    'purge_reminder_days' => (int) env('PURGE_REMINDER_DAYS', 7),
+
+    /**
      * Parameters used by the tenants:migrate command.
      */
     'migration_parameters' => [

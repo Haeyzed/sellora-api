@@ -29,8 +29,7 @@ final class ManagedStoreResource extends JsonResource
         return [
             'id' => $this->resource->public_id,
             'name' => $this->resource->name,
-            /** "provisioning", "provisioning_failed", "active" or "suspended". */
-            'status' => $this->resource->status->value,
+            'status' => $this->resource->status,
             'domains' => $this->whenLoaded('domains', fn (): array => array_values($this->resource->domains->map(static fn (Domain $domain): string => $domain->domain)->all())),
             'hosting_region' => $this->resource->hosting_region,
             'owner' => [
@@ -50,6 +49,17 @@ final class ManagedStoreResource extends JsonResource
             'suspended_at' => $this->resource->suspended_at?->toIso8601String(),
             /** Why it was suspended, for the platform team only. */
             'suspension_reason' => $this->resource->suspension_reason,
+            /** Set while the store is closed; null otherwise. */
+            'closure' => $this->resource->closed_at === null ? null : [
+                'closed_at' => $this->resource->closed_at->toIso8601String(),
+                'reason' => $this->resource->closure_reason,
+                /** Who closed it: "platform_admin" or "staff_member" (the owner), and that account's ID. */
+                'closed_by' => ['type' => $this->resource->closed_by_type, 'id' => $this->resource->closed_by_id],
+                /** The status a restore returns it to. */
+                'status_before_closing' => $this->resource->status_before_closing,
+                /** After this date its data may be deleted for good. */
+                'purge_after' => $this->resource->purge_after?->toIso8601String(),
+            ],
             'provisioned_at' => $this->resource->provisioned_at?->toIso8601String(),
             'created_at' => $this->resource->created_at?->toIso8601String(),
         ];

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Landlord\Tenancy\Enums;
 
 /**
- * Where a store is in its life: being set up, open, suspended by the platform, or failed to set up.
+ * Where a store is in its life: being set up, open, suspended by the platform, failed to set up, or closed.
  */
 enum TenantStatus: string
 {
@@ -25,11 +25,27 @@ enum TenantStatus: string
     case Suspended = 'suspended';
 
     /**
+     * Closed by its owner or a platform admin. It serves no requests and everyone was signed out, but its database is
+     * kept (and migrated) until its purge date, so a platform admin can still restore it.
+     */
+    case Closed = 'closed';
+
+    /**
      * Whether the store's domains serve requests.
      */
     public function servesRequests(): bool
     {
         return $this === self::Active || $this === self::Suspended;
+    }
+
+    /**
+     * The statuses a store can be closed from.
+     *
+     * @return list<self>
+     */
+    public static function closable(): array
+    {
+        return [self::Active, self::Suspended, self::ProvisioningFailed];
     }
 
     /**

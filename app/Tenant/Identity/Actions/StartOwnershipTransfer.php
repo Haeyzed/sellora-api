@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tenant\Identity\Actions;
 
-use App\Shared\Auth\CurrentPasswordCheck;
 use App\Shared\Auth\Exceptions\IncorrectCurrentPasswordException;
 use App\Shared\Auth\Exceptions\InvalidTwoFactorCodeException;
 use App\Shared\Auth\Exceptions\TooManyIncorrectAttemptsException;
+use App\Shared\Auth\IdentityConfirmation;
 use App\Shared\Auth\Models\Role;
-use App\Shared\Auth\TwoFactor\TwoFactorAuthenticator;
 use App\Tenant\Identity\Enums\OwnershipTransferStatus;
 use App\Tenant\Identity\Exceptions\InvalidOwnershipTransferRecipientException;
 use App\Tenant\Identity\Exceptions\OwnershipTransferAlreadyPendingException;
@@ -36,8 +35,7 @@ final readonly class StartOwnershipTransfer
     private const string LOCK_KEY = 'ownership-transfer';
 
     public function __construct(
-        private CurrentPasswordCheck $currentPasswordCheck,
-        private TwoFactorAuthenticator $twoFactorAuthenticator,
+        private IdentityConfirmation $identityConfirmation,
         private StaffAuthority $staffAuthority,
     ) {}
 
@@ -53,7 +51,7 @@ final readonly class StartOwnershipTransfer
      */
     public function handle(StaffMember $owner, StaffMember $recipient, string $currentPassword, ?string $code, ?string $recoveryCode, array $keptRoles): OwnershipTransfer
     {
-        $this->ensureItIsTheOwner($owner, $currentPassword, $code, $recoveryCode);
+        $this->identityConfirmation->ensureConfirmed($owner, $currentPassword, $code, $recoveryCode);
         $this->ensureCanReceiveTheStore($owner, $recipient);
         $this->staffAuthority->ensureCanGiveRoles($owner, $keptRoles);
 
@@ -79,22 +77,6 @@ final readonly class StartOwnershipTransfer
 
             return $ownershipTransfer->load(['fromStaffMember', 'toStaffMember', 'keptRoles']);
         });
-    }
-
-    /**
-     * The password always, and a code too when the owner uses two-factor authentication.
-     *
-     * @throws IncorrectCurrentPasswordException
-     * @throws InvalidTwoFactorCodeException
-     * @throws TooManyIncorrectAttemptsException
-     */
-    private function ensureItIsTheOwner(StaffMember $owner, string $currentPassword, ?string $code, ?string $recoveryCode): void
-    {
-        $this->currentPasswordCheck->ensureCorrect($owner, $currentPassword);
-
-        if ($owner->hasTwoFactorEnabled()) {
-            $this->twoFactorAuthenticator->ensureValidCode($owner, $code, $recoveryCode);
-        }
     }
 
     /**
