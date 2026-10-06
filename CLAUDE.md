@@ -394,6 +394,7 @@ app/
 │   ├── Tenancy/                      # glue around the tenancy package; TenantRoutes.php is the single definition of how store routes are served (core and modules)
 │   ├── Geography/                    # thin read-only access to nnjeim/world reference data
 │   ├── Auth/                         # shared sign-in pieces for all four guards: token issuing, credential check with lockout, password change and reset
+│   │   └── TwoFactor/                # 2FA challenges, codes and recovery codes; the ONLY place allowed to use pragmarx/google2fa
 │   ├── Idempotency/                  # Idempotency-Key middleware and stored replay responses
 │   ├── Privacy/                      # privacy registry: export and erase handlers per kind of person
 │   ├── Retention/                    # retention periods and the scheduled per-tenant purge
@@ -747,6 +748,8 @@ arch('domains are final')
     ->ignoring(['App\Shared']);
 ```
 
+**Pest caveat:** a `not->toUse([...])` rule that lists several namespaces can pass even when it's broken. Write one namespace per rule, and when adding a rule, prove it fails against a deliberate violation before relying on it.
+
 If a change needs to break a rule, stop and explain why instead of working around the test.
 
 ---
@@ -842,7 +845,14 @@ There are four guards, all on Sanctum. Each guard has its own model, provider, l
 - The first platform admin is created with `php artisan platform:create-admin --super-admin`. Built-in roles: Super Admin (platform) and Owner (store, seeded into every new store).
 - Customer sign-up may say an email is already taken (standard in e-commerce, and rate-limited).
 - Always name the guard in route middleware (`auth:platform`, `auth:staff`, `auth:customer`, `auth:driver`). Never use a bare `auth:sanctum` or `auth`; an architecture test enforces this.
-- **Two-factor authentication** (`pragmarx/google2fa`) is available for platform admins and staff: TOTP codes, hashed one-time recovery codes, and a 2FA challenge before a token is issued. Platform admins must use it; for staff, it's a store setting the owner can require.
+- **Two-factor authentication** (`pragmarx/google2fa`) is available for platform admins and staff: TOTP codes, hashed one-time recovery codes, and a 2FA challenge before a token is issued. Platform admins must use it; for staff, it's a store setting the owner can require (built with store settings in Step 6).
+  - With 2FA on, a correct password returns **202 with a challenge** that lasts 5 minutes and works only for the store and account type that started it. Codes work once, even under racing requests. 5 wrong codes lock sign-in for 15 minutes, and a correct password doesn't reset that count.
+  - Setting up 2FA requires the current password, signs out every other device, and shows 8 recovery codes once. Authenticator secrets are stored encrypted; recovery codes only as hashes, removed when used.
+  - **Turning 2FA off requires the current password and a current code or recovery code.** For platform admins, turning it off forces them to set it up again.
+  - A platform admin without 2FA can only view their profile, set up 2FA and sign out. A route test enforces this for every platform route.
+  - `platform:create-admin` sets up 2FA at creation (it prints the `otpauth://` link and the recovery codes), so a new admin is never left with a password-only account. Later platform admins are invited by a super admin with an expiring link (Step 5), never given a password chosen by someone else.
+  - A platform admin who loses both their phone and recovery codes is reset by another super admin (Step 5).
+- **Current-password checks** (password change, 2FA settings) lock after 5 wrong tries and return 429 `too_many_incorrect_attempts`, so a stolen token can't be used to guess the password behind it.
 - **Platform admins** are authorized with `spatie/laravel-permission` roles and permissions on the `platform` guard (central database).
 - **Staff** are authorized with `spatie/laravel-permission` roles and permissions on the `staff` guard (tenant database), through Policies.
 - **Customers** can only access their own data (orders, addresses, profile). This is enforced with Policies and scoped queries, not roles.
