@@ -47,6 +47,10 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+            // Every session runs in UTC, like the app. Otherwise PostgreSQL reads the
+            // offset-less timestamps Laravel writes as the server's local time, and
+            // every timestampTz column is shifted (an hour on a +01:00 server).
+            'timezone' => 'UTC',
         ],
 
     ],
