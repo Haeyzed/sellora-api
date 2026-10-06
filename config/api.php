@@ -77,6 +77,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Two-factor Authentication
+    |--------------------------------------------------------------------------
+    |
+    | After a correct password, an account with two-factor authentication
+    | gets a challenge instead of a token, valid for this many minutes, to
+    | answer with a code from its authenticator app or a recovery code.
+    | Wrong codes count towards the same lockout limits as sign-in.
+    |
+    */
+
+    'two_factor' => [
+        'challenge_minutes' => (int) env('TWO_FACTOR_CHALLENGE_MINUTES', 5),
+        'recovery_code_count' => 8,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Breached Password Check
     |--------------------------------------------------------------------------
     |

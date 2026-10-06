@@ -41,6 +41,19 @@ arch('integrations use Money, never the money library')
     ->expect('Integrations')
     ->not->toUse(['Brick\Money', 'Brick\Math']);
 
+arch('only the two-factor authenticator uses the one-time password library, so it stays replaceable')
+    ->expect('App')
+    ->not->toUse('PragmaRX\Google2FA')
+    ->ignoring('App\Shared\Auth\TwoFactor\TwoFactorAuthenticator');
+
+arch('modules never use the one-time password library')
+    ->expect('Modules')
+    ->not->toUse('PragmaRX\Google2FA');
+
+arch('integrations never use the one-time password library')
+    ->expect('Integrations')
+    ->not->toUse('PragmaRX\Google2FA');
+
 arch('integrations never import modules')
     ->expect('Integrations')
     ->not->toUse('Modules');

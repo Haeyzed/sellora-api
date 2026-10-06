@@ -19,6 +19,7 @@
         "maatwebsite/excel": "^4.0.3",
         "nnjeim/world": "^1.1.39",
         "owen-it/laravel-auditing": "^14.0.6",
+        "pragmarx/google2fa": "^9.1",
         "propaganistas/laravel-phone": "^6.1",
         "sentry/sentry-laravel": "^4.28",
         "spatie/laravel-activitylog": "^5.1.1",

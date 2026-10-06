@@ -6,12 +6,16 @@ use App\Shared\Auth\Http\Controllers\AccessTokenController;
 use App\Shared\Auth\Http\Controllers\PasswordController;
 use App\Shared\Auth\Http\Controllers\PasswordResetController;
 use App\Shared\Auth\Http\Controllers\PasswordResetLinkController;
+use App\Shared\Auth\Http\Controllers\RecoveryCodeController;
+use App\Shared\Auth\Http\Controllers\TwoFactorConfirmationController;
+use App\Shared\Auth\Http\Controllers\TwoFactorController;
 use App\Tenant\Customers\Http\Controllers\CurrentCustomerController;
 use App\Tenant\Customers\Http\Controllers\RegistrationController;
 use App\Tenant\Customers\Http\Controllers\SignInController as CustomerSignInController;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Identity\Http\Controllers\CurrentStaffMemberController;
 use App\Tenant\Identity\Http\Controllers\SignInController as StaffSignInController;
+use App\Tenant\Identity\Http\Controllers\TwoFactorChallengeController as StaffTwoFactorChallengeController;
 use App\Tenant\Identity\Models\StaffMember;
 use Illuminate\Support\Facades\Route;
 
@@ -20,7 +24,10 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::prefix('staff/auth')->name('staff.auth.')->group(static function (): void {
-    Route::post('tokens', StaffSignInController::class)->middleware('throttle:login')->name('tokens.store');
+    Route::middleware('throttle:login')->group(static function (): void {
+        Route::post('tokens', StaffSignInController::class)->name('tokens.store');
+        Route::post('two-factor-challenges', StaffTwoFactorChallengeController::class)->name('two-factor-challenges.store');
+    });
 
     Route::middleware('throttle:password-reset')->group(static function (): void {
         Route::post('password-reset-links', [PasswordResetLinkController::class, 'store'])->defaults('broker', StaffMember::PASSWORD_BROKER)->name('password-reset-links.store');
@@ -32,6 +39,10 @@ Route::prefix('staff/auth')->name('staff.auth.')->group(static function (): void
         Route::delete('tokens/current', [AccessTokenController::class, 'destroy'])->name('tokens.destroy');
         Route::get('me', CurrentStaffMemberController::class)->name('me');
         Route::put('password', [PasswordController::class, 'update'])->name('password.update');
+        Route::post('two-factor', [TwoFactorController::class, 'store'])->name('two-factor.store');
+        Route::post('two-factor/confirmation', TwoFactorConfirmationController::class)->name('two-factor.confirmation.store');
+        Route::delete('two-factor', [TwoFactorController::class, 'destroy'])->name('two-factor.destroy');
+        Route::post('two-factor/recovery-codes', RecoveryCodeController::class)->name('two-factor.recovery-codes.store');
     });
 });
 

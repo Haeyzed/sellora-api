@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Tenant\Identity\Models;
 
 use App\Shared\Auth\PasswordResetLinkNotification;
+use App\Shared\Auth\TwoFactor\Contracts\TwoFactorAuthenticatable;
+use App\Shared\Auth\TwoFactor\HasTwoFactorAuthentication;
 use App\Shared\Concerns\HasNormalisedEmail;
 use App\Shared\Concerns\HasPublicId;
 use Carbon\CarbonImmutable;
@@ -29,10 +31,14 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string $password
  * @property bool $is_active
  * @property CarbonImmutable|null $last_signed_in_at
+ * @property string|null $two_factor_secret
+ * @property list<string>|null $two_factor_recovery_codes
+ * @property CarbonImmutable|null $two_factor_confirmed_at
+ * @property int|null $two_factor_last_used_timestep
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  */
-final class StaffMember extends User implements HasApiTokensContract
+final class StaffMember extends User implements HasApiTokensContract, TwoFactorAuthenticatable
 {
     use HasApiTokens;
 
@@ -42,6 +48,7 @@ final class StaffMember extends User implements HasApiTokensContract
     use HasNormalisedEmail;
     use HasPublicId;
     use HasRoles;
+    use HasTwoFactorAuthentication;
     use Notifiable;
 
     public const string GUARD = 'staff';

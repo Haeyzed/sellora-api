@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 use App\Landlord\Identity\Enums\PlatformRole;
 use App\Landlord\Identity\Models\PlatformAdmin;
+use App\Shared\Auth\AccessTokenIssuer;
 use App\Shared\Auth\PasswordResetLinkNotification;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
+use PragmaRX\Google2FA\Google2FA;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -20,9 +22,24 @@ beforeEach(function (): void {
     $this->admin = PlatformAdmin::factory()->create(['email' => 'ada@sellora.test', 'password' => PLATFORM_ADMIN_PASSWORD]);
 });
 
+/**
+ * Signs in with the password alone, which gives a token only while two-factor authentication isn't set up yet.
+ */
 function signInAsPlatformAdmin(string $password = PLATFORM_ADMIN_PASSWORD): string
 {
     return test()->postJson('/api/v1/platform/auth/tokens', ['email' => 'ada@sellora.test', 'password' => $password])->json('data.token');
+}
+
+/**
+ * A token for the test admin with two-factor authentication on, as after a completed two-factor sign-in.
+ */
+function fullySignedInPlatformAdminToken(PlatformAdmin $platformAdmin): string
+{
+    if (! $platformAdmin->hasTwoFactorEnabled()) {
+        enableTwoFactor($platformAdmin);
+    }
+
+    return app(AccessTokenIssuer::class)->issue($platformAdmin, PlatformAdmin::GUARD, 'test')->plainTextToken;
 }
 
 it('returns a 24-hour bearer token for the right email and password, whatever the email\'s case', function (): void {
@@ -97,7 +114,7 @@ it('returns 401 without a token', function (): void {
 });
 
 it('replaces the token on refresh, so the old one stops working', function (): void {
-    $oldToken = signInAsPlatformAdmin();
+    $oldToken = fullySignedInPlatformAdminToken($this->admin);
 
     $newToken = $this->withToken($oldToken)->putJson('/api/v1/platform/auth/tokens/current')->assertOk()->json('data.token');
     forgetSignIns();
@@ -120,8 +137,8 @@ it('signs out only the device that asks', function (): void {
 });
 
 it('changes the password and signs out every other device, keeping this one', function (): void {
-    $thisDeviceToken = signInAsPlatformAdmin();
-    $otherDeviceToken = signInAsPlatformAdmin();
+    $thisDeviceToken = fullySignedInPlatformAdminToken($this->admin);
+    $otherDeviceToken = fullySignedInPlatformAdminToken($this->admin);
 
     $this->withToken($thisDeviceToken)->putJson('/api/v1/platform/auth/password', [
         'current_password' => PLATFORM_ADMIN_PASSWORD,
@@ -133,12 +150,12 @@ it('changes the password and signs out every other device, keeping this one', fu
     $this->withToken($otherDeviceToken)->getJson('/api/v1/platform/auth/me')->assertUnauthorized();
     forgetSignIns();
     $this->withToken($thisDeviceToken)->getJson('/api/v1/platform/auth/me')->assertOk();
-    signInAsPlatformAdmin('a-brand-new-long-password');
-    $this->assertDatabaseCount('personal_access_tokens', 2);
+    $this->postJson('/api/v1/platform/auth/tokens', ['email' => 'ada@sellora.test', 'password' => 'a-brand-new-long-password'])->assertAccepted();
+    $this->assertDatabaseCount('personal_access_tokens', 1);
 });
 
 it('refuses a password change with the wrong current password or a short new one', function (array $input, string $invalidField): void {
-    $token = signInAsPlatformAdmin();
+    $token = fullySignedInPlatformAdminToken($this->admin);
 
     $this->withToken($token)->putJson('/api/v1/platform/auth/password', $input)
         ->assertUnprocessable()
@@ -191,15 +208,57 @@ it('refuses a wrong or reused reset token with the same 422', function (): void 
     expect(password_verify(PLATFORM_ADMIN_PASSWORD, $this->admin->fresh()->password))->toBeTrue();
 });
 
-it('creates the first super admin from the command line, asking for the password at a hidden prompt', function (): void {
+/**
+ * Makes new authenticator secrets predictable, so a test can type the code an app would show.
+ */
+function useFixedTwoFactorSecret(string $secret): void
+{
+    app()->instance(Google2FA::class, new class($secret) extends Google2FA
+    {
+        public function __construct(private readonly string $fixedSecret) {}
+
+        public function generateSecretKey($length = 32, $prefix = ''): string
+        {
+            return $this->fixedSecret;
+        }
+    });
+}
+
+it('creates the first super admin from the command line, with two-factor authentication set up before the account exists', function (): void {
+    $secret = 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
+    useFixedTwoFactorSecret($secret);
+
     $this->artisan('platform:create-admin', ['--name' => 'Grace Hopper', '--email' => 'Grace@Sellora.test', '--super-admin' => true])
         ->expectsQuestion('Password (at least 12 characters)', 'a-long-founder-password')
+        ->expectsOutputToContain('otpauth://totp/')
+        ->expectsQuestion('6-digit code from the authenticator app', '000000')
+        ->expectsOutputToContain('That code is incorrect')
+        ->expectsQuestion('6-digit code from the authenticator app', twoFactorCode($secret))
+        ->expectsOutputToContain('Recovery codes')
         ->assertSuccessful();
 
     $grace = PlatformAdmin::query()->where('email', 'grace@sellora.test')->firstOrFail();
     expect($grace->hasRole(PlatformRole::SuperAdmin->value))->toBeTrue()
         ->and($grace->can('anything.at.all'))->toBeTrue()
-        ->and($this->admin->can('anything.at.all'))->toBeFalse();
+        ->and($this->admin->can('anything.at.all'))->toBeFalse()
+        ->and($grace->hasTwoFactorEnabled())->toBeTrue()
+        ->and($grace->two_factor_secret)->toBe($secret)
+        ->and($grace->two_factor_recovery_codes)->toHaveCount(8);
+
+    $this->postJson('/api/v1/platform/auth/tokens', ['email' => 'grace@sellora.test', 'password' => 'a-long-founder-password'])->assertAccepted();
+});
+
+it('creates no admin when the authenticator code is wrong three times', function (): void {
+    useFixedTwoFactorSecret('JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP');
+
+    $this->artisan('platform:create-admin', ['--name' => 'Grace Hopper', '--email' => 'grace@sellora.test'])
+        ->expectsQuestion('Password (at least 12 characters)', 'a-long-founder-password')
+        ->expectsQuestion('6-digit code from the authenticator app', '000000')
+        ->expectsQuestion('6-digit code from the authenticator app', 'abcdef')
+        ->expectsQuestion('6-digit code from the authenticator app', '111111')
+        ->assertFailed();
+
+    $this->assertDatabaseMissing('platform_admins', ['email' => 'grace@sellora.test']);
 });
 
 it('refuses to create an admin with a short password or an email already in use', function (): void {

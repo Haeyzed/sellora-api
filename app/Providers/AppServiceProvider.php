@@ -8,6 +8,7 @@ use App\Landlord\Identity\Enums\PlatformRole;
 use App\Landlord\Identity\Models\PlatformAdmin;
 use App\Landlord\Subscriptions\SubscriptionFeatureSource;
 use App\Shared\Auth\ExpiredPasswordResetTokenRetention;
+use App\Shared\Auth\TwoFactor\TwoFactorChallenges;
 use App\Shared\Exceptions\ApiErrorResponseDocumentation;
 use App\Shared\Features\Contracts\FeatureSource;
 use App\Shared\Features\FeatureRegistry;
@@ -55,6 +56,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->registerSharedRegistries();
         $this->registerPlanGating();
         $this->registerBreachedPasswordCheck();
+        $this->app->singleton(TwoFactorChallenges::class);
     }
 
     /**

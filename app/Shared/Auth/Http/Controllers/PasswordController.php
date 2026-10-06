@@ -6,6 +6,7 @@ namespace App\Shared\Auth\Http\Controllers;
 
 use App\Shared\Auth\Actions\ChangePassword;
 use App\Shared\Auth\Exceptions\IncorrectCurrentPasswordException;
+use App\Shared\Auth\Exceptions\TooManyIncorrectAttemptsException;
 use App\Shared\Auth\Http\Requests\ChangePasswordRequest;
 use App\Shared\Auth\Http\SignedInAccount;
 use App\Shared\Http\Controller;
@@ -23,6 +24,7 @@ final class PasswordController extends Controller
      * making this request stays signed in.
      *
      * @throws IncorrectCurrentPasswordException
+     * @throws TooManyIncorrectAttemptsException
      */
     public function update(ChangePasswordRequest $request, ChangePassword $changePassword, SignedInAccount $signedInAccount): Response
     {

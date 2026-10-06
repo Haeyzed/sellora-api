@@ -22,7 +22,7 @@ final class PlatformAdminResource extends JsonResource
     }
 
     /**
-     * @return array{id: string, name: string, email: string, roles: list<string>, permissions: list<string>, last_signed_in_at: string|null}
+     * @return array{id: string, name: string, email: string, roles: list<string>, permissions: list<string>, last_signed_in_at: string|null, two_factor_enabled: bool}
      */
     public function toArray(Request $request): array
     {
@@ -35,6 +35,8 @@ final class PlatformAdminResource extends JsonResource
             /** Every permission held, directly or through a role, sorted by name. */
             'permissions' => array_values($this->resource->getAllPermissions()->map(static fn (Permission $permission): string => $permission->name)->sort()->all()),
             'last_signed_in_at' => $this->resource->last_signed_in_at?->toIso8601String(),
+            /** Whether sign-in asks for a code from an authenticator app. */
+            'two_factor_enabled' => $this->resource->hasTwoFactorEnabled(),
         ];
     }
 }

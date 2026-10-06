@@ -3,7 +3,11 @@
 declare(strict_types=1);
 
 use App\Landlord\Tenancy\Models\Tenant;
+use App\Shared\Auth\TwoFactor\Contracts\TwoFactorAuthenticatable;
+use App\Shared\Auth\TwoFactor\TwoFactorAuthenticator;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use PragmaRX\Google2FA\Google2FA;
 use Tests\TestCase;
 
 /*
@@ -56,6 +60,48 @@ function createStoreRecord(): Tenant
 function forgetSignIns(): void
 {
     app('auth')->forgetGuards();
+}
+
+/*
+|--------------------------------------------------------------------------
+| Two-factor helpers
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Turns two-factor authentication on for an account, as a confirmed setup would, and returns the authenticator secret.
+ */
+function enableTwoFactor(Model&TwoFactorAuthenticatable $account, string ...$recoveryCodes): string
+{
+    $twoFactorAuthenticator = app(TwoFactorAuthenticator::class);
+    $secret = $twoFactorAuthenticator->newSecret();
+
+    $account->forceFill([
+        'two_factor_secret' => $secret,
+        'two_factor_confirmed_at' => now(),
+        'two_factor_recovery_codes' => array_map($twoFactorAuthenticator->hashRecoveryCode(...), array_values($recoveryCodes)),
+        'two_factor_last_used_timestep' => null,
+    ])->save();
+
+    return $secret;
+}
+
+/**
+ * The code an authenticator app shows for a secret, now or a number of 30-second steps away.
+ */
+function twoFactorCode(string $secret, int $stepsFromNow = 0): string
+{
+    $google2fa = new Google2FA;
+
+    return $google2fa->oathTotp($secret, $google2fa->getTimestamp() + $stepsFromNow);
+}
+
+/**
+ * The full URL of a path on the platform's central domain. Needed after a store request, because the test client keeps the last request's domain for relative paths.
+ */
+function centralUrl(string $path): string
+{
+    return 'http://'.config()->array('tenancy.central_domains')[0].$path;
 }
 
 /**

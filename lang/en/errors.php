@@ -36,6 +36,13 @@ return [
     'account_deactivated' => 'This account has been deactivated.',
     'password_reset_invalid' => 'This password reset link is invalid or has expired. Request a new one.',
     'current_password_incorrect' => 'The current password is incorrect.',
+    'too_many_incorrect_attempts' => 'Too many incorrect attempts. Try again in :minutes minutes.',
+    'two_factor_code_invalid' => 'This code is incorrect, expired or already used.',
+    'two_factor_challenge_invalid' => 'This sign-in attempt has expired. Sign in with your password again.',
+    'two_factor_already_enabled' => 'Two-factor authentication is already on. Turn it off first to move it to a new device.',
+    'two_factor_not_enabled' => 'Two-factor authentication is not on for this account.',
+    'two_factor_setup_not_started' => 'Start two-factor setup before confirming it.',
+    'two_factor_setup_required' => 'Set up two-factor authentication to continue.',
 
     'feature_unavailable' => 'Your plan does not include this feature.',
     'feature_locked' => 'Your plan no longer includes this feature. Its existing data is read-only.',

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Shared\Auth\Http\Middleware\EnsureTwoFactorIsEnabled;
 use Illuminate\Routing\Route as RouteDefinition;
 use Illuminate\Support\Facades\Route;
 
@@ -51,6 +52,27 @@ it('uses only the platform guard on platform routes, and only store guards on st
             expect($authMiddleware)->toBeIn($allowedAuthMiddleware, "Route {$route->uri()} uses {$authMiddleware}");
         }
     }
+});
+
+it('requires two-factor authentication on every signed-in platform route except those needed to set it up', function (): void {
+    $availableBeforeSetup = [
+        'platform.auth.me',
+        'platform.auth.tokens.destroy',
+        'platform.auth.two-factor.store',
+        'platform.auth.two-factor.confirmation.store',
+    ];
+    $checkedRoutes = 0;
+
+    foreach (applicationRoutes() as $route) {
+        if (! in_array('auth:platform', authMiddlewareOf($route), true) || in_array($route->getName(), $availableBeforeSetup, true)) {
+            continue;
+        }
+
+        expect(in_array(EnsureTwoFactorIsEnabled::class, $route->gatherMiddleware(), true))->toBeTrue("{$route->methods()[0]} {$route->uri()} must require two-factor authentication");
+        $checkedRoutes++;
+    }
+
+    expect($checkedRoutes)->toBeGreaterThan(0);
 });
 
 it('has at least one route per guard, so the checks above really ran', function (): void {

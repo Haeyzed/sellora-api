@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Shared\Auth\Http;
 
+use App\Shared\Auth\TwoFactor\Contracts\TwoFactorAuthenticatable;
 use Illuminate\Auth\AuthManager;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Model;
@@ -27,6 +28,22 @@ final readonly class SignedInAccount
 
         if (! $account instanceof Model || ! $account instanceof Authenticatable || ! $account instanceof HasApiTokens) {
             throw new LogicException('This route must be protected by an auth:<guard> middleware with a token-based account.');
+        }
+
+        return $account;
+    }
+
+    /**
+     * The signed-in account, on routes for guards whose accounts can use two-factor authentication.
+     *
+     * @throws LogicException When the route's guard has no two-factor authentication, which is a routing mistake.
+     */
+    public function withTwoFactorFrom(Request $request): Model&Authenticatable&HasApiTokens&TwoFactorAuthenticatable
+    {
+        $account = $this->from($request);
+
+        if (! $account instanceof TwoFactorAuthenticatable) {
+            throw new LogicException('Two-factor routes may only be registered for guards whose accounts support two-factor authentication.');
         }
 
         return $account;

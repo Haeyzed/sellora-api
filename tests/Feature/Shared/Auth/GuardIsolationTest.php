@@ -34,7 +34,7 @@ it('accepts each guard\'s token only on that guard\'s routes', function (): void
     ];
 
     $meEndpoints = [
-        'platform' => '/api/v1/platform/auth/me',
+        'platform' => centralUrl('/api/v1/platform/auth/me'),
         'staff' => storeUrl('first-store', '/api/v1/staff/auth/me'),
         'customer' => storeUrl('first-store', '/api/v1/customer/auth/me'),
         'driver' => storeUrl('first-store', '/api/v1/driver/auth/me'),
@@ -58,7 +58,7 @@ it('stops a deactivated account\'s existing tokens working on the very next requ
     $issuer = app(AccessTokenIssuer::class);
     $platformAdmin = PlatformAdmin::factory()->create();
     $signedIn = [
-        ['/api/v1/platform/auth/me', $issuer->issue($platformAdmin, PlatformAdmin::GUARD, 'test')->plainTextToken],
+        [centralUrl('/api/v1/platform/auth/me'), $issuer->issue($platformAdmin, PlatformAdmin::GUARD, 'test')->plainTextToken],
         ...$store->run(static fn (): array => array_map(
             static fn (array $account): array => [storeUrl('first-store', $account[1]), $issuer->issue($account[0], $account[0]::GUARD, 'test')->plainTextToken],
             [

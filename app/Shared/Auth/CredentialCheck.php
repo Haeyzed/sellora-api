@@ -7,9 +7,7 @@ namespace App\Shared\Auth;
 use App\Shared\Auth\Exceptions\InvalidCredentialsException;
 use App\Shared\Auth\Exceptions\SignInTemporarilyLockedException;
 use App\Shared\Tenancy\TenantScopedKey;
-use Illuminate\Cache\RateLimiter;
 use Illuminate\Contracts\Auth\Authenticatable;
-use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Contracts\Hashing\Hasher;
 
 /**
@@ -26,8 +24,7 @@ final readonly class CredentialCheck
 {
     public function __construct(
         private Hasher $hasher,
-        private RateLimiter $rateLimiter,
-        private ConfigRepository $config,
+        private AttemptLockout $attemptLockout,
     ) {}
 
     /**
@@ -46,18 +43,19 @@ final readonly class CredentialCheck
     public function ensureValid(string $guard, string $identifier, ?Authenticatable $account, string $secret): Authenticatable
     {
         $lockoutKey = TenantScopedKey::forIdentifier('sign-in-lockout:'.$guard, $identifier);
+        $secondsUntilUnlocked = $this->attemptLockout->secondsUntilUnlocked($lockoutKey);
 
-        if ($this->rateLimiter->tooManyAttempts($lockoutKey, $this->config->integer('api.sign_in_lockout.max_failed_attempts'))) {
-            throw new SignInTemporarilyLockedException($this->rateLimiter->availableIn($lockoutKey));
+        if ($secondsUntilUnlocked !== null) {
+            throw new SignInTemporarilyLockedException($secondsUntilUnlocked);
         }
 
         if ($account === null || ! $this->matches($account->getAuthPassword(), $secret)) {
-            $this->rateLimiter->hit($lockoutKey, $this->config->integer('api.sign_in_lockout.lockout_minutes') * 60);
+            $this->attemptLockout->recordFailure($lockoutKey);
 
             throw new InvalidCredentialsException;
         }
 
-        $this->rateLimiter->clear($lockoutKey);
+        $this->attemptLockout->clear($lockoutKey);
 
         return $account;
     }
