@@ -30,6 +30,7 @@ return [
         'morph_prefix' => 'user',
         'guards' => [
             'staff',
+            'platform',
         ],
         'resolver' => OwenIt\Auditing\Resolvers\UserResolver::class,
     ],

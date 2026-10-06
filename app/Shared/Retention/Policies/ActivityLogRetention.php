@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Spatie\Activitylog\Models\Activity;
 
 /**
- * Deletes old entries from each store's activity feed ("Ada cancelled order #1042"), which names the people involved.
+ * Deletes old entries from each store's activity feed ("Ada cancelled order #1042"), and from the platform's own, which name the people involved.
  *
  * @extends TimestampRetentionPolicy<Activity>
  */
@@ -23,7 +23,7 @@ final class ActivityLogRetention extends TimestampRetentionPolicy
 
     public function scope(): RetentionScope
     {
-        return RetentionScope::Tenant;
+        return RetentionScope::Both;
     }
 
     /**

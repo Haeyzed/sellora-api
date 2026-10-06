@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Builder;
 use OwenIt\Auditing\Models\Audit;
 
 /**
- * Deletes old field-level change history (old value → new value) in each store, which records who changed what.
+ * Deletes old field-level change history (old value → new value) in each store and in the platform's database, which records who changed what.
  *
  * @extends TimestampRetentionPolicy<Audit>
  */
@@ -23,7 +23,7 @@ final class AuditRetention extends TimestampRetentionPolicy
 
     public function scope(): RetentionScope
     {
-        return RetentionScope::Tenant;
+        return RetentionScope::Both;
     }
 
     /**
