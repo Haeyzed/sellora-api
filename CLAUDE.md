@@ -45,7 +45,7 @@ The legacy code may contain bugs, security holes, shortcuts and wrong business r
 | `spatie/laravel-sluggable` | URL slugs for products, categories, brands | On the models that need slugs. Slugs are unique per tenant automatically, because each tenant has its own database. |
 | `spatie/laravel-medialibrary` | Product images and other uploads | Tenant database and tenant-isolated storage. Image conversions run on tenant-aware queues. Define collections and conversions on the model. |
 | `spatie/laravel-activitylog` | Human-readable business activity feed ("Ada cancelled order #1042") | Logged explicitly from **Actions**, not automatically on every model save. Causer is the authenticated staff user. |
-| `owen-it/laravel-auditing` | Field-level change history for sensitive data (old value → new value) | Only on sensitive models: prices, stock levels, payments, refunds, roles, store settings. Not on every model. |
+| `owen-it/laravel-auditing` | Field-level change history for sensitive data (old value → new value) | Only on sensitive models: prices, stock levels, payments, refunds, roles, store settings, and on the platform side roles, plans and feature grants. Not on every model. **Auditing runs for console and queued changes too** (`audit.console` on), so no change escapes the trail because it ran in a job or command. |
 | `maatwebsite/excel` | Imports and exports | In the owning domain's `Imports/` and `Exports/` folders. Large files are queued and chunked, and queued imports and exports must be tenant-aware. |
 | `nnjeim/world` | Countries, states, cities, currencies, timezones, languages | **Global reference data. Install it in the central (landlord) database, not in every tenant database.** Tenants read it through the central connection. It's read-only from the tenant side. |
 | `brick/money` | Exact money maths with correct decimals for every currency | Wrapped by `App\Shared\Money\Money`. Domains use our `Money` value object, never `brick/money` classes directly, so the library stays swappable. All rounding goes through it. |
@@ -67,6 +67,7 @@ On a fresh project, **the first task is installing and configuring all dependenc
 **1. Check compatibility before installing.**
 - For each package, confirm it officially supports Laravel 13 and **PHP 8.4**, the project's PHP version.
 - `composer.json` requires `"php": "^8.4"` and sets `config.platform.php` to the installed 8.4 version, so Composer never picks a package release that needs PHP 8.5. Move to PHP 8.5 only when I decide to, after every package's CI tests it.
+- **The database is PostgreSQL** (central and tenant). PostgreSQL-specific features are allowed where the query builder has no equivalent (for example advisory locks and functional indexes), always with bound values.
 - Never install with `--ignore-platform-reqs`, never force a dev or beta version, and never downgrade Laravel to make a package fit. If a package has no stable Laravel 13 release, stop and tell me the options.
 
 **2. Install the packages.**
@@ -106,8 +107,8 @@ If a package's skill gives install steps, the skill's steps win over this table.
 | `laravel/sanctum` (tokens) | **both** `landlord/` and `tenant/` | platform admins log in centrally; staff and customers log in per store |
 | `spatie/laravel-permission` | **both** `landlord/` and `tenant/` | platform admins have platform roles; each store has its own staff roles |
 | `spatie/laravel-medialibrary` | `database/migrations/tenant/` | each store's images |
-| `spatie/laravel-activitylog` | `database/migrations/tenant/` | each store's activity. Add a landlord copy only if platform admin activity needs logging, and ask first. |
-| `owen-it/laravel-auditing` | `database/migrations/tenant/` | each store's audit history |
+| `spatie/laravel-activitylog` | **both** `landlord/` and `tenant/` | each store's activity, plus platform-admin actions in the central database (approved; added in Step 5) |
+| `owen-it/laravel-auditing` | **both** `landlord/` and `tenant/` | each store's audit history, plus platform roles, plans and other sensitive central records (added in Step 5) |
 | `laravel/telescope` | central (local only) | development tool; must never touch tenant data in production |
 | `laravel/reverb`, `laravel/scout`, `sentry/sentry-laravel`, `brick/money`, `propaganistas/laravel-phone` | no migrations | configuration only; review each published config |
 | Laravel defaults (users, cache, jobs, sessions) | review each one | delete or move per this guide; for example there is no generic `users` table, because identities live in their own domains (section 10) |
@@ -394,7 +395,8 @@ app/
 │   ├── Tenancy/                      # glue around the tenancy package; TenantRoutes.php is the single definition of how store routes are served (core and modules)
 │   ├── Geography/                    # thin read-only access to nnjeim/world reference data
 │   ├── Auth/                         # shared sign-in pieces for all four guards: token issuing, credential check with lockout, password change and reset
-│   │   └── TwoFactor/                # 2FA challenges, codes and recovery codes; the ONLY place allowed to use pragmarx/google2fa
+│   │   ├── TwoFactor/                # 2FA challenges, codes and recovery codes; the ONLY place allowed to use pragmarx/google2fa
+│   │   └── Models/Role.php           # the one role model for both sides (the permissions package allows only one); always scoped by guard
 │   ├── Idempotency/                  # Idempotency-Key middleware and stored replay responses
 │   ├── Privacy/                      # privacy registry: export and erase handlers per kind of person
 │   ├── Retention/                    # retention periods and the scheduled per-tenant purge
@@ -853,7 +855,11 @@ There are four guards, all on Sanctum. Each guard has its own model, provider, l
   - `platform:create-admin` sets up 2FA at creation (it prints the `otpauth://` link and the recovery codes), so a new admin is never left with a password-only account. Later platform admins are invited by a super admin with an expiring link (Step 5), never given a password chosen by someone else.
   - A platform admin who loses both their phone and recovery codes is reset by another super admin (Step 5).
 - **Current-password checks** (password change, 2FA settings) lock after 5 wrong tries and return 429 `too_many_incorrect_attempts`, so a stolen token can't be used to guess the password behind it.
-- **Platform admins** are authorized with `spatie/laravel-permission` roles and permissions on the `platform` guard (central database).
+- **Staff join only by invitation:** an emailed one-time link that expires after 7 days (only its hash is stored); the person chooses their own password when accepting. Invitations can be resent (the old link stops working) or cancelled. Nobody ever sets another person's password.
+- **No self-promotion:** nobody can grant a permission they don't hold (through a role or an invitation), edit a role or manage a person that has permissions they lack, change their own roles, or deactivate themselves. The owner and the Owner role can't be changed or given through staff management; ownership transfer is its own flow (Step 5).
+- **Role names** are unique per guard ignoring case, enforced by a functional unique index on `lower(name)` as well as validation. A role still in use can't be deleted.
+- **The staff limit** counts active staff plus pending invitations; deactivated staff don't count.
+- **Platform admins** are authorized with `spatie/laravel-permission` roles and permissions on the `platform` guard (central database). Their actions (granting roles, suspending stores, feature grants) are written to the central activity log and audited.
 - **Staff** are authorized with `spatie/laravel-permission` roles and permissions on the `staff` guard (tenant database), through Policies.
 - **Customers** can only access their own data (orders, addresses, profile). This is enforced with Policies and scoped queries, not roles.
 - **Drivers** can only see and update deliveries assigned to them. Authorization is by assignment, through Policies, not staff roles. A driver never sees other drivers' deliveries, unassigned orders, prices beyond what delivery needs, or store settings.
@@ -884,7 +890,7 @@ There are four guards, all on Sanctum. Each guard has its own model, provider, l
 Every endpoint behaves the same way, so frontends and API consumers can rely on it.
 
 - **Errors** always use one JSON shape with a stable machine-readable code, a translated human message, and field errors for validation, for example `{"message": "...", "code": "order_cannot_be_cancelled", "errors": {...}}`. Map domain exceptions to this shape in `bootstrap/app.php`. Use correct status codes: 401 unauthenticated, 403 forbidden, 404 not found (also when a record exists but belongs to someone else), 409 conflict, 422 validation, 429 rate limited.
-- **Pagination:** every list endpoint is paginated, never unbounded. Use cursor pagination for large or fast-growing lists (orders, products, activity) and a maximum page size.
+- **Pagination:** every list endpoint of records is paginated, never unbounded. The only exception is a short, fixed reference list defined in code (for example the permission list). Use cursor pagination for large or fast-growing lists (orders, products, activity) and a maximum page size.
 - **Public identifiers:** never expose sequential database IDs in URLs or responses. Use ULIDs for public identifiers, so nobody can guess or count records. Orders also get a human-friendly order number per store (`#1042`), which is display-only and never used for lookups that bypass authorization.
 - **Idempotency:** endpoints that create money-related records (checkout, payments, refunds) accept an `Idempotency-Key` header, so a retried request never creates a duplicate.
 - **Dates** are ISO 8601 with offset.
