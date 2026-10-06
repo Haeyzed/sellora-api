@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Shared\Exceptions\ApiErrorRenderer;
+use App\Shared\Http\Middleware\AddSecurityHeaders;
+use App\Shared\Http\Middleware\ForceJsonResponse;
 use App\Shared\Tenancy\Http\Middleware\EnsureCentralDomain;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -9,6 +12,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
+use Symfony\Component\HttpFoundation\Response;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -30,7 +34,12 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->group(base_path('routes/tenant.php'));
         },
     )
-    ->withMiddleware(static function (Middleware $middleware): void {})
+    ->withMiddleware(static function (Middleware $middleware): void {
+        $middleware->prepend(ForceJsonResponse::class);
+        $middleware->append(AddSecurityHeaders::class);
+
+        $middleware->redirectGuestsTo(null);
+    })
     ->withExceptions(static function (Exceptions $exceptions): void {
-        $exceptions->shouldRenderJsonWhen(static fn (): bool => true);
+        $exceptions->render(static fn (Throwable $exception): Response => app(ApiErrorRenderer::class)->render($exception));
     })->create();
