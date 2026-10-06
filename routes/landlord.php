@@ -14,6 +14,7 @@ declare(strict_types=1);
 */
 
 require __DIR__.'/landlord/auth.php';
+require __DIR__.'/landlord/team.php';
 require __DIR__.'/landlord/tenants.php';
 require __DIR__.'/landlord/plans.php';
 require __DIR__.'/landlord/subscriptions.php';

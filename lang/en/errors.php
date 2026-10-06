@@ -68,6 +68,14 @@ return [
     'legal_document_already_published' => 'A published document cannot change. Create a new version instead.',
     'legal_document_version_taken' => 'This document already has a version with this label.',
 
+    'platform_admin_already_exists' => 'This person already has a platform admin account.',
+    'platform_admin_invitation_already_pending' => 'This person already has a pending invitation. Resend it instead.',
+    'platform_admin_invitation_not_pending' => 'This invitation was already accepted or cancelled.',
+    'platform_admin_invitation_invalid' => 'This invitation link is invalid, has expired or was already used. Ask for a new one.',
+    'last_super_admin' => 'At least one active super admin must remain.',
+    'platform_role_protected' => 'The Super Admin role cannot be changed or deleted.',
+    'platform_role_in_use' => 'This role is still given to platform admins or pending invitations. Remove it from them first.',
+
     'feature_unavailable' => 'Your plan does not include this feature.',
     'feature_locked' => 'Your plan no longer includes this feature. Its existing data is read-only.',
     'feature_suspended' => 'This store is suspended, so this feature is unavailable.',

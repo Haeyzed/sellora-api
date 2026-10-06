@@ -57,6 +57,10 @@ function createStoreRecord(): Tenant
 /**
  * Forgets who is signed in, as a real new request would. Laravel's test client
  * otherwise keeps a guard's user between requests, which hides revoked tokens.
+ *
+ * Call it before a request as well as after: work done between requests can
+ * sign the last request's account in again. For example, saving an audited
+ * model asks every guard who made the change, against the last request.
  */
 function forgetSignIns(): void
 {

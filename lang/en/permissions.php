@@ -3,11 +3,21 @@
 declare(strict_types=1);
 
 /*
-| Descriptions of the permissions a store's roles can grant, shown when a
-| merchant chooses what a role may do. Keyed by permission name.
+| Descriptions of the permissions a store's roles and the platform's roles
+| can grant, shown when choosing what a role may do. Keyed by permission name.
 */
 
 return [
+
+    'legal_documents' => [
+        'manage' => 'Draft, edit and publish the legal documents merchants accept, such as the terms of service.',
+    ],
+
+    'stores' => [
+        'view' => 'See every store, its status, plan, feature grants and limit overrides.',
+        'manage' => 'Suspend and reactivate stores, and retry setting up a store whose setup failed.',
+        'grant' => 'Give stores modules and integrations outside their plan, and change their usage limits.',
+    ],
 
     'staff' => [
         'view' => 'See the team: staff members, their roles and pending invitations.',

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Landlord\Identity\Models;
 
+use App\Landlord\Identity\Enums\PlatformRole;
 use App\Shared\Auth\PasswordResetLinkNotification;
 use App\Shared\Auth\TwoFactor\Contracts\TwoFactorAuthenticatable;
 use App\Shared\Auth\TwoFactor\HasTwoFactorAuthentication;
@@ -70,6 +71,14 @@ final class PlatformAdmin extends User implements HasApiTokensContract, TwoFacto
     protected $hidden = [
         'password',
     ];
+
+    /**
+     * Whether they have the Super Admin role, which can do everything, including managing the platform team.
+     */
+    public function isSuperAdmin(): bool
+    {
+        return $this->hasRole(PlatformRole::SuperAdmin->value, self::GUARD);
+    }
 
     /**
      * Emails a link into the platform admin app to choose a new password.

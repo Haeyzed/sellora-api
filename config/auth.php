@@ -155,6 +155,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Platform Admin Invitations
+    |--------------------------------------------------------------------------
+    |
+    | The emailed link for a super admin's invitation to join Sellora's team,
+    | into the platform admin app. {token} is filled in. Links work once and
+    | expire after this many days; shorter than staff links, because platform
+    | accounts can reach every store.
+    |
+    */
+
+    'platform_admin_invitations' => [
+        'accept_url' => env('PLATFORM_ADMIN_INVITATION_URL', 'http://localhost:3000/accept-invitation?token={token}'),
+        'expire_days' => (int) env('PLATFORM_ADMIN_INVITATION_EXPIRE_DAYS', 3),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Password Confirmation Timeout
     |--------------------------------------------------------------------------
     |

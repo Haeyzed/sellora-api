@@ -34,6 +34,7 @@ beforeEach(function (): void {
  */
 function manageLegalDocuments(string $method, string $path, array $data = [], ?PlatformAdmin $as = null): TestResponse
 {
+    forgetSignIns();
     $response = test()
         ->withToken(app(AccessTokenIssuer::class)->issue($as ?? test()->legalAdmin, PlatformAdmin::GUARD, 'test')->plainTextToken)
         ->json($method, centralUrl('/api/v1/platform/legal-documents'.$path), $data);

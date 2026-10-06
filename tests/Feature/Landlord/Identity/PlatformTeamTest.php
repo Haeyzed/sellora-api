@@ -1,0 +1,212 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Landlord\Identity\Actions\ChangePlatformAdminRoles;
+use App\Landlord\Identity\Enums\PlatformPermission;
+use App\Landlord\Identity\Enums\PlatformRole;
+use App\Landlord\Identity\Exceptions\LastSuperAdminException;
+use App\Landlord\Identity\Models\PlatformAdmin;
+use App\Landlord\Identity\Models\PlatformAdminInvitation;
+use App\Landlord\Identity\PlatformAdminInvitationNotification;
+use App\Shared\Auth\AccessTokenIssuer;
+use App\Shared\Auth\Models\Role;
+use Database\Seeders\Landlord\PlatformPermissionSeeder;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Notifications\AnonymousNotifiable;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Testing\TestResponse;
+use OwenIt\Auditing\Models\Audit;
+use Spatie\Activitylog\Models\Activity;
+
+/*
+ * Section 10: later platform admins join only by a super admin's expiring
+ * invitation and choose their own password, then must set up two-factor
+ * authentication. Managing the team is for super admins only; nobody changes
+ * their own account this way; the platform always keeps an active super
+ * admin; a super admin can reset another admin's two-factor authentication.
+ */
+uses(LazilyRefreshDatabase::class);
+
+const PLATFORM_TEAM_PASSWORD = 'a-long-platform-password';
+
+beforeEach(function (): void {
+    Notification::fake();
+    $this->seed(PlatformPermissionSeeder::class);
+
+    $this->superAdmin = platformTeamMember('Ada Super', PlatformRole::SuperAdmin->value);
+});
+
+function platformTeamMember(string $name, ?string $roleName = null): PlatformAdmin
+{
+    $platformAdmin = PlatformAdmin::factory()->create(['name' => $name, 'password' => PLATFORM_TEAM_PASSWORD]);
+    enableTwoFactor($platformAdmin);
+
+    if ($roleName !== null) {
+        $platformAdmin->assignRole(Role::findOrCreate($roleName, PlatformAdmin::GUARD));
+    }
+
+    return $platformAdmin;
+}
+
+/**
+ * @param  array<string, mixed>  $data
+ */
+function platformTeam(string $method, string $path, array $data = [], ?PlatformAdmin $as = null): TestResponse
+{
+    forgetSignIns();
+    $request = test();
+
+    if ($as !== null) {
+        $request = $request->withToken(app(AccessTokenIssuer::class)->issue($as, PlatformAdmin::GUARD, 'test')->plainTextToken);
+    }
+
+    $response = $request->json($method, centralUrl('/api/v1/platform/'.$path), $data);
+    forgetSignIns();
+
+    return $response;
+}
+
+function lastPlatformInvitationToken(string $email): string
+{
+    $tokens = [];
+
+    Notification::assertSentOnDemand(PlatformAdminInvitationNotification::class, static function (PlatformAdminInvitationNotification $notification, array $channels, AnonymousNotifiable $notifiable) use ($email, &$tokens): bool {
+        if ($notifiable->routes['mail'] === $email) {
+            parse_str((string) parse_url($notification->acceptUrl(), PHP_URL_QUERY), $query);
+            $tokens[] = is_string($query['token'] ?? null) ? $query['token'] : '';
+        }
+
+        return true;
+    });
+
+    return $tokens === [] ? throw new RuntimeException("No invitation was sent to {$email}.") : end($tokens);
+}
+
+it('invites someone who joins with their own password and must set up two-factor authentication first', function (): void {
+    $support = Role::findOrCreate('Support', PlatformAdmin::GUARD);
+
+    platformTeam('POST', 'team/invitations', ['email' => 'Bola@Example.com', 'name' => 'Bola', 'roles' => [$support->public_id]], $this->superAdmin)
+        ->assertCreated()
+        ->assertJsonPath('data.status', 'pending')
+        ->assertJsonPath('data.roles.0.name', 'Support');
+
+    expect(PlatformAdmin::query()->where('email', 'bola@example.com')->exists())->toBeFalse();
+    $token = lastPlatformInvitationToken('bola@example.com');
+
+    platformTeam('POST', 'auth/invitation-previews', ['token' => $token])->assertOk()->assertJsonPath('data.invited_by', 'Ada Super');
+
+    $accessToken = platformTeam('POST', 'auth/invitation-acceptances', [
+        'token' => $token, 'name' => 'Bola Ade', 'password' => PLATFORM_TEAM_PASSWORD, 'password_confirmation' => PLATFORM_TEAM_PASSWORD,
+    ])->assertCreated()->json('data.token');
+
+    $this->withToken($accessToken)->getJson(centralUrl('/api/v1/platform/auth/me'))->assertOk()->assertJsonPath('data.roles', ['Support']);
+    forgetSignIns();
+    $this->withToken($accessToken)->getJson(centralUrl('/api/v1/platform/stores'))->assertForbidden()->assertJsonPath('code', 'two_factor_setup_required');
+    forgetSignIns();
+
+    platformTeam('POST', 'auth/invitation-acceptances', [
+        'token' => $token, 'name' => 'Someone Else', 'password' => PLATFORM_TEAM_PASSWORD, 'password_confirmation' => PLATFORM_TEAM_PASSWORD,
+    ])->assertUnprocessable()->assertJsonPath('code', 'platform_admin_invitation_invalid');
+
+    expect(Activity::query()->pluck('event')->all())->toBe(['platform_admin_invited', 'platform_admin_joined']);
+});
+
+it('refuses duplicate invitations, and a resent link replaces the old one', function (): void {
+    platformTeam('POST', 'team/invitations', ['email' => $this->superAdmin->email, 'roles' => []], $this->superAdmin)
+        ->assertConflict()->assertJsonPath('code', 'platform_admin_already_exists');
+
+    platformTeam('POST', 'team/invitations', ['email' => 'bola@example.com', 'roles' => []], $this->superAdmin)->assertCreated();
+    $firstToken = lastPlatformInvitationToken('bola@example.com');
+    platformTeam('POST', 'team/invitations', ['email' => 'bola@example.com', 'roles' => []], $this->superAdmin)
+        ->assertConflict()->assertJsonPath('code', 'platform_admin_invitation_already_pending');
+
+    $invitation = PlatformAdminInvitation::query()->sole();
+    platformTeam('POST', "team/invitations/{$invitation->public_id}/resend", as: $this->superAdmin)->assertOk();
+
+    platformTeam('POST', 'auth/invitation-previews', ['token' => $firstToken])->assertUnprocessable();
+    platformTeam('POST', 'auth/invitation-previews', ['token' => lastPlatformInvitationToken('bola@example.com')])->assertOk();
+
+    platformTeam('DELETE', "team/invitations/{$invitation->public_id}", as: $this->superAdmin)->assertNoContent();
+    platformTeam('POST', 'auth/invitation-previews', ['token' => lastPlatformInvitationToken('bola@example.com')])->assertUnprocessable();
+});
+
+it('lets only super admins manage the team, whatever permissions others have', function (): void {
+    $everyPermission = Role::findOrCreate('Everything but team', PlatformAdmin::GUARD);
+    $everyPermission->syncPermissions(array_map(static fn (PlatformPermission $permission): string => $permission->value, PlatformPermission::cases()));
+    $colleague = platformTeamMember('Chidi', 'Everything but team');
+
+    platformTeam('GET', 'team/admins', as: $colleague)->assertForbidden();
+    platformTeam('POST', 'team/invitations', ['email' => 'bola@example.com', 'roles' => []], $colleague)->assertForbidden();
+    platformTeam('POST', 'team/roles', ['name' => 'Sneaky', 'permissions' => []], $colleague)->assertForbidden();
+    platformTeam('PUT', "team/admins/{$colleague->public_id}/roles", ['roles' => []], $colleague)->assertForbidden();
+
+    platformTeam('GET', 'team/admins', as: $this->superAdmin)->assertOk()->assertJsonCount(2, 'data');
+});
+
+it('never lets super admins change their own account, and always keeps an active super admin', function (): void {
+    $superAdminRole = Role::findByName(PlatformRole::SuperAdmin->value, PlatformAdmin::GUARD);
+
+    platformTeam('PUT', "team/admins/{$this->superAdmin->public_id}/roles", ['roles' => []], $this->superAdmin)
+        ->assertForbidden()->assertJsonPath('code', 'cannot_manage_own_account');
+    platformTeam('POST', "team/admins/{$this->superAdmin->public_id}/deactivate", as: $this->superAdmin)
+        ->assertForbidden()->assertJsonPath('code', 'cannot_manage_own_account');
+
+    // Two super admins demoting each other at once: whoever is second finds they'd remove the last one.
+    $demotedMeanwhile = platformTeamMember('Bola', PlatformRole::SuperAdmin->value);
+    $demotedMeanwhile->syncRoles([]);
+
+    expect(fn () => app(ChangePlatformAdminRoles::class)->handle($demotedMeanwhile, $this->superAdmin, []))->toThrow(LastSuperAdminException::class)
+        ->and($this->superAdmin->refresh()->hasRole($superAdminRole))->toBeTrue();
+});
+
+it('deactivates an admin, who is signed out at once, and reactivates them', function (): void {
+    $colleague = platformTeamMember('Chidi');
+    $colleagueToken = app(AccessTokenIssuer::class)->issue($colleague, PlatformAdmin::GUARD, 'test')->plainTextToken;
+
+    platformTeam('POST', "team/admins/{$colleague->public_id}/deactivate", as: $this->superAdmin)->assertOk()->assertJsonPath('data.is_active', false);
+    $this->withToken($colleagueToken)->getJson(centralUrl('/api/v1/platform/auth/me'))->assertUnauthorized();
+    forgetSignIns();
+
+    platformTeam('POST', "team/admins/{$colleague->public_id}/reactivate", as: $this->superAdmin)->assertOk()->assertJsonPath('data.is_active', true);
+});
+
+it('resets another admin\'s two-factor authentication after the super admin confirms their password', function (): void {
+    $colleague = platformTeamMember('Chidi');
+    $colleagueToken = app(AccessTokenIssuer::class)->issue($colleague, PlatformAdmin::GUARD, 'test')->plainTextToken;
+
+    platformTeam('POST', "team/admins/{$colleague->public_id}/two-factor-reset", ['password' => 'not-the-password'], $this->superAdmin)
+        ->assertUnprocessable()->assertJsonPath('code', 'current_password_incorrect');
+    platformTeam('POST', "team/admins/{$this->superAdmin->public_id}/two-factor-reset", ['password' => PLATFORM_TEAM_PASSWORD], $this->superAdmin)
+        ->assertForbidden()->assertJsonPath('code', 'cannot_manage_own_account');
+
+    platformTeam('POST', "team/admins/{$colleague->public_id}/two-factor-reset", ['password' => PLATFORM_TEAM_PASSWORD], $this->superAdmin)
+        ->assertOk()->assertJsonPath('data.two_factor_enabled', false);
+
+    $this->withToken($colleagueToken)->getJson(centralUrl('/api/v1/platform/auth/me'))->assertUnauthorized();
+    forgetSignIns();
+    platformTeam('POST', "team/admins/{$colleague->public_id}/two-factor-reset", ['password' => PLATFORM_TEAM_PASSWORD], $this->superAdmin)
+        ->assertConflict()->assertJsonPath('code', 'two_factor_not_enabled');
+});
+
+it('manages platform roles from the permission list, audited in the central database', function (): void {
+    platformTeam('GET', 'team/permissions', as: $this->superAdmin)->assertOk()->assertJsonCount(count(PlatformPermission::cases()), 'data');
+
+    $roleId = platformTeam('POST', 'team/roles', ['name' => 'Support', 'permissions' => ['stores.view']], $this->superAdmin)
+        ->assertCreated()->assertJsonPath('data.permissions', ['stores.view'])->json('data.id');
+
+    platformTeam('POST', 'team/roles', ['name' => 'SUPPORT', 'permissions' => []], $this->superAdmin)
+        ->assertUnprocessable()->assertJsonPath('code', 'role_name_taken');
+    platformTeam('PUT', "team/roles/{$roleId}", ['name' => 'Support desk', 'permissions' => ['stores.view', 'stores.manage']], $this->superAdmin)
+        ->assertOk()->assertJsonPath('data.permissions', ['stores.manage', 'stores.view']);
+
+    $superAdminRole = Role::findByName(PlatformRole::SuperAdmin->value, PlatformAdmin::GUARD);
+    platformTeam('PUT', "team/roles/{$superAdminRole->public_id}", ['name' => 'Renamed', 'permissions' => []], $this->superAdmin)
+        ->assertConflict()->assertJsonPath('code', 'platform_role_protected');
+
+    platformTeamMember('Chidi', 'Support desk');
+    platformTeam('DELETE', "team/roles/{$roleId}", as: $this->superAdmin)->assertConflict()->assertJsonPath('code', 'platform_role_in_use');
+
+    $role = Role::query()->where('public_id', $roleId)->sole();
+    expect(Audit::query()->where('auditable_type', 'role')->where('auditable_id', (string) $role->id)->where('user_id', $this->superAdmin->id)->count())->toBeGreaterThanOrEqual(2);
+});

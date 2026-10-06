@@ -26,7 +26,8 @@ final readonly class SignedInAccount
     {
         $account = $request->user();
 
-        if (! $account instanceof Model || ! $account instanceof Authenticatable || ! $account instanceof HasApiTokens) {
+        // Every guard's provider model is an Eloquent model with tokens, so only "no account" is left to rule out.
+        if (! $account instanceof Model) {
             throw new LogicException('This route must be protected by an auth:<guard> middleware with a token-based account.');
         }
 

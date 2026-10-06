@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Landlord\Identity\Http\Controllers\CurrentPlatformAdminController;
+use App\Landlord\Identity\Http\Controllers\PlatformAdminInvitationAcceptanceController;
 use App\Landlord\Identity\Http\Controllers\SignInController;
 use App\Landlord\Identity\Http\Controllers\TwoFactorChallengeController;
 use App\Landlord\Identity\Models\PlatformAdmin;
@@ -24,7 +25,10 @@ Route::prefix('auth')->name('auth.')->group(static function (): void {
     Route::middleware('throttle:login')->group(static function (): void {
         Route::post('tokens', SignInController::class)->name('tokens.store');
         Route::post('two-factor-challenges', TwoFactorChallengeController::class)->name('two-factor-challenges.store');
+        Route::post('invitation-previews', [PlatformAdminInvitationAcceptanceController::class, 'show'])->name('invitation-previews.store');
     });
+
+    Route::post('invitation-acceptances', [PlatformAdminInvitationAcceptanceController::class, 'store'])->middleware('throttle:registration')->name('invitation-acceptances.store');
 
     Route::middleware('throttle:password-reset')->group(static function (): void {
         Route::post('password-reset-links', [PasswordResetLinkController::class, 'store'])->defaults('broker', PlatformAdmin::PASSWORD_BROKER)->name('password-reset-links.store');

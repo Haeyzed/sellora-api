@@ -6,6 +6,7 @@ namespace App\Providers;
 
 use App\Landlord\Identity\Enums\PlatformRole;
 use App\Landlord\Identity\Models\PlatformAdmin;
+use App\Landlord\Identity\Models\PlatformAdminInvitation;
 use App\Landlord\Legal\Models\LegalDocument;
 use App\Landlord\Subscriptions\SubscriptionFeatureSource;
 use App\Landlord\Tenancy\Models\DatabaseServer;
@@ -181,6 +182,7 @@ final class AppServiceProvider extends ServiceProvider
             'store' => Tenant::class,
             'legal_document' => LegalDocument::class,
             'database_server' => DatabaseServer::class,
+            'platform_admin_invitation' => PlatformAdminInvitation::class,
         ]);
     }
 
