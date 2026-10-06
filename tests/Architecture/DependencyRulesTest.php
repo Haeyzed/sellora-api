@@ -24,6 +24,23 @@ arch('shared contains no business logic')
     ->expect('App\Shared')
     ->not->toUse(['App\Landlord', 'App\Tenant', 'Modules', 'Integrations']);
 
+/*
+ * One expectation per target: with several targets, not->toUse() silently
+ * passes for vendor namespaces (checked against a deliberate violation).
+ */
+arch('only the Money wrapper uses the money library, so it stays replaceable')
+    ->expect('App')
+    ->not->toUse(['Brick\Money', 'Brick\Math'])
+    ->ignoring('App\Shared\Money');
+
+arch('modules use Money, never the money library')
+    ->expect('Modules')
+    ->not->toUse(['Brick\Money', 'Brick\Math']);
+
+arch('integrations use Money, never the money library')
+    ->expect('Integrations')
+    ->not->toUse(['Brick\Money', 'Brick\Math']);
+
 arch('integrations never import modules')
     ->expect('Integrations')
     ->not->toUse('Modules');
