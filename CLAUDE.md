@@ -320,6 +320,7 @@ sellora-api/
 │   ├── landlord.php                  # central domain; loads routes/landlord/*
 │   ├── landlord/
 │   │   ├── auth.php
+│   │   ├── team.php                  # platform team: admin invitations, admins, platform roles, 2FA resets (super admins only)
 │   │   ├── tenants.php
 │   │   ├── plans.php
 │   │   ├── subscriptions.php
@@ -770,7 +771,9 @@ If a change needs to break a rule, stop and explain why instead of working aroun
 - **A dependent feature takes its requirement's state.** If HR is Locked, Payroll is Locked too (read-only), not Disabled.
 - Features on a store's plan start Enabled; the merchant can switch them off (Disabled).
 - A limit missing from a plan means **zero**, never unlimited. Limits may overshoot by one under exact concurrency; that's acceptable for plan limits, because it never loses data.
-- **Feature grants:** platform admins can grant or revoke a feature for one store, optionally until a date (for example "Loyalty free for 30 days"). Built with the platform-admin store management in Step 5, through `Features`, never by editing plans.
+- **Feature grants:** platform admins can grant or revoke a feature for one store, optionally until a date (for example "Loyalty free for 30 days"), through `Features`, never by editing plans. When a grant ends (by date or by being revoked), the feature becomes **Locked** (read-only), never hidden.
+- **Limit overrides** per store, optionally until a date. **Unlimited must be stated explicitly** (an explicit unlimited flag or value sent on purpose), never inferred from a missing or empty value, so a bug can never grant unlimited by accident.
+- **Platform suspension** is separate from billing: every feature becomes Suspended, but the store is still served so staff can sign in and see why. Paying doesn't lift a platform suspension, and lifting it doesn't override an unpaid subscription.
 
 **Feature states.** A feature is not just on or off. `Features` returns one of these states, and every gate respects it:
 
@@ -828,7 +831,7 @@ Until merchant billing is decided (section 16), new stores register on the plan 
 - Design for this from day one, even if the first launch has only one region. That means the region is stored on the tenant, database and storage connections are chosen from the tenant's region (following the `stancl/tenancy` skill for per-tenant connection settings), and nothing assumes a single database server.
 - Moving a store between regions is a deliberate, planned migration, never automatic. Treat the region as fixed after registration unless I decide otherwise.
 - The central (landlord) database is the only cross-region store. Keep personal data out of it beyond what's needed to run the platform (tenant owner contact, billing).
-- **Database server pool:** tenant databases are placed on a pool of database servers recorded in `Landlord\Tenancy`. Each server has a region, a capacity and an "accepting new tenants" flag. Registration picks a server in the tenant's region with spare capacity. This is how Sellora grows past one server without code changes.
+- **Database server pool:** servers are added with `php artisan platform:add-database-server` (password entered hidden and stored encrypted; only added after a successful test connection). Tenant databases are placed on a pool of database servers recorded in `Landlord\Tenancy`. Each server has a region, a capacity and an "accepting new tenants" flag. Registration picks a server in the tenant's region with spare capacity. This is how Sellora grows past one server without code changes.
 
 **Backups and restore**
 - Every tenant database is backed up on a schedule, in its own region, and backups are encrypted.
@@ -863,7 +866,8 @@ There are four guards, all on Sanctum. Each guard has its own model, provider, l
   - **Turning 2FA off requires the current password and a current code or recovery code.** For platform admins, turning it off forces them to set it up again.
   - A platform admin without 2FA can only view their profile, set up 2FA and sign out. A route test enforces this for every platform route.
   - `platform:create-admin` sets up 2FA at creation (it prints the `otpauth://` link and the recovery codes), so a new admin is never left with a password-only account. Later platform admins are invited by a super admin with an expiring link (Step 5), never given a password chosen by someone else.
-  - A platform admin who loses both their phone and recovery codes is reset by another super admin (Step 5).
+  - A platform admin who loses both their phone and recovery codes is reset by another super admin, who must confirm with their own password; the reset signs the admin out everywhere and forces 2FA setup again.
+  - **Platform team management** (super admins only): admins join only by invitation (one-time link, expires after 3 days, because platform accounts reach every store); the account exists only once they accept and choose a password. Nobody changes their own account through team management, the last active super admin can never be deactivated or demoted (also under concurrent requests), and admins can't change each other's email (that would let one admin redirect another's password resets).
 - **Current-password checks** (password change, 2FA settings) lock after 5 wrong tries and return 429 `too_many_incorrect_attempts`, so a stolen token can't be used to guess the password behind it.
 - **Staff join only by invitation:** an emailed one-time link that expires after 7 days (only its hash is stored); the person chooses their own password when accepting. Invitations can be resent (the old link stops working) or cancelled. Nobody ever sets another person's password.
 - **No self-promotion:** nobody can grant a permission they don't hold (through a role or an invitation), edit a role or manage a person that has permissions they lack, change their own roles, or deactivate themselves. The owner and the Owner role can't be changed or given through staff management; ownership transfer is its own flow (Step 5).
