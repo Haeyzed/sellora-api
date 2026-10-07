@@ -58,7 +58,7 @@ The legacy code may contain bugs, security holes, shortcuts and wrong business r
 
 **Activity log vs auditing: don't overlap them.** Both can record model changes, and running both automatically on the same models doubles the writes and gives two conflicting histories. Activity log answers "what happened in the business, and who did it?" Auditing answers "exactly which fields changed, from what to what?" Keep each to its own job as described above.
 
-**Reference data exception:** world data is the one case where Tenant code may read from the central database. Access it only through the package's models or a thin wrapper in `App\Shared\Geography`, never by writing raw queries against the central connection.
+**Reference data exception:** world data is the one case where Tenant code may read from the central database. Access it only through the package's models or a thin wrapper in `App\Shared\Geography`, never by writing raw queries against the central connection. **Only `App\Shared\Geography` may use the nnjeim package** (an architecture rule enforces this), and countries, states, currencies and timezones are always identified by ISO codes, never by the package's database IDs, which change when the data is reseeded.
 
 ### 2.2 First-time setup: install and publish everything first
 
@@ -240,6 +240,8 @@ This platform targets merchants and shoppers worldwide. **Never hard-code anythi
 **Currencies**
 - Amounts are always `Money`: integer minor units plus an ISO 4217 currency code. Never floats. Respect each currency's decimal places (JPY has 0, KWD has 3).
 - Each store has a base currency and may sell in additional presentment currencies.
+- **The base currency and the tax mode (inclusive or exclusive) can't be changed once anything is priced**, because stored prices are interpreted through them; changing either later would silently change what customers pay. Domains that hold prices block the change through a Shared guard contract.
+- Number formatting (decimal places, symbol position, right-to-left) comes from ISO 4217 and the locale, never from store settings.
 - Exchange rates are stored with a timestamp, and **an order saves the rate it used**. Later rate changes never alter past orders.
 - **Precision rule:** everything a customer is charged or sees as a price (unit prices, line totals, discounts, tax, shipping, order totals, refunds) is stored and calculated in **whole minor units**. Only internal figures may carry extra decimals: purchase unit costs (for example bulk supplier costs) and exchange rates. Store those as decimals with a fixed, documented scale, and round them into `Money` (through `brick/money`) before they affect anything a customer pays.
 - **Rounding mode:** customer-facing amounts round **half-up**. Always pass the rounding mode explicitly; never rely on a library default. Splitting an amount (discounts across lines, refunds across items) uses largest-remainder allocation, so the parts always add up exactly to the whole.
@@ -262,6 +264,7 @@ This platform targets merchants and shoppers worldwide. **Never hard-code anythi
 - "Today's sales", report periods and scheduled promotions use the store's timezone, not the server's.
 
 **Addresses, phones and units**
+- Phone numbers are validated and formatted with `propaganistas/laravel-phone` (already installed; it includes libphonenumber), never a second phone library.
 - Address formats differ by country: states, postcodes and city rules are not universal. Validate per country using `nnjeim/world` data, and never require fields a country doesn't use.
 - Phone numbers are stored in E.164 format (`+2348012345678`, `+14155550123`).
 - Store weights and dimensions in metric internally, and let each store choose display units.
@@ -440,6 +443,7 @@ Every domain, in core, modules and integrations alike, uses the same layout. **O
 │   ├── Controllers/  # thin: Form Request → Action → Resource
 │   ├── Requests/
 │   └── Resources/
+├── Concerns/         # traits other domains may use (public surface, section 6)
 ├── Imports/          # Excel/CSV imports (maatwebsite/excel)
 ├── Jobs/
 ├── Listeners/        # this domain reacting to other domains' events
@@ -763,7 +767,7 @@ arch('domains are final')
     ->ignoring(['App\Shared']);
 ```
 
-**Pest caveat:** a `not->toUse([...])` rule that lists several namespaces can pass even when it's broken. Write one namespace per rule, and when adding a rule, prove it fails against a deliberate violation before relying on it.
+**Pest caveat:** a `not->toUse([...])` rule that lists several namespaces can pass even when it's broken. Write one namespace per rule, and when adding a rule, prove it fails against a deliberate violation before relying on it. A rule forbidding a namespace that has no classes yet (for example a module that doesn't exist) can't fail until a real class exists there; prove it again when the first class arrives. Other rules include: only `App\Shared\Geography` uses the nnjeim package, and only `App\Shared\Auth\TwoFactor` uses `pragmarx/google2fa`.
 
 If a change needs to break a rule, stop and explain why instead of working around the test.
 
@@ -854,7 +858,7 @@ Until merchant billing is decided (section 16), new stores register on the plan 
 - **Statuses:** Closed, Purging and Purged join the store statuses. Closed stores still have a database and keep being migrated; Purging and Purged stores are skipped. None of the three is served.
 - **Closing** works on Active, Suspended and ProvisioningFailed stores, by a platform admin (`stores.manage`) or by the owner (password plus a 2FA code when they have 2FA). It records the status before closing, revokes every sign-in in the store (staff, customers and drivers) through a Shared contract, and sets a purge date from config (90 days). The owner is emailed the purge date, told how to export first, and reminded 7 days before.
 - **Restoring** is done by a platform admin, only from Closed, and returns the store to the status it had before closing, so closing and restoring can never lift a suspension. Restore and purge take the same row lock; once a store is Purging, restore answers 409.
-- **Purge** is resumable and safe to run twice: lock, re-check, mark Purging and commit; drop the database; delete the store's files and exports; delete its domains and hold its subdomain (365 days, from config) so nobody can take over its old links; clear the owner's personal data on the tenant row (a database check constraint allows null owner details only on Purged stores); mark Purged. Subscriptions and legal acceptances are kept as business and contract records. Personal data about the store in central activity and audit logs follows its retention period.
+- **Purge** is resumable and safe to run twice: lock, re-check, mark Purging and commit; drop the database; delete the store's files and exports; delete its domains and hold its subdomain (365 days, from config) so nobody can take over its old links; clear the owner's personal data on the tenant row (a database check constraint allows null owner details only on Purged stores); mark Purged. Subscriptions and legal acceptances are kept as business and contract records. Personal data about the store in central activity and audit logs is **not** scrubbed by the purge: those are the platform's own evidence of its decisions (suspensions, closures, grants) and are deleted when their retention period ends. Purge clears free-text reasons on the store's own rows with mass updates, so the clearing doesn't copy the text into a new audit record. Reason fields are for business reasons; the API docs and dashboards say not to put personal data in them.
 - **Export** is a ZIP of JSON Lines files plus a manifest, built in chunks on the `bulk` queue, one export at a time per store, stored privately on the store's regional disk and deleted after 7 days. It's downloadable only by the person who requested it, while signed in, and every download is logged. Platform admins need `stores.export` (separate from `stores.view`, because an export holds every customer's personal data); the owner can export their own store.
 - **Export contents are decided column by column, failing closed.** Every column of every store table is either explicitly included or explicitly excluded (with a reason), and a test fails when any column is unclassified, so a new column is never exported by accident. Secrets are never exported: password and PIN hashes, tokens, 2FA secrets, recovery codes, gateway credentials, and secret values inside audit and activity log records. Uploaded files (images and documents) are part of the export once domains have them.
 
@@ -880,6 +884,7 @@ There are four guards, all on Sanctum. Each guard has its own model, provider, l
 - The first platform admin is created with `php artisan platform:create-admin --super-admin`. Built-in roles: Super Admin (platform) and Owner (store, seeded into every new store).
 - Customer sign-up may say an email is already taken (standard in e-commerce, and rate-limited).
 - Always name the guard in route middleware (`auth:platform`, `auth:staff`, `auth:customer`, `auth:driver`). Never use a bare `auth:sanctum` or `auth`; an architecture test enforces this.
+- **Store settings** live in one typed, audited, single-row `store_settings` table in `Tenant\Settings` (one row enforced by a constraint), holding **core settings only**. Each module and integration owns its own settings in its own tables; core never stores a module's or integration's settings (for example messaging SMTP details belong to Messaging).
 - **Two-factor authentication** (`pragmarx/google2fa`) is available for platform admins and staff: TOTP codes, hashed one-time recovery codes, and a 2FA challenge before a token is issued. Platform admins must use it; for staff, it's a store setting the owner can require (built with store settings in Step 6).
   - With 2FA on, a correct password returns **202 with a challenge** that lasts 5 minutes and works only for the store and account type that started it. Codes work once, even under racing requests. 5 wrong codes lock sign-in for 15 minutes, and a correct password doesn't reset that count.
   - Setting up 2FA requires the current password, signs out every other device, and shows 8 recovery codes once. Authenticator secrets are stored encrypted; recovery codes only as hashes, removed when used.
