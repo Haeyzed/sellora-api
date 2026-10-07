@@ -55,4 +55,7 @@ return [
      */
     'tax_exclusive_countries' => ['CA', 'US'],
 
+    /* Countries where a new store shows weights in pounds and sizes in inches; everywhere else uses kilograms and centimetres. */
+    'imperial_countries' => ['LR', 'MM', 'US'],
+
 ];

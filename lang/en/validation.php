@@ -190,6 +190,9 @@ return [
         'country_code' => [
             'unknown' => 'Stores cannot be registered in this country.',
         ],
+        'default_locale' => [
+            'not_enabled' => 'The default language must be one of the store\'s enabled languages.',
+        ],
         'timezone' => [
             'required_for_country' => 'This country has several timezones. Choose the store\'s timezone.',
             'not_in_country' => 'Choose one of the country\'s timezones.',

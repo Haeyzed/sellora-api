@@ -19,6 +19,7 @@ use App\Landlord\Tenancy\Models\Tenant;
 use App\Landlord\Tenancy\PlatformStoreClosure;
 use App\Landlord\Tenancy\PlatformStoreExports;
 use App\Landlord\Tenancy\PlatformStoreOwnerContact;
+use App\Landlord\Tenancy\PlatformStoreProfile;
 use App\Landlord\Tenancy\StoreExportRetention;
 use App\Landlord\Tenancy\StoreRegistrationRetention;
 use App\Shared\Auth\ExpiredPasswordResetTokenRetention;
@@ -28,6 +29,7 @@ use App\Shared\Exceptions\ApiErrorResponseDocumentation;
 use App\Shared\Features\Contracts\FeatureSource;
 use App\Shared\Features\FeatureRegistry;
 use App\Shared\Idempotency\IdempotencyKeyRetention;
+use App\Shared\Money\PricedRecordsRegistry;
 use App\Shared\Privacy\PersonalDataRegistry;
 use App\Shared\Privacy\SharedStoreTables;
 use App\Shared\Privacy\StoreExportRegistry;
@@ -40,7 +42,9 @@ use App\Shared\Tenancy\Contracts\StoreClosure;
 use App\Shared\Tenancy\Contracts\StoreExports;
 use App\Shared\Tenancy\Contracts\StoreOwnerAccounts;
 use App\Shared\Tenancy\Contracts\StoreOwnerContact;
+use App\Shared\Tenancy\Contracts\StoreProfile;
 use App\Shared\Tenancy\Contracts\StoreSessions;
+use App\Shared\Tenancy\Contracts\StoreSettingsSetup;
 use App\Tenant\Customers\CustomerStoreTables;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Delivery\DeliveryStoreTables;
@@ -56,7 +60,11 @@ use App\Tenant\Identity\StaffInvitationRetention;
 use App\Tenant\Identity\StaffPermissionCatalogue;
 use App\Tenant\Identity\StaffStoreOwnerAccounts;
 use App\Tenant\Identity\StoreSignOut;
+use App\Tenant\Settings\Enums\SettingsPermission;
+use App\Tenant\Settings\Models\StoreSettings;
 use App\Tenant\Settings\Policies\StoreLifecyclePolicy;
+use App\Tenant\Settings\SettingsStoreTables;
+use App\Tenant\Settings\StoreSettingsDefaults;
 use Dedoc\Scramble\Scramble;
 use Illuminate\Auth\Events\Authenticated;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -100,6 +108,8 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(StoreClosure::class, PlatformStoreClosure::class);
         $this->app->bind(StoreExports::class, PlatformStoreExports::class);
         $this->app->bind(StoreAccountNotifications::class, StaffAccountNotifications::class);
+        $this->app->bind(StoreProfile::class, PlatformStoreProfile::class);
+        $this->app->bind(StoreSettingsSetup::class, StoreSettingsDefaults::class);
     }
 
     /**
@@ -110,6 +120,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->singleton(StaffPermissionCatalogue::class, static function (): StaffPermissionCatalogue {
             $catalogue = new StaffPermissionCatalogue;
             $catalogue->register(StaffPermission::class);
+            $catalogue->register(SettingsPermission::class);
 
             return $catalogue;
         });
@@ -182,6 +193,9 @@ final class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(PersonalDataRegistry::class);
 
+        // Domains register their priced records here as they start storing prices (Catalog, Pricing, Orders).
+        $this->app->singleton(PricedRecordsRegistry::class);
+
         $this->app->singleton(RetentionRegistry::class, static function (Application $app): RetentionRegistry {
             $registry = new RetentionRegistry($app);
             $registry->register(IdempotencyKeyRetention::class);
@@ -199,7 +213,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->singleton(StoreExportRegistry::class, static function (Application $app): StoreExportRegistry {
             $registry = new StoreExportRegistry;
 
-            foreach ([SharedStoreTables::class, IdentityStoreTables::class, CustomerStoreTables::class, DeliveryStoreTables::class] as $storeTables) {
+            foreach ([SharedStoreTables::class, IdentityStoreTables::class, SettingsStoreTables::class, CustomerStoreTables::class, DeliveryStoreTables::class] as $storeTables) {
                 $app->make($storeTables)->classify($registry);
             }
 
@@ -228,6 +242,7 @@ final class AppServiceProvider extends ServiceProvider
             'platform_admin_invitation' => PlatformAdminInvitation::class,
             'feature_grant' => FeatureGrant::class,
             'limit_override' => TenantLimitOverride::class,
+            'store_settings' => StoreSettings::class,
             'plan' => Plan::class,
             'plan_feature' => PlanFeature::class,
             'plan_limit' => PlanLimit::class,

@@ -11,6 +11,7 @@ use App\Landlord\Tenancy\Services\DatabaseServerPlacement;
 use App\Landlord\Tenancy\Services\StoreDatabase;
 use App\Landlord\Tenancy\StoreReadyNotification;
 use App\Shared\Tenancy\Contracts\StoreOwnerAccounts;
+use App\Shared\Tenancy\Contracts\StoreSettingsSetup;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -54,7 +55,7 @@ final class ProvisionStore implements ShouldBeUnique, ShouldQueue
         return $this->tenantId;
     }
 
-    public function handle(DatabaseServerPlacement $databaseServerPlacement, StoreDatabase $storeDatabase, StoreOwnerAccounts $storeOwnerAccounts): void
+    public function handle(DatabaseServerPlacement $databaseServerPlacement, StoreDatabase $storeDatabase, StoreOwnerAccounts $storeOwnerAccounts, StoreSettingsSetup $storeSettingsSetup): void
     {
         $tenant = Tenant::query()->find($this->tenantId);
 
@@ -67,7 +68,10 @@ final class ProvisionStore implements ShouldBeUnique, ShouldQueue
 
         $storeRegistration = StoreRegistration::query()->where('tenant_id', $tenant->id)->first();
 
-        $hasOwner = $tenant->run(static function () use ($storeRegistration, $storeOwnerAccounts): bool {
+        $hasOwner = $tenant->run(static function () use ($storeRegistration, $storeOwnerAccounts, $storeSettingsSetup): bool {
+            // The store's first settings, from what it was registered with and its country's defaults; kept if it has them.
+            $storeSettingsSetup->initialize();
+
             if ($storeOwnerAccounts->hasOwner()) {
                 return true;
             }

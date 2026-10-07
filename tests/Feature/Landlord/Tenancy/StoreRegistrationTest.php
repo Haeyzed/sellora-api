@@ -16,9 +16,12 @@ use App\Landlord\Tenancy\Models\StoreRegistration;
 use App\Landlord\Tenancy\Models\Tenant;
 use App\Landlord\Tenancy\StoreReadyNotification;
 use App\Landlord\Tenancy\StoreRegistrationCodeNotification;
+use App\Shared\Money\TaxMode;
 use App\Shared\Retention\PurgeExpiredRecords;
 use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
+use App\Tenant\Settings\Enums\WeightUnit;
+use App\Tenant\Settings\Models\StoreSettings;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Notification;
@@ -316,4 +319,8 @@ it('sets the store\'s currency and content language from its country', function 
         ->currency_code->toBe('EUR')
         ->timezone->toBe('Europe/Berlin')
         ->locale->toBe('de');
+
+    // Setting the store up gives it its first settings, from the same defaults.
+    expect(Tenant::query()->sole()->run(static fn (): array => StoreSettings::query()->sole()->only(['currency_code', 'timezone', 'default_locale', 'enabled_locales', 'tax_mode', 'weight_unit'])))
+        ->toBe(['currency_code' => 'EUR', 'timezone' => 'Europe/Berlin', 'default_locale' => 'de', 'enabled_locales' => ['de'], 'tax_mode' => TaxMode::Inclusive, 'weight_unit' => WeightUnit::Kilogram]);
 });
