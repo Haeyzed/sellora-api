@@ -42,6 +42,8 @@ final class StoreSettingsResource extends JsonResource
             'tax_mode' => $settings->tax_mode,
             /** True once anything in the store is priced: the currency and tax mode can no longer change. */
             'pricing_locked' => $this->pricingLocked,
+            /** Whether every staff member must use two-factor authentication. Only the owner can change it. */
+            'require_staff_two_factor' => $settings->require_staff_two_factor,
             'weight_unit' => $settings->weight_unit,
             'dimension_unit' => $settings->dimension_unit,
             'contact_email' => $settings->contact_email,

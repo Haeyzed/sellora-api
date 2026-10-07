@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Shared\Auth\Http\Middleware\EnsureTwoFactorIsEnabled;
+use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
 use Illuminate\Routing\Route as RouteDefinition;
 use Illuminate\Support\Facades\Route;
 
@@ -69,6 +70,27 @@ it('requires two-factor authentication on every signed-in platform route except 
         }
 
         expect(in_array(EnsureTwoFactorIsEnabled::class, $route->gatherMiddleware(), true))->toBeTrue("{$route->methods()[0]} {$route->uri()} must require two-factor authentication");
+        $checkedRoutes++;
+    }
+
+    expect($checkedRoutes)->toBeGreaterThan(0);
+});
+
+it('applies the store\'s two-factor requirement on every signed-in staff route except those needed to set it up', function (): void {
+    $availableBeforeSetup = [
+        'staff.auth.me',
+        'staff.auth.tokens.destroy',
+        'staff.auth.two-factor.store',
+        'staff.auth.two-factor.confirmation.store',
+    ];
+    $checkedRoutes = 0;
+
+    foreach (applicationRoutes() as $route) {
+        if (! in_array('auth:staff', authMiddlewareOf($route), true) || in_array($route->getName(), $availableBeforeSetup, true)) {
+            continue;
+        }
+
+        expect(in_array(EnsureTwoFactorWhenRequired::class, $route->gatherMiddleware(), true))->toBeTrue("{$route->methods()[0]} {$route->uri()} must apply the store's two-factor requirement");
         $checkedRoutes++;
     }
 

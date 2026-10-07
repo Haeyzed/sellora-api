@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
 use App\Shared\Auth\Models\Role;
 use App\Tenant\Identity\Http\Controllers\OwnershipTransferController;
 use App\Tenant\Identity\Http\Controllers\StaffInvitationController;
@@ -23,7 +24,7 @@ Route::bind('staffRole', static fn (string $publicId): Role => Role::query()
 
 Route::prefix('staff/team')
     ->name('staff.team.')
-    ->middleware(['auth:'.StaffMember::GUARD, 'throttle:api'])
+    ->middleware(['auth:'.StaffMember::GUARD, EnsureTwoFactorWhenRequired::class, 'throttle:api'])
     ->group(static function (): void {
         Route::get('members', [TeamMemberController::class, 'index'])->name('members.index');
         Route::get('members/{staffMember}', [TeamMemberController::class, 'show'])->name('members.show');

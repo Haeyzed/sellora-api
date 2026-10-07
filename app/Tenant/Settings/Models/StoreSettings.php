@@ -38,6 +38,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property string|null $address_state_code The state's code within the address country, such as "LA".
  * @property string|null $address_postal_code Free text; formats differ by country.
  * @property string|null $address_country_code ISO 3166-1 alpha-2.
+ * @property bool $require_staff_two_factor Whether every staff member must use two-factor authentication; the owner's decision alone, never mass-assigned.
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  */
@@ -95,6 +96,7 @@ final class StoreSettings extends Model implements AuditableContract
     {
         return [
             'enabled_locales' => 'array',
+            'require_staff_two_factor' => 'boolean',
             'tax_mode' => TaxMode::class,
             'weight_unit' => WeightUnit::class,
             'dimension_unit' => DimensionUnit::class,

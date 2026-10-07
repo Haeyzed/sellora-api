@@ -17,7 +17,7 @@ final class SettingsStoreTables implements ClassifiesStoreTables
         $registry->table('store_settings', include: [
             'id', 'name', 'country_code', 'currency_code', 'timezone', 'default_locale', 'enabled_locales', 'tax_mode',
             'weight_unit', 'dimension_unit', 'contact_email', 'contact_phone', 'address_line1', 'address_line2', 'address_city',
-            'address_state_code', 'address_postal_code', 'address_country_code', 'created_at', 'updated_at',
+            'address_state_code', 'address_postal_code', 'address_country_code', 'require_staff_two_factor', 'created_at', 'updated_at',
         ]);
     }
 }

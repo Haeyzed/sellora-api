@@ -22,6 +22,7 @@ use App\Landlord\Tenancy\PlatformStoreOwnerContact;
 use App\Landlord\Tenancy\PlatformStoreProfile;
 use App\Landlord\Tenancy\StoreExportRetention;
 use App\Landlord\Tenancy\StoreRegistrationRetention;
+use App\Shared\Auth\Contracts\TwoFactorRequirement;
 use App\Shared\Auth\ExpiredPasswordResetTokenRetention;
 use App\Shared\Auth\Models\Role;
 use App\Shared\Auth\TwoFactor\TwoFactorChallenges;
@@ -65,6 +66,7 @@ use App\Tenant\Settings\Models\StoreSettings;
 use App\Tenant\Settings\Policies\StoreLifecyclePolicy;
 use App\Tenant\Settings\SettingsStoreTables;
 use App\Tenant\Settings\StoreSettingsDefaults;
+use App\Tenant\Settings\StoreTwoFactorRequirement;
 use Dedoc\Scramble\Scramble;
 use Illuminate\Auth\Events\Authenticated;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -110,6 +112,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(StoreAccountNotifications::class, StaffAccountNotifications::class);
         $this->app->bind(StoreProfile::class, PlatformStoreProfile::class);
         $this->app->bind(StoreSettingsSetup::class, StoreSettingsDefaults::class);
+        $this->app->bind(TwoFactorRequirement::class, StoreTwoFactorRequirement::class);
     }
 
     /**

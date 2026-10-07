@@ -9,6 +9,7 @@ use App\Shared\Auth\Http\Controllers\PasswordResetLinkController;
 use App\Shared\Auth\Http\Controllers\RecoveryCodeController;
 use App\Shared\Auth\Http\Controllers\TwoFactorConfirmationController;
 use App\Shared\Auth\Http\Controllers\TwoFactorController;
+use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
 use App\Tenant\Customers\Http\Controllers\CurrentCustomerController;
 use App\Tenant\Customers\Http\Controllers\RegistrationController;
 use App\Tenant\Customers\Http\Controllers\SignInController as CustomerSignInController;
@@ -39,14 +40,19 @@ Route::prefix('staff/auth')->name('staff.auth.')->group(static function (): void
     });
 
     Route::middleware(['auth:'.StaffMember::GUARD, 'throttle:api'])->group(static function (): void {
-        Route::put('tokens/current', [AccessTokenController::class, 'update'])->name('tokens.update');
+        // When the owner requires two-factor authentication, these are the
+        // only routes staff who haven't set it up can use.
         Route::delete('tokens/current', [AccessTokenController::class, 'destroy'])->name('tokens.destroy');
         Route::get('me', CurrentStaffMemberController::class)->name('me');
-        Route::put('password', [PasswordController::class, 'update'])->name('password.update');
         Route::post('two-factor', [TwoFactorController::class, 'store'])->name('two-factor.store');
         Route::post('two-factor/confirmation', TwoFactorConfirmationController::class)->name('two-factor.confirmation.store');
-        Route::delete('two-factor', [TwoFactorController::class, 'destroy'])->name('two-factor.destroy');
-        Route::post('two-factor/recovery-codes', RecoveryCodeController::class)->name('two-factor.recovery-codes.store');
+
+        Route::middleware(EnsureTwoFactorWhenRequired::class)->group(static function (): void {
+            Route::put('tokens/current', [AccessTokenController::class, 'update'])->name('tokens.update');
+            Route::put('password', [PasswordController::class, 'update'])->name('password.update');
+            Route::delete('two-factor', [TwoFactorController::class, 'destroy'])->name('two-factor.destroy');
+            Route::post('two-factor/recovery-codes', RecoveryCodeController::class)->name('two-factor.recovery-codes.store');
+        });
     });
 });
 
