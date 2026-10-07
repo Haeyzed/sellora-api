@@ -28,6 +28,7 @@ final class FeatureGrantResource extends JsonResource
         return [
             'id' => $this->resource->public_id,
             'feature' => $this->resource->feature_key,
+            /** Null once the store was purged. */
             'reason' => $this->resource->reason,
             /** "active", or "ended" once its date passed or it was revoked; an ended grant leaves the feature locked unless the plan includes it. */
             'status' => $this->resource->isActive() ? 'active' : 'ended',

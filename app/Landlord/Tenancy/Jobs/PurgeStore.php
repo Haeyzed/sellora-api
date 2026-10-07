@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Landlord\Tenancy\Jobs;
 
+use App\Landlord\Subscriptions\Models\FeatureGrant;
+use App\Landlord\Subscriptions\Models\TenantLimitOverride;
 use App\Landlord\Tenancy\Enums\TenantStatus;
 use App\Landlord\Tenancy\Models\Domain;
 use App\Landlord\Tenancy\Models\ReleasedSubdomain;
@@ -25,8 +27,9 @@ use Illuminate\Support\Facades\File;
  * on a restore is refused, and a purge that stops halfway carries on from
  * where it was. Then, each step doing nothing if already done: drop the
  * database, delete the store's files and exports, delete its domains and hold
- * its subdomain, clear the owner's personal data, and mark it Purged. Its
- * subscriptions and the legal acceptances (the contract) are kept.
+ * its subdomain, clear the owner's personal data and every free-text reason,
+ * and mark it Purged. Its subscriptions, feature grants, limit overrides and
+ * the legal acceptances (the contract) are kept.
  */
 final class PurgeStore implements ShouldQueue
 {
@@ -132,7 +135,7 @@ final class PurgeStore implements ShouldQueue
     }
 
     /**
-     * Clears the owner's personal data, and the free-text reasons that may hold some, then marks the store Purged.
+     * Clears the owner's personal data, and the free-text reasons that may hold some (on the store, its feature grants and its limit overrides), then marks the store Purged.
      */
     private function finish(Tenant $store): void
     {
@@ -147,6 +150,10 @@ final class PurgeStore implements ShouldQueue
                 'closure_reason' => null,
                 'suspension_reason' => null,
             ])->save();
+
+            // Mass updates on purpose: an audited save would copy each reason into the audit trail as the old value.
+            FeatureGrant::query()->where('tenant_id', $locked->id)->whereNotNull('reason')->update(['reason' => null]);
+            TenantLimitOverride::query()->where('tenant_id', $locked->id)->whereNotNull('reason')->update(['reason' => null]);
 
             activity('stores')
                 ->causedByAnonymous()

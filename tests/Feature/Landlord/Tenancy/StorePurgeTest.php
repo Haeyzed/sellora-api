@@ -6,7 +6,9 @@ use App\Landlord\Identity\Models\PlatformAdmin;
 use App\Landlord\Legal\Models\LegalAcceptance;
 use App\Landlord\Legal\Models\LegalDocument;
 use App\Landlord\Plans\Models\Plan;
+use App\Landlord\Subscriptions\Models\FeatureGrant;
 use App\Landlord\Subscriptions\Models\Subscription;
+use App\Landlord\Subscriptions\Models\TenantLimitOverride;
 use App\Landlord\Tenancy\Enums\StoreExportStatus;
 use App\Landlord\Tenancy\Enums\TenantStatus;
 use App\Landlord\Tenancy\Jobs\PurgeStore;
@@ -110,6 +112,8 @@ it('deletes a closed store\'s data for good once its purge date has passed, keep
     $subscription = Subscription::factory()->create(['tenant_id' => $store->id, 'plan_id' => Plan::factory()->create()->id]);
     $acceptance = new LegalAcceptance(['legal_document_id' => LegalDocument::factory()->inForce()->create()->id, 'accepted_by_name' => 'Pat Owner', 'accepted_by_email' => 'pat@purged.example', 'accepted_at' => now()]);
     $acceptance->forceFill(['tenant_id' => $store->id])->save();
+    $featureGrant = FeatureGrant::query()->create(['tenant_id' => $store->id, 'feature_key' => 'loyalty', 'reason' => 'Pat asked for it after her surgery']);
+    $limitOverride = TenantLimitOverride::query()->create(['tenant_id' => $store->id, 'limit_key' => 'staff', 'limit_value' => 20, 'reason' => 'Pat hired her family']);
 
     expect(Artisan::call('stores:purge-closed'))->toBe(0);
 
@@ -125,6 +129,9 @@ it('deletes a closed store\'s data for good once its purge date has passed, keep
         ->and(Domain::query()->where('tenant_id', $store->id)->exists())->toBeFalse()
         ->and(Subscription::query()->whereKey($subscription->id)->exists())->toBeTrue()
         ->and(LegalAcceptance::query()->whereKey($acceptance->id)->exists())->toBeTrue()
+        ->and($featureGrant->refresh()->reason)->toBeNull()
+        ->and($limitOverride->refresh()->reason)->toBeNull()
+        ->and($limitOverride->limit_value)->toBe(20)
         ->and(Activity::query()->where('event', 'store_purged')->where('subject_id', $store->id)->exists())->toBeTrue();
     Storage::disk('store_exports')->assertMissing("{$store->id}/export.zip");
 });

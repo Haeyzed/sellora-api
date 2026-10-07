@@ -26,7 +26,7 @@ use Stancl\Tenancy\Database\Concerns\CentralConnection;
  * @property string $public_id
  * @property string $tenant_id
  * @property string $feature_key
- * @property string $reason
+ * @property string|null $reason Null only once the store was purged.
  * @property int|null $granted_by_id
  * @property CarbonImmutable|null $expires_at Null when it has no end date.
  * @property CarbonImmutable|null $revoked_at
