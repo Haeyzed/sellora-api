@@ -30,7 +30,7 @@ final class CloseOwnStoreRequest extends FormRequest
             'code' => ['nullable', 'prohibits:recovery_code', 'string', 'digits:6'],
             /** One of your recovery codes, when the authenticator app is not available. */
             'recovery_code' => ['nullable', 'string', 'max:32'],
-            /** Why you are closing the store, for Sellora's team. Optional. */
+            /** Why you are closing the store, for Sellora's team. Optional. A business reason only: never personal data such as health, family or contact details, because the platform keeps it in its activity and audit logs until their retention period ends. */
             'reason' => ['nullable', 'string', 'max:500'],
         ];
     }

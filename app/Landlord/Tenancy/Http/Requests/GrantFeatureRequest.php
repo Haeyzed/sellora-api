@@ -25,7 +25,7 @@ final class GrantFeatureRequest extends FormRequest
         return [
             /** The key of an installed module or integration, such as "loyalty". */
             'feature' => ['required', 'string', Rule::in(array_keys(app(FeatureRegistry::class)->all()))],
-            /** For the platform team, such as "Free for the launch month". */
+            /** For the platform team, such as "Free for the launch month". A business reason only: never personal data such as health, family or contact details, because the platform keeps it in its activity and audit logs until their retention period ends. */
             'reason' => ['required', 'string', 'min:3', 'max:500'],
             /** When the grant ends, ISO 8601. Left out for no end date. */
             'expires_at' => ['sometimes', 'nullable', 'date', 'after:now'],

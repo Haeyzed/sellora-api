@@ -19,7 +19,7 @@ final class CloseStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            /** For the platform team, such as "Owner asked by email to close it". */
+            /** For the platform team, such as "Owner asked by email to close it". A business reason only: never personal data such as health, family or contact details, because the platform keeps it in its activity and audit logs until their retention period ends. */
             'reason' => ['required', 'string', 'min:3', 'max:500'],
         ];
     }
