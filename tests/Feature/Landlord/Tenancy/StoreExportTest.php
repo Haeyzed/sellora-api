@@ -14,6 +14,7 @@ use App\Shared\Auth\Models\Role;
 use App\Shared\Privacy\Exceptions\UnclassifiedStoreDataException;
 use App\Shared\Privacy\StoreDataExporter;
 use App\Shared\Privacy\StoreExportRegistry;
+use App\Shared\Tenancy\StoreExportReadyNotification;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Delivery\Models\Driver;
 use App\Tenant\Identity\Enums\StaffRole;
@@ -25,6 +26,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -193,6 +195,7 @@ it('exports the store\'s data without a single secret, and says what it left out
 
 it('refuses to export a store with a column nobody classified, instead of exporting it', function (): void {
     Queue::fake();
+    Notification::fake();
     $this->store->run(static fn () => Schema::table('customers', static fn (Blueprint $table) => $table->string('secret_note')->nullable()));
 
     $exportId = platformExports('POST', $this->store)->assertAccepted()->assertJsonPath('data.status', 'queued')->json('data.id');
@@ -203,6 +206,7 @@ it('refuses to export a store with a column nobody classified, instead of export
     (new BuildStoreExport($storeExport->id))->failed(null);
     expect($storeExport->refresh()->status)->toBe(StoreExportStatus::Failed)
         ->and(Storage::disk('store_exports')->allFiles())->toBe([]);
+    Notification::assertNothingSent();
 });
 
 it('builds exports on the bulk queue, one at a time per store', function (): void {
@@ -316,4 +320,19 @@ it('never puts another store\'s data in an export, nor lets another store reach 
     expect(implode("\n", $files))->not->toContain('someone@other-store.example');
     ownerExports('GET', "/{$exportId}", $otherOwner, 'other-exported-store')->assertNotFound();
     ownerExports('GET', "/{$exportId}/download", $otherOwner, 'other-exported-store')->assertNotFound();
+});
+
+it('emails whoever asked for an export once it is ready, linking to their dashboard rather than the file', function (): void {
+    Notification::fake();
+
+    $adminExportId = platformExports('POST', $this->store)->assertAccepted()->json('data.id');
+    $ownerExportId = ownerExports('POST')->assertAccepted()->json('data.id');
+
+    $adminUrl = strtr(config()->string('tenancy.store_exports.ready_urls.platform_admin'), ['{store}' => $this->store->public_id, '{export}' => $adminExportId]);
+    $ownerUrl = strtr(config()->string('tenancy.store_exports.ready_urls.staff_member'), ['{domain}' => Tenant::platformDomainFor('exported-store'), '{export}' => $ownerExportId]);
+
+    Notification::assertSentTo($this->exporter, StoreExportReadyNotification::class, static fn (StoreExportReadyNotification $notification): bool => $notification->exportUrl() === $adminUrl);
+    Notification::assertSentTo($this->exportOwner, StoreExportReadyNotification::class, static fn (StoreExportReadyNotification $notification): bool => $notification->exportUrl() === $ownerUrl);
+    Notification::assertSentTimes(StoreExportReadyNotification::class, 2);
+    expect($ownerUrl)->not->toContain('{');
 });

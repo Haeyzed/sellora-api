@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace App\Landlord\Tenancy\Jobs;
 
+use App\Landlord\Identity\Models\PlatformAdmin;
 use App\Landlord\Tenancy\Enums\StoreExportStatus;
 use App\Landlord\Tenancy\Models\StoreExport;
+use App\Shared\Auth\AccountReference;
 use App\Shared\Privacy\StoreDataExporter;
+use App\Shared\Tenancy\Contracts\StoreAccountNotifications;
+use App\Shared\Tenancy\StoreExportReadyNotification;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Filesystem\Factory as FilesystemFactory;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -21,7 +25,8 @@ use ZipArchive;
  *
  * Runs on the bulk queue, so a large store never delays urgent work. The
  * working files live in a temporary folder that is always removed, and the
- * export is marked failed if every try fails.
+ * export is marked failed if every try fails. Once it is ready, whoever asked
+ * for it is emailed.
  */
 final class BuildStoreExport implements ShouldQueue
 {
@@ -44,7 +49,7 @@ final class BuildStoreExport implements ShouldQueue
     /**
      * @throws Throwable When writing or storing the export fails; the queue retries it.
      */
-    public function handle(StoreDataExporter $storeDataExporter, FilesystemFactory $filesystems): void
+    public function handle(StoreDataExporter $storeDataExporter, FilesystemFactory $filesystems, StoreAccountNotifications $storeAccountNotifications): void
     {
         $storeExport = StoreExport::query()->with('tenant')->find($this->storeExportId);
 
@@ -73,6 +78,40 @@ final class BuildStoreExport implements ShouldQueue
         } finally {
             File::deleteDirectory($workingFolder);
             File::delete($zipPath);
+        }
+
+        $this->notifyRequester($storeExport, $storeAccountNotifications);
+    }
+
+    /**
+     * Emails whoever asked for the export that it is ready. A store's owner is reached through the store, which holds their account.
+     *
+     * The export is ready whether or not the email goes out (the requester
+     * can also check its status), so a failure is reported, never retried:
+     * a retry would find the export ready and do nothing.
+     */
+    private function notifyRequester(StoreExport $storeExport, StoreAccountNotifications $storeAccountNotifications): void
+    {
+        $store = $storeExport->tenant;
+
+        try {
+            $exportUrl = strtr(config()->string("tenancy.store_exports.ready_urls.{$storeExport->requested_by_type}"), [
+                '{store}' => $store->public_id,
+                '{export}' => $storeExport->public_id,
+                '{domain}' => (string) $store->domains()->orderBy('id')->value('domain'),
+            ]);
+            $notification = new StoreExportReadyNotification($store->name, $storeExport->expires_at, $exportUrl);
+            $requester = new AccountReference($storeExport->requested_by_type, $storeExport->requested_by_id);
+
+            if ($requester->type === (new PlatformAdmin)->getMorphClass()) {
+                PlatformAdmin::query()->where('public_id', $requester->publicId)->where('is_active', true)->first()?->notify($notification);
+
+                return;
+            }
+
+            $store->run(static fn (): bool => $storeAccountNotifications->send($requester, $notification));
+        } catch (Throwable $exception) {
+            report($exception);
         }
     }
 

@@ -211,6 +211,12 @@ return [
         'queue' => env('STORE_EXPORT_QUEUE', 'bulk'),
         'default_disk' => env('STORE_EXPORT_DISK', 'store_exports'),
         'disks' => [],
+        // The dashboard page where the requester downloads an export, linked from the "export ready" email, by requester type.
+        // {store} is the store's public ID, {export} the export's, and {domain} the store's platform domain.
+        'ready_urls' => [
+            'platform_admin' => env('STORE_EXPORT_PLATFORM_URL', 'http://localhost:3000/stores/{store}/exports/{export}'),
+            'staff_member' => env('STORE_EXPORT_STORE_URL', 'https://{domain}/admin/settings/exports/{export}'),
+        ],
     ],
 
     /**

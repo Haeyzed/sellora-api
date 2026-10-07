@@ -35,6 +35,7 @@ use App\Shared\Retention\Policies\ActivityLogRetention;
 use App\Shared\Retention\Policies\AuditRetention;
 use App\Shared\Retention\Policies\ExpiredAccessTokenRetention;
 use App\Shared\Retention\RetentionRegistry;
+use App\Shared\Tenancy\Contracts\StoreAccountNotifications;
 use App\Shared\Tenancy\Contracts\StoreClosure;
 use App\Shared\Tenancy\Contracts\StoreExports;
 use App\Shared\Tenancy\Contracts\StoreOwnerAccounts;
@@ -50,6 +51,7 @@ use App\Tenant\Identity\IdentityStoreTables;
 use App\Tenant\Identity\Models\OwnershipTransfer;
 use App\Tenant\Identity\Models\StaffInvitation;
 use App\Tenant\Identity\Models\StaffMember;
+use App\Tenant\Identity\StaffAccountNotifications;
 use App\Tenant\Identity\StaffInvitationRetention;
 use App\Tenant\Identity\StaffPermissionCatalogue;
 use App\Tenant\Identity\StaffStoreOwnerAccounts;
@@ -97,6 +99,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(StoreSessions::class, StoreSignOut::class);
         $this->app->bind(StoreClosure::class, PlatformStoreClosure::class);
         $this->app->bind(StoreExports::class, PlatformStoreExports::class);
+        $this->app->bind(StoreAccountNotifications::class, StaffAccountNotifications::class);
     }
 
     /**
