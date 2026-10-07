@@ -87,6 +87,19 @@ arch('integrations never import modules')
     ->expect('Integrations')
     ->not->toUse('Modules');
 
+arch('only the Geography wrapper uses the world reference data package, which it identifies by ISO codes')
+    ->expect('App')
+    ->not->toUse('Nnjeim\World')
+    ->ignoring('App\Shared\Geography');
+
+arch('modules use Geography, never the world reference data package')
+    ->expect('Modules')
+    ->not->toUse('Nnjeim\World');
+
+arch('integrations use Geography, never the world reference data package')
+    ->expect('Integrations')
+    ->not->toUse('Nnjeim\World');
+
 arch('landlord domains are final')
     ->expect('App\Landlord')
     ->classes()

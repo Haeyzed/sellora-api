@@ -21,7 +21,6 @@ use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Notifications\AnonymousNotifiable;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
 use Spatie\Activitylog\Models\Activity;
@@ -50,7 +49,7 @@ afterEach(function (): void {
 });
 
 /**
- * Everything registration needs: a free plan, a version in force of every legal document, a database server, and two countries.
+ * Everything registration needs: a free plan, a version in force of every legal document, a database server, and the test countries (seedWorld()).
  */
 function openStoreRegistration(): DatabaseServer
 {
@@ -60,38 +59,9 @@ function openStoreRegistration(): DatabaseServer
         LegalDocument::factory()->ofType($type)->inForce()->create();
     }
 
-    $nigeria = DB::table('countries')->insertGetId(worldCountry('NG', 'Nigeria'));
-    $unitedStates = DB::table('countries')->insertGetId(worldCountry('US', 'United States'));
-    DB::table('currencies')->insert([worldCurrency($nigeria, 'NGN'), worldCurrency($unitedStates, 'USD')]);
-    DB::table('timezones')->insert([
-        ['country_id' => $nigeria, 'name' => 'Africa/Lagos'],
-        ['country_id' => $unitedStates, 'name' => 'America/New_York'],
-        ['country_id' => $unitedStates, 'name' => 'America/Chicago'],
-    ]);
+    seedWorld();
 
     return DatabaseServer::factory()->inRegion('africa')->create(['name' => 'africa-1', 'capacity' => 10]);
-}
-
-/**
- * @return array<string, string|int>
- */
-function worldCountry(string $iso2, string $name): array
-{
-    return [
-        'iso2' => $iso2, 'name' => $name, 'status' => 1, 'phone_code' => '1', 'iso3' => $iso2.'X', 'native' => $name,
-        'region' => 'World', 'subregion' => 'World', 'latitude' => '0', 'longitude' => '0', 'emoji' => '', 'emojiU' => '',
-    ];
-}
-
-/**
- * @return array<string, string|int>
- */
-function worldCurrency(int $countryId, string $code): array
-{
-    return [
-        'country_id' => $countryId, 'name' => $code, 'code' => $code, 'precision' => 2, 'symbol' => $code,
-        'symbol_native' => $code, 'symbol_first' => 1, 'decimal_mark' => '.', 'thousands_separator' => ',',
-    ];
 }
 
 /**
@@ -167,6 +137,7 @@ it('registers a store, sets it up on a server in its region, and lets the owner 
         ->and($store->hosting_region)->toBe('africa')
         ->and($store->currency_code)->toBe('NGN')
         ->and($store->timezone)->toBe('Africa/Lagos')
+        ->and($store->locale)->toBe('en')
         ->and($store->owner_email)->toBe('ada@example.com')
         ->and($store->database_server_id)->toBe($this->databaseServer->id)
         ->and($store->database()->getTemplateConnectionName())->toBe('database_server_'.$this->databaseServer->id)
@@ -278,6 +249,7 @@ it('limits how many stores one email can own, counting sign-ups in progress', fu
 it('asks for the timezone when the country has several, and only accepts the country\'s own', function (): void {
     signUpForStore(['country_code' => 'US'])->assertJsonValidationErrors('timezone');
     signUpForStore(['country_code' => 'US', 'timezone' => 'Africa/Lagos'])->assertJsonValidationErrors('timezone');
+    signUpForStore(['country_code' => 'US', 'timezone' => 'US/Eastern'])->assertJsonValidationErrors('timezone');
     signUpForStore(['country_code' => 'FR'])->assertJsonValidationErrors('country_code');
 
     signUpForStore(['country_code' => 'us', 'timezone' => 'America/Chicago'])->assertAccepted();
@@ -334,4 +306,14 @@ it('marks a store as failed when setting it up fails for good', function (): voi
     expect($store->status)->toBe(TenantStatus::ProvisioningFailed)
         ->and(StoreRegistration::query()->sole()->password_hash)->not->toBeNull()
         ->and(Activity::query()->where('subject_id', $store->id)->pluck('event')->all())->toBe(['store_registered', 'store_provisioning_failed']);
+});
+
+it('sets the store\'s currency and content language from its country', function (): void {
+    $storeRegistrationId = signUpForStore(['country_code' => 'DE'])->assertAccepted()->json('data.id');
+    confirmStoreSignUp($storeRegistrationId, lastStoreRegistrationCode())->assertAccepted();
+
+    expect(Tenant::query()->sole())
+        ->currency_code->toBe('EUR')
+        ->timezone->toBe('Europe/Berlin')
+        ->locale->toBe('de');
 });

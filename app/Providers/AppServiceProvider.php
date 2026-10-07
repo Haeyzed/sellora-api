@@ -135,7 +135,9 @@ final class AppServiceProvider extends ServiceProvider
      *
      * The store API is Scramble's default API, configured in config/scramble.php.
      * Registration shares its /api/v1 prefix, so it is told apart by route
-     * name. All document errors in the shape the API really returns.
+     * name. The geography reference data is served on both the central and
+     * store domains, so it appears in both documents. All document errors in
+     * the shape the API really returns.
      */
     private function registerApiDocumentation(): void
     {
@@ -149,7 +151,7 @@ final class AppServiceProvider extends ServiceProvider
             'ui' => [
                 'title' => config('app.name').' Store Registration API',
             ],
-        ])->routes(static fn (Route $route): bool => str_starts_with((string) $route->getName(), 'registration.'))
+        ])->routes(static fn (Route $route): bool => str_starts_with((string) $route->getName(), 'registration.') || str_starts_with((string) $route->getName(), 'geography.'))
             ->expose(ui: 'docs/registration', document: 'docs/registration.json');
 
         Scramble::registerApi('platform', [

@@ -16,11 +16,11 @@ use App\Landlord\Tenancy\Exceptions\SubdomainTakenException;
 use App\Landlord\Tenancy\Jobs\ProvisionStore;
 use App\Landlord\Tenancy\Models\StoreRegistration;
 use App\Landlord\Tenancy\Models\Tenant;
-use App\Landlord\Tenancy\Services\CountryDefaults;
 use App\Landlord\Tenancy\Services\StoreRegistrationCodes;
 use App\Landlord\Tenancy\Services\StoreRegistrationRequirements;
 use App\Landlord\Tenancy\Services\StoresPerEmailLimit;
 use App\Landlord\Tenancy\Services\StoreSubdomains;
+use App\Shared\Geography\Geography;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\UniqueConstraintViolationException;
 use LogicException;
@@ -39,7 +39,7 @@ final readonly class RegisterStore
         private StoreRegistrationRequirements $storeRegistrationRequirements,
         private StoresPerEmailLimit $storesPerEmailLimit,
         private StoreSubdomains $storeSubdomains,
-        private CountryDefaults $countryDefaults,
+        private Geography $geography,
         private StartSubscription $startSubscription,
     ) {}
 
@@ -88,6 +88,9 @@ final readonly class RegisterStore
         $this->storesPerEmailLimit->ensureRoomForOneMore($storeRegistration->email, replacing: $storeRegistration);
         $this->storeSubdomains->ensureFree($storeRegistration->subdomain, except: $storeRegistration);
 
+        $countryDefaults = $this->geography->defaultsFor($storeRegistration->country_code)
+            ?? throw new LogicException("Stores can no longer be registered in {$storeRegistration->country_code}.");
+
         $tenant = Tenant::query()->create([
             'name' => $storeRegistration->store_name,
             'status' => TenantStatus::Provisioning,
@@ -95,10 +98,9 @@ final readonly class RegisterStore
             'owner_name' => $storeRegistration->owner_name,
             'owner_email' => $storeRegistration->email,
             'country_code' => $storeRegistration->country_code,
-            'currency_code' => $this->countryDefaults->currencyCode($storeRegistration->country_code)
-                ?? throw new LogicException("The country {$storeRegistration->country_code} has no currency."),
+            'currency_code' => $countryDefaults->currencyCode,
             'timezone' => $storeRegistration->timezone,
-            'locale' => config()->string('app.locale'),
+            'locale' => $countryDefaults->locale,
         ]);
 
         try {

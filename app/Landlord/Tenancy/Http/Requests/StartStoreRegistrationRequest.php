@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Landlord\Tenancy\Http\Requests;
 
 use App\Landlord\Tenancy\Data\StoreRegistrationData;
-use App\Landlord\Tenancy\Services\CountryDefaults;
 use App\Landlord\Tenancy\Services\StoreSubdomains;
+use App\Shared\Geography\Geography;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -39,13 +39,11 @@ final class StartStoreRegistrationRequest extends FormRequest
             'owner_name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'string', 'email:rfc', 'max:254'],
             'password' => ['required', 'string', 'confirmed', Password::defaults()],
-            /** ISO 3166-1 alpha-2 code, such as "NG". Sets the store's default currency and timezone. */
+            /** ISO 3166-1 alpha-2 code, such as "NG", from the countries list. Sets the store's currency, timezone, content language and tax mode, which the merchant can change later. */
             'country_code' => [
                 'required', 'string', 'size:2',
                 function (string $attribute, mixed $value, Closure $fail): void {
-                    $countryDefaults = app(CountryDefaults::class);
-
-                    if (! is_string($value) || ! $countryDefaults->isKnown($value) || $countryDefaults->currencyCode($value) === null) {
+                    if (! is_string($value) || app(Geography::class)->defaultsFor($value) === null) {
                         $fail(__('validation.custom.country_code.unknown'));
                     }
                 },
@@ -73,7 +71,7 @@ final class StartStoreRegistrationRequest extends FormRequest
                     return;
                 }
 
-                $timezones = app(CountryDefaults::class)->timezones($this->countryCode());
+                $timezones = app(Geography::class)->defaultsFor($this->countryCode())->timezones ?? [];
                 $chosen = $this->filled('timezone') ? $this->string('timezone')->value() : null;
 
                 if ($chosen === null && count($timezones) !== 1) {
@@ -107,7 +105,7 @@ final class StartStoreRegistrationRequest extends FormRequest
             countryCode: $this->countryCode(),
             timezone: $this->filled('timezone')
                 ? $this->string('timezone')->value()
-                : app(CountryDefaults::class)->timezones($this->countryCode())[0],
+                : (app(Geography::class)->defaultsFor($this->countryCode())->timezones ?? [])[0],
             hostingRegion: $this->string('hosting_region')->value(),
             acceptedLegalDocumentIds: $acceptedLegalDocumentIds,
             ipAddress: $this->ip(),

@@ -14,6 +14,7 @@ use App\Shared\Http\Middleware\ForceJsonResponse;
 use App\Shared\Idempotency\EnsureRequestIsIdempotent;
 use App\Shared\Retention\PurgeExpiredRecordsCommand;
 use App\Shared\Tenancy\Http\Middleware\EnsureCentralDomain;
+use App\Shared\Tenancy\Http\Middleware\IdentifyStoreUnlessCentral;
 use App\Shared\Tenancy\TenantRoutes;
 use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Foundation\Application;
@@ -41,6 +42,12 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->prefix('webhooks')
                 ->name('webhooks.')
                 ->group(base_path('routes/webhooks.php'));
+
+            // Reference data for forms, on the central domain and on every store's domain alike.
+            Route::middleware(['api', IdentifyStoreUnlessCentral::class])
+                ->prefix('api/v1')
+                ->name('geography.')
+                ->group(base_path('routes/geography.php'));
 
             Route::middleware(TenantRoutes::MIDDLEWARE)
                 ->prefix(TenantRoutes::PREFIX)
