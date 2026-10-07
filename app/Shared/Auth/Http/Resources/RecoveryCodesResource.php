@@ -28,7 +28,7 @@ final class RecoveryCodesResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            /** Each code works once. They can't be shown again, so ask the person to store them safely. */
+            /** @var list<string> Each code works once. They can't be shown again, so ask the person to store them safely. */
             'recovery_codes' => $this->resource,
         ];
     }

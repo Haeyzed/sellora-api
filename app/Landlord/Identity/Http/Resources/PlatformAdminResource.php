@@ -30,9 +30,9 @@ final class PlatformAdminResource extends JsonResource
             'id' => $this->resource->public_id,
             'name' => $this->resource->name,
             'email' => $this->resource->email,
-            /** Role names, such as "super_admin". */
+            /** @var list<string> Role names, such as "super_admin". */
             'roles' => array_values($this->resource->getRoleNames()->all()),
-            /** Every permission held, directly or through a role, sorted by name. */
+            /** @var list<string> Every permission held, directly or through a role, sorted by name. */
             'permissions' => array_values($this->resource->getAllPermissions()->map(static fn (Permission $permission): string => $permission->name)->sort()->all()),
             'last_signed_in_at' => $this->resource->last_signed_in_at?->toIso8601String(),
             /** Whether sign-in asks for a code from an authenticator app. */

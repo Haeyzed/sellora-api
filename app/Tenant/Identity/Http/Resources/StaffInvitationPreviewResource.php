@@ -30,7 +30,7 @@ final class StaffInvitationPreviewResource extends JsonResource
             'email' => $this->resource->email,
             /** The name the inviter suggested, to prefill. */
             'name' => $this->resource->name,
-            /** Role names the person will have. */
+            /** @var list<string> Role names the person will have. */
             'roles' => array_values($this->resource->roles->map(static fn (Role $role): string => $role->name)->all()),
             'expires_at' => $this->resource->expires_at->toIso8601String(),
         ];

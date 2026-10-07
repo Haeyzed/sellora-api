@@ -36,7 +36,7 @@ final class PlatformRoleResource extends JsonResource
             'is_built_in' => $isSuperAdmin,
             /** True for Super Admin, which may do everything without needing each permission. */
             'grants_everything' => $isSuperAdmin,
-            /** Permission names, sorted. Empty for Super Admin, which needs none. */
+            /** @var list<string> Permission names, sorted. Empty for Super Admin, which needs none. */
             'permissions' => $this->whenLoaded('permissions', fn (): array => array_values($this->resource->permissions->map(static fn (Permission $permission): string => $permission->name)->sort()->all())),
             /** How many platform admins have the role, deactivated ones included. */
             'admin_count' => $this->whenHas('admin_count'),

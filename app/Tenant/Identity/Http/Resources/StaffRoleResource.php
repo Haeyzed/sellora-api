@@ -36,7 +36,7 @@ final class StaffRoleResource extends JsonResource
             'is_built_in' => $isOwner,
             /** True for Owner, which may do everything without needing each permission. */
             'grants_everything' => $isOwner,
-            /** Permission names, sorted. Empty for Owner, which needs none. */
+            /** @var list<string> Permission names, sorted. Empty for Owner, which needs none. */
             'permissions' => $this->whenLoaded('permissions', fn (): array => array_values($this->resource->permissions->map(static fn (Permission $permission): string => $permission->name)->sort()->all())),
             /** How many staff members have the role, deactivated ones included. */
             'staff_count' => $this->whenHas('staff_count'),

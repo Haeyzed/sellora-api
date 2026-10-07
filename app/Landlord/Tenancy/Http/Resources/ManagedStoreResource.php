@@ -30,6 +30,7 @@ final class ManagedStoreResource extends JsonResource
             'id' => $this->resource->public_id,
             'name' => $this->resource->name,
             'status' => $this->resource->status,
+            /** @var list<string> The store's domains, such as "ada-fabrics.sellora.test". */
             'domains' => $this->whenLoaded('domains', fn (): array => array_values($this->resource->domains->map(static fn (Domain $domain): string => $domain->domain)->all())),
             'hosting_region' => $this->resource->hosting_region,
             /** Null once the store is purged: the owner's personal data is cleared. */
