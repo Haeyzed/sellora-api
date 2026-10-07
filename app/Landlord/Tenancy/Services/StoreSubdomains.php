@@ -6,6 +6,7 @@ namespace App\Landlord\Tenancy\Services;
 
 use App\Landlord\Tenancy\Exceptions\SubdomainTakenException;
 use App\Landlord\Tenancy\Models\Domain;
+use App\Landlord\Tenancy\Models\ReleasedSubdomain;
 use App\Landlord\Tenancy\Models\StoreRegistration;
 use App\Landlord\Tenancy\Models\Tenant;
 use LogicException;
@@ -15,7 +16,8 @@ use LogicException;
  *
  * A sign-up holds its subdomain while it waits for its code, so someone else
  * can't take it in between. The unique index on domains settles the race if
- * two sign-ups are verified at the same moment.
+ * two sign-ups are verified at the same moment. A purged store's subdomain
+ * stays taken for a while, so nobody can take over its old links.
  */
 final readonly class StoreSubdomains
 {
@@ -49,6 +51,10 @@ final readonly class StoreSubdomains
     public function isTaken(string $subdomain, ?StoreRegistration $except = null): bool
     {
         if (Domain::query()->where('domain', Tenant::platformDomainFor($subdomain))->exists()) {
+            return true;
+        }
+
+        if (ReleasedSubdomain::query()->held()->where('subdomain', $subdomain)->exists()) {
             return true;
         }
 

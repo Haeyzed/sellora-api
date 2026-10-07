@@ -36,8 +36,8 @@ use Stancl\Tenancy\DatabaseConfig;
  * @property TenantStatus $status
  * @property string $hosting_region Where its database, files and backups live, such as "eu". Fixed after registration.
  * @property int|null $database_server_id Null until the store is placed on a server.
- * @property string $owner_name
- * @property string $owner_email
+ * @property string|null $owner_name Null only once the store is purged.
+ * @property string|null $owner_email Null only once the store is purged.
  * @property string $country_code ISO 3166-1 alpha-2.
  * @property string $currency_code ISO 4217, the default from the country.
  * @property string $timezone
@@ -52,6 +52,7 @@ use Stancl\Tenancy\DatabaseConfig;
  * @property TenantStatus|null $status_before_closing Where a restore returns it to, so closing never lifts a suspension.
  * @property CarbonImmutable|null $purge_after When its data may be deleted for good, if it is still closed.
  * @property CarbonImmutable|null $purge_reminder_sent_at
+ * @property CarbonImmutable|null $purged_at
  * @property array<string, mixed>|null $data
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
@@ -101,6 +102,7 @@ final class Tenant extends BaseTenant implements TenantWithDatabase
             'status_before_closing',
             'purge_after',
             'purge_reminder_sent_at',
+            'purged_at',
         ];
     }
 
@@ -180,6 +182,7 @@ final class Tenant extends BaseTenant implements TenantWithDatabase
             'status_before_closing' => TenantStatus::class,
             'purge_after' => 'immutable_datetime',
             'purge_reminder_sent_at' => 'immutable_datetime',
+            'purged_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];

@@ -19,7 +19,7 @@ afterEach(function (): void {
     deleteAllStores();
 });
 
-it('migrates every store with a database, suspended and closed ones included, and skips stores still being set up or failed', function (): void {
+it('migrates every store with a database, suspended and closed ones included, and skips stores being set up, failed or purged', function (): void {
     $active = createStore('active-store');
     $suspended = createStore('suspended-store');
     $suspended->update(['status' => TenantStatus::Suspended]);
@@ -27,6 +27,8 @@ it('migrates every store with a database, suspended and closed ones included, an
     $closed->update(['status' => TenantStatus::Closed, 'status_before_closing' => TenantStatus::Active, 'closed_at' => now(), 'purge_after' => now()->addDays(90)]);
     $provisioning = Tenant::factory()->provisioning()->create();
     $failed = Tenant::factory()->create(['status' => TenantStatus::ProvisioningFailed]);
+    $purging = Tenant::factory()->create(['status' => TenantStatus::Purging]);
+    $purged = Tenant::factory()->create(['status' => TenantStatus::Purged]);
 
     expect(Artisan::call('tenants:migrate'))->toBe(0);
     $output = Artisan::output();
@@ -35,7 +37,9 @@ it('migrates every store with a database, suspended and closed ones included, an
         ->toContain($suspended->id)
         ->toContain($closed->id)
         ->not->toContain($provisioning->id)
-        ->not->toContain($failed->id);
+        ->not->toContain($failed->id)
+        ->not->toContain($purging->id)
+        ->not->toContain($purged->id);
 });
 
 it('runs on exactly the stores named, which is how a new store is migrated while being set up', function (): void {

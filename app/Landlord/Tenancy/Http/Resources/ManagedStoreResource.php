@@ -32,6 +32,7 @@ final class ManagedStoreResource extends JsonResource
             'status' => $this->resource->status,
             'domains' => $this->whenLoaded('domains', fn (): array => array_values($this->resource->domains->map(static fn (Domain $domain): string => $domain->domain)->all())),
             'hosting_region' => $this->resource->hosting_region,
+            /** Null once the store is purged: the owner's personal data is cleared. */
             'owner' => [
                 'name' => $this->resource->owner_name,
                 'email' => $this->resource->owner_email,
@@ -61,6 +62,8 @@ final class ManagedStoreResource extends JsonResource
                 'purge_after' => $this->resource->purge_after?->toIso8601String(),
             ],
             'provisioned_at' => $this->resource->provisioned_at?->toIso8601String(),
+            /** When its data was deleted for good. */
+            'purged_at' => $this->resource->purged_at?->toIso8601String(),
             'created_at' => $this->resource->created_at?->toIso8601String(),
         ];
     }

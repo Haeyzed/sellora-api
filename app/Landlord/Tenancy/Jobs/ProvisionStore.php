@@ -67,7 +67,7 @@ final class ProvisionStore implements ShouldBeUnique, ShouldQueue
 
         $storeRegistration = StoreRegistration::query()->where('tenant_id', $tenant->id)->first();
 
-        $hasOwner = $tenant->run(static function () use ($tenant, $storeRegistration, $storeOwnerAccounts): bool {
+        $hasOwner = $tenant->run(static function () use ($storeRegistration, $storeOwnerAccounts): bool {
             if ($storeOwnerAccounts->hasOwner()) {
                 return true;
             }
@@ -76,7 +76,8 @@ final class ProvisionStore implements ShouldBeUnique, ShouldQueue
                 return false;
             }
 
-            $storeOwnerAccounts->createOwner($tenant->owner_name, $tenant->owner_email, $storeRegistration->password_hash);
+            // The sign-up the store came from: the owner's details as they registered, with the password hash.
+            $storeOwnerAccounts->createOwner($storeRegistration->owner_name, $storeRegistration->email, $storeRegistration->password_hash);
 
             return true;
         });

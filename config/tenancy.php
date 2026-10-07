@@ -187,6 +187,20 @@ return [
     'purge_reminder_days' => (int) env('PURGE_REMINDER_DAYS', 7),
 
     /**
+     * Whether the daily purge deletes closed stores past their purge date.
+     * Off by default: it stays off in production until per-region encrypted
+     * backups exist and a restore has been tested, because a purge is the
+     * one thing in the system that can't be undone (section 9.1).
+     */
+    'purge_enabled' => (bool) env('PURGE_ENABLED', false),
+
+    /**
+     * How many days a purged store's subdomain stays unavailable, so nobody
+     * can register it and receive the old store's links and traffic.
+     */
+    'released_subdomain_hold_days' => (int) env('RELEASED_SUBDOMAIN_HOLD_DAYS', 365),
+
+    /**
      * Full store exports (section 9.1), built on the bulk queue and kept
      * privately on the store's regional disk. "disks" maps a hosting region
      * to a private disk in that region (in production, a bucket there);

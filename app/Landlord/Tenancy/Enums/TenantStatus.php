@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Landlord\Tenancy\Enums;
 
 /**
- * Where a store is in its life: being set up, open, suspended by the platform, failed to set up, or closed.
+ * Where a store is in its life: being set up, open, suspended by the platform, failed to set up, closed, or purged.
  */
 enum TenantStatus: string
 {
@@ -31,6 +31,17 @@ enum TenantStatus: string
     case Closed = 'closed';
 
     /**
+     * Its data is being deleted for good. Can no longer be restored; a purge that stopped halfway carries on from here.
+     */
+    case Purging = 'purging';
+
+    /**
+     * Its data is gone: no database, files, domains or owner details. The row stays as a record, with its
+     * subscription history and the legal acceptances that were the contract.
+     */
+    case Purged = 'purged';
+
+    /**
      * Whether the store's domains serve requests.
      */
     public function servesRequests(): bool
@@ -49,12 +60,12 @@ enum TenantStatus: string
     }
 
     /**
-     * The statuses of stores that may not have a database yet, which commands run across every store skip.
+     * The statuses of stores that may have no database (not yet, or no longer), which commands run across every store skip.
      *
      * @return list<self>
      */
     public static function withoutDatabase(): array
     {
-        return [self::Provisioning, self::ProvisioningFailed];
+        return [self::Provisioning, self::ProvisioningFailed, self::Purging, self::Purged];
     }
 }
