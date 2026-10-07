@@ -9,6 +9,7 @@ use App\Shared\Auth\Exceptions\InvalidTwoFactorCodeException;
 use App\Shared\Auth\Exceptions\TooManyIncorrectAttemptsException;
 use App\Shared\Auth\IdentityConfirmation;
 use App\Tenant\Identity\Models\StaffMember;
+use App\Tenant\Settings\Exceptions\MissingStoreSettingsException;
 use App\Tenant\Settings\Exceptions\OwnTwoFactorRequiredException;
 use App\Tenant\Settings\Models\StoreSettings;
 
@@ -33,6 +34,7 @@ final readonly class ChangeStaffTwoFactorRequirement
      * @throws InvalidTwoFactorCodeException When the owner uses two-factor authentication and the code is missing, wrong or used.
      * @throws TooManyIncorrectAttemptsException After too many wrong passwords or codes.
      * @throws OwnTwoFactorRequiredException When requiring it while the owner doesn't use it.
+     * @throws MissingStoreSettingsException When the store has no settings row, which is a bug.
      */
     public function handle(StaffMember $owner, bool $required, string $currentPassword, ?string $code, ?string $recoveryCode): StoreSettings
     {
@@ -42,10 +44,8 @@ final readonly class ChangeStaffTwoFactorRequirement
             throw new OwnTwoFactorRequiredException;
         }
 
-        $this->findStoreSettings->handle();
-
-        return StoreSettings::query()->getConnection()->transaction(static function () use ($owner, $required): StoreSettings {
-            $settings = StoreSettings::query()->lockForUpdate()->findOrFail(1);
+        return StoreSettings::query()->getConnection()->transaction(function () use ($owner, $required): StoreSettings {
+            $settings = $this->findStoreSettings->forUpdate();
 
             if ($settings->require_staff_two_factor === $required) {
                 return $settings;

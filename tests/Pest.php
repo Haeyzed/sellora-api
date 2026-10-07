@@ -6,6 +6,7 @@ use App\Landlord\Tenancy\Models\Tenant;
 use App\Landlord\Tenancy\Services\StoreDatabase;
 use App\Shared\Auth\TwoFactor\Contracts\TwoFactorAuthenticatable;
 use App\Shared\Auth\TwoFactor\TwoFactorAuthenticator;
+use App\Shared\Tenancy\Contracts\StoreSettingsSetup;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use PragmaRX\Google2FA\Google2FA;
@@ -36,13 +37,17 @@ pest()->extend(TestCase::class)->in('Feature');
 */
 
 /**
- * Creates an active store with its own database, reachable on "<subdomain>.<platform domain>".
+ * Creates an active store with its own database and settings, reachable on "<subdomain>.<platform domain>".
+ *
+ * @param  array<string, mixed>  $attributes  Overrides for the store's row, such as its name or country, which its first settings are made from.
  */
-function createStore(string $subdomain): Tenant
+function createStore(string $subdomain, array $attributes = []): Tenant
 {
-    $store = Tenant::factory()->create();
+    $store = Tenant::factory()->create($attributes);
     $store->domains()->create(['domain' => Tenant::platformDomainFor($subdomain)]);
     app(StoreDatabase::class)->prepare($store);
+    // As setting a store up does: every store has its settings from the start.
+    $store->run(static fn () => app(StoreSettingsSetup::class)->initialize());
 
     return $store;
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tenant\Settings\Actions;
 
 use App\Shared\Money\PricedRecordsRegistry;
+use App\Tenant\Settings\Exceptions\MissingStoreSettingsException;
 use App\Tenant\Settings\Exceptions\PricingSettingsLockedException;
 use App\Tenant\Settings\Jobs\SyncStoreProfile;
 use App\Tenant\Settings\Models\StoreSettings;
@@ -29,13 +30,12 @@ final readonly class UpdateStoreSettings
      * @param  array<string, mixed>  $changes  Validated settings, by column.
      *
      * @throws PricingSettingsLockedException When the base currency or tax mode would change while something is priced.
+     * @throws MissingStoreSettingsException When the store has no settings row, which is a bug.
      */
     public function handle(array $changes): StoreSettings
     {
-        $this->findStoreSettings->handle();
-
         return StoreSettings::query()->getConnection()->transaction(function () use ($changes): StoreSettings {
-            $settings = StoreSettings::query()->lockForUpdate()->findOrFail(1);
+            $settings = $this->findStoreSettings->forUpdate();
             $settings->fill($changes);
 
             if ($settings->isDirty(StoreSettings::PRICING_FIELDS) && $this->pricedRecordsRegistry->anyExist()) {

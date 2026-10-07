@@ -8,9 +8,11 @@ use App\Shared\Auth\AccessTokenIssuer;
 use App\Shared\Auth\Models\Role;
 use App\Shared\Money\Contracts\PricedRecords;
 use App\Shared\Money\PricedRecordsRegistry;
+use App\Shared\Tenancy\Contracts\StoreSettingsSetup;
 use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Settings\Actions\FindStoreSettings;
+use App\Tenant\Settings\Exceptions\MissingStoreSettingsException;
 use App\Tenant\Settings\Jobs\SyncStoreProfile;
 use App\Tenant\Settings\Models\StoreSettings;
 use Illuminate\Database\QueryException;
@@ -44,8 +46,7 @@ final class AlwaysPricedRecords implements PricedRecords
 beforeEach(function (): void {
     seedWorld();
 
-    $this->store = createStore('settings-store');
-    $this->store->update(['name' => 'Ada Fabrics']);
+    $this->store = createStore('settings-store', ['name' => 'Ada Fabrics']);
 
     [$this->owner, $this->viewer, $this->outsider] = $this->store->run(static function (): array {
         $owner = StaffMember::factory()->create();
@@ -99,7 +100,12 @@ it('starts a store with what it was registered with and its country\'s tax mode 
 });
 
 it('starts a store in the United States tax-exclusive, in pounds and inches', function (): void {
+    // Set the store up again as if it had registered in the United States.
     $this->store->update(['country_code' => 'US', 'currency_code' => 'USD', 'timezone' => 'America/Chicago']);
+    $this->store->run(static function (): void {
+        DB::table('store_settings')->delete();
+        app(StoreSettingsSetup::class)->initialize();
+    });
 
     storeSettingsRequest('GET')->assertOk()
         ->assertJsonPath('data.tax_mode', 'exclusive')
@@ -226,4 +232,13 @@ it('keeps exactly one settings row, with its default language enabled, in the da
             ->and(static fn () => DB::transaction(static fn () => DB::table('store_settings')->update(['address_state_code' => 'LA'])))
             ->toThrow(QueryException::class, 'store_settings_state_needs_country');
     });
+});
+
+it('fails loudly when a store has no settings, instead of creating them on read', function (): void {
+    $this->store->run(static fn () => DB::table('store_settings')->delete());
+
+    storeSettingsRequest('GET')->assertServerError();
+
+    expect($this->store->run(static fn (): int => DB::table('store_settings')->count()))->toBe(0)
+        ->and(fn () => $this->store->run(static fn () => app(FindStoreSettings::class)->handle()))->toThrow(MissingStoreSettingsException::class);
 });

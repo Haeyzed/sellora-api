@@ -18,8 +18,9 @@ use Carbon\CarbonImmutable;
  *
  * Country defaults apply only here, at sign-up (section 9.1); changing the
  * country later changes nothing else. The row is inserted only if missing,
- * so setting a store up again, or two requests racing, never overwrite
- * settings the merchant has changed.
+ * so setting a store up again never overwrites settings the merchant has
+ * changed. Only setting a store up calls this: reads never create settings
+ * (section 3.3).
  */
 final readonly class StoreSettingsDefaults implements StoreSettingsSetup
 {

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Tenant\Settings\Jobs;
 
 use App\Shared\Tenancy\Contracts\StoreProfile;
-use App\Tenant\Settings\Models\StoreSettings;
+use App\Tenant\Settings\Actions\FindStoreSettings;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -36,14 +36,8 @@ final class SyncStoreProfile implements ShouldQueue
         return CarbonImmutable::now()->addWeek();
     }
 
-    public function handle(StoreProfile $storeProfile): void
+    public function handle(StoreProfile $storeProfile, FindStoreSettings $findStoreSettings): void
     {
-        $settings = StoreSettings::query()->find(1);
-
-        if ($settings === null) {
-            return;
-        }
-
-        $storeProfile->update($settings->profileDetails());
+        $storeProfile->update($findStoreSettings->handle()->profileDetails());
     }
 }
