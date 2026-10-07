@@ -268,6 +268,8 @@ This platform targets merchants and shoppers worldwide. **Never hard-code anythi
 - Address formats differ by country: states, postcodes and city rules are not universal. Validate per country using `nnjeim/world` data, and never require fields a country doesn't use.
 - Phone numbers are stored in E.164 format (`+2348012345678`, `+14155550123`).
 - Store weights and dimensions in metric internally, and let each store choose display units.
+- **Country defaults** (content language, tax mode, display units) live in `config/geography.php` and apply only at sign-up. Where reference data can't identify something (for example a state with no ISO code), never make that field required for that country; fall back to optional free text.
+- **Required data is created when its owner is created, never lazily on first read.** A missing settings row is a bug that must fail loudly, not be patched over by a silent write inside a read.
 
 **Personal data and privacy**
 - Design for data-protection laws such as GDPR (Europe), NDPA (Nigeria) and CCPA (California): a store can export or delete a customer's personal data on request, and a tenant can be fully exported or deleted.
@@ -346,6 +348,7 @@ sellora-api/
 │   │   ├── storefront.php
 │   │   └── delivery.php              # driver app endpoints + staff delivery management
 │   ├── registration.php              # central domain, no sign-in: hosting regions, legal documents, store sign-up (docs at /docs/registration)
+│   ├── geography.php                 # read-only countries, states, currencies, timezones, locales; served on the central domain AND store domains
 │   ├── webhooks.php                  # central domain; shared webhook entry points
 │   ├── channels.php                  # Reverb channel authorization, tenant- and guard-aware
 │   └── console.php
@@ -397,7 +400,7 @@ app/
 │
 ├── Shared/                           # Infrastructure used by all zones. No business rules.
 │   ├── Features/                     # plan gating (see 5.6)
-│   ├── Tenancy/                      # glue around the tenancy package; TenantRoutes.php is the single definition of how store routes are served (core and modules)
+│   ├── Tenancy/                      # glue around the tenancy package; TenantRoutes.php is the single definition of how store routes are served (core and modules); Contracts/ for cross-database work (store setup, owner contact, store profile sync)
 │   ├── Geography/                    # thin read-only access to nnjeim/world reference data
 │   ├── Auth/                         # shared sign-in pieces for all four guards: token issuing, credential check with lockout, password change and reset
 │   │   ├── TwoFactor/                # 2FA challenges, codes and recovery codes; the ONLY place allowed to use pragmarx/google2fa
@@ -410,7 +413,9 @@ app/
 │   │   ├── MoneyCast.php             # stores amount + currency columns (currency column may be shared)
 │   │   ├── Decimal.php               # high-precision internal numbers (exchange rates, unit costs)
 │   │   ├── DecimalCast.php           # fixed-scale column; refuses values with too many decimals
-│   │   └── MoneyResource.php         # {amount, currency, formatted} in every API response
+│   │   ├── MoneyResource.php         # {amount, currency, formatted} in every API response
+│   │   ├── Currencies.php            # ISO 4217 list and decimals (the source of truth for currencies)
+│   │   └── PricedRecordsRegistry.php # domains holding prices register here; locks base currency and tax mode once anything is priced
 │   ├── Http/
 │   │   ├── Controller.php            # abstract base controller
 │   │   └── Middleware/               # app-wide middleware only, e.g. ForceJsonResponse
