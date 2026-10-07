@@ -18,6 +18,7 @@ use Stancl\Tenancy\Database\Concerns\CentralConnection;
  * @property int $legal_document_id
  * @property int|null $store_registration_id Set while the sign-up hasn't become a store.
  * @property string|null $tenant_id
+ * @property string|null $reference What the acceptance was part of, such as an ownership transfer, so it is recorded once.
  * @property string $accepted_by_name
  * @property string $accepted_by_email
  * @property string|null $ip_address

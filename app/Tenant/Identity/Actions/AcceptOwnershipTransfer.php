@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace App\Tenant\Identity\Actions;
 
 use App\Shared\Auth\Models\Role;
-use App\Shared\Tenancy\Contracts\StoreOwnership;
+use App\Shared\Tenancy\Contracts\StoreOwnerContact;
 use App\Shared\Tenancy\Exceptions\TermsOfServiceNotAcceptedException;
 use App\Tenant\Identity\Enums\OwnershipTransferStatus;
 use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Exceptions\OwnershipTransferNotPendingException;
+use App\Tenant\Identity\Jobs\SyncStoreOwnerContact;
 use App\Tenant\Identity\Models\OwnershipTransfer;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Identity\OwnershipTransferredNotification;
@@ -20,13 +21,15 @@ use Illuminate\Auth\Access\AuthorizationException;
  * The chosen colleague takes over the store: they become the owner, and the previous owner keeps only the roles they chose.
  *
  * The transfer row is locked while it is used, so it is accepted once even
- * under racing requests, and a cancellation can't slip in halfway. The
- * platform side (owner contact, terms of service acceptance) is updated last,
- * so if it refuses, nothing in the store has changed either.
+ * under racing requests, and a cancellation can't slip in halfway. The store
+ * database is the source of truth (section 6): the terms of service version
+ * is checked with the platform first, the store commits the handover, and
+ * then a queued job updates the platform's owner contact and records the
+ * acceptance, retrying until it succeeds.
  */
 final readonly class AcceptOwnershipTransfer
 {
-    public function __construct(private StoreOwnership $storeOwnership) {}
+    public function __construct(private StoreOwnerContact $storeOwnerContact) {}
 
     /**
      * @param  string  $acceptedTermsOfServiceId  Public ID of the terms of service version the new owner accepts.
@@ -37,6 +40,8 @@ final readonly class AcceptOwnershipTransfer
      */
     public function handle(StaffMember $recipient, OwnershipTransfer $ownershipTransfer, string $acceptedTermsOfServiceId, ?string $ipAddress, ?string $userAgent): OwnershipTransfer
     {
+        $this->storeOwnerContact->ensureTermsOfServiceInForce($acceptedTermsOfServiceId);
+
         $ownershipTransfer = OwnershipTransfer::query()->getConnection()->transaction(function () use ($recipient, $ownershipTransfer, $acceptedTermsOfServiceId, $ipAddress, $userAgent): OwnershipTransfer {
             $locked = OwnershipTransfer::query()->whereKey($ownershipTransfer->id)->lockForUpdate()->firstOrFail();
 
@@ -49,9 +54,14 @@ final readonly class AcceptOwnershipTransfer
             }
 
             $previousOwner = $locked->fromStaffMember;
+            $locked->forceFill([
+                'accepted_terms_of_service_id' => $acceptedTermsOfServiceId,
+                'acceptance_ip_address' => $ipAddress,
+                'acceptance_user_agent' => $userAgent === null ? null : mb_substr($userAgent, 0, 512),
+            ]);
             $this->handOver($locked, $previousOwner, $recipient);
-            $this->storeOwnership->recordNewOwner($recipient->name, $recipient->email, $acceptedTermsOfServiceId, $ipAddress, $userAgent);
             $this->notifyBoth($previousOwner, $recipient);
+            dispatch(new SyncStoreOwnerContact($locked->id))->afterCommit();
 
             return $locked;
         });

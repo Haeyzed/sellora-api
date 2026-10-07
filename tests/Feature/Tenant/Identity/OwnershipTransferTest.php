@@ -5,11 +5,15 @@ declare(strict_types=1);
 use App\Landlord\Legal\Enums\LegalDocumentType;
 use App\Landlord\Legal\Models\LegalAcceptance;
 use App\Landlord\Legal\Models\LegalDocument;
+use App\Landlord\Tenancy\Enums\TenantStatus;
 use App\Landlord\Tenancy\Models\Tenant;
 use App\Shared\Auth\AccessTokenIssuer;
 use App\Shared\Auth\Models\Role;
+use App\Shared\Tenancy\Contracts\StoreOwnerContact;
+use App\Shared\Tenancy\TermsOfServiceAcceptance;
 use App\Tenant\Identity\Enums\OwnershipTransferStatus;
 use App\Tenant\Identity\Enums\StaffRole;
+use App\Tenant\Identity\Jobs\SyncStoreOwnerContact;
 use App\Tenant\Identity\Models\OwnershipTransfer;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Identity\OwnershipTransferOfferNotification;
@@ -18,6 +22,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Spatie\Activitylog\Models\Activity;
@@ -251,4 +256,84 @@ it('never lets a transfer of one store be used in another', function (): void {
 
     ownershipTransfer('POST', "/{$transferId}/acceptance", ['accepted_terms_of_service' => $this->termsOfService->public_id], $otherStaffMember, 'other-store')->assertNotFound();
     expect(storeOwnershipState())->toMatchArray(['owner' => true, 'colleague' => false]);
+});
+
+/**
+ * Runs the queued job that brings the platform up to date, in the store's context, as a queue worker would.
+ */
+function runOwnerContactSync(SyncStoreOwnerContact $job): void
+{
+    test()->store->run(static fn () => app()->call([$job, 'handle']));
+    tenancy()->end();
+}
+
+it('commits the handover in the store first, then updates the platform, retrying a failure until both agree', function (): void {
+    Queue::fake();
+    $transferId = offerStoreToColleague()->assertCreated()->json('data.id');
+    acceptStore($transferId)->assertOk();
+
+    $job = Queue::pushed(SyncStoreOwnerContact::class)->sole();
+    expect(storeOwnershipState())->toMatchArray(['owner' => false, 'colleague' => true])
+        ->and($job->retryUntil())->toBeGreaterThanOrEqual(now()->addDays(6))
+        ->and($this->store->refresh()->owner_email)->not->toBe('ada@example.com');
+
+    app()->instance(StoreOwnerContact::class, new class implements StoreOwnerContact
+    {
+        public function ensureTermsOfServiceInForce(string $termsOfServiceId): void {}
+
+        public function update(string $name, string $email, ?TermsOfServiceAcceptance $acceptance = null): void
+        {
+            throw new RuntimeException('The central database is unavailable.');
+        }
+    });
+    expect(static fn () => runOwnerContactSync($job))->toThrow(RuntimeException::class);
+    tenancy()->end();
+    expect($this->store->refresh()->owner_email)->not->toBe('ada@example.com')
+        ->and(storeOwnershipState())->toMatchArray(['colleague' => true]);
+
+    app()->forgetInstance(StoreOwnerContact::class);
+    runOwnerContactSync($job);
+    runOwnerContactSync($job);
+
+    $store = $this->store->refresh();
+    expect($store->owner_name)->toBe('Ada Colleague')
+        ->and($store->owner_email)->toBe('ada@example.com')
+        ->and(LegalAcceptance::query()->where('tenant_id', $store->id)->where('legal_document_id', $this->termsOfService->id)->where('accepted_by_email', 'ada@example.com')->count())->toBe(1);
+});
+
+it('records the terms of service version accepted, even when a newer one takes effect before the platform hears of it', function (): void {
+    Queue::fake();
+    $transferId = offerStoreToColleague()->assertCreated()->json('data.id');
+    acceptStore($transferId)->assertOk();
+
+    LegalDocument::factory()->ofType(LegalDocumentType::TermsOfService)->create(['published_at' => now()->subMinute(), 'effective_at' => now()->subMinute()]);
+    runOwnerContactSync(Queue::pushed(SyncStoreOwnerContact::class)->sole());
+
+    expect(LegalAcceptance::query()->where('tenant_id', $this->store->id)->where('accepted_by_email', 'ada@example.com')->sole()->legal_document_id)
+        ->toBe($this->termsOfService->id);
+});
+
+it('sends the owner\'s new name or email to the platform, and nobody else\'s', function (): void {
+    Queue::fake();
+
+    $this->store->run(fn () => StaffMember::query()->findOrFail($this->manager->id)->update(['email' => 'new-manager@example.com']));
+    $this->store->run(fn () => StaffMember::query()->findOrFail($this->owner->id)->forceFill(['last_signed_in_at' => now()])->save());
+    Queue::assertNotPushed(SyncStoreOwnerContact::class);
+
+    $this->store->run(fn () => StaffMember::query()->findOrFail($this->owner->id)->update(['email' => 'new-owner@example.com', 'name' => 'Olu Renamed']));
+    runOwnerContactSync(Queue::pushed(SyncStoreOwnerContact::class)->sole());
+
+    expect($this->store->refresh()->owner_email)->toBe('new-owner@example.com')
+        ->and($this->store->owner_name)->toBe('Olu Renamed');
+});
+
+it('never brings back the owner details of a store being purged', function (): void {
+    Queue::fake();
+    $this->store->update(['owner_email' => 'kept@example.com']);
+    $this->store->run(fn () => StaffMember::query()->findOrFail($this->owner->id)->update(['email' => 'late@example.com']));
+    $this->store->update(['status' => TenantStatus::Purging]);
+
+    runOwnerContactSync(Queue::pushed(SyncStoreOwnerContact::class)->sole());
+
+    expect($this->store->refresh()->owner_email)->toBe('kept@example.com');
 });

@@ -25,6 +25,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property CarbonImmutable $expires_at
  * @property CarbonImmutable|null $accepted_at
  * @property CarbonImmutable|null $cancelled_at
+ * @property string|null $accepted_terms_of_service_id Public ID of the terms of service version the new owner accepted.
+ * @property string|null $acceptance_ip_address
+ * @property string|null $acceptance_user_agent
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property-read StaffMember $fromStaffMember

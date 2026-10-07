@@ -9,6 +9,8 @@ use App\Shared\Auth\TwoFactor\Contracts\TwoFactorAuthenticatable;
 use App\Shared\Auth\TwoFactor\HasTwoFactorAuthentication;
 use App\Shared\Concerns\HasNormalisedEmail;
 use App\Shared\Concerns\HasPublicId;
+use App\Tenant\Identity\Enums\StaffRole;
+use App\Tenant\Identity\Jobs\SyncStoreOwnerContact;
 use Carbon\CarbonImmutable;
 use Database\Factories\Tenant\StaffMemberFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -81,6 +83,18 @@ final class StaffMember extends User implements HasApiTokensContract, TwoFactorA
     protected static function newFactory(): StaffMemberFactory
     {
         return StaffMemberFactory::new();
+    }
+
+    /**
+     * The platform keeps the owner's name and email as the store's contact, so a change to them is sent on once it has committed (section 6).
+     */
+    protected static function booted(): void
+    {
+        self::updated(static function (self $staffMember): void {
+            if ($staffMember->wasChanged(['name', 'email']) && $staffMember->hasRole(StaffRole::Owner->value)) {
+                dispatch(new SyncStoreOwnerContact)->afterCommit();
+            }
+        });
     }
 
     /**

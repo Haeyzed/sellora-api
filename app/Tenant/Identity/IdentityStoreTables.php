@@ -34,7 +34,7 @@ final class IdentityStoreTables implements ClassifiesStoreTables
         );
         $registry->table('staff_invitation_roles', include: ['staff_invitation_id', 'role_id']);
 
-        $registry->table('ownership_transfers', include: ['id', 'public_id', 'from_staff_member_id', 'to_staff_member_id', 'status', 'expires_at', 'accepted_at', 'cancelled_at', 'created_at', 'updated_at']);
+        $registry->table('ownership_transfers', include: ['id', 'public_id', 'from_staff_member_id', 'to_staff_member_id', 'status', 'expires_at', 'accepted_at', 'cancelled_at', 'accepted_terms_of_service_id', 'acceptance_ip_address', 'acceptance_user_agent', 'created_at', 'updated_at']);
         $registry->table('ownership_transfer_kept_roles', include: ['ownership_transfer_id', 'role_id']);
     }
 }
