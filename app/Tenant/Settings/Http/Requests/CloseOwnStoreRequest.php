@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tenant\Settings\Http\Requests;
 
+use App\Tenant\Identity\Concerns\ActsAsStaffMember;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**

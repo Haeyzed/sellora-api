@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tenant\Identity\Http\Requests;
 
+use App\Tenant\Identity\Concerns\ActsAsStaffMember;
 use App\Tenant\Identity\Models\StaffInvitation;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
