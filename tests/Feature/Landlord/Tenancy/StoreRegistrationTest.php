@@ -24,6 +24,7 @@ use App\Tenant\Settings\Enums\WeightUnit;
 use App\Tenant\Settings\Models\StoreSettings;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Notifications\AnonymousNotifiable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
 use Spatie\Activitylog\Models\Activity;
@@ -155,6 +156,19 @@ it('registers a store, sets it up on a server in its region, and lets the owner 
 
     expect($store->run(static fn (): bool => StaffMember::query()->sole()->hasRole(StaffRole::Owner->value)))->toBeTrue();
     Notification::assertSentOnDemand(StoreReadyNotification::class, static fn (StoreReadyNotification $notification): bool => $notification->dashboardUrl() === 'https://ada-fabrics.'.config('platform.domain').'/admin');
+});
+
+it('closes its connection to the database server after creating or dropping a store database', function (): void {
+    $storeRegistrationId = signUpForStore()->assertAccepted()->json('data.id');
+    confirmStoreSignUp($storeRegistrationId, lastStoreRegistrationCode())->assertAccepted();
+
+    // A worker that kept it open would hold one idle connection per server for as long as it runs.
+    $serverConnection = 'database_server_'.$this->databaseServer->id;
+    expect(DB::getConnections())->not->toHaveKey($serverConnection);
+
+    deleteAllStores();
+
+    expect(DB::getConnections())->not->toHaveKey($serverConnection);
 });
 
 it('counts every wrong code, even though the request fails, and needs a new code after five', function (): void {
