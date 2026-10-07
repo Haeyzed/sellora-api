@@ -400,7 +400,7 @@ app/
 │   │   ├── TwoFactor/                # 2FA challenges, codes and recovery codes; the ONLY place allowed to use pragmarx/google2fa
 │   │   └── Models/Role.php           # the one role model for both sides (the permissions package allows only one); always scoped by guard
 │   ├── Idempotency/                  # Idempotency-Key middleware and stored replay responses
-│   ├── Privacy/                      # privacy registry: export and erase handlers per kind of person
+│   ├── Privacy/                      # privacy registry (export and erase handlers per kind of person) and the store export registry
 │   ├── Retention/                    # retention periods and the scheduled per-tenant purge
 │   ├── Money/
 │   │   ├── Money.php                 # value object wrapping brick/money: minor units + currency
@@ -716,10 +716,13 @@ Each domain has a **public surface** that other domains may use, and **private i
 | `Events/` | `Services/` |
 | `Exceptions/` | |
 | `Models/` (**read only**) | |
+| `Concerns/` (traits other domains may use, e.g. `Tenant\Identity\Concerns\ActsAsStaffMember`) | |
 
 - **Only a domain changes its own data.** Orders may read a `Product`, but it never updates one. To change stock, it calls an Inventory Action or Inventory reacts to an Orders event.
 - **Prefer events for reactions.** Payments announces `PaymentSucceeded`, and Orders listens and marks the order paid. Payments never calls into Orders.
 - **Use Actions for direct requests**, when one domain needs another to do something right now and needs the result, such as Checkout calling `Inventory\Actions\ReserveStock`.
+- **Never copy another domain's private code to get around this table.** If several domains need the same helper, the owning domain makes it public (usually in `Concerns/` or `Contracts/`); one copy, not one per domain.
+- **Writes across the central and store databases can't share one transaction.** The store database is the source of truth for what happens inside a store, so commit the store change first, then update the central side through a Shared contract with an idempotent queued job that retries until it succeeds. Check anything that could make the central side refuse (for example the current terms version) before the store commits.
 - **Core offers extension points; modules plug in.** Core never imports a module to support it. Instead, core defines contracts for the places modules need to hook in, and modules register implementations from their service providers. Examples: payment methods offered at checkout (gift cards, instalments, store credit), discount sources (loyalty points, promotions), order-line enrichers, and checkout validators. Core collects whatever is registered and only uses the ones whose module is enabled for the tenant.
 
 ---
@@ -727,7 +730,7 @@ Each domain has a **public surface** that other domains may use, and **private i
 ## 7. Dependency rules (non-negotiable)
 
 1. **Core never imports `Modules\` or `Integrations\`.**
-2. **Landlord and Tenant stay apart.** Tenant domains never import Landlord models; they ask through `App\Shared\Features`. Landlord domains never query tenant databases directly.
+2. **Landlord and Tenant stay apart.** Tenant domains never import Landlord models; they ask through `App\Shared\Features`. Landlord domains never query tenant databases directly. The platform may initialise a store's tenancy to run Shared infrastructure through contracts (tenant migrations, the store export, revoking sign-ins), but Landlord code never reads or writes store tables itself.
 3. Modules and integrations may use core's public surface (section 6) only.
 4. Modules never import other modules, except for a dependency declared in the provider. Even then, they use only its public surface.
 5. Integrations never import modules.
@@ -737,13 +740,21 @@ Each domain has a **public surface** that other domains may use, and **private i
 These rules are enforced by Pest architecture tests in `tests/Architecture/`, for example:
 
 ```php
-arch('core does not depend on modules or integrations')
+arch('core does not depend on modules')
     ->expect('App')
-    ->not->toUse(['Modules', 'Integrations']);
+    ->not->toUse('Modules');
 
-arch('shared contains no business logic')
+arch('core does not depend on integrations')
+    ->expect('App')
+    ->not->toUse('Integrations');
+
+arch('shared does not depend on the landlord side')
     ->expect('App\Shared')
-    ->not->toUse(['App\Landlord', 'App\Tenant']);
+    ->not->toUse('App\Landlord');
+
+arch('shared does not depend on stores')
+    ->expect('App\Shared')
+    ->not->toUse('App\Tenant');
 
 arch('domains are final')
     ->expect(['App\Landlord', 'App\Tenant'])
@@ -814,7 +825,7 @@ Until merchant billing is decided (section 16), new stores register on the plan 
 - Codes last 60 minutes; 5 wrong codes require a new code. Abandoned sign-ups are deleted 7 days after expiry, together with their legal acceptances (no contract was formed). A real store's acceptances are kept as evidence of the contract.
 - Confirming the code creates the store (status `provisioning`), its subdomain and its `free` subscription, then queues setup. Setup is retry-safe (5 tries with growing waits) before the store becomes `provisioning_failed`. The owner's password hash is held only until their account exists, then deleted.
 - The owner is created through a Shared contract (Landlord never writes to a store database itself), and **the owner does not count toward the staff limit**; the limit covers additional staff.
-- A store that isn't `active` answers every request with 503 `store_unavailable`, checked when the store is identified from its domain.
+- A store that doesn't serve requests (`provisioning`, `provisioning_failed`, `closed`, `purging`, `purged`) answers every request with 503 `store_unavailable`, checked when the store is identified from its domain. Suspended stores are still served (section 8).
 - Published legal document versions never change. A version published for a future date doesn't replace the current one until it takes effect.
 - **Running tenant migrations across all stores skips only stores that have no database yet** (`provisioning` before its database exists, and `provisioning_failed`). Suspended and closed-but-not-purged stores still have databases and must stay migrated, or reactivating them would break.
 
@@ -883,7 +894,7 @@ There are four guards, all on Sanctum. Each guard has its own model, provider, l
 - **Ownership transfer** has two steps. The current owner starts it (current password, plus a 2FA code when they have 2FA) and chooses which roles they keep afterwards (required; may be none). The chosen person must be active staff, and **accepts while signed in** within 72 hours, accepting Sellora's current terms of service as they do, because the contract with Sellora moves to them. Nothing changes until they accept; the owner can cancel before then. Only one transfer can be pending per store. On acceptance the new owner gets the Owner role, the platform's owner contact is updated through a Shared contract, both people are emailed, and the change goes in the store's activity log.
 - **Role names** are unique per guard ignoring case, enforced by a functional unique index on `lower(name)` as well as validation. A role still in use can't be deleted.
 - **The staff limit** counts active staff plus pending invitations; deactivated staff don't count.
-- **Platform admins** are authorized with `spatie/laravel-permission` roles and permissions on the `platform` guard (central database). Their actions (granting roles, suspending stores, feature grants) are written to the central activity log and audited.
+- **Platform admins** are authorized with `spatie/laravel-permission` roles and permissions on the `platform` guard (central database). Their actions (granting roles, suspending stores, feature grants) are written to the central activity log and audited. **When a store account triggers a platform action** (for example an owner closing their store), the central log entry has no causer and records the account as account type plus public ID, because a store account's database ID means nothing centrally. Never let the activity log fill in the signed-in user by default on such entries.
 - **Staff** are authorized with `spatie/laravel-permission` roles and permissions on the `staff` guard (tenant database), through Policies.
 - **Customers** can only access their own data (orders, addresses, profile). This is enforced with Policies and scoped queries, not roles.
 - **Drivers** can only see and update deliveries assigned to them. Authorization is by assignment, through Policies, not staff roles. A driver never sees other drivers' deliveries, unassigned orders, prices beyond what delivery needs, or store settings.
@@ -1151,6 +1162,7 @@ If you notice a security problem anywhere, in the legacy project, in this reposi
 - Before creating any class, check that its name and location follow sections 5 and 12.
 - If something is ambiguous, ask rather than guess. Wrong guesses on structure are expensive to undo.
 - Commit in small, focused commits with clear messages that say what changed and why. Never commit secrets, `.env` files or generated files.
+- **Unpushed commits may be cleaned up** (for example folding a fix into the commit that introduced the bug); pushed commits are never rewritten.
 - **Every commit must pass on its own.** Before each commit, clear Larastan's result cache and run Larastan plus that commit's tests with only that commit's changes in place. A test may never depend on code from a later commit.
 - Claude Code never edits this `CLAUDE.md` itself; proposed changes go in the report (section 2.3).
 - A CI pipeline (for example GitHub Actions) runs Pint, Larastan, Pest (including architecture and tenant-isolation tests) and `composer audit` on every push. Nothing is merged while CI fails.
