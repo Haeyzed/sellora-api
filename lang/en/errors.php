@@ -98,4 +98,7 @@ return [
     'subscription_already_exists' => 'This store already has a subscription. Change its plan instead.',
     'plan_not_available' => 'The ":plan" plan is not available.',
 
+    'brand_slug_taken' => 'Another brand already uses this slug. Choose another.',
+    'brand_restore_conflict' => 'Another brand now uses this brand\'s slug. Change one of the slugs, then restore it.',
+
 ];

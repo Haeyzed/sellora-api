@@ -26,6 +26,11 @@ return [
         'manage' => 'Change staff members\' roles, and deactivate or reactivate them.',
     ],
 
+    'catalog' => [
+        'view' => 'See the catalog: brands, categories and products, including drafts, archived items and the trash.',
+        'manage' => 'Create and change brands, categories and products, move them to the trash and restore them.',
+    ],
+
     'roles' => [
         'view' => 'See the store\'s roles and what each one allows.',
         'manage' => 'Create, rename and delete roles, and choose what each one allows.',

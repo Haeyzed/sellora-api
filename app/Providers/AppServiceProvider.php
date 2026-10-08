@@ -46,6 +46,9 @@ use App\Shared\Tenancy\Contracts\StoreOwnerContact;
 use App\Shared\Tenancy\Contracts\StoreProfile;
 use App\Shared\Tenancy\Contracts\StoreSessions;
 use App\Shared\Tenancy\Contracts\StoreSettingsSetup;
+use App\Tenant\Catalog\CatalogStoreTables;
+use App\Tenant\Catalog\Enums\CatalogPermission;
+use App\Tenant\Catalog\Models\Brand;
 use App\Tenant\Customers\CustomerStoreTables;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Delivery\DeliveryStoreTables;
@@ -86,6 +89,7 @@ use Laravel\Sanctum\PersonalAccessToken;
 use Laravel\Sanctum\Sanctum;
 use Laravel\Telescope\TelescopeServiceProvider as TelescopePackageServiceProvider;
 use Sentry\State\Scope;
+use Spatie\Translatable\Translatable;
 
 use function Sentry\configureScope;
 
@@ -127,6 +131,7 @@ final class AppServiceProvider extends ServiceProvider
             $catalogue = new StaffPermissionCatalogue;
             $catalogue->register(StaffPermission::class);
             $catalogue->register(SettingsPermission::class);
+            $catalogue->register(CatalogPermission::class);
 
             return $catalogue;
         });
@@ -145,6 +150,18 @@ final class AppServiceProvider extends ServiceProvider
         $this->defineStoreLifecycleAbilities();
         $this->tagErrorReportsWithGuard();
         $this->registerApiDocumentation();
+        $this->fallBackToAnyTranslation();
+    }
+
+    /**
+     * A text missing in both the requested and the store's default language shows any language it has, rather than nothing.
+     *
+     * The store's default language comes first (HasStoreTranslations); this
+     * last resort is the same for every store, so it is safe to set once.
+     */
+    private function fallBackToAnyTranslation(): void
+    {
+        $this->app->make(Translatable::class)->fallback(fallbackAny: true);
     }
 
     /**
@@ -219,7 +236,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->singleton(StoreExportRegistry::class, static function (Application $app): StoreExportRegistry {
             $registry = new StoreExportRegistry;
 
-            foreach ([SharedStoreTables::class, IdentityStoreTables::class, SettingsStoreTables::class, CustomerStoreTables::class, DeliveryStoreTables::class] as $storeTables) {
+            foreach ([SharedStoreTables::class, IdentityStoreTables::class, SettingsStoreTables::class, CustomerStoreTables::class, DeliveryStoreTables::class, CatalogStoreTables::class] as $storeTables) {
                 $app->make($storeTables)->classify($registry);
             }
 
@@ -253,6 +270,7 @@ final class AppServiceProvider extends ServiceProvider
             'plan_feature' => PlanFeature::class,
             'plan_limit' => PlanLimit::class,
             'ownership_transfer' => OwnershipTransfer::class,
+            'brand' => Brand::class,
         ]);
     }
 
