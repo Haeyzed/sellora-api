@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Landlord\Identity\Enums\PlatformPermission;
 use App\Shared\Auth\AccessTokenIssuer;
 use App\Shared\Auth\Models\Role;
 use App\Shared\Features\Contracts\FeatureSource;
@@ -10,8 +11,10 @@ use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffInvitation;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Identity\StaffInvitationNotification;
+use App\Tenant\Identity\StaffPermissionCatalogue;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Notifications\AnonymousNotifiable;
+use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
 use OwenIt\Auditing\Models\Audit;
@@ -364,6 +367,12 @@ it('lists the permissions roles can grant, with descriptions', function (): void
     team('GET', 'team/permissions', as: $this->owner)
         ->assertOk()
         ->assertJsonFragment(['name' => 'staff.invite', 'description' => __('permissions.staff.invite')]);
+});
+
+it('describes every permission a store\'s or the platform\'s roles can grant', function (): void {
+    $permissionNames = [...app(StaffPermissionCatalogue::class)->all(), ...array_column(PlatformPermission::cases(), 'value')];
+
+    expect(array_values(array_filter($permissionNames, static fn (string $name): bool => ! Lang::has("permissions.{$name}", 'en', false))))->toBe([]);
 });
 
 it('keeps invitations and roles inside their own store', function (): void {

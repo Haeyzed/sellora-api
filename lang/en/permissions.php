@@ -31,6 +31,11 @@ return [
         'manage' => 'Create and change brands, categories and products, move them to the trash and restore them.',
     ],
 
+    'settings' => [
+        'view' => 'See the store\'s settings: name, country, currency, languages, tax mode, units and contact details.',
+        'manage' => 'Change the store\'s settings. Requiring two-factor authentication for staff stays with the owner.',
+    ],
+
     'roles' => [
         'view' => 'See the store\'s roles and what each one allows.',
         'manage' => 'Create, rename and delete roles, and choose what each one allows.',
