@@ -8,6 +8,7 @@ use App\Shared\Money\TaxMode;
 use App\Shared\Tenancy\StoreProfileDetails;
 use App\Tenant\Settings\Enums\DimensionUnit;
 use App\Tenant\Settings\Enums\WeightUnit;
+use App\Tenant\Settings\StoreLocales;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use OwenIt\Auditing\Auditable;
@@ -80,6 +81,16 @@ final class StoreSettings extends Model implements AuditableContract
      * @var list<string>
      */
     protected $auditExclude = ['id'];
+
+    /**
+     * Saved settings may change the store's languages, so the remembered ones are forgotten.
+     */
+    protected static function booted(): void
+    {
+        self::saved(static function (): void {
+            app(StoreLocales::class)->forget();
+        });
+    }
 
     /**
      * The details the platform keeps a copy of.

@@ -65,6 +65,7 @@ use App\Tenant\Settings\Enums\SettingsPermission;
 use App\Tenant\Settings\Models\StoreSettings;
 use App\Tenant\Settings\Policies\StoreLifecyclePolicy;
 use App\Tenant\Settings\SettingsStoreTables;
+use App\Tenant\Settings\StoreLocales;
 use App\Tenant\Settings\StoreSettingsDefaults;
 use App\Tenant\Settings\StoreTwoFactorRequirement;
 use Dedoc\Scramble\Scramble;
@@ -113,6 +114,8 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(StoreProfile::class, PlatformStoreProfile::class);
         $this->app->bind(StoreSettingsSetup::class, StoreSettingsDefaults::class);
         $this->app->bind(TwoFactorRequirement::class, StoreTwoFactorRequirement::class);
+        // Per request or job, so a long-running worker never reuses one store's languages for the next.
+        $this->app->scoped(StoreLocales::class);
     }
 
     /**
