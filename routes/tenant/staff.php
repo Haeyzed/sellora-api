@@ -29,6 +29,8 @@ Route::prefix('staff/team')
         Route::get('members', [TeamMemberController::class, 'index'])->name('members.index');
         Route::get('members/{staffMember}', [TeamMemberController::class, 'show'])->name('members.show');
         Route::put('members/{staffMember}/roles', [TeamMemberController::class, 'updateRoles'])->name('members.roles.update');
+        Route::get('members/{staffMember}/permissions', [TeamMemberController::class, 'permissions'])->name('members.permissions.show');
+        Route::put('members/{staffMember}/permissions', [TeamMemberController::class, 'updatePermissions'])->name('members.permissions.update');
         Route::post('members/{staffMember}/deactivate', [TeamMemberController::class, 'deactivate'])->name('members.deactivate');
         Route::post('members/{staffMember}/reactivate', [TeamMemberController::class, 'reactivate'])->name('members.reactivate');
 

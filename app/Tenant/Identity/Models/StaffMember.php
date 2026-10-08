@@ -18,6 +18,8 @@ use Illuminate\Foundation\Auth\User;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\Contracts\HasApiTokens as HasApiTokensContract;
 use Laravel\Sanctum\HasApiTokens;
+use OwenIt\Auditing\Auditable;
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
@@ -40,8 +42,9 @@ use Spatie\Permission\Traits\HasRoles;
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  */
-final class StaffMember extends User implements HasApiTokensContract, TwoFactorAuthenticatable
+final class StaffMember extends User implements AuditableContract, HasApiTokensContract, TwoFactorAuthenticatable
 {
+    use Auditable;
     use HasApiTokens;
 
     /** @use HasFactory<StaffMemberFactory> */
@@ -69,6 +72,13 @@ final class StaffMember extends User implements HasApiTokensContract, TwoFactorA
     protected $hidden = [
         'password',
     ];
+
+    /**
+     * Only changes to their direct permissions are audited (through auditSync); profile and sign-in changes go in the activity log instead, so secrets never reach an audit record.
+     *
+     * @var list<string>
+     */
+    protected $auditEvents = [];
 
     /**
      * Emails a link into the store dashboard to choose a new password.

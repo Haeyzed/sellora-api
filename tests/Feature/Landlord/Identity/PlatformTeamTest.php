@@ -210,3 +210,44 @@ it('manages platform roles from the permission list, audited in the central data
     $role = Role::query()->where('public_id', $roleId)->sole();
     expect(Audit::query()->where('auditable_type', 'role')->where('auditable_id', (string) $role->id)->where('user_id', $this->superAdmin->id)->count())->toBeGreaterThanOrEqual(2);
 });
+
+it('gives a platform admin permissions directly, on top of their roles, audited and logged', function (): void {
+    $support = platformTeamMember('Sam Support', 'Support');
+    Role::findByName('Support', PlatformAdmin::GUARD)->givePermissionTo(PlatformPermission::StoresView->value);
+
+    platformTeam('PUT', "team/admins/{$support->public_id}/permissions", ['permissions' => [PlatformPermission::StoresExport->value]], $this->superAdmin)
+        ->assertOk()
+        ->assertJsonPath('data.holds_every_permission', false)
+        ->assertJsonPath('data.permissions.*.name', ['stores.export', 'stores.view'])
+        ->assertJsonPath('data.permissions.0.sources', [['type' => 'direct', 'role' => null]])
+        ->assertJsonPath('data.permissions.1.sources', [['type' => 'role', 'role' => 'Support']]);
+
+    $audit = Audit::query()->where('auditable_type', 'platform_admin')->where('auditable_id', $support->id)->sole();
+    $activity = Activity::query()->where('event', 'platform_admin_permissions_changed')->sole();
+
+    expect($support->fresh()?->can(PlatformPermission::StoresExport->value))->toBeTrue()
+        ->and($audit->event)->toBe('sync')
+        ->and(collect($audit->new_values['permissions'] ?? [])->pluck('name')->all())->toBe(['stores.export'])
+        ->and($activity->causer?->is($this->superAdmin))->toBeTrue()
+        ->and($activity->properties->all())->toBe(['previous_permissions' => [], 'permissions' => ['stores.export']]);
+
+    platformTeam('GET', "team/admins/{$this->superAdmin->public_id}/permissions", as: $this->superAdmin)
+        ->assertOk()
+        ->assertJsonPath('data.holds_every_permission', true)
+        ->assertJsonCount(count(PlatformPermission::cases()), 'data.permissions')
+        ->assertJsonPath('data.permissions.0.sources', [['type' => 'role', 'role' => 'super_admin']]);
+});
+
+it('never lets an admin change their own permissions, gives super admins none directly, and is for super admins only', function (): void {
+    $otherSuperAdmin = platformTeamMember('Bo Super', PlatformRole::SuperAdmin->value);
+    $support = platformTeamMember('Sam Support', 'Support');
+    $path = static fn (PlatformAdmin $platformAdmin): string => "team/admins/{$platformAdmin->public_id}/permissions";
+
+    platformTeam('PUT', $path($this->superAdmin), ['permissions' => []], $this->superAdmin)->assertForbidden()->assertJsonPath('code', 'cannot_manage_own_account');
+    platformTeam('PUT', $path($otherSuperAdmin), ['permissions' => ['stores.view']], $this->superAdmin)->assertConflict()->assertJsonPath('code', 'super_admin_protected');
+    platformTeam('PUT', $path($support), ['permissions' => ['stores.everything']], $this->superAdmin)->assertUnprocessable()->assertJsonValidationErrors('permissions.0');
+    platformTeam('PUT', $path($support), ['permissions' => ['stores.view']], $support)->assertForbidden();
+    platformTeam('GET', $path($support), as: $support)->assertForbidden();
+
+    expect($support->permissions()->count() + $otherSuperAdmin->permissions()->count())->toBe(0);
+});

@@ -79,6 +79,7 @@ return [
     'platform_admin_invitation_invalid' => 'This invitation link is invalid, has expired or was already used. Ask for a new one.',
     'last_super_admin' => 'At least one active super admin must remain.',
     'platform_role_protected' => 'The Super Admin role cannot be changed or deleted.',
+    'super_admin_protected' => 'A super admin may already do everything; change their roles instead of giving them permissions.',
     'platform_role_in_use' => 'This role is still given to platform admins or pending invitations. Remove it from them first.',
     'store_status_conflict' => 'This cannot be done while the store is in its current status.',
     'store_export_in_progress' => 'An export of this store is already being prepared. Wait for it to finish.',

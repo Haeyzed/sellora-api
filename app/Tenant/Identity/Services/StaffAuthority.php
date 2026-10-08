@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tenant\Identity\Services;
 
+use App\Shared\Auth\EffectivePermissions;
 use App\Shared\Auth\Models\Role;
 use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Exceptions\CannotManageOwnAccountException;
@@ -46,6 +47,29 @@ final readonly class StaffAuthority
         }
 
         return array_values($staffMember->getAllPermissions()->map(static fn (Permission $permission): string => $permission->name)->unique()->all());
+    }
+
+    /**
+     * Every permission a staff member holds and where each comes from: their roles, or given directly. The owner holds the whole catalogue through the Owner role.
+     */
+    public function effectivePermissionsOf(StaffMember $staffMember): EffectivePermissions
+    {
+        if ($this->isOwner($staffMember)) {
+            return EffectivePermissions::everythingThrough(StaffRole::Owner->value, $this->permissionCatalogue->all());
+        }
+
+        $roles = Role::query()
+            ->with('permissions')
+            ->where('guard_name', StaffMember::GUARD)
+            ->whereIn('name', $staffMember->getRoleNames())
+            ->get();
+        $permissionsByRole = [];
+
+        foreach ($roles as $role) {
+            $permissionsByRole[$role->name] = $this->permissionNamesOf($role);
+        }
+
+        return EffectivePermissions::from($permissionsByRole, array_values($staffMember->permissions()->pluck('name')->all()));
     }
 
     /**

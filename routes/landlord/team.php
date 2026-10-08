@@ -27,6 +27,8 @@ Route::prefix('team')
         Route::get('admins', [PlatformTeamMemberController::class, 'index'])->name('admins.index');
         Route::get('admins/{platformAdmin}', [PlatformTeamMemberController::class, 'show'])->name('admins.show');
         Route::put('admins/{platformAdmin}/roles', [PlatformTeamMemberController::class, 'updateRoles'])->name('admins.roles.update');
+        Route::get('admins/{platformAdmin}/permissions', [PlatformTeamMemberController::class, 'permissions'])->name('admins.permissions.show');
+        Route::put('admins/{platformAdmin}/permissions', [PlatformTeamMemberController::class, 'updatePermissions'])->name('admins.permissions.update');
         Route::post('admins/{platformAdmin}/deactivate', [PlatformTeamMemberController::class, 'deactivate'])->name('admins.deactivate');
         Route::post('admins/{platformAdmin}/reactivate', [PlatformTeamMemberController::class, 'reactivate'])->name('admins.reactivate');
         Route::post('admins/{platformAdmin}/two-factor-reset', [PlatformTeamMemberController::class, 'resetTwoFactor'])->name('admins.two-factor-reset');

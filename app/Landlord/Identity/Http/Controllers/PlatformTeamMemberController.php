@@ -4,21 +4,27 @@ declare(strict_types=1);
 
 namespace App\Landlord\Identity\Http\Controllers;
 
+use App\Landlord\Identity\Actions\ChangePlatformAdminPermissions;
 use App\Landlord\Identity\Actions\ChangePlatformAdminRoles;
 use App\Landlord\Identity\Actions\DeactivatePlatformAdmin;
 use App\Landlord\Identity\Actions\ReactivatePlatformAdmin;
 use App\Landlord\Identity\Actions\ResetPlatformAdminTwoFactor;
 use App\Landlord\Identity\Exceptions\CannotManageOwnPlatformAccountException;
 use App\Landlord\Identity\Exceptions\LastSuperAdminException;
+use App\Landlord\Identity\Exceptions\SuperAdminProtectedException;
 use App\Landlord\Identity\Exceptions\TwoFactorNotSetUpException;
+use App\Landlord\Identity\Http\Requests\ChangePlatformAdminPermissionsRequest;
 use App\Landlord\Identity\Http\Requests\ChangePlatformAdminRolesRequest;
 use App\Landlord\Identity\Http\Requests\ListPlatformTeamRequest;
 use App\Landlord\Identity\Http\Requests\ManagePlatformTeamRequest;
 use App\Landlord\Identity\Http\Requests\ResetPlatformAdminTwoFactorRequest;
 use App\Landlord\Identity\Http\Resources\PlatformTeamMemberResource;
 use App\Landlord\Identity\Models\PlatformAdmin;
+use App\Landlord\Identity\Services\PlatformAdminPermissions;
+use App\Shared\Auth\EffectivePermissions;
 use App\Shared\Auth\Exceptions\IncorrectCurrentPasswordException;
 use App\Shared\Auth\Exceptions\TooManyIncorrectAttemptsException;
+use App\Shared\Auth\Http\Resources\EffectivePermissionsResource;
 use App\Shared\Http\Controller;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
@@ -27,6 +33,8 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  */
 final class PlatformTeamMemberController extends Controller
 {
+    public function __construct(private readonly PlatformAdminPermissions $platformAdminPermissions) {}
+
     /**
      * List platform admins.
      *
@@ -62,6 +70,36 @@ final class PlatformTeamMemberController extends Controller
     public function updateRoles(ChangePlatformAdminRolesRequest $request, PlatformAdmin $platformAdmin, ChangePlatformAdminRoles $changePlatformAdminRoles): PlatformTeamMemberResource
     {
         return new PlatformTeamMemberResource($changePlatformAdminRoles->handle($request->actor(), $platformAdmin, $request->roles()));
+    }
+
+    /**
+     * Show what a platform admin may do, and why.
+     *
+     * Super admins only. Lists every permission they hold with where it comes
+     * from: each role that gives it, and whether it was given directly. A
+     * super admin may do everything.
+     */
+    public function permissions(ManagePlatformTeamRequest $request, PlatformAdmin $platformAdmin): EffectivePermissionsResource
+    {
+        return new EffectivePermissionsResource($this->effectivePermissionsOf($platformAdmin));
+    }
+
+    /**
+     * Change a platform admin's direct permissions.
+     *
+     * Super admins only. Sends the complete set of permissions given directly,
+     * on top of their roles (an empty list removes them all); it applies on
+     * their next request. You can't change your own, and a super admin
+     * already may do everything. Answers with what they may now do.
+     *
+     * @throws CannotManageOwnPlatformAccountException
+     * @throws SuperAdminProtectedException
+     */
+    public function updatePermissions(ChangePlatformAdminPermissionsRequest $request, PlatformAdmin $platformAdmin, ChangePlatformAdminPermissions $changePlatformAdminPermissions): EffectivePermissionsResource
+    {
+        $changePlatformAdminPermissions->handle($request->actor(), $platformAdmin, $request->platformPermissions());
+
+        return new EffectivePermissionsResource($this->effectivePermissionsOf($platformAdmin));
     }
 
     /**
@@ -106,5 +144,10 @@ final class PlatformTeamMemberController extends Controller
     public function resetTwoFactor(ResetPlatformAdminTwoFactorRequest $request, PlatformAdmin $platformAdmin, ResetPlatformAdminTwoFactor $resetPlatformAdminTwoFactor): PlatformTeamMemberResource
     {
         return new PlatformTeamMemberResource($resetPlatformAdminTwoFactor->handle($request->actor(), $platformAdmin, $request->actorPassword())->load('roles'));
+    }
+
+    private function effectivePermissionsOf(PlatformAdmin $platformAdmin): EffectivePermissions
+    {
+        return $this->platformAdminPermissions->effectivePermissionsOf($platformAdmin);
     }
 }

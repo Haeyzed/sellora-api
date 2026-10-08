@@ -405,3 +405,66 @@ it('deletes invitations from the store once their link has been expired for the 
         expect(StaffInvitation::query()->pluck('email')->all())->toBe(['new@example.com']);
     });
 });
+
+it('gives a team member permissions directly, on top of their roles, audited and logged', function (): void {
+    $manager = colleagueWith('manager@example.com', roleWith('Manager', ['staff.view', 'staff.manage', 'catalog.view', 'settings.view']));
+    $cashier = colleagueWith('cashier@example.com', roleWith('Cashier', ['settings.view']));
+
+    team('GET', 'catalog/brands', as: $cashier)->assertForbidden();
+
+    team('PUT', "team/members/{$cashier->public_id}/permissions", ['permissions' => ['catalog.view']], $manager)
+        ->assertOk()
+        ->assertJsonPath('data.holds_every_permission', false)
+        ->assertJsonPath('data.permissions', [
+            ['name' => 'catalog.view', 'description' => __('permissions.catalog.view'), 'sources' => [['type' => 'direct', 'role' => null]]],
+            ['name' => 'settings.view', 'description' => __('permissions.settings.view'), 'sources' => [['type' => 'role', 'role' => 'Cashier']]],
+        ]);
+
+    team('GET', 'catalog/brands', as: $cashier)->assertOk();
+
+    $this->store->run(function () use ($cashier, $manager): void {
+        $audit = Audit::query()->where('auditable_type', 'staff_member')->where('auditable_id', $cashier->id)->sole();
+        $activity = Activity::query()->where('event', 'staff_permissions_changed')->sole();
+
+        expect($audit->event)->toBe('sync')
+            ->and(collect($audit->new_values['permissions'] ?? [])->pluck('name')->all())->toBe(['catalog.view'])
+            ->and($activity->causer?->is($manager))->toBeTrue()
+            ->and($activity->properties->all())->toBe(['previous_permissions' => [], 'permissions' => ['catalog.view']]);
+    });
+
+    team('PUT', "team/members/{$cashier->public_id}/permissions", ['permissions' => []], $manager)->assertOk()->assertJsonCount(1, 'data.permissions');
+    team('GET', 'catalog/brands', as: $cashier)->assertForbidden();
+});
+
+it('shows where each permission comes from: every role that gives it, and direct', function (): void {
+    $viewer = colleagueWith('viewer@example.com', roleWith('Viewer', ['staff.view']));
+    $both = colleagueWith('both@example.com', roleWith('Packer', ['catalog.view']), roleWith('Picker', ['catalog.view']));
+    $this->store->run(static fn () => $both->givePermissionTo('catalog.view'));
+
+    team('GET', "team/members/{$both->public_id}/permissions", as: $viewer)
+        ->assertOk()
+        ->assertJsonPath('data.permissions.0.name', 'catalog.view')
+        ->assertJsonPath('data.permissions.0.sources', [['type' => 'role', 'role' => 'Packer'], ['type' => 'role', 'role' => 'Picker'], ['type' => 'direct', 'role' => null]]);
+
+    $owner = team('GET', "team/members/{$this->owner->public_id}/permissions", as: $viewer)->assertOk()->assertJsonPath('data.holds_every_permission', true);
+    expect($owner->json('data.permissions.*.name'))->toBe(app(StaffPermissionCatalogue::class)->all())
+        ->and(collect($owner->json('data.permissions.*.sources'))->unique()->values()->all())->toBe([[['type' => 'role', 'role' => 'owner']]]);
+});
+
+it('gives direct permissions under the same rules as roles', function (): void {
+    $manager = colleagueWith('manager@example.com', roleWith('Manager', ['staff.view', 'staff.manage']));
+    $supervisor = colleagueWith('supervisor@example.com', roleWith('Supervisor', ['staff.view', 'staff.manage', 'roles.manage']));
+    $cashier = colleagueWith('cashier@example.com');
+    $viewer = colleagueWith('viewer@example.com', roleWith('Viewer', ['staff.view']));
+    $permissions = static fn (StaffMember $staffMember): string => "team/members/{$staffMember->public_id}/permissions";
+
+    team('PUT', $permissions($cashier), ['permissions' => ['catalog.manage']], $manager)->assertForbidden()->assertJsonPath('code', 'permissions_exceed_your_own');
+    team('PUT', $permissions($manager), ['permissions' => ['staff.view']], $manager)->assertForbidden()->assertJsonPath('code', 'cannot_manage_own_account');
+    team('PUT', $permissions($this->owner), ['permissions' => []], $manager)->assertForbidden()->assertJsonPath('code', 'store_owner_protected');
+    team('PUT', $permissions($supervisor), ['permissions' => []], $manager)->assertForbidden()->assertJsonPath('code', 'permissions_exceed_your_own');
+    team('PUT', $permissions($cashier), ['permissions' => ['staff.everything']], $manager)->assertUnprocessable()->assertJsonValidationErrors('permissions.0');
+    team('PUT', $permissions($cashier), ['permissions' => ['staff.view']], $viewer)->assertForbidden();
+    team('GET', $permissions($cashier), as: $cashier)->assertForbidden();
+
+    expect($this->store->run(static fn (): int => $cashier->permissions()->count()))->toBe(0);
+});

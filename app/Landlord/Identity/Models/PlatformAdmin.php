@@ -17,6 +17,8 @@ use Illuminate\Foundation\Auth\User;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\Contracts\HasApiTokens as HasApiTokensContract;
 use Laravel\Sanctum\HasApiTokens;
+use OwenIt\Auditing\Auditable;
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 use Spatie\Permission\Traits\HasRoles;
 use Stancl\Tenancy\Database\Concerns\CentralConnection;
 
@@ -41,8 +43,9 @@ use Stancl\Tenancy\Database\Concerns\CentralConnection;
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  */
-final class PlatformAdmin extends User implements HasApiTokensContract, TwoFactorAuthenticatable
+final class PlatformAdmin extends User implements AuditableContract, HasApiTokensContract, TwoFactorAuthenticatable
 {
+    use Auditable;
     use CentralConnection;
     use HasApiTokens;
 
@@ -71,6 +74,13 @@ final class PlatformAdmin extends User implements HasApiTokensContract, TwoFacto
     protected $hidden = [
         'password',
     ];
+
+    /**
+     * Only changes to their direct permissions are audited (through auditSync); profile and sign-in changes go in the activity log instead, so secrets never reach an audit record.
+     *
+     * @var list<string>
+     */
+    protected $auditEvents = [];
 
     /**
      * Whether they have the Super Admin role, which can do everything, including managing the platform team.
