@@ -199,6 +199,7 @@ return [
         ],
         'compare_at_price' => [
             'above_price' => 'The compare-at price must be higher than the price.',
+            'needs_price' => 'Set a price before a compare-at price.',
         ],
         'weight_grams' => [
             'required_for_shipping' => 'Anything that ships needs a weight in grams.',

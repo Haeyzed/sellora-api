@@ -20,8 +20,9 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * One version of a product that a customer buys, such as "Linen shirt, blue, size M", with its price, SKU and shipping details.
  *
  * Prices are Money in the store's base currency, which can't change once
- * anything is priced, so every variant's currency is the same. A
- * compare-at price, when set, is higher than the price. Weights are grams
+ * anything is priced, so every priced variant's currency is the same. A
+ * variant can exist before it has a price but can't be bought until it has
+ * one. A compare-at price, when set, is higher than the price. Weights are grams
  * and dimensions millimetres; whatever ships has a weight.
  *
  * @property int $id
@@ -29,9 +30,9 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property int $product_id
  * @property string|null $sku Unique among variants outside the trash.
  * @property string|null $barcode Such as a GTIN.
- * @property Money $price
- * @property Money|null $compare_at_price The "was" price shown crossed out; always higher than the price.
- * @property string $currency ISO 4217; the store's base currency.
+ * @property Money|null $price Null until priced; an unpriced variant can't be bought.
+ * @property Money|null $compare_at_price The "was" price shown crossed out; always higher than the price, and only on a priced variant.
+ * @property string|null $currency ISO 4217; the store's base currency, or null until priced.
  * @property bool $requires_shipping False for things that never ship, such as a service or a gift card.
  * @property int|null $weight_grams Always set for variants that ship.
  * @property int|null $length_mm

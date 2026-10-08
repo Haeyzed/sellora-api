@@ -54,8 +54,8 @@ final class StoreProductRequest extends FormRequest
             ...$this->placementRules(),
             /** The first variant: what is bought, with its price and shipping details. */
             'variant' => ['required', 'array'],
-            /** The price in minor units of the store's base currency, such as 1999 for 19.99. */
-            'variant.price' => $this->priceRules(required: true),
+            /** The price in minor units of the store's base currency, such as 1999 for 19.99. Can be left out until it is known; an unpriced variant can't be bought. */
+            'variant.price' => $this->priceRules(),
             /** The "was" price shown crossed out, in minor units; must be higher than the price. */
             'variant.compare_at_price' => $this->compareAtPriceRules(),
             /** Your own stock code, unique among variants outside the trash. */

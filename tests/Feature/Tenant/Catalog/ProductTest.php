@@ -130,6 +130,44 @@ it('adds a draft product with its first variant priced in minor units of the sto
         ->toBe(['product', 'product_variant']);
 });
 
+it('adds a variant without a price, which leaves the base currency free until it is priced', function (): void {
+    $settings = fn (array $data): TestResponse => test()->withToken($this->store->run(fn (): string => app(AccessTokenIssuer::class)->issue($this->owner, StaffMember::GUARD, 'test')->plainTextToken))
+        ->patchJson(storeUrl('product-store', '/api/v1/staff/store/settings'), $data);
+
+    productRequest('POST', data: newProduct(variant: ['price' => null]))->assertUnprocessable()->assertJsonValidationErrors('variant.price');
+    productRequest('POST', data: newProduct(variant: ['compare_at_price' => 2500, 'price' => null]))->assertUnprocessable();
+
+    $unpriced = newProduct(['name' => ['en' => 'Unpriced']]);
+    unset($unpriced['variant']['price']);
+
+    $response = productRequest('POST', data: $unpriced)->assertCreated()->assertJsonPath('data.variants.0.price', null);
+    [$productId, $variantId] = [$response->json('data.id'), $response->json('data.variants.0.id')];
+
+    $settings(['currency' => 'USD'])->assertOk();
+
+    productRequest('PATCH', "/{$productId}/variants/{$variantId}", ['compare_at_price' => 2500])->assertUnprocessable()->assertJsonValidationErrors('compare_at_price');
+    productRequest('PATCH', "/{$productId}/variants/{$variantId}", ['price' => 1500])->assertOk()->assertJsonPath('data.price.amount', 1500)->assertJsonPath('data.price.currency', 'USD');
+    productRequest('PATCH', "/{$productId}/variants/{$variantId}", ['price' => null])->assertUnprocessable()->assertJsonValidationErrors('price');
+
+    $settings(['currency' => 'NGN'])->assertConflict()->assertJsonPath('code', 'pricing_settings_locked');
+});
+
+it('keeps prices, currencies and compare-at prices together in the database', function (): void {
+    $id = productRequest('POST', data: newProduct(variant: ['compare_at_price' => 2500]))->assertCreated()->json('data.id');
+
+    $this->store->run(static function () use ($id): void {
+        $variants = static fn () => DB::table('product_variants')->whereIn('product_id', Product::query()->where('public_id', $id)->select('id'));
+
+        expect(static fn () => $variants()->update(['price_amount' => null]))->toThrow(QueryException::class, 'product_variants_compare_at_above_price')
+            ->and(static fn () => $variants()->update(['price_amount' => null, 'compare_at_price_amount' => null]))->toThrow(QueryException::class, 'product_variants_priced_have_currency')
+            ->and(static fn () => $variants()->update(['currency' => null]))->toThrow(QueryException::class, 'product_variants_priced_have_currency')
+            ->and(static fn () => $variants()->update(['price_amount' => -1]))->toThrow(QueryException::class, 'product_variants_price_not_negative')
+            ->and($variants()->update(['price_amount' => null, 'compare_at_price_amount' => null, 'currency' => null]))->toBe(1)
+            ->and(static fn () => $variants()->update(['compare_at_price_amount' => 100]))->toThrow(QueryException::class, 'product_variants_compare_at_above_price')
+            ->and(static fn () => $variants()->update(['currency' => 'NGN']))->toThrow(QueryException::class, 'product_variants_priced_have_currency');
+    });
+});
+
 it('takes amounts only as whole minor units, never decimals or strings', function (mixed $price): void {
     productRequest('POST', data: newProduct(variant: ['price' => $price]))->assertUnprocessable()->assertJsonValidationErrors('variant.price');
 })->with(['a decimal' => 19.99, 'a decimal string' => '19.99', 'a whole number as a string' => '1999', 'below zero' => -1]);

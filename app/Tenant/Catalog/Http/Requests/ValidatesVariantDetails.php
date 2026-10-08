@@ -26,9 +26,9 @@ trait ValidatesVariantDetails
     /**
      * @return list<string>
      */
-    protected function priceRules(bool $required): array
+    protected function priceRules(): array
     {
-        return [$required ? 'required' : 'sometimes', 'integer:strict', 'min:0', 'max:'.self::MAX_AMOUNT];
+        return ['sometimes', 'integer:strict', 'min:0', 'max:'.self::MAX_AMOUNT];
     }
 
     /**
@@ -94,7 +94,7 @@ trait ValidatesVariantDetails
     }
 
     /**
-     * Checks what depends on the variant as a whole, counting what isn't being changed: the compare-at price is above the price, and whatever ships has a weight.
+     * Checks what depends on the variant as a whole, counting what isn't being changed: a compare-at price needs a price below it, and whatever ships has a weight.
      */
     protected function validateVariantAsAWhole(Validator $validator, string $prefix, ?ProductVariant $current): void
     {
@@ -102,10 +102,12 @@ trait ValidatesVariantDetails
             return;
         }
 
-        $price = $this->has("{$prefix}price") ? $this->integer("{$prefix}price") : $current?->price->minorAmount();
+        $price = $this->has("{$prefix}price") ? $this->integer("{$prefix}price") : $current?->price?->minorAmount();
         $compareAtPrice = $this->has("{$prefix}compare_at_price") ? $this->input("{$prefix}compare_at_price") : $current?->compare_at_price?->minorAmount();
 
-        if (is_int($compareAtPrice) && $price !== null && $compareAtPrice <= $price) {
+        if (is_int($compareAtPrice) && $price === null) {
+            $validator->errors()->add("{$prefix}compare_at_price", __('validation.custom.compare_at_price.needs_price'));
+        } elseif (is_int($compareAtPrice) && $compareAtPrice <= $price) {
             $validator->errors()->add("{$prefix}compare_at_price", __('validation.custom.compare_at_price.above_price'));
         }
 

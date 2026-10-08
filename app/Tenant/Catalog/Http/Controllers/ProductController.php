@@ -45,7 +45,8 @@ final class ProductController extends Controller
      *
      * Needs the catalog.manage permission. The product starts as a draft,
      * with its first variant. Amounts are whole minor units of the store's
-     * base currency (1999 for 19.99). Refused when the plan's product limit
+     * base currency (1999 for 19.99); the price can wait, but customers can't
+     * buy an unpriced variant. Refused when the plan's product limit
      * is reached; products in the trash don't count.
      *
      * @throws UsageLimitReachedException

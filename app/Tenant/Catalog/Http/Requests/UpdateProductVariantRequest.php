@@ -31,8 +31,8 @@ final class UpdateProductVariantRequest extends FormRequest
     public function rules(): array
     {
         return [
-            /** The price in minor units of the store's base currency, such as 1999 for 19.99. */
-            'price' => $this->priceRules(required: false),
+            /** The price in minor units of the store's base currency, such as 1999 for 19.99. Once set, it can be changed but not removed. */
+            'price' => $this->priceRules(),
             /** The "was" price shown crossed out, in minor units; must be higher than the price. Null removes it. */
             'compare_at_price' => $this->compareAtPriceRules(),
             /** Your own stock code, unique among variants outside the trash. Null removes it. */

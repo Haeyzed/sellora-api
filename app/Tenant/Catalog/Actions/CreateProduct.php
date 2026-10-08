@@ -18,7 +18,7 @@ use App\Tenant\Settings\Actions\FindStoreSettings;
 use Illuminate\Database\UniqueConstraintViolationException;
 
 /**
- * Adds a product to the store's catalog as a draft, with its first variant priced in the store's base currency.
+ * Adds a product to the store's catalog as a draft, with its first variant, priced in the store's base currency or left unpriced for now.
  *
  * Checks the plan's product limit first. Without a chosen slug, one is made
  * from the name in the default language.

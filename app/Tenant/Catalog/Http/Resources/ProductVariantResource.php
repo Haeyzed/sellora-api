@@ -32,7 +32,8 @@ final class ProductVariantResource extends JsonResource
             'id' => $variant->public_id,
             'sku' => $variant->sku,
             'barcode' => $variant->barcode,
-            'price' => new MoneyResource($variant->price),
+            /** Null until the variant is priced; customers can't see or buy an unpriced variant. */
+            'price' => $variant->price === null ? null : new MoneyResource($variant->price),
             /** The "was" price shown crossed out; null when there is none. */
             'compare_at_price' => $variant->compare_at_price === null ? null : new MoneyResource($variant->compare_at_price),
             'requires_shipping' => $variant->requires_shipping,
