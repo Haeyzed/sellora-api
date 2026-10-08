@@ -5,12 +5,17 @@ declare(strict_types=1);
 use App\Shared\Auth\AccessTokenIssuer;
 use App\Shared\Auth\Models\Role;
 use App\Shared\Features\Contracts\FeatureSource;
+use App\Shared\Features\Exceptions\UsageLimitReachedException;
 use App\Shared\Features\Features;
 use App\Shared\Money\Money;
+use App\Tenant\Catalog\Actions\CreateProduct;
+use App\Tenant\Catalog\Data\ProductData;
+use App\Tenant\Catalog\Data\ProductVariantData;
 use App\Tenant\Catalog\Models\Brand;
 use App\Tenant\Catalog\Models\Category;
 use App\Tenant\Catalog\Models\Product;
 use App\Tenant\Catalog\Models\ProductVariant;
+use App\Tenant\Catalog\Services\ProductLimit;
 use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
 use Illuminate\Database\QueryException;
@@ -20,6 +25,7 @@ use Illuminate\Testing\TestResponse;
 use OwenIt\Auditing\Models\Audit;
 use Spatie\Permission\Models\Permission;
 use Tests\Fixtures\Features\FakeFeatureSource;
+use Tests\Support\SecondConnection;
 
 /*
  * Sections 3.3, 8, 11 and 13: a product starts as a draft with its first
@@ -221,6 +227,28 @@ it('refuses a product over the plan\'s limit, not counting products in the trash
     $this->store->run(static fn () => Product::query()->where('public_id', $id)->sole()->delete());
 
     productRequest('POST', data: newProduct(['name' => ['en' => 'Second']]))->assertCreated();
+});
+
+it('waits for a concurrent request adding a product, so two can\'t both take the last place', function (): void {
+    allowProducts($this->store->getTenantKey(), 1);
+
+    $this->store->run(static function (): void {
+        $createProduct = static fn (): Product => app(CreateProduct::class)->handle(
+            new ProductData(name: ['en' => 'Second']),
+            new ProductVariantData(priceAmount: 1000, weightGrams: 100),
+        );
+
+        // The other request has checked the limit and added the store's last product, but not yet committed.
+        $otherRequest = SecondConnection::open()->holdAdvisoryLock(ProductLimit::LIMIT_KEY);
+        $otherRequest->run(static fn () => Product::factory()->connection(SecondConnection::NAME)->create(['name' => ['en' => 'First']]));
+
+        expect($otherRequest->blocks($createProduct))->toBeTrue();
+
+        $otherRequest->commit();
+
+        expect($createProduct)->toThrow(UsageLimitReachedException::class)
+            ->and(Product::query()->count())->toBe(1);
+    });
 });
 
 it('locks the store\'s base currency once a product is priced', function (): void {
