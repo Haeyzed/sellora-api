@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Landlord\Identity\CreatePlatformAdminCommand;
 use App\Landlord\Tenancy\AddDatabaseServerCommand;
+use App\Landlord\Tenancy\Console\MovePlatformDomainCommand;
 use App\Landlord\Tenancy\Console\PurgeClosedStoresCommand;
 use App\Landlord\Tenancy\Console\SendPurgeRemindersCommand;
 use App\Landlord\Tenancy\Console\SyncPermissionsCommand;
@@ -60,6 +61,7 @@ return Application::configure(basePath: dirname(__DIR__))
         AddDatabaseServerCommand::class,
         SendPurgeRemindersCommand::class,
         PurgeClosedStoresCommand::class,
+        MovePlatformDomainCommand::class,
         SyncPermissionsCommand::class,
         PurgeExpiredRecordsCommand::class,
     ])

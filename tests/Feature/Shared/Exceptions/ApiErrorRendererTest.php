@@ -66,10 +66,11 @@ it('returns 404 for an endpoint that does not exist', function (): void {
         ->assertJsonPath('code', 'not_found');
 });
 
-it('returns 404 for a store domain that does not exist', function (): void {
+it('returns 404 store_not_found for a store domain that does not exist, unlike a missing endpoint', function (): void {
     $this->getJson(storeUrl('no-such-store', '/api/v1/test-errors/store-only'))
         ->assertNotFound()
-        ->assertJsonPath('code', 'not_found');
+        ->assertJsonPath('code', 'store_not_found')
+        ->assertJsonPath('message', __('errors.store_not_found'));
 });
 
 it('returns a business rule error with its own code, status and translated message', function (): void {

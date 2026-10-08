@@ -19,6 +19,7 @@ return [
     'unauthenticated' => 'You need to sign in to do this.',
     'forbidden' => 'You are not allowed to do this.',
     'not_found' => 'We could not find what you were looking for.',
+    'store_not_found' => 'No store uses this address. Check the store\'s domain.',
     'method_not_allowed' => 'This action is not supported here.',
     'conflict' => 'This request conflicts with the current state. Refresh and try again.',
     'validation_failed' => 'Some of the information provided is not valid.',

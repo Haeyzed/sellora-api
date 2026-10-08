@@ -15,7 +15,7 @@ return [
     |
     */
 
-    'domain' => env('PLATFORM_DOMAIN', 'sellora.test'),
+    'domain' => env('PLATFORM_DOMAIN', 'sellora-api.test'),
 
     /*
     |--------------------------------------------------------------------------

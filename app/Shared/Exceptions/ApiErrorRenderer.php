@@ -43,7 +43,7 @@ final class ApiErrorRenderer
                 $exception->errors(),
             ),
             $exception instanceof AuthenticationException => $this->respondWithCode('unauthenticated', Response::HTTP_UNAUTHORIZED),
-            $exception instanceof TenantCouldNotBeIdentifiedException => $this->respondWithCode('not_found', Response::HTTP_NOT_FOUND),
+            $exception instanceof TenantCouldNotBeIdentifiedException => $this->respondWithCode('store_not_found', Response::HTTP_NOT_FOUND),
             $exception instanceof HttpExceptionInterface => $this->respondToHttpException($exception),
             default => $this->respondToUnexpectedError($exception),
         };
