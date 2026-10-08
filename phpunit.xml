@@ -33,6 +33,10 @@
         <env name="DB_URL" value=""/>
         <env name="TENANT_DATABASE_PREFIX" value="sellora_testing_tenant_"/>
         <env name="PLATFORM_CENTRAL_DOMAINS" value="localhost"/>
+        <env name="FILESYSTEM_DISK" value="local"/>
+        <env name="STORE_EXPORT_AFRICA_DRIVER" value="local"/>
+        <env name="STORE_EXPORT_EU_DRIVER" value="local"/>
+        <env name="STORE_EXPORT_US_DRIVER" value="local"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>

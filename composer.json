@@ -16,6 +16,7 @@
         "laravel/sanctum": "^4.3.3",
         "laravel/scout": "^11.8",
         "laravel/tinker": "^3.0",
+        "league/flysystem-aws-s3-v3": "^3.0",
         "maatwebsite/excel": "^4.0.3",
         "nnjeim/world": "^1.1.39",
         "owen-it/laravel-auditing": "^14.0.6",
@@ -67,7 +68,7 @@
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
-            "npx concurrently -c \"#93c5fd,#c4b5fd,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --tries=1 --timeout=0\" \"npm run dev\" --names='server,queue,vite'"
+            "npx concurrently -c \"#93c5fd,#c4b5fd,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --queue=default,bulk --tries=1 --timeout=0\" \"npm run dev\" --names='server,queue,vite'"
         ],
         "test": [
             "@php artisan config:clear --ansi @no_additional_args",
