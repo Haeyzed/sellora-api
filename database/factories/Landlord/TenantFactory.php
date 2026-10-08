@@ -27,7 +27,7 @@ final class TenantFactory extends Factory
             'id' => (string) Str::uuid(),
             'name' => fake()->company(),
             'status' => TenantStatus::Active,
-            'hosting_region' => config()->array('platform.regions')[0],
+            'hosting_region' => array_key_first(config()->array('platform.regions')),
             'owner_name' => fake()->name(),
             'owner_email' => fake()->unique()->safeEmail(),
             'country_code' => 'NG',

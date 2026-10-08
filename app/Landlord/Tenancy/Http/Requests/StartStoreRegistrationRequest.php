@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Landlord\Tenancy\Http\Requests;
 
 use App\Landlord\Tenancy\Data\StoreRegistrationData;
+use App\Landlord\Tenancy\HostingRegions;
 use App\Landlord\Tenancy\Services\StoreSubdomains;
 use App\Shared\Geography\Geography;
 use Closure;
@@ -51,7 +52,7 @@ final class StartStoreRegistrationRequest extends FormRequest
             /** Required when the country has several timezones, such as the United States; otherwise the country's only one is used. */
             'timezone' => ['sometimes', 'nullable', 'string', 'max:64'],
             /** One of the regions from the hosting regions list. */
-            'hosting_region' => ['required', 'string', Rule::in(config()->array('platform.regions'))],
+            'hosting_region' => ['required', 'string', Rule::in(app(HostingRegions::class)->codes())],
             /** The IDs of every legal document version in force, from the legal documents list. */
             'accepted_legal_documents' => ['required', 'array', 'min:1', 'max:20'],
             'accepted_legal_documents.*' => ['required', 'string', 'ulid'],

@@ -6,8 +6,10 @@ declare(strict_types=1);
  * A private disk for full store exports in one hosting region (see
  * tenancy.store_exports.disks). STORE_EXPORT_<REGION>_DRIVER chooses "local"
  * (the default, under storage/app/store-exports/<region>) or "s3", a bucket
- * in that region set by the other STORE_EXPORT_<REGION>_* variables, with
- * AWS_DEFAULT_REGION and the AWS keys when a region sets none. Never
+ * in that hosting region set by STORE_EXPORT_<REGION>_BUCKET, in the
+ * region's cloud region (REGION_<REGION>_CLOUD_REGION, see
+ * platform.regions), with AWS_DEFAULT_REGION and the AWS keys when a region
+ * sets none. Never
  * served by URL, and not suffixed per store by tenancy (the exports are
  * written by platform-side jobs).
  */
@@ -19,7 +21,7 @@ $storeExportDisk = static function (string $region): array {
             'driver' => 's3',
             'key' => env($prefix.'KEY', env('AWS_ACCESS_KEY_ID')),
             'secret' => env($prefix.'SECRET', env('AWS_SECRET_ACCESS_KEY')),
-            'region' => env($prefix.'BUCKET_REGION', env('AWS_DEFAULT_REGION')),
+            'region' => env('REGION_'.strtoupper($region).'_CLOUD_REGION') ?: env('AWS_DEFAULT_REGION'),
             'bucket' => env($prefix.'BUCKET'),
             'endpoint' => env($prefix.'ENDPOINT'),
             'use_path_style_endpoint' => env($prefix.'USE_PATH_STYLE_ENDPOINT', false),

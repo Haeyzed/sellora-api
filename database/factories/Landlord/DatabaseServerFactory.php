@@ -23,7 +23,7 @@ final class DatabaseServerFactory extends Factory
     {
         return [
             'name' => fake()->unique()->slug(2),
-            'region' => config()->array('platform.regions')[0],
+            'region' => array_key_first(config()->array('platform.regions')),
             'host' => config()->string('database.connections.central.host'),
             'port' => (int) config('database.connections.central.port'),
             'username' => config()->string('database.connections.central.username'),

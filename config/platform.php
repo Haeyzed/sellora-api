@@ -37,16 +37,20 @@ return [
     | Hosting Regions
     |--------------------------------------------------------------------------
     |
-    | Where a store's database, files and backups can live. Merchants choose
-    | one at registration, and only regions with a database server accepting
-    | new stores are offered. Names are in lang/<locale>/regions.php.
+    | Where a store's database, files and backups can live (section 9.1). The
+    | keys are Sellora's own region names, never ISO or cloud-provider codes;
+    | a new region is added here as Sellora expands, with its name in
+    | lang/<locale>/regions.php. Each maps to its real cloud region (such as
+    | AWS af-south-1) through the environment. Registration offers only the
+    | regions with a database server accepting new stores.
     |
     */
 
-    'regions' => array_values(array_filter(array_map(
-        trim(...),
-        explode(',', (string) env('PLATFORM_REGIONS', 'africa,eu,us')),
-    ))),
+    'regions' => [
+        'africa' => ['cloud_region' => env('REGION_AFRICA_CLOUD_REGION')],
+        'eu' => ['cloud_region' => env('REGION_EU_CLOUD_REGION')],
+        'us' => ['cloud_region' => env('REGION_US_CLOUD_REGION')],
+    ],
 
     /*
     |--------------------------------------------------------------------------

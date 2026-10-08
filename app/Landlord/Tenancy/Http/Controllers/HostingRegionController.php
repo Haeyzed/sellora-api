@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Landlord\Tenancy\Http\Controllers;
 
+use App\Landlord\Tenancy\HostingRegions;
 use App\Landlord\Tenancy\Http\Resources\HostingRegionResource;
 use App\Landlord\Tenancy\Services\DatabaseServerPlacement;
 use App\Shared\Http\Controller;
@@ -22,11 +23,11 @@ final class HostingRegionController extends Controller
      *
      * @unauthenticated
      */
-    public function index(DatabaseServerPlacement $databaseServerPlacement): AnonymousResourceCollection
+    public function index(HostingRegions $hostingRegions, DatabaseServerPlacement $databaseServerPlacement): AnonymousResourceCollection
     {
         $regionCodes = array_values(array_filter(
-            config()->array('platform.regions'),
-            static fn (mixed $regionCode): bool => is_string($regionCode) && $databaseServerPlacement->hasRoomIn($regionCode),
+            $hostingRegions->codes(),
+            static fn (string $regionCode): bool => $databaseServerPlacement->hasRoomIn($regionCode),
         ));
 
         return HostingRegionResource::collection($regionCodes);

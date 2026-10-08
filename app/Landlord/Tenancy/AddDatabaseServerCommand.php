@@ -41,7 +41,7 @@ final class AddDatabaseServerCommand extends Command
     {
         $details = [
             'name' => $this->stringOption('name') ?? text('Name, such as "eu-1"', required: true),
-            'region' => $this->stringOption('region') ?? text('Hosting region ('.implode(', ', config()->array('platform.regions')).')', required: true),
+            'region' => $this->stringOption('region') ?? text('Hosting region ('.implode(', ', app(HostingRegions::class)->codes()).')', required: true),
             'host' => $this->stringOption('host') ?? text('Host', required: true),
             'port' => $this->stringOption('port') ?? '5432',
             'username' => $this->stringOption('username') ?? text('Username', required: true),
@@ -50,7 +50,7 @@ final class AddDatabaseServerCommand extends Command
 
         $validator = Validator::make($details, [
             'name' => ['required', 'string', 'max:64', Rule::unique(DatabaseServer::class, 'name')],
-            'region' => ['required', Rule::in(config()->array('platform.regions'))],
+            'region' => ['required', Rule::in(app(HostingRegions::class)->codes())],
             'host' => ['required', 'string', 'max:255'],
             'port' => ['required', 'integer', 'between:1,65535'],
             'username' => ['required', 'string', 'max:128'],

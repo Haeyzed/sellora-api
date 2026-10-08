@@ -10,6 +10,7 @@ use App\Landlord\Subscriptions\Enums\SubscriptionStatus;
 use App\Landlord\Subscriptions\Models\Subscription;
 use App\Landlord\Tenancy\Enums\TenantStatus;
 use App\Landlord\Tenancy\Exceptions\NoDatabaseServerAvailableException;
+use App\Landlord\Tenancy\HostingRegions;
 use App\Landlord\Tenancy\Jobs\ProvisionStore;
 use App\Landlord\Tenancy\Models\DatabaseServer;
 use App\Landlord\Tenancy\Models\StoreRegistration;
@@ -251,6 +252,23 @@ it('only offers regions with a database server accepting new stores', function (
     $this->getJson(centralUrl('/api/v1/hosting-regions'))->assertOk()->assertJsonCount(0, 'data');
     signUpForStore()->assertUnprocessable()->assertJsonPath('code', 'hosting_region_unavailable')->assertJsonValidationErrors('hosting_region');
     signUpForStore(['hosting_region' => 'mars'])->assertJsonValidationErrors('hosting_region');
+});
+
+it('offers Sellora\'s own region keys from config, never country or cloud codes, and maps each to its cloud region', function (): void {
+    DatabaseServer::factory()->inRegion('eu')->create();
+    config()->set('platform.regions.eu.cloud_region', 'eu-central-1');
+    config()->set('platform.regions.africa.cloud_region', null);
+
+    $this->getJson(centralUrl('/api/v1/hosting-regions'))->assertOk()
+        ->assertExactJson(['data' => [['code' => 'africa', 'name' => 'Africa'], ['code' => 'eu', 'name' => 'European Union']]]);
+    signUpForStore(['hosting_region' => 'af'])->assertJsonPath('code', 'validation_failed')->assertJsonValidationErrors('hosting_region');
+    signUpForStore(['hosting_region' => 'eu-central-1'])->assertJsonPath('code', 'validation_failed')->assertJsonValidationErrors('hosting_region');
+
+    $hostingRegions = app(HostingRegions::class);
+    expect($hostingRegions->codes())->toBe(['africa', 'eu', 'us'])
+        ->and($hostingRegions->cloudRegionOf('eu'))->toBe('eu-central-1')
+        ->and($hostingRegions->cloudRegionOf('africa'))->toBeNull()
+        ->and($hostingRegions->cloudRegionOf('mars'))->toBeNull();
 });
 
 it('limits how many stores one email can own, counting sign-ups in progress', function (): void {

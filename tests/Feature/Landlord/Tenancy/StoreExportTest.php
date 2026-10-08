@@ -237,6 +237,40 @@ it('defines every regional export disk as a private disk, on this machine unless
     }
 });
 
+it('puts a region\'s S3 export bucket in that region\'s cloud region, or the default AWS region', function (): void {
+    $environment = ['STORE_EXPORT_EU_DRIVER' => 's3', 'STORE_EXPORT_EU_BUCKET' => 'exports-eu', 'REGION_EU_CLOUD_REGION' => 'eu-central-1', 'STORE_EXPORT_US_DRIVER' => 's3', 'REGION_US_CLOUD_REGION' => '', 'AWS_DEFAULT_REGION' => 'us-east-2'];
+    $previous = [];
+
+    foreach ($environment as $name => $value) {
+        $previous[$name] = [$_SERVER[$name] ?? null, $_ENV[$name] ?? null, getenv($name)];
+        $_SERVER[$name] = $_ENV[$name] = $value;
+        putenv("{$name}={$value}");
+    }
+
+    try {
+        $disks = (require base_path('config/filesystems.php'))['disks'];
+    } finally {
+        foreach ($previous as $name => [$server, $env, $process]) {
+            if ($server === null) {
+                unset($_SERVER[$name]);
+            } else {
+                $_SERVER[$name] = $server;
+            }
+
+            if ($env === null) {
+                unset($_ENV[$name]);
+            } else {
+                $_ENV[$name] = $env;
+            }
+
+            putenv($process === false ? $name : "{$name}={$process}");
+        }
+    }
+
+    expect($disks['store_exports_eu'])->toMatchArray(['driver' => 's3', 'bucket' => 'exports-eu', 'region' => 'eu-central-1', 'visibility' => 'private'])
+        ->and($disks['store_exports_us'])->toMatchArray(['driver' => 's3', 'region' => 'us-east-2']);
+});
+
 it('builds exports on the bulk queue, one at a time per store', function (): void {
     Queue::fake();
 
