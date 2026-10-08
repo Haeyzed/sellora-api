@@ -211,7 +211,11 @@ return [
     'store_exports' => [
         'queue' => env('STORE_EXPORT_QUEUE', 'bulk'),
         'default_disk' => env('STORE_EXPORT_DISK', 'store_exports'),
-        'disks' => [],
+        'disks' => [
+            'africa' => 'store_exports_africa',
+            'eu' => 'store_exports_eu',
+            'us' => 'store_exports_us',
+        ],
         // The dashboard page where the requester downloads an export, linked from the "export ready" email, by requester type.
         // {store} is the store's public ID, {export} the export's, and {domain} the store's platform domain.
         'ready_urls' => [
