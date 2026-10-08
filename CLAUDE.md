@@ -95,6 +95,7 @@ On a fresh project, **the first task is installing and configuring all dependenc
 | Testing (dev) | `pestphp/pest`, `pestphp/pest-plugin-laravel` | replace PHPUnit tests with Pest |
 | Static analysis (dev) | `larastan/larastan` | **level 8**, with a `phpstan.neon` |
 | Formatting (dev) | `laravel/pint` | with a `pint.json` |
+| S3 storage | `league/flysystem-aws-s3-v3` | Laravel's official S3 adapter, for per-region disks (approved in Step 5c) |
 
 If a package's skill gives install steps, the skill's steps win over this table. Don't install anything not listed here without asking.
 
@@ -849,7 +850,7 @@ Until merchant billing is decided (section 16), new stores register on the plan 
 
 **Hosting region (data residency)**
 - Because the platform is global, some merchants are legally required, or simply prefer, to keep their data in a specific region (for example the EU for GDPR).
-- Every tenant records a **hosting region** at registration (for example `eu`, `us`, `africa`). Its database, file storage and backups live in that region.
+- Every tenant records a **hosting region** at registration (for example `eu`, `us`, `africa`). Region keys are Sellora's own names, defined in config, not ISO or cloud-provider codes (never `af`, which is Afghanistan's country code); each region maps to its real cloud region in environment settings (for example `africa` → AWS `af-south-1`). New regions are added in config as Sellora expands, and registration only offers regions that have a database server accepting new stores. Its database, file storage and backups live in that region.
 - Design for this from day one, even if the first launch has only one region. That means the region is stored on the tenant, database and storage connections are chosen from the tenant's region (following the `stancl/tenancy` skill for per-tenant connection settings), and nothing assumes a single database server.
 - Moving a store between regions is a deliberate, planned migration, never automatic. Treat the region as fixed after registration unless I decide otherwise.
 - The central (landlord) database is the only cross-region store. Keep personal data out of it beyond what's needed to run the platform (tenant owner contact, billing).
@@ -908,6 +909,8 @@ There are four guards, all on Sanctum. Each guard has its own model, provider, l
 - **The staff limit** counts active staff plus pending invitations; deactivated staff don't count.
 - **Platform admins** are authorized with `spatie/laravel-permission` roles and permissions on the `platform` guard (central database). Their actions (granting roles, suspending stores, feature grants) are written to the central activity log and audited. **When a store account triggers a platform action** (for example an owner closing their store), the central log entry has no causer and records the account as account type plus public ID, because a store account's database ID means nothing centrally. Never let the activity log fill in the signed-in user by default on such entries.
 - **Staff** are authorized with `spatie/laravel-permission` roles and permissions on the `staff` guard (tenant database), through Policies.
+- **Permissions are defined in code** (one enum per guard, the single source of truth) and **synced into the database** by an idempotent command: into the central database for `platform`, and into every store database for `staff`. It runs at store setup and on every deploy, so a permission added in a later step reaches every existing store. A permission row that exists in no enum is removed by the sync only after being taken off every role and person.
+- **Direct permissions:** besides roles, a staff member or platform admin may be given extra permissions individually (for example one Cashier who may also issue refunds). The same rules as roles apply: nobody grants a permission they don't hold, nobody changes their own permissions, the owner and super admins are protected, and every change is audited and goes in the activity log. The API shows each person's effective permissions and where each comes from (which role, or direct), so "why can Ada do this?" is always answerable.
 - **Customers** can only access their own data (orders, addresses, profile). This is enforced with Policies and scoped queries, not roles.
 - **Drivers** can only see and update deliveries assigned to them. Authorization is by assignment, through Policies, not staff roles. A driver never sees other drivers' deliveries, unassigned orders, prices beyond what delivery needs, or store settings.
 
