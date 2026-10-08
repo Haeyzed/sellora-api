@@ -251,6 +251,22 @@ it('waits for a concurrent request adding a product, so two can\'t both take the
     });
 });
 
+it('prices variants in the store\'s base currency whatever currency the request names', function (): void {
+    $response = productRequest('POST', data: newProduct(['currency' => 'USD'], ['currency' => 'EUR', 'price_currency' => 'GBP']))
+        ->assertCreated()
+        ->assertJsonPath('data.variants.0.price.currency', 'NGN');
+
+    $productId = $response->json('data.id');
+    $variantId = $response->json('data.variants.0.id');
+
+    productRequest('PATCH', "/{$productId}/variants/{$variantId}", ['price' => 2500, 'currency' => 'USD'])
+        ->assertOk()
+        ->assertJsonPath('data.price.amount', 2500)
+        ->assertJsonPath('data.price.currency', 'NGN');
+
+    expect($this->store->run(static fn (): array => ProductVariant::query()->pluck('currency')->all()))->toBe(['NGN']);
+});
+
 it('locks the store\'s base currency once a product is priced', function (): void {
     $settings = fn (array $data): TestResponse => test()->withToken($this->store->run(fn (): string => app(AccessTokenIssuer::class)->issue($this->owner, StaffMember::GUARD, 'test')->plainTextToken))
         ->patchJson(storeUrl('product-store', '/api/v1/staff/store/settings'), $data);
