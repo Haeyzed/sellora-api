@@ -87,7 +87,8 @@ return [
             'hideTryIt' => false,
             'hideSchemas' => false,
             'logo' => '',
-            'tryItCredentialsPolicy' => 'include',
+            // Clients sign in with bearer tokens, never cookies, so "Try it" sends no credentials (CORS refuses them anyway).
+            'tryItCredentialsPolicy' => 'omit',
             'layout' => 'responsive',
             'router' => 'hash',
         ],

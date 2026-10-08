@@ -77,6 +77,12 @@
             "@php artisan permissions:sync",
             "@php artisan queue:restart"
         ],
+        "docs:export": [
+            "@php -r \"is_dir('api-docs') || mkdir('api-docs');\"",
+            "@php artisan scramble:export --api=platform --path=api-docs/platform.json",
+            "@php artisan scramble:export --api=registration --path=api-docs/registration.json",
+            "@php artisan scramble:export --api=default --path=api-docs/store.json"
+        ],
         "test": [
             "@php artisan config:clear --ansi @no_additional_args",
             "@php artisan test"

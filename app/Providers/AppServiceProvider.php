@@ -78,6 +78,7 @@ use App\Tenant\Settings\StoreLocales;
 use App\Tenant\Settings\StoreSettingsDefaults;
 use App\Tenant\Settings\StoreTwoFactorRequirement;
 use Dedoc\Scramble\Scramble;
+use Dedoc\Scramble\Support\Generator\ServerVariable;
 use Illuminate\Auth\Events\Authenticated;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Foundation\Application;
@@ -184,8 +185,13 @@ final class AppServiceProvider extends ServiceProvider
     {
         Scramble::registerExtension(ApiErrorResponseDocumentation::class);
 
+        // "Try it" sends requests here: the central APIs to the first central domain, the store API to a store's subdomain chosen in the docs.
+        $scheme = parse_url(config()->string('app.url'), PHP_URL_SCHEME) ?: 'https';
+        $centralUrl = $scheme.'://'.(config()->array('platform.central_domains')[0] ?? 'localhost');
+
         Scramble::registerApi('registration', [
             'api_path' => 'api/v1',
+            'servers' => ['Central' => $centralUrl.'/api/v1'],
             'info' => [
                 'description' => 'Endpoints for merchants registering a new store, served on the central domain only.',
             ],
@@ -197,6 +203,7 @@ final class AppServiceProvider extends ServiceProvider
 
         Scramble::registerApi('platform', [
             'api_path' => 'api/v1/platform',
+            'servers' => ['Central' => $centralUrl.'/api/v1/platform'],
             'info' => [
                 'description' => 'Endpoints for platform administrators, served on the central domain only.',
             ],
@@ -206,7 +213,9 @@ final class AppServiceProvider extends ServiceProvider
         ])->expose(ui: 'docs/platform', document: 'docs/platform.json');
 
         // Last: registering an API copies the store API's settings, and this filter is the store API's alone.
-        $storeApi = Scramble::configure();
+        $storeApi = Scramble::configure()
+            ->useConfig([...config()->array('scramble'), 'servers' => ['Store' => $scheme.'://{store}.'.config()->string('platform.domain').'/api/v1']])
+            ->withServerVariables(['store' => ServerVariable::make('your-store', description: "The store's subdomain, such as \"ada-fabrics\" for ada-fabrics.".config()->string('platform.domain').'.')]);
         $storeApi->routes(static fn (Route $route): bool => $storeApi->apiPath()->matches($route->uri)
             && ! str_starts_with((string) $route->getName(), 'registration.'));
     }
