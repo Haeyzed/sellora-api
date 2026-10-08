@@ -46,10 +46,13 @@ use App\Shared\Tenancy\Contracts\StoreOwnerContact;
 use App\Shared\Tenancy\Contracts\StoreProfile;
 use App\Shared\Tenancy\Contracts\StoreSessions;
 use App\Shared\Tenancy\Contracts\StoreSettingsSetup;
+use App\Tenant\Catalog\CatalogPricedRecords;
 use App\Tenant\Catalog\CatalogStoreTables;
 use App\Tenant\Catalog\Enums\CatalogPermission;
 use App\Tenant\Catalog\Models\Brand;
 use App\Tenant\Catalog\Models\Category;
+use App\Tenant\Catalog\Models\Product;
+use App\Tenant\Catalog\Models\ProductVariant;
 use App\Tenant\Customers\CustomerStoreTables;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Delivery\DeliveryStoreTables;
@@ -218,7 +221,12 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->singleton(PersonalDataRegistry::class);
 
         // Domains register their priced records here as they start storing prices (Catalog, Pricing, Orders).
-        $this->app->singleton(PricedRecordsRegistry::class);
+        $this->app->singleton(PricedRecordsRegistry::class, static function (Application $app): PricedRecordsRegistry {
+            $registry = new PricedRecordsRegistry($app);
+            $registry->register(CatalogPricedRecords::class);
+
+            return $registry;
+        });
 
         $this->app->singleton(RetentionRegistry::class, static function (Application $app): RetentionRegistry {
             $registry = new RetentionRegistry($app);
@@ -273,6 +281,8 @@ final class AppServiceProvider extends ServiceProvider
             'ownership_transfer' => OwnershipTransfer::class,
             'brand' => Brand::class,
             'category' => Category::class,
+            'product' => Product::class,
+            'product_variant' => ProductVariant::class,
         ]);
     }
 

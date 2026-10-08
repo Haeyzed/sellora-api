@@ -107,5 +107,7 @@ return [
     'category_too_deep' => 'Categories can be nested at most :max levels deep.',
     'category_loop' => 'A category can\'t move under itself or one of its own subcategories.',
     'category_order_mismatch' => 'List every subcategory of the parent exactly once.',
+    'product_slug_taken' => 'Another product already uses this slug. Choose another.',
+    'variant_sku_taken' => 'Another product variant already uses this SKU. Choose another.',
 
 ];

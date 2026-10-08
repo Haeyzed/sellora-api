@@ -197,6 +197,15 @@ return [
             'required_for_country' => 'This country has several timezones. Choose the store\'s timezone.',
             'not_in_country' => 'Choose one of the country\'s timezones.',
         ],
+        'compare_at_price' => [
+            'above_price' => 'The compare-at price must be higher than the price.',
+        ],
+        'weight_grams' => [
+            'required_for_shipping' => 'Anything that ships needs a weight in grams.',
+        ],
+        'primary_category' => [
+            'not_in_categories' => 'The primary category must be one of the product\'s categories.',
+        ],
     ],
 
     /*

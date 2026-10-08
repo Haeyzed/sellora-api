@@ -5,6 +5,8 @@ declare(strict_types=1);
 use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
 use App\Tenant\Catalog\Http\Controllers\BrandController;
 use App\Tenant\Catalog\Http\Controllers\CategoryController;
+use App\Tenant\Catalog\Http\Controllers\ProductController;
+use App\Tenant\Catalog\Http\Controllers\ProductVariantController;
 use App\Tenant\Catalog\Http\Controllers\ReorderCategoriesController;
 use App\Tenant\Catalog\Http\Controllers\RestoreBrandController;
 use App\Tenant\Catalog\Http\Controllers\RestoreCategoryController;
@@ -36,4 +38,10 @@ Route::prefix('staff/catalog')
         Route::patch('categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
         Route::delete('categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
         Route::post('categories/{category}/restore', RestoreCategoryController::class)->name('categories.restore')->withTrashed();
+
+        Route::get('products', [ProductController::class, 'index'])->name('products.index');
+        Route::post('products', [ProductController::class, 'store'])->name('products.store');
+        Route::get('products/{product}', [ProductController::class, 'show'])->name('products.show')->withTrashed();
+        Route::patch('products/{product}', [ProductController::class, 'update'])->name('products.update');
+        Route::patch('products/{product}/variants/{variant}', [ProductVariantController::class, 'update'])->name('products.variants.update')->scopeBindings();
     });
