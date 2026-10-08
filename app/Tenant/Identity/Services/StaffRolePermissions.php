@@ -17,14 +17,14 @@ final readonly class StaffRolePermissions
     public function __construct(private PermissionRegistrar $permissionRegistrar) {}
 
     /**
-     * Replaces the role's permissions. Callers pass only names from the permission catalogue.
+     * Replaces the role's permissions. Callers pass only names from the permission catalogue, which permissions:sync has written into the store's database.
      *
      * @param  list<string>  $permissionNames
      */
     public function replace(Role $role, array $permissionNames): void
     {
         $permissionIds = array_map(
-            static fn (string $permissionName): int => Permission::findOrCreate($permissionName, StaffMember::GUARD)->getKey(),
+            static fn (string $permissionName): int => Permission::findByName($permissionName, StaffMember::GUARD)->getKey(),
             array_values(array_unique($permissionNames)),
         );
 

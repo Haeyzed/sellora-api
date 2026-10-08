@@ -63,12 +63,19 @@
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
             "@php artisan key:generate",
             "@php artisan migrate --force",
+            "@php artisan permissions:sync",
             "npm install --ignore-scripts",
             "npm run build"
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
             "npx concurrently -c \"#93c5fd,#c4b5fd,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --queue=default,bulk --tries=1 --timeout=0\" \"npm run dev\" --names='server,queue,vite'"
+        ],
+        "deploy": [
+            "@php artisan migrate --force",
+            "@php artisan tenants:migrate --force",
+            "@php artisan permissions:sync",
+            "@php artisan queue:restart"
         ],
         "test": [
             "@php artisan config:clear --ansi @no_additional_args",

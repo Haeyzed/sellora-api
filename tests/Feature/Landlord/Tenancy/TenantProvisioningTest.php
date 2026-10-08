@@ -54,11 +54,11 @@ it('does not serve one store\'s cached permissions to another store', function (
     $firstStore->run(function (): void {
         Permission::create(['name' => 'edit products', 'guard_name' => 'staff']);
 
-        expect(app(PermissionRegistrar::class)->getPermissions()->pluck('name')->all())->toBe(['edit products']);
+        expect(app(PermissionRegistrar::class)->getPermissions()->pluck('name')->all())->toContain('edit products');
     });
 
     $secondStore->run(function (): void {
-        expect(app(PermissionRegistrar::class)->getPermissions())->toBeEmpty();
+        expect(app(PermissionRegistrar::class)->getPermissions()->pluck('name')->all())->not->toBeEmpty()->not->toContain('edit products');
     });
 
     expect(app(PermissionRegistrar::class)->getPermissions())->toBeEmpty();

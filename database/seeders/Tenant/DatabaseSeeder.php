@@ -18,6 +18,9 @@ final class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call(StaffRoleSeeder::class);
+        $this->call([
+            StaffPermissionSeeder::class,
+            StaffRoleSeeder::class,
+        ]);
     }
 }

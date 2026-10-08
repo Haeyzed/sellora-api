@@ -23,7 +23,7 @@ final readonly class PlatformRolePermissions
     public function replace(Role $role, array $permissions): void
     {
         $permissionIds = array_map(
-            static fn (PlatformPermission $permission): int => Permission::findOrCreate($permission->value, PlatformAdmin::GUARD)->getKey(),
+            static fn (PlatformPermission $permission): int => Permission::findByName($permission->value, PlatformAdmin::GUARD)->getKey(),
             array_values(array_unique($permissions, SORT_REGULAR)),
         );
 

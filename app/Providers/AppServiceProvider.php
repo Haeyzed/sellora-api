@@ -43,6 +43,7 @@ use App\Shared\Tenancy\Contracts\StoreClosure;
 use App\Shared\Tenancy\Contracts\StoreExports;
 use App\Shared\Tenancy\Contracts\StoreOwnerAccounts;
 use App\Shared\Tenancy\Contracts\StoreOwnerContact;
+use App\Shared\Tenancy\Contracts\StorePermissions;
 use App\Shared\Tenancy\Contracts\StoreProfile;
 use App\Shared\Tenancy\Contracts\StoreSessions;
 use App\Shared\Tenancy\Contracts\StoreSettingsSetup;
@@ -66,6 +67,7 @@ use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Identity\StaffAccountNotifications;
 use App\Tenant\Identity\StaffInvitationRetention;
 use App\Tenant\Identity\StaffPermissionCatalogue;
+use App\Tenant\Identity\StaffPermissionSync;
 use App\Tenant\Identity\StaffStoreOwnerAccounts;
 use App\Tenant\Identity\StoreSignOut;
 use App\Tenant\Settings\Enums\SettingsPermission;
@@ -121,6 +123,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(StoreAccountNotifications::class, StaffAccountNotifications::class);
         $this->app->bind(StoreProfile::class, PlatformStoreProfile::class);
         $this->app->bind(StoreSettingsSetup::class, StoreSettingsDefaults::class);
+        $this->app->bind(StorePermissions::class, StaffPermissionSync::class);
         $this->app->bind(TwoFactorRequirement::class, StoreTwoFactorRequirement::class);
         // Per request or job, so a long-running worker never reuses one store's languages for the next.
         $this->app->scoped(StoreLocales::class);
