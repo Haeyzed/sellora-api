@@ -46,7 +46,9 @@ uses(DatabaseTruncation::class);
 const EXPORT_OWNER_PASSWORD = 'a-long-export-owner-password';
 
 beforeEach(function (): void {
-    Storage::fake('store_exports');
+    foreach ([config()->string('tenancy.store_exports.default_disk'), ...config()->array('tenancy.store_exports.disks')] as $disk) {
+        Storage::fake($disk);
+    }
     $this->seed(PlatformPermissionSeeder::class);
     $this->exporter = exportAdminWith('stores.view', 'stores.export');
 
@@ -205,8 +207,34 @@ it('refuses to export a store with a column nobody classified, instead of export
 
     (new BuildStoreExport($storeExport->id))->failed(null);
     expect($storeExport->refresh()->status)->toBe(StoreExportStatus::Failed)
-        ->and(Storage::disk('store_exports')->allFiles())->toBe([]);
+        ->and(Storage::disk($storeExport->disk)->allFiles())->toBe([]);
     Notification::assertNothingSent();
+});
+
+it('keeps each export on its store\'s regional disk, and on the default disk for regions without one', function (): void {
+    Queue::fake();
+    config()->set('tenancy.store_exports.disks', ['africa' => 'store_exports_africa', 'eu' => 'store_exports_eu']);
+    $euStore = createStore('eu-exported-store', ['hosting_region' => 'eu']);
+    $unlistedStore = createStore('unlisted-exported-store', ['hosting_region' => 'us']);
+
+    platformExports('POST', $this->store)->assertAccepted();
+    platformExports('POST', $euStore)->assertAccepted();
+    platformExports('POST', $unlistedStore)->assertAccepted();
+
+    expect(StoreExport::query()->where('tenant_id', $this->store->id)->value('disk'))->toBe('store_exports_africa')
+        ->and(StoreExport::query()->where('tenant_id', $euStore->id)->value('disk'))->toBe('store_exports_eu')
+        ->and(StoreExport::query()->where('tenant_id', $unlistedStore->id)->value('disk'))->toBe('store_exports');
+});
+
+it('defines every regional export disk as a private disk, on this machine unless set otherwise', function (): void {
+    foreach (config()->array('tenancy.store_exports.disks') as $region => $disk) {
+        expect(config()->array("filesystems.disks.{$disk}"))->toMatchArray([
+            'driver' => 'local',
+            'root' => storage_path("app/store-exports/{$region}"),
+            'visibility' => 'private',
+            'serve' => false,
+        ]);
+    }
 });
 
 it('builds exports on the bulk queue, one at a time per store', function (): void {
@@ -255,7 +283,7 @@ it('lets only the admin who requested an export see or download it, and logs eve
 it('can no longer be downloaded after 7 days, when its file is deleted', function (): void {
     $exportId = platformExports('POST', $this->store)->assertAccepted()->json('data.id');
     $storeExport = StoreExport::query()->where('public_id', $exportId)->sole();
-    Storage::disk('store_exports')->assertExists((string) $storeExport->path);
+    Storage::disk($storeExport->disk)->assertExists((string) $storeExport->path);
 
     $this->travel(7)->days();
     $this->travel(1)->minutes();
@@ -264,7 +292,7 @@ it('can no longer be downloaded after 7 days, when its file is deleted', functio
     platformExports('GET', $this->store, "/{$exportId}/download")->assertConflict()->assertJsonPath('code', 'store_export_not_ready');
 
     expect(app(StoreExportRetention::class)->purgeOlderThan(CarbonImmutable::now()->subDays(config()->integer('retention.periods.store_exports'))))->toBe(1);
-    Storage::disk('store_exports')->assertMissing((string) $storeExport->path);
+    Storage::disk($storeExport->disk)->assertMissing((string) $storeExport->path);
     expect(StoreExport::query()->count())->toBe(0);
 });
 
