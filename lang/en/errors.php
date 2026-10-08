@@ -100,5 +100,12 @@ return [
 
     'brand_slug_taken' => 'Another brand already uses this slug. Choose another.',
     'brand_restore_conflict' => 'Another brand now uses this brand\'s slug. Change one of the slugs, then restore it.',
+    'category_slug_taken' => 'Another category already uses this slug. Choose another.',
+    'category_restore_conflict' => 'Another category now uses this category\'s slug. Change one of the slugs, then restore it.',
+    'category_has_subcategories' => 'This category still has subcategories. Move them or move them to the trash first.',
+    'category_parent_in_trash' => 'This category\'s parent is in the trash. Restore the parent first, or move this category.',
+    'category_too_deep' => 'Categories can be nested at most :max levels deep.',
+    'category_loop' => 'A category can\'t move under itself or one of its own subcategories.',
+    'category_order_mismatch' => 'List every subcategory of the parent exactly once.',
 
 ];

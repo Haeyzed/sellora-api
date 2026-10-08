@@ -49,6 +49,7 @@ use App\Shared\Tenancy\Contracts\StoreSettingsSetup;
 use App\Tenant\Catalog\CatalogStoreTables;
 use App\Tenant\Catalog\Enums\CatalogPermission;
 use App\Tenant\Catalog\Models\Brand;
+use App\Tenant\Catalog\Models\Category;
 use App\Tenant\Customers\CustomerStoreTables;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Delivery\DeliveryStoreTables;
@@ -271,6 +272,7 @@ final class AppServiceProvider extends ServiceProvider
             'plan_limit' => PlanLimit::class,
             'ownership_transfer' => OwnershipTransfer::class,
             'brand' => Brand::class,
+            'category' => Category::class,
         ]);
     }
 

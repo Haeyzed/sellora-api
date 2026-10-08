@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tenant\Catalog\Models;
 
 use App\Shared\Concerns\HasPublicId;
+use App\Tenant\Catalog\CatalogSlug;
 use App\Tenant\Settings\Concerns\HasStoreTranslations;
 use Carbon\CarbonImmutable;
 use Database\Factories\Tenant\BrandFactory;
@@ -46,8 +47,6 @@ final class Brand extends Model implements AuditableContract
     use HasStoreTranslations;
     use SoftDeletes;
 
-    public const int SLUG_MAX_LENGTH = 190;
-
     /**
      * @var list<string>
      */
@@ -76,7 +75,7 @@ final class Brand extends Model implements AuditableContract
                 return Str::slug($name) === '' ? 'brand' : $name;
             })
             ->saveSlugsTo('slug')
-            ->slugsShouldBeNoLongerThan(self::SLUG_MAX_LENGTH)
+            ->slugsShouldBeNoLongerThan(CatalogSlug::MAX_LENGTH)
             ->preventOverwrite()
             ->doNotGenerateSlugsOnUpdate();
     }

@@ -18,5 +18,10 @@ final class CatalogStoreTables implements ClassifiesStoreTables
             'brands',
             include: ['id', 'public_id', 'name', 'slug', 'description', 'created_at', 'updated_at', 'deleted_at'],
         );
+
+        $registry->table(
+            'categories',
+            include: ['id', 'public_id', 'parent_id', 'name', 'slug', 'description', 'position', 'created_at', 'updated_at', 'deleted_at'],
+        );
     }
 }

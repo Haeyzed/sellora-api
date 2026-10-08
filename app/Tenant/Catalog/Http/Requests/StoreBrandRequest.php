@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tenant\Catalog\Http\Requests;
 
+use App\Tenant\Catalog\CatalogSlug;
 use App\Tenant\Catalog\Data\BrandData;
 use App\Tenant\Catalog\Models\Brand;
 use App\Tenant\Identity\Concerns\ActsAsStaffMember;
@@ -18,8 +19,6 @@ final class StoreBrandRequest extends FormRequest
 {
     use ActsAsStaffMember;
     use ValidatesStoreTranslations;
-
-    public const string SLUG_PATTERN = '/^[a-z0-9]+(?:-[a-z0-9]+)*$/';
 
     public function authorize(): bool
     {
@@ -45,7 +44,7 @@ final class StoreBrandRequest extends FormRequest
              */
             'description' => ['sometimes', 'nullable', 'array', $this->storeTranslatedText(2000)],
             /** Lower-case letters, numbers and single hyphens, such as "adidas". Made from the name in the default language when left out. */
-            'slug' => ['sometimes', 'string', 'max:'.Brand::SLUG_MAX_LENGTH, 'regex:'.self::SLUG_PATTERN, Rule::unique(Brand::class, 'slug')->whereNull('deleted_at')],
+            'slug' => ['sometimes', 'string', 'max:'.CatalogSlug::MAX_LENGTH, 'regex:'.CatalogSlug::PATTERN, Rule::unique(Brand::class, 'slug')->whereNull('deleted_at')],
         ];
     }
 
