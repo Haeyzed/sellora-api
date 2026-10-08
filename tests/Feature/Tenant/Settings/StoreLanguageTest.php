@@ -62,6 +62,16 @@ it('answers in the requested language when the store publishes in it, and in the
     sampleLanguage('french-store')->assertExactJson(['locale' => 'fr'])->assertHeader('Content-Language', 'fr');
 });
 
+it('falls back from a regional language to its base language when the store publishes in that instead', function (): void {
+    sampleLanguage('english-store', 'fr-CA')->assertExactJson(['locale' => 'fr'])->assertHeader('Content-Language', 'fr');
+    sampleLanguage('english-store', 'fr-CA, en;q=0.9')->assertExactJson(['locale' => 'fr']);
+    sampleLanguage('english-store', 'de-AT, fr-CA;q=0.8, en;q=0.5')->assertExactJson(['locale' => 'fr']);
+    sampleLanguage('french-store', 'en-GB')->assertExactJson(['locale' => 'en']);
+
+    publishIn($this->englishStore, 'en', ['en']);
+    sampleLanguage('english-store', 'fr-CA')->assertExactJson(['locale' => 'en']);
+});
+
 it('follows a change of the store\'s languages at once', function (): void {
     sampleLanguage('english-store', 'fr')->assertExactJson(['locale' => 'fr']);
 

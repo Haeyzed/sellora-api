@@ -49,12 +49,22 @@ final class StoreLocales
 
     /**
      * The enabled language that best matches the request's Accept-Language header, or the store's default.
+     *
+     * Languages are tried in the client's order of preference. A regional
+     * language such as fr-CA falls back to its base language fr when the
+     * store publishes in that instead (section 3.3).
      */
     public function preferredBy(Request $request): string
     {
-        $preferred = $request->getPreferredLanguage($this->enabledLocales());
+        foreach ($request->getLanguages() as $requested) {
+            $enabled = $this->enabledMatchFor($requested);
 
-        return is_string($preferred) && in_array($preferred, $this->enabledLocales(), true) ? $preferred : $this->defaultLocale();
+            if ($enabled !== null) {
+                return $enabled;
+            }
+        }
+
+        return $this->defaultLocale();
     }
 
     /**
@@ -63,6 +73,25 @@ final class StoreLocales
     public function forget(): void
     {
         $this->localesByStore = [];
+    }
+
+    /**
+     * The enabled language for one requested language, such as "fr_CA": that language itself, or else its base language.
+     */
+    private function enabledMatchFor(string $requested): ?string
+    {
+        $exact = strtolower(str_replace('_', '-', $requested));
+        $base = explode('-', $exact)[0];
+
+        foreach ([$exact, $base] as $candidate) {
+            foreach ($this->enabledLocales() as $locale) {
+                if (strtolower($locale) === $candidate) {
+                    return $locale;
+                }
+            }
+        }
+
+        return null;
     }
 
     /**
