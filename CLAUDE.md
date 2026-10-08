@@ -255,7 +255,8 @@ This platform targets merchants and shoppers worldwide. **Never hard-code anythi
 - Customer-facing content must be translatable per locale, using **`spatie/laravel-translatable`** (translations stored as JSON in the same column, for example `{"en": "Shoe", "fr": "Chaussure"}`). Translate product names and descriptions, variant and attribute labels, category and brand names, storefront pages, menus, banners and SEO text. Never translate SKUs, prices, codes or internal notes.
 - Every translated field falls back to the store's default locale when a translation is missing. Scout indexes searchable text per locale.
 - API error messages and validation messages use Laravel's translation files, never hard-coded English strings.
-- Each store has a default locale and may enable more. The storefront requests a locale, and the API falls back to the store default.
+- Each store has a default locale and may enable more. The storefront requests a locale, and the API falls back to the store default. Disabling a locale never deletes its translations.
+- **Search with Scout's database engine** matches text in any of the store's locales (one derived search column); per-locale indexes arrive with a hosted engine.
 
 **Timezones and dates**
 - Store every timestamp in UTC. Convert to the store's or customer's timezone only for display.
@@ -1077,7 +1078,9 @@ Names must say exactly what a thing is or does, so the code reads without explan
 ### Data integrity
 
 - **Financial records are never deleted or rewritten.** Orders, order lines, payments, refunds, invoices and tax records keep the values they had at the time (prices, tax, exchange rates, product names). Corrections are made with new records (refunds, adjustments, credit notes), never by editing history.
-- Use soft deletes for things merchants may want back (products, categories, customers), and make sure soft-deleted records still show correctly on old orders.
+- Use soft deletes for things merchants may want back (products, variants, categories, brands, customers), and make sure soft-deleted records still show correctly on old orders.
+- **Uniqueness that merchants see (SKUs, slugs, combinations) applies to records not in the trash**, enforced by partial unique indexes; restoring from the trash re-checks for conflicts.
+- **Every variant carries `requires_shipping` and a weight in grams** (plus optional dimensions in millimetres), so Shipping can price parcels and services or digital goods can skip shipping. Digital delivery, bundles and services as product types come later as modules.
 - Use database constraints (foreign keys, unique indexes, not-null) as the last line of defence, not just validation.
 - Stock changes are always recorded as stock movements, and concurrent updates (two customers buying the last item) are protected with row locks or atomic updates, so stock can never go negative by accident.
 
@@ -1137,7 +1140,7 @@ This platform handles many businesses' money, customers and personal data. **Sec
 - Rate-limit login, registration, password reset, OTP, checkout, coupon redemption and all public endpoints.
 - **Every rate-limit key includes the store** (for tenant routes), so an attacker in one store can never lock out users of another store. Emails and phone numbers in rate-limit keys are hashed.
 - Login and password-reset responses never reveal whether an email exists.
-- Validate uploads strictly: allowed MIME types, file size limits, no executable files, and no SVG uploads unless sanitised. Store uploads privately, with access through signed URLs where appropriate.
+- Validate uploads strictly: allowed MIME types, file size limits, maximum image dimensions (against decompression bombs), no executable files, and no SVG uploads unless sanitised. Store uploads privately, with access through signed URLs where appropriate. **Only images meant for the storefront** (product, variant, category, brand, store logo) go on a public disk; everything else (proof of delivery, documents, exports) stays private.
 
 **Secrets and sensitive data**
 - Integration credentials (API keys, tokens, webhook secrets) are stored encrypted with Laravel's `encrypted` cast, never in plain text, and never returned by the API after saving.
