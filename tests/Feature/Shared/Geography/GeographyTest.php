@@ -82,6 +82,33 @@ it('lists a country\'s states by name, identified by their codes', function (): 
     $this->getJson(centralUrl('/api/v1/geography/countries/DE/states'))->assertOk()->assertExactJson(['data' => []]);
 });
 
+it('follows ISO 3166 rather than the dataset: states belong to the country they are filed under, and another country\'s codes are left out', function (): void {
+    $hongKong = DB::table('countries')->insertGetId(worldCountry('HK', 'Hong Kong', '852'));
+    $cambodia = DB::table('countries')->insertGetId(worldCountry('KH', 'Cambodia', '855'));
+    $russia = DB::table('countries')->insertGetId(worldCountry('RU', 'Russia', '7'));
+    $unitedStates = DB::table('countries')->where('iso2', 'US')->value('id');
+
+    DB::table('states')->insert([
+        // The dataset labels this Hong Kong district with Cambodia's code.
+        worldState($hongKong, 'KH', 'NTP', 'Tai Po District'),
+        worldState($cambodia, 'KH', '12', 'Phnom Penh'),
+        // Sevastopol is filed under Russia with Ukraine's ISO 3166-2 code.
+        worldState($russia, 'RU', 'UA-40', 'Sevastopol'),
+        worldState($russia, 'RU', 'MOW', 'Moscow'),
+        worldState($russia, 'RU', 'RU-AD', 'Adygea'),
+        worldState($unitedStates, 'US', 'UM-81', 'Baker Island'),
+    ]);
+
+    $codes = fn (string $country): array => array_column($this->getJson(centralUrl("/api/v1/geography/countries/{$country}/states"))->assertOk()->json('data'), 'code');
+
+    expect($codes('HK'))->toBe(['NTP'])
+        ->and($codes('KH'))->toBe(['12'])
+        ->and($codes('RU'))->toBe(['AD', 'MOW'])
+        ->and($codes('US'))->toBe(['CA', 'NY'])
+        ->and(app(Geography::class)->state('RU', 'UA-40'))->toBeNull()
+        ->and(app(Geography::class)->state('RU', '40'))->toBeNull();
+});
+
 it('lists ISO 4217 currencies in use with their decimal places, current timezones without deprecated aliases, and content languages', function (): void {
     $currencies = collect($this->getJson(centralUrl('/api/v1/geography/currencies'))->assertOk()->json('data'))->keyBy('code');
     $timezones = $this->getJson(centralUrl('/api/v1/geography/timezones'))->assertOk()->json('data');

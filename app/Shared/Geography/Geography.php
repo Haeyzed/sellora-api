@@ -248,23 +248,47 @@ final class Geography
     }
 
     /**
-     * A country's states that have a code, one per code, by name.
+     * A country's states, one per code, by name: only those whose ISO 3166-2 code belongs to the country.
+     *
+     * States are matched to their country by the country's row, because the
+     * dataset's own country code is sometimes wrong (a Hong Kong district is
+     * labelled Cambodia). Some states carry another country's full ISO 3166-2
+     * code (Sevastopol is "UA-40" under Russia); ISO 3166 decides, so those
+     * are left out.
      *
      * @return list<array{code: string, name: string, type: string|null}>
      */
     private static function loadStates(string $countryCode): array
     {
+        $countryIds = WorldCountry::query()->select('id')->where('iso2', $countryCode);
         $states = [];
 
-        foreach (WorldState::query()->where('country_code', $countryCode)->whereNotNull('state_code')->orderBy('name')->get() as $worldState) {
-            $code = mb_strtoupper(trim((string) $worldState->state_code));
+        foreach (WorldState::query()->whereIn('country_id', $countryIds)->whereNotNull('state_code')->orderBy('name')->get() as $worldState) {
+            $code = self::subdivisionCode($countryCode, (string) $worldState->state_code);
 
-            if ($code !== '' && ! isset($states[$code])) {
+            if ($code !== null && ! isset($states[$code])) {
                 $states[$code] = ['code' => $code, 'name' => $worldState->name, 'type' => $worldState->type];
             }
         }
 
         return array_values($states);
+    }
+
+    /**
+     * The state's code within the country ("LA" for "NG-LA"), or null when the code is empty or its ISO 3166-2 code names another country.
+     */
+    private static function subdivisionCode(string $countryCode, string $stateCode): ?string
+    {
+        $stateCode = mb_strtoupper(trim($stateCode));
+        $isoCode = str_contains($stateCode, '-') ? $stateCode : "{$countryCode}-{$stateCode}";
+
+        if ($stateCode === '' || ! str_starts_with($isoCode, "{$countryCode}-")) {
+            return null;
+        }
+
+        $code = mb_substr($isoCode, mb_strlen($countryCode) + 1);
+
+        return $code === '' ? null : $code;
     }
 
     /**
