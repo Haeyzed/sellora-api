@@ -255,7 +255,8 @@ This platform targets merchants and shoppers worldwide. **Never hard-code anythi
 - Customer-facing content must be translatable per locale, using **`spatie/laravel-translatable`** (translations stored as JSON in the same column, for example `{"en": "Shoe", "fr": "Chaussure"}`). Translate product names and descriptions, variant and attribute labels, category and brand names, storefront pages, menus, banners and SEO text. Never translate SKUs, prices, codes or internal notes.
 - Every translated field falls back to the store's default locale when a translation is missing. Scout indexes searchable text per locale.
 - API error messages and validation messages use Laravel's translation files, never hard-coded English strings.
-- Each store has a default locale and may enable more. The storefront requests a locale, and the API falls back to the store default. Disabling a locale never deletes its translations.
+- Each store has a default locale and may enable more. The storefront requests a locale, and the API falls back to the store default. Disabling a locale never deletes its translations. A requested regional locale (`fr-CA`) falls back to its base language (`fr`) when the store has enabled that instead.
+- Products, variants and anything else a customer can buy are visible to customers only when published **and** priced; an unpriced variant can never be bought.
 - **Search with Scout's database engine** matches text in any of the store's locales (one derived search column); per-locale indexes arrive with a hosted engine.
 
 **Timezones and dates**
@@ -1082,6 +1083,8 @@ Names must say exactly what a thing is or does, so the code reads without explan
 - **Uniqueness that merchants see (SKUs, slugs, combinations) applies to records not in the trash**, enforced by partial unique indexes; restoring from the trash re-checks for conflicts.
 - **Every variant carries `requires_shipping` and a weight in grams** (plus optional dimensions in millimetres), so Shipping can price parcels and services or digital goods can skip shipping. Digital delivery, bundles and services as product types come later as modules.
 - Use database constraints (foreign keys, unique indexes, not-null) as the last line of defence, not just validation.
+- **A Postgres check constraint passes when its condition is NULL.** Any check involving nullable columns spells out `IS NULL` / `IS NOT NULL` explicitly, and has a test with the nulls in place.
+- **Locks are tested under real contention**, not just by checking they're taken: a test holds the lock from a second database connection and proves the protected action waits or fails. This matters most for stock (Step 8), limits and anything involving money.
 - Stock changes are always recorded as stock movements, and concurrent updates (two customers buying the last item) are protected with row locks or atomic updates, so stock can never go negative by accident.
 
 ### Scheduled and background work
