@@ -7,6 +7,7 @@ namespace Tests\Support;
 use App\Landlord\Tenancy\Models\Tenant;
 use App\Landlord\Tenancy\Services\StoreDatabase;
 use Illuminate\Database\Connection;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use LogicException;
 use Throwable;
@@ -36,6 +37,9 @@ use Throwable;
 final class StoreDatabaseTemplate
 {
     private const string POOL_CONNECTION = 'test_store_pool';
+
+    /** PostgreSQL's error for a database someone is connected to. */
+    private const string IN_USE = '55006';
 
     private static ?string $template = null;
 
@@ -71,9 +75,13 @@ final class StoreDatabaseTemplate
         $name = (string) $databaseConfig->getName();
         $pooled = $mayReuse ? array_pop(self::$pool) : null;
 
-        self::server()->statement($pooled !== null
-            ? sprintf('alter database %s rename to %s', self::quoted($pooled), self::quoted($name))
-            : sprintf('create database %s template %s', self::quoted($name), self::quoted($template)));
+        if ($pooled !== null) {
+            self::whileUnused($pooled, sprintf('alter database %s rename to %s', self::quoted($pooled), self::quoted($name)));
+
+            return;
+        }
+
+        self::server()->statement(sprintf('create database %s template %s', self::quoted($name), self::quoted($template)));
     }
 
     /**
@@ -89,8 +97,7 @@ final class StoreDatabaseTemplate
             return false;
         }
 
-        $server = self::server();
-        $server->select('select pg_terminate_backend(pid) from pg_stat_activity where datname = ? and pid <> pg_backend_pid()', [$name]);
+        self::endOtherSessions($name);
 
         try {
             $isLikeTheTemplate = self::reset($name);
@@ -101,13 +108,13 @@ final class StoreDatabaseTemplate
         }
 
         if (! $isLikeTheTemplate) {
-            $server->statement('drop database '.self::quoted($name).' with (force)');
+            self::server()->statement('drop database '.self::quoted($name).' with (force)');
 
             return true;
         }
 
         $pooled = self::$template.'_pool_'.++self::$pooled;
-        $server->statement(sprintf('alter database %s rename to %s', self::quoted($name), self::quoted($pooled)));
+        self::whileUnused($name, sprintf('alter database %s rename to %s', self::quoted($name), self::quoted($pooled)));
         self::$pool[] = $pooled;
 
         return true;
@@ -144,7 +151,7 @@ final class StoreDatabaseTemplate
         }
 
         $template = $prefix.'template';
-        $server->statement(sprintf('alter database %s rename to %s', self::quoted($prepared), self::quoted($template)));
+        self::whileUnused($prepared, sprintf('alter database %s rename to %s', self::quoted($prepared), self::quoted($template)));
         // Nobody can connect to it, so a stray connection can never block a copy.
         $server->statement(sprintf('alter database %s with allow_connections false', self::quoted($template)));
 
@@ -249,6 +256,38 @@ final class StoreDatabaseTemplate
             static fn (string $table): string => "select '".str_replace("'", "''", $table)."' as name where exists (select 1 from {$table})",
             self::$tables,
         ))), 'name');
+    }
+
+    /**
+     * Runs a statement that needs nobody connected to the database, such as renaming it.
+     *
+     * Only this test process uses its store databases, so any other session on
+     * one is a stale connection of this process (or a server worker passing
+     * through), which is ended. Windows can also leave a closed connection
+     * registered for a moment, so the statement is tried a few times.
+     */
+    private static function whileUnused(string $database, string $statement): void
+    {
+        for ($attempt = 1; ; $attempt++) {
+            self::endOtherSessions($database);
+
+            try {
+                self::server()->statement($statement);
+
+                return;
+            } catch (QueryException $exception) {
+                if ($exception->getCode() !== self::IN_USE || $attempt === 10) {
+                    throw $exception;
+                }
+
+                usleep(200_000);
+            }
+        }
+    }
+
+    private static function endOtherSessions(string $database): void
+    {
+        self::server()->select('select pg_terminate_backend(pid) from pg_stat_activity where datname = ? and pid <> pg_backend_pid()', [$database]);
     }
 
     private static function exists(string $name): bool

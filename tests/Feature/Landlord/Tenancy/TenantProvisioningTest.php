@@ -177,3 +177,21 @@ it('never reuses a test store\'s database whose schema the test changed', functi
         ->and(DB::selectOne('select count(*) as found from pg_database where oid = ?', [$changedDatabase])->found)->toBe(0)
         ->and($next->run(static fn (): array => DB::select("select 1 from pg_indexes where indexname = 'roles_by_guard'")))->toBe([]);
 });
+
+it('still reuses a test store\'s database when a stale connection to it was left open', function (): void {
+    $used = Tenant::factory()->create();
+    StoreDatabaseTemplate::copyInto($used);
+    $usedDatabase = storeDatabaseIdentity($used);
+
+    // A connection some earlier code forgot to close.
+    config(['database.connections.stale' => [...config()->array('database.connections.central'), 'database' => $used->database()->getName()]]);
+    DB::connection('stale')->select('select 1');
+
+    deleteAllStores();
+    DB::purge('stale');
+
+    $reused = Tenant::factory()->create();
+    StoreDatabaseTemplate::copyInto($reused);
+
+    expect(storeDatabaseIdentity($reused))->toBe($usedDatabase);
+});
