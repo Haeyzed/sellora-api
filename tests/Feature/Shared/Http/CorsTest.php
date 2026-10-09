@@ -95,7 +95,10 @@ it('lets the API docs on a central domain try the store API on a developer\'s ma
     preflightFrom($docsOrigin)->assertHeaderMissing('Access-Control-Allow-Origin');
 
     config(['cors' => corsConfigWith(['APP_ENV' => 'production', 'API_DOCS_TRY_IT' => 'true'])]);
-    preflightFrom($docsOrigin)->assertHeader('Access-Control-Allow-Origin', $docsOrigin);
+    preflightFrom($docsOrigin)->assertHeaderMissing('Access-Control-Allow-Origin');
+
+    config(['cors' => corsConfigWith(['APP_ENV' => 'staging', 'API_DOCS_TRY_IT' => 'true'])]);
+    preflightFrom($docsOrigin)->assertHeaderMissing('Access-Control-Allow-Origin');
 
     config(['cors' => corsConfigWith(['APP_ENV' => 'local', 'API_DOCS_TRY_IT' => 'false'])]);
     preflightFrom($docsOrigin)->assertHeaderMissing('Access-Control-Allow-Origin');

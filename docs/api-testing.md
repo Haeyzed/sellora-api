@@ -87,8 +87,13 @@ Each docs page sends requests to where that API is served: the platform and
 registration docs to the central domain, the store docs to
 `http://{store}.sellora-api.test/api/v1`. Fill in `store` with the store's
 subdomain. Calling a store from the docs page is a cross-origin request,
-which CORS allows from the central domain only when `APP_ENV=local` (or
-`API_DOCS_TRY_IT=true`). Paste a token into the bearer authentication field.
+which CORS allows from the central domain only when `APP_ENV=local` (never in
+production). Paste a token into the bearer authentication field.
+
+Outside `APP_ENV=local` the docs pages and documents answer 403 unless the
+request carries the bearer token of a platform admin with two-factor
+authentication on. `composer docs:export` works everywhere: it reads the routes
+directly, not over HTTP.
 
 ## Postman
 

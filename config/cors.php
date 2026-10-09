@@ -33,8 +33,9 @@ return [
 
     'allowed_origins_patterns' => [
         '#^https://[a-z0-9-]+\.'.preg_quote($platformDomain, '#').'$#',
-        // The API docs' "Try it", served on a central domain, calling a store's API. On by default only on a developer's machine.
-        ...(env('API_DOCS_TRY_IT', env('APP_ENV') === 'local') ? ['#^https?://('.implode('|', $centralDomains).')(:\d+)?$#'] : []),
+        // The API docs' "Try it", served on a central domain, calling a store's API. Only ever on a developer's
+        // machine (API_DOCS_TRY_IT=false turns it off there too); never in production, whatever the variable says.
+        ...(env('APP_ENV') === 'local' && env('API_DOCS_TRY_IT', true) ? ['#^https?://('.implode('|', $centralDomains).')(:\d+)?$#'] : []),
     ],
 
     'allowed_headers' => [

@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Landlord\Identity\Http\Middleware\RestrictApiDocsToPlatformAdmins;
 use App\Shared\Tenancy\Http\Middleware\EnsureCentralDomain;
-use Dedoc\Scramble\Http\Middleware\RestrictedDocsAccess;
 
 return [
     /*
@@ -162,7 +162,8 @@ return [
     'middleware' => [
         'web',
         EnsureCentralDomain::class,
-        RestrictedDocsAccess::class,
+        // Open on a developer's machine; everywhere else only to platform admins signed in with two-factor authentication.
+        RestrictApiDocsToPlatformAdmins::class,
     ],
 
     'extensions' => [],
