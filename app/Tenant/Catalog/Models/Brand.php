@@ -8,6 +8,7 @@ use App\Shared\Concerns\HasPublicId;
 use App\Shared\Media\Concerns\HasStorefrontImages;
 use App\Shared\Media\StorefrontImage;
 use App\Tenant\Catalog\CatalogSlug;
+use App\Tenant\Catalog\Services\ProductSearchText;
 use App\Tenant\Settings\Concerns\HasStoreTranslations;
 use Carbon\CarbonImmutable;
 use Database\Factories\Tenant\BrandFactory;
@@ -90,6 +91,19 @@ final class Brand extends Model implements AuditableContract, HasMedia
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection(self::LOGO)->singleFile()->useDisk(StorefrontImage::DISK);
+    }
+
+    /**
+     * Keeps its products' search text current when it is renamed: at once for a few products, on the bulk queue for many.
+     */
+    protected static function booted(): void
+    {
+        self::saved(static function (self $brand): void {
+            // A new brand has no products yet; wasChanged() is only true for an update.
+            if ($brand->wasChanged('name')) {
+                app(ProductSearchText::class)->refreshBrand($brand);
+            }
+        });
     }
 
     protected static function newFactory(): BrandFactory

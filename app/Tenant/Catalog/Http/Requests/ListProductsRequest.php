@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\Rule;
 
 /**
- * A page of the store's products, newest first, optionally narrowed by status, brand or category, or those in the trash.
+ * A page of the store's products, newest first, optionally searched or narrowed by status, brand or category, or those in the trash.
  */
 final class ListProductsRequest extends PaginatedListRequest
 {
@@ -37,6 +37,8 @@ final class ListProductsRequest extends PaginatedListRequest
             'brand' => ['sometimes', 'string', Rule::exists(Brand::class, 'public_id')],
             /** A category's ID: only the products directly in it. */
             'category' => ['sometimes', 'string', Rule::exists(Category::class, 'public_id')],
+            /** Words to find in the product's name (in any of the store's languages), SKUs, barcodes or brand. */
+            'search' => ['sometimes', 'string', 'min:2', 'max:100'],
             /** True for the products in the trash instead of the others. */
             'trashed' => ['sometimes', 'boolean'],
         ];
@@ -51,6 +53,12 @@ final class ListProductsRequest extends PaginatedListRequest
     {
         if ($this->boolean('trashed')) {
             $query->onlyTrashed();
+        }
+
+        $search = $this->validated('search');
+
+        if (is_string($search)) {
+            $query->matching($search);
         }
 
         $status = $this->validated('status');

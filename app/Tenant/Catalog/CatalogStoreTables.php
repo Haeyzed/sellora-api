@@ -27,6 +27,7 @@ final class CatalogStoreTables implements ClassifiesStoreTables
         $registry->table(
             'products',
             include: ['id', 'public_id', 'status', 'name', 'slug', 'description', 'brand_id', 'primary_category_id', 'created_at', 'updated_at', 'deleted_at'],
+            exclude: ['search_text' => 'Derived from the names, codes and brand, which are exported themselves.'],
         );
 
         $registry->table('category_product', include: ['category_id', 'product_id']);

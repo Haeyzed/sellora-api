@@ -7,6 +7,7 @@ namespace App\Tenant\Catalog\Models;
 use App\Shared\Concerns\HasPublicId;
 use App\Shared\Money\Money;
 use App\Shared\Money\MoneyCast;
+use App\Tenant\Catalog\Services\ProductSearchText;
 use Carbon\CarbonImmutable;
 use Database\Factories\Tenant\ProductVariantFactory;
 use Illuminate\Database\Eloquent\Collection;
@@ -109,6 +110,23 @@ final class ProductVariant extends Model implements AuditableContract
     public function attributeValues(): BelongsToMany
     {
         return $this->belongsToMany(AttributeValue::class)->withPivot('attribute_id')->orderByPivot('attribute_id');
+    }
+
+    /**
+     * Keeps its product's search text current when a variant comes or goes, or its SKU or barcode changes.
+     */
+    protected static function booted(): void
+    {
+        $refresh = static function (self $variant): void {
+            app(ProductSearchText::class)->refresh($variant->product_id);
+        };
+
+        self::saved(static function (self $variant) use ($refresh): void {
+            if ($variant->wasRecentlyCreated || $variant->wasChanged(['sku', 'barcode', 'deleted_at'])) {
+                $refresh($variant);
+            }
+        });
+        self::deleted($refresh);
     }
 
     protected static function newFactory(): ProductVariantFactory

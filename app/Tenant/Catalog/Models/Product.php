@@ -9,9 +9,11 @@ use App\Shared\Media\Concerns\HasStorefrontImages;
 use App\Shared\Media\StorefrontImage;
 use App\Tenant\Catalog\CatalogSlug;
 use App\Tenant\Catalog\Enums\ProductStatus;
+use App\Tenant\Catalog\Services\ProductSearchText;
 use App\Tenant\Settings\Concerns\HasStoreTranslations;
 use Carbon\CarbonImmutable;
 use Database\Factories\Tenant\ProductFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -45,6 +47,7 @@ use Spatie\Sluggable\SlugOptions;
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property CarbonImmutable|null $deleted_at
+ * @property string $search_text Its names, variants' SKUs and barcodes and brand names, in lower case, for search; kept current by ProductSearchText.
  * @property-read Brand|null $brand
  * @property-read Category|null $primaryCategory
  * @property-read Collection<int, Category> $categories
@@ -160,6 +163,41 @@ final class Product extends Model implements AuditableContract, HasMedia
     public function variants(): HasMany
     {
         return $this->hasMany(ProductVariant::class)->orderBy('position')->orderBy('id');
+    }
+
+    /**
+     * Products customers can see and buy: published, outside the trash, with at least one priced variant outside the trash (section 3.3).
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeVisibleToCustomers(Builder $query): void
+    {
+        $query->where('status', ProductStatus::Active)
+            ->whereHas('variants', static fn (Builder $variants) => $variants->whereNotNull('price_amount'));
+    }
+
+    /**
+     * Products whose search text contains every word searched for, ignoring case, answered by the trigram index.
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeMatching(Builder $query, string $words): void
+    {
+        foreach (preg_split('/\s+/', mb_strtolower(trim($words)), flags: PREG_SPLIT_NO_EMPTY) ?: [] as $word) {
+            $query->where('search_text', 'like', '%'.addcslashes($word, '%_\\').'%');
+        }
+    }
+
+    /**
+     * Keeps the search text current whenever the name or brand changes.
+     */
+    protected static function booted(): void
+    {
+        self::saved(static function (self $product): void {
+            if ($product->wasRecentlyCreated || $product->wasChanged(['name', 'brand_id'])) {
+                app(ProductSearchText::class)->refresh($product->id);
+            }
+        });
     }
 
     protected static function newFactory(): ProductFactory

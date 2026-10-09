@@ -21,6 +21,9 @@ use App\Tenant\Catalog\Http\Controllers\RestoreBrandController;
 use App\Tenant\Catalog\Http\Controllers\RestoreCategoryController;
 use App\Tenant\Catalog\Http\Controllers\RestoreProductController;
 use App\Tenant\Catalog\Http\Controllers\RestoreProductVariantController;
+use App\Tenant\Catalog\Http\Controllers\StorefrontBrandController;
+use App\Tenant\Catalog\Http\Controllers\StorefrontCategoryController;
+use App\Tenant\Catalog\Http\Controllers\StorefrontProductController;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Settings\Http\Middleware\UseStoreLanguage;
 use Illuminate\Support\Facades\Route;
@@ -28,8 +31,20 @@ use Illuminate\Support\Facades\Route;
 /*
 | The store's catalog (Tenant\Catalog). Staff manage it under
 | /api/v1/staff/catalog with the catalog.view and catalog.manage permissions.
-| Answers follow the store language the client asks for (Accept-Language).
+| Customers read it under /api/v1/catalog: open to anyone, rate-limited per
+| visitor, published and priced products only. Answers follow the store
+| language the client asks for (Accept-Language).
 */
+
+Route::prefix('catalog')
+    ->name('catalog.')
+    ->middleware(['throttle:public', UseStoreLanguage::class])
+    ->group(static function (): void {
+        Route::get('products', [StorefrontProductController::class, 'index'])->name('products.index');
+        Route::get('products/{slug}', [StorefrontProductController::class, 'show'])->name('products.show');
+        Route::get('categories', [StorefrontCategoryController::class, 'index'])->name('categories.index');
+        Route::get('brands', [StorefrontBrandController::class, 'index'])->name('brands.index');
+    });
 
 Route::prefix('staff/catalog')
     ->name('staff.catalog.')
