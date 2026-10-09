@@ -52,7 +52,7 @@ The legacy code may contain bugs, security holes, shortcuts and wrong business r
 | `spatie/laravel-translatable` | Translatable customer-facing content | On tenant models with customer-facing text (section 3.3). Translations live in JSON columns in the tenant database; validation and Resources handle the store's enabled locales. |
 | `propaganistas/laravel-phone` | Validating and formatting international phone numbers | Validate phone input in Form Requests with the country context, and store numbers in E.164 format (section 3.3). |
 | `laravel/reverb` | Real-time updates over WebSockets (**approved but deferred**: install only once a stable release is compatible with this project's dependencies; never force it) | Broadcasts such as order status changes, new orders on the staff dashboard, and live delivery tracking. **Every channel name includes the tenant**, and channel authorization checks both the tenant and the correct guard (section 10), so no one can subscribe to another store's or another user's events. Broadcast after the database transaction commits. Never broadcast secrets or more personal data than the screen needs. |
-| `laravel/scout` | Product and customer search | Indexes must be **tenant-isolated**: prefix every index with the tenant, or use the engine's tenant filtering, so a search never returns another store's records. Start with Scout's database engine; ask before choosing a hosted engine such as Meilisearch or Typesense. Indexing runs on tenant-aware queues. |
+| `laravel/scout` | Product and customer search | Indexes must be **tenant-isolated**: prefix every index with the tenant, or use the engine's tenant filtering, so a search never returns another store's records. **Not used yet:** search currently runs as direct, cursor-paginated queries on a `pg_trgm`-indexed `search_text` column, because Scout's database engine can't cursor-paginate. Scout is adopted together with a hosted engine (Meilisearch, Typesense or other; ask first). Indexing then runs on tenant-aware queues. |
 | `sentry/sentry-laravel` | Error and performance tracking in production | Tag every event with the tenant ID, guard and environment so problems can be traced to a store. **Never send personal data, tokens, passwords or request bodies**; configure scrubbing and keep `send_default_pii` off. |
 | `laravel/telescope` | Debugging requests, queries, jobs and events | **Local development only.** Install as a dev dependency, register it only in the local environment, and never enable it in production or staging with real data. |
 
@@ -258,7 +258,7 @@ This platform targets merchants and shoppers worldwide. **Never hard-code anythi
 - API error messages and validation messages use Laravel's translation files, never hard-coded English strings.
 - Each store has a default locale and may enable more. The storefront requests a locale, and the API falls back to the store default. Disabling a locale never deletes its translations. A requested regional locale (`fr-CA`) falls back to its base language (`fr`) when the store has enabled that instead.
 - Products, variants and anything else a customer can buy are visible to customers only when published **and** priced; an unpriced variant can never be bought.
-- **Search with Scout's database engine** matches text in any of the store's locales (one derived search column); per-locale indexes arrive with a hosted engine.
+- **Search** uses a `pg_trgm` index (PostgreSQL 13 or later) on a derived `search_text` column, matching text in any of the store's locales; per-locale indexes arrive with a hosted engine through Scout.
 
 **Timezones and dates**
 - Store every timestamp in UTC. Convert to the store's or customer's timezone only for display.
@@ -411,6 +411,7 @@ app/
 │   │   ├── TwoFactor/                # 2FA challenges, codes and recovery codes; the ONLY place allowed to use pragmarx/google2fa
 │   │   └── Models/Role.php           # the one role model for both sides (the permissions package allows only one); always scoped by guard
 │   ├── Idempotency/                  # Idempotency-Key middleware and stored replay responses
+│   ├── Media/                        # storefront image rules, uploader, URL generator, export of stored files
 │   ├── Privacy/                      # privacy registry (export and erase handlers per kind of person) and the store export registry
 │   ├── Retention/                    # retention periods and the scheduled per-tenant purge
 │   ├── Money/
@@ -677,6 +678,7 @@ app/Shared/Features/
 ├── FeatureState.php                  # Enabled, Locked, Suspended, Disabled, Unavailable
 ├── FeatureRegistry.php               # every registered module/integration key, dependencies, wind-down routes
 ├── FeatureSnapshot.php               # cached per-tenant plan data (plain array in the cache)
+├── StorageLimit.php                  # the plan's storage limit, checked under a lock on every upload
 ├── Contracts/
 │   └── FeatureSource.php             # implemented by Landlord\Subscriptions; Shared never imports Landlord
 ├── FeatureServiceProvider.php        # abstract parent of the two providers below
@@ -1149,7 +1151,7 @@ This platform handles many businesses' money, customers and personal data. **Sec
 - Rate-limit login, registration, password reset, OTP, checkout, coupon redemption and all public endpoints.
 - **Every rate-limit key includes the store** (for tenant routes), so an attacker in one store can never lock out users of another store. Emails and phone numbers in rate-limit keys are hashed.
 - Login and password-reset responses never reveal whether an email exists.
-- Validate uploads strictly: allowed MIME types, file size limits, maximum image dimensions (against decompression bombs), no executable files, and no SVG uploads unless sanitised. Store uploads privately, with access through signed URLs where appropriate. **Only images meant for the storefront** (product, variant, category, brand, store logo) go on a public disk; everything else (proof of delivery, documents, exports) stays private.
+- Validate uploads strictly: allowed MIME types, file size limits, maximum image dimensions (against decompression bombs), no executable files, and no SVG uploads unless sanitised. Store uploads privately, with access through signed URLs where appropriate. **Only images meant for the storefront** (product, variant, category, brand, store logo) go on a public disk; everything else (proof of delivery, documents, exports) stays private. Until a CDN or S3 disk is configured, storefront images are served on the store's own domain through the tenancy package's asset route; production serves them from S3 behind a CDN so image traffic never boots the application.
 
 **Secrets and sensitive data**
 - Integration credentials (API keys, tokens, webhook secrets) are stored encrypted with Laravel's `encrypted` cast, never in plain text, and never returned by the API after saving.
@@ -1187,7 +1189,7 @@ If you notice a security problem anywhere, in the legacy project, in this reposi
 - **Unpushed commits may be cleaned up** (for example folding a fix into the commit that introduced the bug); pushed commits are never rewritten.
 - **Every commit must pass on its own.** Before each commit, clear Larastan's result cache and run Larastan plus that commit's tests with only that commit's changes in place. A test may never depend on code from a later commit.
 - Claude Code never edits this `CLAUDE.md` itself; proposed changes go in the report (section 2.3).
-- **Keep the full test suite fast** enough to run before every push (aim for under 10 minutes): reuse a prepared store database as a template instead of migrating a fresh one per test, and run tests in parallel. A slow suite stops being run, and an unrun suite protects nothing.
+- **Keep the full test suite fast** enough to run before every push (aim for under 10 minutes): test stores get a copy of a prepared template database, or a used copy that has been reset and verified identical to the template (schema, rows, ID counters and extensions); tests run in parallel. Time the suite on mains power, and on Linux in CI. A slow suite stops being run, and an unrun suite protects nothing.
 - **Verification copies (worktrees or clones) never touch the main checkout.** Scripts that check out other commits refuse to run in it, so uncommitted work there is never at risk.
 - A CI pipeline (for example GitHub Actions) runs Pint, Larastan, Pest (including architecture and tenant-isolation tests) and `composer audit` on every push. Nothing is merged while CI fails.
 
@@ -1198,7 +1200,7 @@ Don't build anything that depends on these until I decide. If a task needs one, 
 - **Drivers:** per store (current design) or a shared Sellora driver network (section 10).
 - **Themes:** whether and when to add `Landlord\Themes` and theme settings. (Storefront content itself is decided: `Tenant\Storefront`.)
 - **Queue monitoring:** whether to add `laravel/horizon`.
-- **Search engine** beyond Scout's database engine (Meilisearch, Typesense or other).
+- **Search engine:** a hosted engine through Scout (Meilisearch, Typesense or other), replacing today's `pg_trgm` search when stores outgrow it.
 - **Platform domain** (`sellora.com` or other).
 - **Merchant billing for global merchants:** Paystack bills African merchants (section 3.3). Whether Stripe Billing is used for merchants elsewhere depends on where Sellora's company is registered, which I'll decide later.
 
