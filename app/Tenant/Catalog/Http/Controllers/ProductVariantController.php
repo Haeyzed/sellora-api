@@ -6,12 +6,15 @@ namespace App\Tenant\Catalog\Http\Controllers;
 
 use App\Shared\Http\Controller;
 use App\Tenant\Catalog\Actions\AddProductVariant;
+use App\Tenant\Catalog\Actions\TrashProductVariant;
 use App\Tenant\Catalog\Actions\UpdateProductVariant;
 use App\Tenant\Catalog\Exceptions\ProductHasNoOptionsException;
+use App\Tenant\Catalog\Exceptions\ProductNeedsAVariantException;
 use App\Tenant\Catalog\Exceptions\ProductOptionsIncompleteException;
 use App\Tenant\Catalog\Exceptions\VariantCombinationTakenException;
 use App\Tenant\Catalog\Exceptions\VariantLimitReachedException;
 use App\Tenant\Catalog\Exceptions\VariantSkuTakenException;
+use App\Tenant\Catalog\Http\Requests\ManageProductRequest;
 use App\Tenant\Catalog\Http\Requests\StoreProductVariantRequest;
 use App\Tenant\Catalog\Http\Requests\UpdateProductVariantRequest;
 use App\Tenant\Catalog\Http\Resources\ProductVariantResource;
@@ -61,5 +64,21 @@ final class ProductVariantController extends Controller
     public function update(UpdateProductVariantRequest $request, Product $product, ProductVariant $variant, UpdateProductVariant $updateProductVariant): ProductVariantResource
     {
         return new ProductVariantResource($updateProductVariant->handle($variant, $request->changes())->load(ProductVariantResource::RELATIONS));
+    }
+
+    /**
+     * Move a variant to the trash.
+     *
+     * Needs the catalog.manage permission. Customers can't buy it any more,
+     * its SKU and values become free, old orders keep it, and it can be
+     * restored. A product keeps at least one variant outside the trash.
+     *
+     * @throws ProductNeedsAVariantException
+     */
+    public function destroy(ManageProductRequest $request, Product $product, ProductVariant $variant, TrashProductVariant $trashProductVariant): Response
+    {
+        $trashProductVariant->handle($variant);
+
+        return response()->noContent();
     }
 }

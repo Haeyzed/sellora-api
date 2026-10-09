@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
+use App\Tenant\Catalog\Http\Controllers\ArchiveProductController;
 use App\Tenant\Catalog\Http\Controllers\AttributeController;
 use App\Tenant\Catalog\Http\Controllers\AttributeValueController;
 use App\Tenant\Catalog\Http\Controllers\BrandController;
@@ -10,9 +11,12 @@ use App\Tenant\Catalog\Http\Controllers\CategoryController;
 use App\Tenant\Catalog\Http\Controllers\ProductController;
 use App\Tenant\Catalog\Http\Controllers\ProductOptionsController;
 use App\Tenant\Catalog\Http\Controllers\ProductVariantController;
+use App\Tenant\Catalog\Http\Controllers\PublishProductController;
 use App\Tenant\Catalog\Http\Controllers\ReorderCategoriesController;
 use App\Tenant\Catalog\Http\Controllers\RestoreBrandController;
 use App\Tenant\Catalog\Http\Controllers\RestoreCategoryController;
+use App\Tenant\Catalog\Http\Controllers\RestoreProductController;
+use App\Tenant\Catalog\Http\Controllers\RestoreProductVariantController;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Settings\Http\Middleware\UseStoreLanguage;
 use Illuminate\Support\Facades\Route;
@@ -46,9 +50,15 @@ Route::prefix('staff/catalog')
         Route::post('products', [ProductController::class, 'store'])->name('products.store');
         Route::get('products/{product}', [ProductController::class, 'show'])->name('products.show')->withTrashed();
         Route::patch('products/{product}', [ProductController::class, 'update'])->name('products.update');
+        Route::delete('products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+        Route::post('products/{product}/restore', RestoreProductController::class)->name('products.restore')->withTrashed();
+        Route::post('products/{product}/publish', PublishProductController::class)->name('products.publish');
+        Route::post('products/{product}/archive', ArchiveProductController::class)->name('products.archive');
         Route::put('products/{product}/options', ProductOptionsController::class)->name('products.options');
         Route::post('products/{product}/variants', [ProductVariantController::class, 'store'])->name('products.variants.store');
         Route::patch('products/{product}/variants/{variant}', [ProductVariantController::class, 'update'])->name('products.variants.update')->scopeBindings();
+        Route::delete('products/{product}/variants/{variant}', [ProductVariantController::class, 'destroy'])->name('products.variants.destroy')->scopeBindings();
+        Route::post('products/{product}/variants/{variant}/restore', RestoreProductVariantController::class)->name('products.variants.restore')->scopeBindings()->withTrashed();
 
         Route::get('attributes', [AttributeController::class, 'index'])->name('attributes.index');
         Route::post('attributes', [AttributeController::class, 'store'])->name('attributes.store');

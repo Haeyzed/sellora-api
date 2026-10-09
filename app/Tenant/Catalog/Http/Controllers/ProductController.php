@@ -7,10 +7,12 @@ namespace App\Tenant\Catalog\Http\Controllers;
 use App\Shared\Features\Exceptions\UsageLimitReachedException;
 use App\Shared\Http\Controller;
 use App\Tenant\Catalog\Actions\CreateProduct;
+use App\Tenant\Catalog\Actions\TrashProduct;
 use App\Tenant\Catalog\Actions\UpdateProduct;
 use App\Tenant\Catalog\Exceptions\ProductSlugTakenException;
 use App\Tenant\Catalog\Exceptions\VariantSkuTakenException;
 use App\Tenant\Catalog\Http\Requests\ListProductsRequest;
+use App\Tenant\Catalog\Http\Requests\ManageProductRequest;
 use App\Tenant\Catalog\Http\Requests\StoreProductRequest;
 use App\Tenant\Catalog\Http\Requests\UpdateProductRequest;
 use App\Tenant\Catalog\Http\Requests\ViewProductRequest;
@@ -83,5 +85,19 @@ final class ProductController extends Controller
     public function update(UpdateProductRequest $request, Product $product, UpdateProduct $updateProduct): ProductResource
     {
         return new ProductResource($updateProduct->handle($product, $request->changes())->load(ProductResource::RELATIONS));
+    }
+
+    /**
+     * Move a product to the trash.
+     *
+     * Needs the catalog.manage permission. The product and its variants go to
+     * the trash together: customers stop seeing it, its slug and SKUs become
+     * free, old orders keep it, and it can be restored.
+     */
+    public function destroy(ManageProductRequest $request, Product $product, TrashProduct $trashProduct): Response
+    {
+        $trashProduct->handle($product);
+
+        return response()->noContent();
     }
 }

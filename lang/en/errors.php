@@ -117,6 +117,15 @@ return [
     'product_options_incomplete' => 'Give every variant of the product exactly one value for each of its options, and list every variant outside the trash.',
     'product_has_no_options' => 'Give the product options, such as Size, before adding variants. A product without options has a single variant.',
     'attribute_in_use' => 'A product varies by this attribute, or a variant (perhaps one in the trash) has one of its values. Remove it from them first.',
+    'product_cannot_be_published' => 'This product isn\'t ready for customers yet.',
+    'product_cannot_be_published_because' => [
+        'default_name' => 'Give the product a name in the store\'s default language.',
+        'priced_variant' => 'Give at least one variant a price.',
+    ],
+    'product_status_conflict' => 'This product can\'t do that from where it is now, for example archiving one that is already archived.',
+    'product_restore_conflict' => 'Another product now uses this product\'s slug, or another variant one of its SKUs or combinations. Change them, then restore it.',
+    'variant_restore_conflict' => 'This variant can\'t come back: another variant now has its SKU or values, or its values no longer match the product\'s options.',
+    'product_needs_a_variant' => 'A product needs at least one variant outside the trash. Move the product to the trash instead.',
     'attribute_value_in_use' => 'A variant, perhaps one in the trash, has this value. Change that variant first.',
 
 ];

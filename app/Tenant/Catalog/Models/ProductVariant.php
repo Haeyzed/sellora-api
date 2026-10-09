@@ -45,6 +45,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property CarbonImmutable|null $deleted_at
+ * @property bool $trashed_with_product True while it is in the trash because its product is, so restoring the product brings it back.
  * @property-read Product $product
  * @property-read Collection<int, AttributeValue> $attributeValues
  */
@@ -117,6 +118,7 @@ final class ProductVariant extends Model implements AuditableContract
             'width_mm' => 'integer',
             'height_mm' => 'integer',
             'position' => 'integer',
+            'trashed_with_product' => 'boolean',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
             'deleted_at' => 'immutable_datetime',

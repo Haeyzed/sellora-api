@@ -35,7 +35,7 @@ final class CatalogStoreTables implements ClassifiesStoreTables
             'product_variants',
             include: [
                 'id', 'public_id', 'product_id', 'sku', 'barcode', 'price_amount', 'compare_at_price_amount', 'currency',
-                'requires_shipping', 'weight_grams', 'length_mm', 'width_mm', 'height_mm', 'position', 'created_at', 'updated_at', 'deleted_at',
+                'requires_shipping', 'weight_grams', 'length_mm', 'width_mm', 'height_mm', 'position', 'created_at', 'updated_at', 'deleted_at', 'trashed_with_product',
             ],
             exclude: ['attribute_signature' => 'Derived from the variant\'s values, which are exported themselves.'],
         );
