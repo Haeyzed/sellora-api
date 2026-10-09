@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Tenant\Catalog\Http\Requests;
 
 use App\Tenant\Catalog\Data\ProductVariantData;
+use App\Tenant\Catalog\Models\Product;
 use App\Tenant\Catalog\Models\ProductVariant;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
  * The rules for a variant's price, codes and shipping details, sent at the top level or inside another field such as "variant".
@@ -84,6 +86,22 @@ trait ValidatesVariantDetails
     }
 
     /**
+     * The variant's own image: one of the product's gallery images, by ID.
+     *
+     * @return list<mixed>
+     */
+    protected function imageRules(?Product $product): array
+    {
+        return [
+            'sometimes', 'nullable', 'string',
+            Rule::exists(Media::class, 'uuid')
+                ->where('model_type', (new Product)->getMorphClass())
+                ->where('model_id', $product->id ?? 0)
+                ->where('collection_name', Product::GALLERY),
+        ];
+    }
+
+    /**
      * One dimension's rules, given the field holding the dimensions, such as "variant.dimensions".
      *
      * @return list<string>
@@ -141,6 +159,8 @@ trait ValidatesVariantDetails
             removesWeight: $sentAsNull('weight_grams'),
             dimensions: $dimensions,
             removesDimensions: $sentAsNull('dimensions'),
+            imageMediaId: $this->filled($prefix.'image') ? Media::query()->where('uuid', $this->string($prefix.'image')->value())->value('id') : null,
+            removesImage: $sentAsNull('image'),
         );
     }
 }

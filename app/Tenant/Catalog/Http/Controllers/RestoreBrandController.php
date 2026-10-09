@@ -26,6 +26,6 @@ final class RestoreBrandController extends Controller
      */
     public function __invoke(ManageBrandRequest $request, Brand $brand, RestoreBrand $restoreBrand): BrandResource
     {
-        return new BrandResource($restoreBrand->handle($brand));
+        return new BrandResource($restoreBrand->handle($brand)->load('media'));
     }
 }

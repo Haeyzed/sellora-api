@@ -48,6 +48,7 @@ use App\Shared\Tenancy\Contracts\StoreProfile;
 use App\Shared\Tenancy\Contracts\StoreSessions;
 use App\Shared\Tenancy\Contracts\StoreSettingsSetup;
 use App\Tenant\Catalog\CatalogPricedRecords;
+use App\Tenant\Catalog\CatalogStoreFiles;
 use App\Tenant\Catalog\CatalogStoreTables;
 use App\Tenant\Catalog\Enums\CatalogPermission;
 use App\Tenant\Catalog\Models\Attribute;
@@ -75,6 +76,7 @@ use App\Tenant\Identity\StoreSignOut;
 use App\Tenant\Settings\Enums\SettingsPermission;
 use App\Tenant\Settings\Models\StoreSettings;
 use App\Tenant\Settings\Policies\StoreLifecyclePolicy;
+use App\Tenant\Settings\SettingsStoreFiles;
 use App\Tenant\Settings\SettingsStoreTables;
 use App\Tenant\Settings\StoreLocales;
 use App\Tenant\Settings\StoreSettingsDefaults;
@@ -262,6 +264,9 @@ final class AppServiceProvider extends ServiceProvider
             foreach ([SharedStoreTables::class, IdentityStoreTables::class, SettingsStoreTables::class, CustomerStoreTables::class, DeliveryStoreTables::class, CatalogStoreTables::class] as $storeTables) {
                 $app->make($storeTables)->classify($registry);
             }
+
+            $registry->addFileSource(SettingsStoreFiles::class);
+            $registry->addFileSource(CatalogStoreFiles::class);
 
             return $registry;
         });

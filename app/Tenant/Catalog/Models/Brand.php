@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Tenant\Catalog\Models;
 
 use App\Shared\Concerns\HasPublicId;
+use App\Shared\Media\Concerns\HasStorefrontImages;
+use App\Shared\Media\StorefrontImage;
 use App\Tenant\Catalog\CatalogSlug;
 use App\Tenant\Settings\Concerns\HasStoreTranslations;
 use Carbon\CarbonImmutable;
@@ -15,6 +17,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use OwenIt\Auditing\Auditable;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
+use Spatie\MediaLibrary\HasMedia;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 
@@ -35,8 +38,11 @@ use Spatie\Sluggable\SlugOptions;
  * @property CarbonImmutable|null $updated_at
  * @property CarbonImmutable|null $deleted_at
  */
-final class Brand extends Model implements AuditableContract
+final class Brand extends Model implements AuditableContract, HasMedia
 {
+    /** Its logo; a new one replaces the old. */
+    public const string LOGO = 'logo';
+
     use Auditable;
 
     /** @use HasFactory<BrandFactory> */
@@ -44,6 +50,7 @@ final class Brand extends Model implements AuditableContract
 
     use HasPublicId;
     use HasSlug;
+    use HasStorefrontImages;
     use HasStoreTranslations;
     use SoftDeletes;
 
@@ -78,6 +85,11 @@ final class Brand extends Model implements AuditableContract
             ->slugsShouldBeNoLongerThan(CatalogSlug::MAX_LENGTH)
             ->preventOverwrite()
             ->doNotGenerateSlugsOnUpdate();
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection(self::LOGO)->singleFile()->useDisk(StorefrontImage::DISK);
     }
 
     protected static function newFactory(): BrandFactory

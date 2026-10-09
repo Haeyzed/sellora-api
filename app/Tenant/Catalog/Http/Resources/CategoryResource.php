@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tenant\Catalog\Http\Resources;
 
+use App\Shared\Media\Http\Resources\StorefrontImageResource;
 use App\Tenant\Catalog\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -44,6 +45,8 @@ final class CategoryResource extends JsonResource
              * @var array<string, string>|null
              */
             'description' => $description === [] ? null : $description,
+            /** Null when it has no image. */
+            'image' => $this->whenLoaded('media', static fn (): ?StorefrontImageResource => ($image = $category->getFirstMedia(Category::IMAGE)) === null ? null : new StorefrontImageResource($image)),
             /** Used in the category's storefront address, such as "mens-shirts". */
             'slug' => $category->slug,
             /** Its place among its siblings, from 0. */

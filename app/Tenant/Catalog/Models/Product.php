@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Tenant\Catalog\Models;
 
 use App\Shared\Concerns\HasPublicId;
+use App\Shared\Media\Concerns\HasStorefrontImages;
+use App\Shared\Media\StorefrontImage;
 use App\Tenant\Catalog\CatalogSlug;
 use App\Tenant\Catalog\Enums\ProductStatus;
 use App\Tenant\Settings\Concerns\HasStoreTranslations;
@@ -20,6 +22,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use OwenIt\Auditing\Auditable;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
+use Spatie\MediaLibrary\HasMedia;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 
@@ -48,8 +51,11 @@ use Spatie\Sluggable\SlugOptions;
  * @property-read Collection<int, ProductVariant> $variants
  * @property-read Collection<int, Attribute> $options
  */
-final class Product extends Model implements AuditableContract
+final class Product extends Model implements AuditableContract, HasMedia
 {
+    /** Its images, in order; the first is shown in lists. */
+    public const string GALLERY = 'gallery';
+
     use Auditable;
 
     /** @use HasFactory<ProductFactory> */
@@ -57,6 +63,7 @@ final class Product extends Model implements AuditableContract
 
     use HasPublicId;
     use HasSlug;
+    use HasStorefrontImages;
     use HasStoreTranslations;
     use SoftDeletes;
 
@@ -98,6 +105,11 @@ final class Product extends Model implements AuditableContract
             ->slugsShouldBeNoLongerThan(CatalogSlug::MAX_LENGTH)
             ->preventOverwrite()
             ->doNotGenerateSlugsOnUpdate();
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection(self::GALLERY)->useDisk(StorefrontImage::DISK);
     }
 
     /**

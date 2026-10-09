@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tenant\Settings\Http\Resources;
 
+use App\Shared\Media\Http\Resources\StorefrontImageResource;
 use App\Tenant\Settings\Models\StoreSettings;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -29,6 +30,8 @@ final class StoreSettingsResource extends JsonResource
 
         return [
             'name' => $settings->name,
+            /** The store's logo; null when it has none. */
+            'logo' => $this->whenLoaded('media', static fn (): ?StorefrontImageResource => ($logo = $settings->getFirstMedia(StoreSettings::LOGO)) === null ? null : new StorefrontImageResource($logo)),
             /** ISO 3166-1 alpha-2, such as "NG". */
             'country' => $settings->country_code,
             /** The base currency, ISO 4217, such as "NGN". */

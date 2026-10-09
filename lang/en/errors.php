@@ -125,6 +125,7 @@ return [
     'product_status_conflict' => 'This product can\'t do that from where it is now, for example archiving one that is already archived.',
     'product_restore_conflict' => 'Another product now uses this product\'s slug, or another variant one of its SKUs or combinations. Change them, then restore it.',
     'variant_restore_conflict' => 'This variant can\'t come back: another variant now has its SKU or values, or its values no longer match the product\'s options.',
+    'product_image_order_mismatch' => 'List every image of the product exactly once.',
     'product_needs_a_variant' => 'A product needs at least one variant outside the trash. Move the product to the trash instead.',
     'attribute_value_in_use' => 'A variant, perhaps one in the trash, has this value. Change that variant first.',
 

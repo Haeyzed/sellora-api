@@ -39,7 +39,7 @@ final class CategoryController extends Controller
     public function index(ListCategoriesRequest $request): AnonymousResourceCollection
     {
         $query = Category::query()
-            ->with('parent:id,public_id')
+            ->with(['parent:id,public_id', 'media'])
             ->withCount('children')
             ->when($request->wantsTrashed(), static fn ($query) => $query->onlyTrashed());
         $request->applyParentFilter($query);
@@ -111,6 +111,6 @@ final class CategoryController extends Controller
 
     private function withDetails(Category $category): Category
     {
-        return $category->load('parent:id,public_id')->loadCount('children');
+        return $category->load(['parent:id,public_id', 'media'])->loadCount('children');
     }
 }

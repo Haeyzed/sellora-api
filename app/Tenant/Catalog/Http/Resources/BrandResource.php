@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tenant\Catalog\Http\Resources;
 
+use App\Shared\Media\Http\Resources\StorefrontImageResource;
 use App\Tenant\Catalog\Models\Brand;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -42,6 +43,8 @@ final class BrandResource extends JsonResource
              * @var array<string, string>|null
              */
             'description' => $description === [] ? null : $description,
+            /** Null when it has no logo. */
+            'logo' => $this->whenLoaded('media', static fn (): ?StorefrontImageResource => ($logo = $brand->getFirstMedia(Brand::LOGO)) === null ? null : new StorefrontImageResource($logo)),
             /** Used in the brand's storefront address, such as "adidas". */
             'slug' => $brand->slug,
             /** When the brand was moved to the trash; null when it isn't in the trash. */

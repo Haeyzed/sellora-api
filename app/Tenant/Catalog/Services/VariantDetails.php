@@ -37,6 +37,12 @@ final readonly class VariantDetails
 
         $this->applyCodes($variant, $details);
         $this->applyShipping($variant, $details);
+
+        if ($details->removesImage) {
+            $variant->image_media_id = null;
+        } elseif ($details->imageMediaId !== null) {
+            $variant->image_media_id = $details->imageMediaId;
+        }
     }
 
     /**

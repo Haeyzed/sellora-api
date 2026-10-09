@@ -35,6 +35,7 @@ final class BrandController extends Controller
     public function index(ListBrandsRequest $request): AnonymousResourceCollection
     {
         $brands = Brand::query()
+            ->with('media')
             ->when($request->wantsTrashed(), static fn ($query) => $query->onlyTrashed())
             ->orderBy('slug')
             ->orderBy('id')
@@ -53,7 +54,7 @@ final class BrandController extends Controller
      */
     public function store(StoreBrandRequest $request, CreateBrand $createBrand): JsonResponse
     {
-        return (new BrandResource($createBrand->handle($request->brandData())))->response()->setStatusCode(Response::HTTP_CREATED);
+        return (new BrandResource($createBrand->handle($request->brandData())->load('media')))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
     /**
@@ -63,7 +64,7 @@ final class BrandController extends Controller
      */
     public function show(ViewBrandRequest $request, Brand $brand): BrandResource
     {
-        return new BrandResource($brand);
+        return new BrandResource($brand->load('media'));
     }
 
     /**
@@ -77,7 +78,7 @@ final class BrandController extends Controller
      */
     public function update(UpdateBrandRequest $request, Brand $brand, UpdateBrand $updateBrand): BrandResource
     {
-        return new BrandResource($updateBrand->handle($brand, $request->changes()));
+        return new BrandResource($updateBrand->handle($brand, $request->changes())->load('media'));
     }
 
     /**

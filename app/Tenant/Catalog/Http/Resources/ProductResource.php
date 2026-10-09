@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tenant\Catalog\Http\Resources;
 
+use App\Shared\Media\Http\Resources\StorefrontImageResource;
 use App\Tenant\Catalog\Models\Category;
 use App\Tenant\Catalog\Models\Product;
 use Illuminate\Http\Request;
@@ -21,7 +22,7 @@ final class ProductResource extends JsonResource
      *
      * @var list<string>
      */
-    public const array RELATIONS = ['brand:id,public_id', 'primaryCategory:id,public_id', 'categories:id,public_id', 'options', 'variants.attributeValues.attribute:id,public_id'];
+    public const array RELATIONS = ['brand:id,public_id', 'primaryCategory:id,public_id', 'categories:id,public_id', 'options', 'media', 'variants.attributeValues.attribute:id,public_id', 'variants.image:id,uuid'];
 
     public function __construct(Product $product)
     {
@@ -63,6 +64,8 @@ final class ProductResource extends JsonResource
             'category_ids' => $this->whenLoaded('categories', static fn (): array => array_values($product->categories->map(static fn (Category $category): string => $category->public_id)->all())),
             /** The ID of the category it is mainly listed under; null when it is in none. */
             'primary_category_id' => $this->whenLoaded('primaryCategory', static fn (): ?string => $product->primaryCategory?->public_id),
+            /** Its gallery, in order; the first image is shown in lists. */
+            'images' => $this->whenLoaded('media', static fn () => StorefrontImageResource::collection($product->getMedia(Product::GALLERY))),
             /** The attributes its variants differ by, such as Size and Colour, in the order customers see them; empty for a product with a single variant. */
             'options' => AttributeResource::collection($this->whenLoaded('options')),
             'variants' => ProductVariantResource::collection($this->whenLoaded('variants')),

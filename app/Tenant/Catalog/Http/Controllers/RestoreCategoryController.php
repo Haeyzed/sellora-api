@@ -32,6 +32,6 @@ final class RestoreCategoryController extends Controller
      */
     public function __invoke(ManageCategoryRequest $request, Category $category, RestoreCategory $restoreCategory): CategoryResource
     {
-        return new CategoryResource($restoreCategory->handle($category)->load('parent:id,public_id')->loadCount('children'));
+        return new CategoryResource($restoreCategory->handle($category)->load(['parent:id,public_id', 'media'])->loadCount('children'));
     }
 }

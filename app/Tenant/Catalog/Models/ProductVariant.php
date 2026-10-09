@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Auditable;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
  * One version of a product that a customer buys, such as "Linen shirt, blue, size M", with its price, SKU and shipping details.
@@ -45,9 +46,11 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property CarbonImmutable|null $deleted_at
+ * @property int|null $image_media_id One of its product's gallery images.
  * @property bool $trashed_with_product True while it is in the trash because its product is, so restoring the product brings it back.
  * @property-read Product $product
  * @property-read Collection<int, AttributeValue> $attributeValues
+ * @property-read Media|null $image
  */
 final class ProductVariant extends Model implements AuditableContract
 {
@@ -89,6 +92,16 @@ final class ProductVariant extends Model implements AuditableContract
     }
 
     /**
+     * Its own image: one of its product's gallery images, or none.
+     *
+     * @return BelongsTo<Media, $this>
+     */
+    public function image(): BelongsTo
+    {
+        return $this->belongsTo(Media::class, 'image_media_id');
+    }
+
+    /**
      * Its value for each of the product's options, such as "Blue" and "M".
      *
      * @return BelongsToMany<AttributeValue, $this>
@@ -119,6 +132,7 @@ final class ProductVariant extends Model implements AuditableContract
             'height_mm' => 'integer',
             'position' => 'integer',
             'trashed_with_product' => 'boolean',
+            'image_media_id' => 'integer',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
             'deleted_at' => 'immutable_datetime',

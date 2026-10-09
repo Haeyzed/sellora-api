@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tenant\Settings\Models;
 
+use App\Shared\Media\Concerns\HasStorefrontImages;
+use App\Shared\Media\StorefrontImage;
 use App\Shared\Money\TaxMode;
 use App\Shared\Tenancy\StoreProfileDetails;
 use App\Tenant\Settings\Enums\DimensionUnit;
@@ -13,6 +15,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use OwenIt\Auditing\Auditable;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
+use Spatie\MediaLibrary\HasMedia;
 
 /**
  * The store's core settings: one row (a check constraint keeps it so), audited field by field.
@@ -43,9 +46,13 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  */
-final class StoreSettings extends Model implements AuditableContract
+final class StoreSettings extends Model implements AuditableContract, HasMedia
 {
+    /** The store's logo on its storefront; a new one replaces the old. */
+    public const string LOGO = 'logo';
+
     use Auditable;
+    use HasStorefrontImages;
 
     /** The settings that the platform keeps a copy of, so changing one is sent on to it (section 6). */
     public const array PROFILE_FIELDS = ['name', 'country_code', 'currency_code', 'timezone', 'default_locale'];
@@ -85,6 +92,11 @@ final class StoreSettings extends Model implements AuditableContract
     /**
      * Saved settings may change the store's languages, so the remembered ones are forgotten.
      */
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection(self::LOGO)->singleFile()->useDisk(StorefrontImage::DISK);
+    }
+
     protected static function booted(): void
     {
         self::saved(static function (): void {

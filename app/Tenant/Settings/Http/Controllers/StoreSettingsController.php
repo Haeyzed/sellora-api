@@ -25,7 +25,7 @@ final class StoreSettingsController extends Controller
      */
     public function show(ViewStoreSettingsRequest $request, FindStoreSettings $findStoreSettings, PricedRecordsRegistry $pricedRecordsRegistry): StoreSettingsResource
     {
-        return new StoreSettingsResource($findStoreSettings->handle(), $pricedRecordsRegistry->anyExist());
+        return new StoreSettingsResource($findStoreSettings->handle()->load('media'), $pricedRecordsRegistry->anyExist());
     }
 
     /**
@@ -40,6 +40,6 @@ final class StoreSettingsController extends Controller
      */
     public function update(UpdateStoreSettingsRequest $request, UpdateStoreSettings $updateStoreSettings, PricedRecordsRegistry $pricedRecordsRegistry): StoreSettingsResource
     {
-        return new StoreSettingsResource($updateStoreSettings->handle($request->changes()), $pricedRecordsRegistry->anyExist());
+        return new StoreSettingsResource($updateStoreSettings->handle($request->changes())->load('media'), $pricedRecordsRegistry->anyExist());
     }
 }

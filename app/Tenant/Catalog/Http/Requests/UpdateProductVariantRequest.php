@@ -48,6 +48,8 @@ final class UpdateProductVariantRequest extends FormRequest
             'dimensions.length_mm' => $this->dimensionRules('dimensions'),
             'dimensions.width_mm' => $this->dimensionRules('dimensions'),
             'dimensions.height_mm' => $this->dimensionRules('dimensions'),
+            /** The ID of one of the product's images to show for this variant; null shows none of its own. */
+            'image' => $this->imageRules($this->route('product') instanceof Product ? $this->route('product') : null),
         ];
     }
 

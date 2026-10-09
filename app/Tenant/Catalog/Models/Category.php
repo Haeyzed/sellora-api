@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Tenant\Catalog\Models;
 
 use App\Shared\Concerns\HasPublicId;
+use App\Shared\Media\Concerns\HasStorefrontImages;
+use App\Shared\Media\StorefrontImage;
 use App\Tenant\Catalog\CatalogSlug;
 use App\Tenant\Settings\Concerns\HasStoreTranslations;
 use Carbon\CarbonImmutable;
@@ -17,6 +19,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use OwenIt\Auditing\Auditable;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
+use Spatie\MediaLibrary\HasMedia;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 
@@ -41,8 +44,11 @@ use Spatie\Sluggable\SlugOptions;
  * @property-read Category|null $parent
  * @property-read int|null $children_count
  */
-final class Category extends Model implements AuditableContract
+final class Category extends Model implements AuditableContract, HasMedia
 {
+    /** Its image; a new one replaces the old. */
+    public const string IMAGE = 'image';
+
     use Auditable;
 
     /** @use HasFactory<CategoryFactory> */
@@ -50,6 +56,7 @@ final class Category extends Model implements AuditableContract
 
     use HasPublicId;
     use HasSlug;
+    use HasStorefrontImages;
     use HasStoreTranslations;
     use SoftDeletes;
 
@@ -104,6 +111,11 @@ final class Category extends Model implements AuditableContract
     public function children(): HasMany
     {
         return $this->hasMany(self::class, 'parent_id');
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection(self::IMAGE)->singleFile()->useDisk(StorefrontImage::DISK);
     }
 
     protected static function newFactory(): CategoryFactory

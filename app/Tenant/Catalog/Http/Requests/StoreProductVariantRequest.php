@@ -56,6 +56,8 @@ final class StoreProductVariantRequest extends FormRequest
             'dimensions.length_mm' => $this->dimensionRules('dimensions'),
             'dimensions.width_mm' => $this->dimensionRules('dimensions'),
             'dimensions.height_mm' => $this->dimensionRules('dimensions'),
+            /** The ID of one of the product's images to show for this variant. */
+            'image' => $this->imageRules($this->route('product') instanceof Product ? $this->route('product') : null),
         ];
     }
 
@@ -80,6 +82,7 @@ final class StoreProductVariantRequest extends FormRequest
     {
         /** @var list<string> $publicIds */
         $publicIds = $this->validated('values');
+
         return array_values(AttributeValue::query()->whereIn('public_id', $publicIds)->get()
             ->sortBy(static fn (AttributeValue $value): int|false => array_search($value->public_id, $publicIds, true))
             ->all());

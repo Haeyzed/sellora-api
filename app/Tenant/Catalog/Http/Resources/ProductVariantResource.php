@@ -22,7 +22,7 @@ final class ProductVariantResource extends JsonResource
      *
      * @var list<string>
      */
-    public const array RELATIONS = ['attributeValues.attribute:id,public_id'];
+    public const array RELATIONS = ['attributeValues.attribute:id,public_id', 'image:id,uuid'];
 
     public function __construct(ProductVariant $variant)
     {
@@ -63,6 +63,8 @@ final class ProductVariantResource extends JsonResource
                 'width_mm' => $variant->width_mm,
                 'height_mm' => $variant->height_mm,
             ],
+            /** The ID of the product image shown for this variant; null when it has none of its own. */
+            'image_id' => $this->whenLoaded('image', static fn (): ?string => $variant->image?->uuid),
             /** Its place among the product's variants, from 0. */
             'position' => $variant->position,
             /** When the variant was moved to the trash; null when it isn't in the trash. */

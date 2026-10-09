@@ -14,6 +14,7 @@ final readonly class ProductVariantData
 {
     /**
      * @param  array{length_mm: int, width_mm: int, height_mm: int}|null  $dimensions
+     * @param  int|null  $imageMediaId  One of the product's gallery images.
      */
     public function __construct(
         public ?int $priceAmount = null,
@@ -28,5 +29,7 @@ final readonly class ProductVariantData
         public bool $removesWeight = false,
         public ?array $dimensions = null,
         public bool $removesDimensions = false,
+        public ?int $imageMediaId = null,
+        public bool $removesImage = false,
     ) {}
 }

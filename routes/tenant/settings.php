@@ -7,6 +7,7 @@ use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Settings\Http\Controllers\StaffTwoFactorRequirementController;
 use App\Tenant\Settings\Http\Controllers\StoreClosureController;
 use App\Tenant\Settings\Http\Controllers\StoreExportController;
+use App\Tenant\Settings\Http\Controllers\StoreLogoController;
 use App\Tenant\Settings\Http\Controllers\StoreSettingsController;
 use Illuminate\Support\Facades\Route;
 
@@ -22,6 +23,8 @@ Route::prefix('staff/store')
     ->group(static function (): void {
         Route::get('settings', [StoreSettingsController::class, 'show'])->name('settings.show');
         Route::patch('settings', [StoreSettingsController::class, 'update'])->name('settings.update');
+        Route::post('settings/logo', [StoreLogoController::class, 'store'])->name('settings.logo.store');
+        Route::delete('settings/logo', [StoreLogoController::class, 'destroy'])->name('settings.logo.destroy');
         Route::put('settings/staff-two-factor', [StaffTwoFactorRequirementController::class, 'update'])->name('settings.staff-two-factor.update');
 
         Route::post('closure', [StoreClosureController::class, 'store'])->name('closure.store');

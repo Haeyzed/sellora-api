@@ -8,6 +8,7 @@ use App\Shared\Auth\TwoFactor\TwoFactorAuthenticator;
 use App\Shared\Tenancy\Contracts\StoreSettingsSetup;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use PragmaRX\Google2FA\Google2FA;
 use Tests\Support\StoreDatabaseTemplate;
 use Tests\TestCase;
@@ -135,6 +136,9 @@ function deleteAllStores(): void
     tenancy()->end();
 
     Tenant::query()->get()->each(static function (Tenant $store): void {
+        // Its own folder of files (uploaded images), as purging a store deletes it.
+        File::deleteDirectory(storage_path(config()->string('tenancy.filesystem.suffix_base').$store->getTenantKey()));
+
         // Reset and kept for the next test store when it can be made identical to the template; dropped otherwise.
         if (StoreDatabaseTemplate::release($store)) {
             Tenant::withoutEvents(static fn (): ?bool => $store->delete());
