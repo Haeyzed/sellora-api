@@ -186,12 +186,18 @@ it('never shows or finds another store\'s products', function (): void {
     storefront('/products/linen-shirt', subdomain: 'other-front')->assertNotFound();
 });
 
-it('limits how often one visitor may read the catalog', function (): void {
+it('limits how often one visitor may read the catalog, counted per store', function (): void {
+    createStore('other-front');
     config(['api.rate_limits.public' => 2]);
 
     storefront('/products')->assertOk();
     storefront('/brands')->assertOk();
     storefront('/categories')->assertTooManyRequests();
+
+    // The same visitor (same IP address) is still welcome in another store (section 14).
+    storefront('/products', subdomain: 'other-front')->assertOk();
+    storefront('/brands', subdomain: 'other-front')->assertOk();
+    storefront('/categories', subdomain: 'other-front')->assertTooManyRequests();
 });
 
 it('needs no sign-in, and a staff token changes nothing', function (): void {
