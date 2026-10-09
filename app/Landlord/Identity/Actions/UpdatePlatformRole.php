@@ -6,11 +6,13 @@ namespace App\Landlord\Identity\Actions;
 
 use App\Landlord\Identity\Enums\PlatformPermission;
 use App\Landlord\Identity\Enums\PlatformRole;
+use App\Landlord\Identity\Exceptions\PlatformPermissionsExceedYourOwnException;
 use App\Landlord\Identity\Exceptions\PlatformRoleNameTakenException;
 use App\Landlord\Identity\Exceptions\PlatformRoleProtectedException;
 use App\Landlord\Identity\Models\PlatformAdmin;
 use App\Landlord\Identity\Services\PlatformRoleNames;
 use App\Landlord\Identity\Services\PlatformRolePermissions;
+use App\Landlord\Identity\Services\PlatformTeamRules;
 use App\Shared\Auth\Models\Role;
 use Illuminate\Database\UniqueConstraintViolationException;
 
@@ -22,12 +24,14 @@ final readonly class UpdatePlatformRole
     public function __construct(
         private PlatformRoleNames $platformRoleNames,
         private PlatformRolePermissions $platformRolePermissions,
+        private PlatformTeamRules $platformTeamRules,
     ) {}
 
     /**
      * @param  list<PlatformPermission>  $permissions  The complete new set.
      *
      * @throws PlatformRoleProtectedException When it is the built-in Super Admin role.
+     * @throws PlatformPermissionsExceedYourOwnException When the actor lacks one of the permissions.
      * @throws PlatformRoleNameTakenException When the new name is already used, ignoring case.
      */
     public function handle(PlatformAdmin $actor, Role $role, string $name, array $permissions): Role
@@ -35,6 +39,8 @@ final readonly class UpdatePlatformRole
         if ($role->name === PlatformRole::SuperAdmin->value) {
             throw new PlatformRoleProtectedException;
         }
+
+        $this->platformTeamRules->ensureCanGrant($actor, $permissions);
 
         return Role::query()->getConnection()->transaction(function () use ($actor, $role, $name, $permissions): Role {
             $this->platformRoleNames->ensureAvailable($name, $role);

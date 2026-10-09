@@ -7,6 +7,7 @@ namespace App\Landlord\Identity\Actions;
 use App\Landlord\Identity\Enums\PlatformRole;
 use App\Landlord\Identity\Exceptions\CannotManageOwnPlatformAccountException;
 use App\Landlord\Identity\Exceptions\LastSuperAdminException;
+use App\Landlord\Identity\Exceptions\PlatformPermissionsExceedYourOwnException;
 use App\Landlord\Identity\Models\PlatformAdmin;
 use App\Landlord\Identity\Services\PlatformTeamRules;
 use App\Shared\Auth\Models\Role;
@@ -23,10 +24,12 @@ final readonly class ChangePlatformAdminRoles
      *
      * @throws CannotManageOwnPlatformAccountException When the actor changes their own roles.
      * @throws LastSuperAdminException When it would take the Super Admin role from the last active super admin.
+     * @throws PlatformPermissionsExceedYourOwnException When the roles allow more than the actor may.
      */
     public function handle(PlatformAdmin $actor, PlatformAdmin $platformAdmin, array $roles): PlatformAdmin
     {
         $this->platformTeamRules->ensureNotSelf($actor, $platformAdmin);
+        $this->platformTeamRules->ensureCanGiveRoles($actor, $roles);
 
         return PlatformAdmin::query()->getConnection()->transaction(function () use ($actor, $platformAdmin, $roles): PlatformAdmin {
             $keepsSuperAdmin = array_any($roles, static fn (Role $role): bool => $role->name === PlatformRole::SuperAdmin->value);

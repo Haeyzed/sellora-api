@@ -2,13 +2,19 @@
 
 declare(strict_types=1);
 
+use App\Landlord\Identity\Actions\ChangePlatformAdminPermissions;
 use App\Landlord\Identity\Actions\ChangePlatformAdminRoles;
+use App\Landlord\Identity\Actions\CreatePlatformRole;
+use App\Landlord\Identity\Actions\InvitePlatformAdmin;
+use App\Landlord\Identity\Actions\UpdatePlatformRole;
 use App\Landlord\Identity\Enums\PlatformPermission;
 use App\Landlord\Identity\Enums\PlatformRole;
 use App\Landlord\Identity\Exceptions\LastSuperAdminException;
+use App\Landlord\Identity\Exceptions\PlatformPermissionsExceedYourOwnException;
 use App\Landlord\Identity\Models\PlatformAdmin;
 use App\Landlord\Identity\Models\PlatformAdminInvitation;
 use App\Landlord\Identity\PlatformAdminInvitationNotification;
+use App\Landlord\Identity\Services\PlatformRolePermissions;
 use App\Shared\Auth\AccessTokenIssuer;
 use App\Shared\Auth\Models\Role;
 use Database\Seeders\Landlord\PlatformPermissionSeeder;
@@ -250,4 +256,40 @@ it('never lets an admin change their own permissions, gives super admins none di
     platformTeam('GET', $path($support), as: $support)->assertForbidden();
 
     expect($support->permissions()->count() + $otherSuperAdmin->permissions()->count())->toBe(0);
+});
+
+it('never lets a platform admin grant a permission they don\'t hold, directly, through a role or through an invitation', function (): void {
+    // Only super admins reach team management today; the rule is tested directly so it holds if that ever changes.
+    Role::findOrCreate('Support', PlatformAdmin::GUARD)->givePermissionTo(PlatformPermission::StoresView->value);
+    Role::findOrCreate('Operations', PlatformAdmin::GUARD)->givePermissionTo(PlatformPermission::StoresView->value, PlatformPermission::StoresManage->value);
+    $actor = platformTeamMember('Bo Support', 'Support');
+    $actor->givePermissionTo(PlatformPermission::StoresExport->value);
+    $colleague = platformTeamMember('Cy Colleague');
+    $support = Role::findByName('Support', PlatformAdmin::GUARD);
+    $operations = Role::findByName('Operations', PlatformAdmin::GUARD);
+    $superAdminRole = Role::findByName(PlatformRole::SuperAdmin->value, PlatformAdmin::GUARD);
+
+    // What they hold, through their role or directly, they may pass on.
+    app(ChangePlatformAdminPermissions::class)->handle($actor, $colleague, [PlatformPermission::StoresView, PlatformPermission::StoresExport]);
+    app(ChangePlatformAdminRoles::class)->handle($actor, $colleague, [$support]);
+    expect($colleague->fresh()->getAllPermissions()->pluck('name')->sort()->values()->all())->toBe(['stores.export', 'stores.view']);
+
+    $refusals = [
+        'direct permission' => static fn () => app(ChangePlatformAdminPermissions::class)->handle($actor, $colleague, [PlatformPermission::StoresManage]),
+        'role with more' => static fn () => app(ChangePlatformAdminRoles::class)->handle($actor, $colleague, [$operations]),
+        'super admin role' => static fn () => app(ChangePlatformAdminRoles::class)->handle($actor, $colleague, [$superAdminRole]),
+        'new role with more' => static fn () => app(CreatePlatformRole::class)->handle($actor, 'Escalated', [PlatformPermission::StoresManage]),
+        'role edited to more' => static fn () => app(UpdatePlatformRole::class)->handle($actor, $support, 'Support', [PlatformPermission::StoresView, PlatformPermission::StoresGrant]),
+        'invitation with more' => static fn () => app(InvitePlatformAdmin::class)->handle($actor, 'new.admin@example.com', null, [$operations]),
+        'invitation as super admin' => static fn () => app(InvitePlatformAdmin::class)->handle($actor, 'new.super@example.com', null, [$superAdminRole]),
+    ];
+
+    foreach ($refusals as $attempt => $grant) {
+        expect($grant)->toThrow(PlatformPermissionsExceedYourOwnException::class, null, $attempt);
+    }
+
+    expect($colleague->fresh()->getAllPermissions()->pluck('name')->sort()->values()->all())->toBe(['stores.export', 'stores.view'])
+        ->and(Role::query()->where('name', 'Escalated')->exists())->toBeFalse()
+        ->and(PlatformRolePermissions::namesOf($support->fresh()))->toBe(['stores.view'])
+        ->and(PlatformAdminInvitation::query()->count())->toBe(0);
 });

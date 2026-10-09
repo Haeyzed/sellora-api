@@ -2,13 +2,20 @@
 
 declare(strict_types=1);
 
+use App\Landlord\Identity\Actions\ChangePlatformAdminPermissions;
 use App\Landlord\Identity\Enums\PlatformPermission;
+use App\Landlord\Identity\Enums\PlatformRole;
 use App\Landlord\Identity\Models\PlatformAdmin;
+use App\Landlord\Identity\Services\PlatformRolePermissions;
 use App\Shared\Auth\Models\Role;
+use App\Tenant\Identity\Actions\ChangeStaffMemberPermissions;
+use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
+use App\Tenant\Identity\Services\StaffRolePermissions;
 use App\Tenant\Identity\StaffPermissionCatalogue;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\Artisan;
+use Spatie\Permission\Exceptions\PermissionDoesNotExist;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -103,4 +110,33 @@ it('skips stores without a database, and keeps syncing the others when one store
     expect(Artisan::call('permissions:sync'))->toBe(1)
         ->and(Artisan::output())->toContain("Store {$broken->id}")->toContain('1 stores could not be synced')
         ->and($healthy->run(static fn (): array => permissionNames(StaffMember::GUARD)))->toContain('catalog.view');
+});
+
+it('refuses loudly to grant a permission whose row was never synced, instead of silently granting nothing', function (): void {
+    $store = createStore('unsynced-store');
+
+    $store->run(static function (): void {
+        Permission::query()->where('name', 'catalog.view')->delete();
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        $role = Role::findOrCreate('Cataloguer', StaffMember::GUARD);
+        $owner = StaffMember::factory()->create();
+        $owner->assignRole(StaffRole::Owner->value);
+        $staffMember = StaffMember::factory()->create();
+
+        expect(static fn () => app(StaffRolePermissions::class)->replace($role, ['catalog.view']))->toThrow(PermissionDoesNotExist::class)
+            ->and(static fn () => app(ChangeStaffMemberPermissions::class)->handle($owner, $staffMember, ['catalog.view']))->toThrow(PermissionDoesNotExist::class)
+            ->and($role->permissions()->count())->toBe(0)
+            ->and($staffMember->permissions()->count())->toBe(0);
+    });
+
+    // The central database has no platform permission rows until it is synced.
+    $superAdmin = PlatformAdmin::factory()->create();
+    $superAdmin->assignRole(Role::findOrCreate(PlatformRole::SuperAdmin->value, PlatformAdmin::GUARD));
+    $platformAdmin = PlatformAdmin::factory()->create();
+    $platformRole = Role::findOrCreate('Support', PlatformAdmin::GUARD);
+
+    expect(static fn () => app(PlatformRolePermissions::class)->replace($platformRole, [PlatformPermission::StoresView]))->toThrow(PermissionDoesNotExist::class)
+        ->and(static fn () => app(ChangePlatformAdminPermissions::class)->handle($superAdmin, $platformAdmin, [PlatformPermission::StoresView]))->toThrow(PermissionDoesNotExist::class)
+        ->and($platformRole->permissions()->count())->toBe(0)
+        ->and($platformAdmin->permissions()->count())->toBe(0);
 });

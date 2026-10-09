@@ -6,9 +6,11 @@ namespace App\Landlord\Identity\Actions;
 
 use App\Landlord\Identity\Exceptions\PlatformAdminAlreadyExistsException;
 use App\Landlord\Identity\Exceptions\PlatformAdminInvitationAlreadyPendingException;
+use App\Landlord\Identity\Exceptions\PlatformPermissionsExceedYourOwnException;
 use App\Landlord\Identity\Models\PlatformAdmin;
 use App\Landlord\Identity\Models\PlatformAdminInvitation;
 use App\Landlord\Identity\Services\PlatformAdminInvitationLinks;
+use App\Landlord\Identity\Services\PlatformTeamRules;
 use App\Shared\Auth\Models\Role;
 
 /**
@@ -19,7 +21,10 @@ use App\Shared\Auth\Models\Role;
  */
 final readonly class InvitePlatformAdmin
 {
-    public function __construct(private PlatformAdminInvitationLinks $platformAdminInvitationLinks) {}
+    public function __construct(
+        private PlatformAdminInvitationLinks $platformAdminInvitationLinks,
+        private PlatformTeamRules $platformTeamRules,
+    ) {}
 
     /**
      * @param  string  $email  Already trimmed and lower-cased.
@@ -27,9 +32,12 @@ final readonly class InvitePlatformAdmin
      *
      * @throws PlatformAdminAlreadyExistsException When the email already belongs to a platform admin.
      * @throws PlatformAdminInvitationAlreadyPendingException When the email already has a pending invitation.
+     * @throws PlatformPermissionsExceedYourOwnException When the roles allow more than the inviter may.
      */
     public function handle(PlatformAdmin $inviter, string $email, ?string $name, array $roles): PlatformAdminInvitation
     {
+        $this->platformTeamRules->ensureCanGiveRoles($inviter, $roles);
+
         return PlatformAdminInvitation::query()->getConnection()->transaction(function () use ($inviter, $email, $name, $roles): PlatformAdminInvitation {
             // Held until commit, so two invitations for the same email can't both pass the checks.
             PlatformAdminInvitation::query()->getConnection()->select('select pg_advisory_xact_lock(hashtext(?))', ['platform-admin-invitation:'.$email]);
