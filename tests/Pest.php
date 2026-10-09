@@ -3,13 +3,13 @@
 declare(strict_types=1);
 
 use App\Landlord\Tenancy\Models\Tenant;
-use App\Landlord\Tenancy\Services\StoreDatabase;
 use App\Shared\Auth\TwoFactor\Contracts\TwoFactorAuthenticatable;
 use App\Shared\Auth\TwoFactor\TwoFactorAuthenticator;
 use App\Shared\Tenancy\Contracts\StoreSettingsSetup;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use PragmaRX\Google2FA\Google2FA;
+use Tests\Support\StoreDatabaseTemplate;
 use Tests\TestCase;
 
 /*
@@ -30,9 +30,12 @@ pest()->extend(TestCase::class)->in('Feature');
 | Store helpers
 |--------------------------------------------------------------------------
 |
-| Tests that create stores provision real tenant databases, so they use
+| Tests that create stores get real tenant databases, so they use
 | DatabaseTruncation (PostgreSQL can't create a database inside a
 | transaction) and delete their stores afterwards, which drops the databases.
+| Each store database is a copy of one prepared per process, or a used copy
+| reset to be identical to it (StoreDatabaseTemplate), never migrated from
+| scratch.
 |
 */
 
@@ -45,7 +48,8 @@ function createStore(string $subdomain, array $attributes = []): Tenant
 {
     $store = Tenant::factory()->create($attributes);
     $store->domains()->create(['domain' => Tenant::platformDomainFor($subdomain)]);
-    app(StoreDatabase::class)->prepare($store);
+    // A copy of a database prepared once per process, exactly as StoreDatabase::prepare() makes it, but in a fraction of the time.
+    StoreDatabaseTemplate::copyInto($store);
     // As setting a store up does: every store has its settings from the start.
     $store->run(static fn () => app(StoreSettingsSetup::class)->initialize());
 
@@ -124,13 +128,20 @@ function storeUrl(string $subdomain, string $path): string
 }
 
 /**
- * Leaves the current store and deletes every store created by the test, dropping the databases of those that have one.
+ * Leaves the current store and deletes every store created by the test, giving their databases back for reuse (or dropping them).
  */
 function deleteAllStores(): void
 {
     tenancy()->end();
 
     Tenant::query()->get()->each(static function (Tenant $store): void {
+        // Reset and kept for the next test store when it can be made identical to the template; dropped otherwise.
+        if (StoreDatabaseTemplate::release($store)) {
+            Tenant::withoutEvents(static fn (): ?bool => $store->delete());
+
+            return;
+        }
+
         $databaseConfig = $store->database();
 
         if ($databaseConfig->manager()->databaseExists((string) $databaseConfig->getName())) {

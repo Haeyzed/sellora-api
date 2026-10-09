@@ -10,6 +10,7 @@ use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\ParallelTesting;
 use Illuminate\Support\Str;
 
 /**
@@ -28,10 +29,16 @@ abstract class TestCase extends BaseTestCase
 
     /**
      * Tests never call real outside services. The fake breached-password service answers like the real one, from markAsBreached().
+     *
+     * Store databases get a prefix of their own per test process, so parallel
+     * processes never share or clean up each other's store databases (Laravel
+     * already gives each process its own central database).
      */
     protected function setUp(): void
     {
         parent::setUp();
+
+        config(['tenancy.database.prefix' => config()->string('tenancy.database.prefix').(ParallelTesting::token() ?: '0').'_']);
 
         Http::preventStrayRequests();
         Http::fake(['api.pwnedpasswords.com/range/*' => fn (Request $request): PromiseInterface => Http::response($this->breachedPasswordRange($request))]);
