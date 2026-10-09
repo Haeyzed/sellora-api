@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tenant\Catalog\Http\Resources;
 
 use App\Shared\Money\MoneyResource;
+use App\Tenant\Catalog\Models\AttributeValue;
 use App\Tenant\Catalog\Models\ProductVariant;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -16,6 +17,13 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 final class ProductVariantResource extends JsonResource
 {
+    /**
+     * The relations every response needs, so none is loaded lazily.
+     *
+     * @var list<string>
+     */
+    public const array RELATIONS = ['attributeValues.attribute:id,public_id'];
+
     public function __construct(ProductVariant $variant)
     {
         parent::__construct($variant);
@@ -30,6 +38,16 @@ final class ProductVariantResource extends JsonResource
 
         return [
             'id' => $variant->public_id,
+            /**
+             * Its value for each of the product's options, such as Colour "Blue" and Size "M"; empty for a product without options.
+             *
+             * @var list<array{attribute_id: string, value_id: string, label: array<string, string>}>
+             */
+            'values' => $this->whenLoaded('attributeValues', static fn (): array => array_values($variant->attributeValues->map(static fn (AttributeValue $value): array => [
+                'attribute_id' => $value->attribute->public_id,
+                'value_id' => $value->public_id,
+                'label' => $value->getTranslations('label'),
+            ])->all())),
             'sku' => $variant->sku,
             'barcode' => $variant->barcode,
             /** Null until the variant is priced; customers can't see or buy an unpriced variant. */

@@ -50,6 +50,8 @@ use App\Shared\Tenancy\Contracts\StoreSettingsSetup;
 use App\Tenant\Catalog\CatalogPricedRecords;
 use App\Tenant\Catalog\CatalogStoreTables;
 use App\Tenant\Catalog\Enums\CatalogPermission;
+use App\Tenant\Catalog\Models\Attribute;
+use App\Tenant\Catalog\Models\AttributeValue;
 use App\Tenant\Catalog\Models\Brand;
 use App\Tenant\Catalog\Models\Category;
 use App\Tenant\Catalog\Models\Product;
@@ -295,6 +297,8 @@ final class AppServiceProvider extends ServiceProvider
             'category' => Category::class,
             'product' => Product::class,
             'product_variant' => ProductVariant::class,
+            'attribute' => Attribute::class,
+            'attribute_value' => AttributeValue::class,
         ]);
     }
 

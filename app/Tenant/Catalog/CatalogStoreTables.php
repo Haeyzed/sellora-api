@@ -37,6 +37,15 @@ final class CatalogStoreTables implements ClassifiesStoreTables
                 'id', 'public_id', 'product_id', 'sku', 'barcode', 'price_amount', 'compare_at_price_amount', 'currency',
                 'requires_shipping', 'weight_grams', 'length_mm', 'width_mm', 'height_mm', 'position', 'created_at', 'updated_at', 'deleted_at',
             ],
+            exclude: ['attribute_signature' => 'Derived from the variant\'s values, which are exported themselves.'],
         );
+
+        $registry->table('attributes', include: ['id', 'public_id', 'name', 'position', 'created_at', 'updated_at']);
+
+        $registry->table('attribute_values', include: ['id', 'public_id', 'attribute_id', 'label', 'position', 'created_at', 'updated_at']);
+
+        $registry->table('attribute_product', include: ['product_id', 'attribute_id', 'position']);
+
+        $registry->table('attribute_value_product_variant', include: ['product_variant_id', 'attribute_id', 'attribute_value_id']);
     }
 }

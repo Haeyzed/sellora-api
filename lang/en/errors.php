@@ -112,5 +112,11 @@ return [
     'category_order_mismatch' => 'List every subcategory of the parent exactly once.',
     'product_slug_taken' => 'Another product already uses this slug. Choose another.',
     'variant_sku_taken' => 'Another product variant already uses this SKU. Choose another.',
+    'variant_combination_taken' => 'Another variant of this product already has these values. Each variant needs a different combination.',
+    'variant_limit_reached' => 'A product can have at most :limit variants outside the trash.',
+    'product_options_incomplete' => 'Give every variant of the product exactly one value for each of its options, and list every variant outside the trash.',
+    'product_has_no_options' => 'Give the product options, such as Size, before adding variants. A product without options has a single variant.',
+    'attribute_in_use' => 'A product varies by this attribute, or a variant (perhaps one in the trash) has one of its values. Remove it from them first.',
+    'attribute_value_in_use' => 'A variant, perhaps one in the trash, has this value. Change that variant first.',
 
 ];

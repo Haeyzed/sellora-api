@@ -3,9 +3,12 @@
 declare(strict_types=1);
 
 use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
+use App\Tenant\Catalog\Http\Controllers\AttributeController;
+use App\Tenant\Catalog\Http\Controllers\AttributeValueController;
 use App\Tenant\Catalog\Http\Controllers\BrandController;
 use App\Tenant\Catalog\Http\Controllers\CategoryController;
 use App\Tenant\Catalog\Http\Controllers\ProductController;
+use App\Tenant\Catalog\Http\Controllers\ProductOptionsController;
 use App\Tenant\Catalog\Http\Controllers\ProductVariantController;
 use App\Tenant\Catalog\Http\Controllers\ReorderCategoriesController;
 use App\Tenant\Catalog\Http\Controllers\RestoreBrandController;
@@ -43,5 +46,16 @@ Route::prefix('staff/catalog')
         Route::post('products', [ProductController::class, 'store'])->name('products.store');
         Route::get('products/{product}', [ProductController::class, 'show'])->name('products.show')->withTrashed();
         Route::patch('products/{product}', [ProductController::class, 'update'])->name('products.update');
+        Route::put('products/{product}/options', ProductOptionsController::class)->name('products.options');
+        Route::post('products/{product}/variants', [ProductVariantController::class, 'store'])->name('products.variants.store');
         Route::patch('products/{product}/variants/{variant}', [ProductVariantController::class, 'update'])->name('products.variants.update')->scopeBindings();
+
+        Route::get('attributes', [AttributeController::class, 'index'])->name('attributes.index');
+        Route::post('attributes', [AttributeController::class, 'store'])->name('attributes.store');
+        Route::get('attributes/{attribute}', [AttributeController::class, 'show'])->name('attributes.show');
+        Route::patch('attributes/{attribute}', [AttributeController::class, 'update'])->name('attributes.update');
+        Route::delete('attributes/{attribute}', [AttributeController::class, 'destroy'])->name('attributes.destroy');
+        Route::post('attributes/{attribute}/values', [AttributeValueController::class, 'store'])->name('attributes.values.store');
+        Route::patch('attributes/{attribute}/values/{value}', [AttributeValueController::class, 'update'])->name('attributes.values.update')->scopeBindings();
+        Route::delete('attributes/{attribute}/values/{value}', [AttributeValueController::class, 'destroy'])->name('attributes.values.destroy')->scopeBindings();
     });

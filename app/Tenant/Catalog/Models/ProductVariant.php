@@ -9,9 +9,11 @@ use App\Shared\Money\Money;
 use App\Shared\Money\MoneyCast;
 use Carbon\CarbonImmutable;
 use Database\Factories\Tenant\ProductVariantFactory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Auditable;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
@@ -39,10 +41,12 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property int|null $width_mm
  * @property int|null $height_mm
  * @property int $position Its place among the product's variants, from 0.
+ * @property string $attribute_signature Its attribute and value IDs, such as "3:12;5:40"; empty for the one variant of a product without options. Unique within the product outside the trash.
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property CarbonImmutable|null $deleted_at
  * @property-read Product $product
+ * @property-read Collection<int, AttributeValue> $attributeValues
  */
 final class ProductVariant extends Model implements AuditableContract
 {
@@ -67,9 +71,11 @@ final class ProductVariant extends Model implements AuditableContract
     ];
 
     /**
+     * The signature follows the values, which are audited on their own.
+     *
      * @var list<string>
      */
-    protected $auditExclude = ['id', 'public_id'];
+    protected $auditExclude = ['id', 'public_id', 'attribute_signature'];
 
     /**
      * The product it belongs to, even when the product is in the trash.
@@ -79,6 +85,16 @@ final class ProductVariant extends Model implements AuditableContract
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class)->withTrashed();
+    }
+
+    /**
+     * Its value for each of the product's options, such as "Blue" and "M".
+     *
+     * @return BelongsToMany<AttributeValue, $this>
+     */
+    public function attributeValues(): BelongsToMany
+    {
+        return $this->belongsToMany(AttributeValue::class)->withPivot('attribute_id')->orderByPivot('attribute_id');
     }
 
     protected static function newFactory(): ProductVariantFactory

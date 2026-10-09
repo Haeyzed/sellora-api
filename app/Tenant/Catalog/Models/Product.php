@@ -46,6 +46,7 @@ use Spatie\Sluggable\SlugOptions;
  * @property-read Category|null $primaryCategory
  * @property-read Collection<int, Category> $categories
  * @property-read Collection<int, ProductVariant> $variants
+ * @property-read Collection<int, Attribute> $options
  */
 final class Product extends Model implements AuditableContract
 {
@@ -127,6 +128,16 @@ final class Product extends Model implements AuditableContract
     public function categories(): BelongsToMany
     {
         return $this->belongsToMany(Category::class)->withTrashed();
+    }
+
+    /**
+     * The attributes its variants differ by, such as Size and Colour, in the order customers see them. Empty for a product with a single variant.
+     *
+     * @return BelongsToMany<Attribute, $this>
+     */
+    public function options(): BelongsToMany
+    {
+        return $this->belongsToMany(Attribute::class)->withPivot('position')->orderByPivot('position');
     }
 
     /**

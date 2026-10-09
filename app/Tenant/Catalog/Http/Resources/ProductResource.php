@@ -21,7 +21,7 @@ final class ProductResource extends JsonResource
      *
      * @var list<string>
      */
-    public const array RELATIONS = ['brand:id,public_id', 'primaryCategory:id,public_id', 'categories:id,public_id', 'variants'];
+    public const array RELATIONS = ['brand:id,public_id', 'primaryCategory:id,public_id', 'categories:id,public_id', 'options', 'variants.attributeValues.attribute:id,public_id'];
 
     public function __construct(Product $product)
     {
@@ -63,6 +63,8 @@ final class ProductResource extends JsonResource
             'category_ids' => $this->whenLoaded('categories', static fn (): array => array_values($product->categories->map(static fn (Category $category): string => $category->public_id)->all())),
             /** The ID of the category it is mainly listed under; null when it is in none. */
             'primary_category_id' => $this->whenLoaded('primaryCategory', static fn (): ?string => $product->primaryCategory?->public_id),
+            /** The attributes its variants differ by, such as Size and Colour, in the order customers see them; empty for a product with a single variant. */
+            'options' => AttributeResource::collection($this->whenLoaded('options')),
             'variants' => ProductVariantResource::collection($this->whenLoaded('variants')),
             /** When the product was moved to the trash; null when it isn't in the trash. */
             'trashed_at' => $product->deleted_at?->toIso8601String(),

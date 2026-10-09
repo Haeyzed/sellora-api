@@ -6,6 +6,7 @@ namespace App\Tenant\Catalog\Services;
 
 use App\Shared\Money\Money;
 use App\Tenant\Catalog\Data\ProductVariantData;
+use App\Tenant\Catalog\Exceptions\VariantCombinationTakenException;
 use App\Tenant\Catalog\Exceptions\VariantSkuTakenException;
 use App\Tenant\Catalog\Models\ProductVariant;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -16,6 +17,8 @@ use Illuminate\Database\UniqueConstraintViolationException;
 final readonly class VariantDetails
 {
     private const string SKU_INDEX = 'product_variants_sku_unique';
+
+    private const string COMBINATION_INDEX = 'product_variants_combination_unique';
 
     /**
      * Sets what changes; amounts become Money in the given currency.
@@ -40,6 +43,7 @@ final readonly class VariantDetails
      * @param  string  $skuField  The input field the SKU was sent in, for the error.
      *
      * @throws VariantSkuTakenException When another variant outside the trash uses the SKU.
+     * @throws VariantCombinationTakenException When another variant of the product outside the trash has the same values.
      */
     public function save(ProductVariant $variant, string $skuField = 'sku'): void
     {
@@ -48,6 +52,10 @@ final readonly class VariantDetails
         } catch (UniqueConstraintViolationException $exception) {
             if (str_contains($exception->getMessage(), self::SKU_INDEX)) {
                 throw new VariantSkuTakenException($skuField, $exception);
+            }
+
+            if (str_contains($exception->getMessage(), self::COMBINATION_INDEX)) {
+                throw new VariantCombinationTakenException(previous: $exception);
             }
 
             throw $exception;
