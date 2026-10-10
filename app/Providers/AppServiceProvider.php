@@ -47,6 +47,7 @@ use App\Shared\Tenancy\Contracts\StorePermissions;
 use App\Shared\Tenancy\Contracts\StoreProfile;
 use App\Shared\Tenancy\Contracts\StoreSessions;
 use App\Shared\Tenancy\Contracts\StoreSettingsSetup;
+use App\Shared\Tenancy\Contracts\StoreStockLedger;
 use App\Tenant\Catalog\CatalogPricedRecords;
 use App\Tenant\Catalog\CatalogStoreFiles;
 use App\Tenant\Catalog\CatalogStoreTables;
@@ -73,6 +74,15 @@ use App\Tenant\Identity\StaffPermissionCatalogue;
 use App\Tenant\Identity\StaffPermissionSync;
 use App\Tenant\Identity\StaffStoreOwnerAccounts;
 use App\Tenant\Identity\StoreSignOut;
+use App\Tenant\Inventory\Contracts\StockLocationSelector;
+use App\Tenant\Inventory\DefaultStockLocationSelector;
+use App\Tenant\Inventory\Enums\InventoryPermission;
+use App\Tenant\Inventory\InventoryStoreTables;
+use App\Tenant\Inventory\Models\InventoryItem;
+use App\Tenant\Inventory\Models\StockItem;
+use App\Tenant\Inventory\Models\StockLocation;
+use App\Tenant\Inventory\Models\StockMovement;
+use App\Tenant\Inventory\StockLedgerReconciliation;
 use App\Tenant\Settings\Enums\SettingsPermission;
 use App\Tenant\Settings\Models\StoreSettings;
 use App\Tenant\Settings\Policies\StoreLifecyclePolicy;
@@ -129,6 +139,8 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(StoreProfile::class, PlatformStoreProfile::class);
         $this->app->bind(StoreSettingsSetup::class, StoreSettingsDefaults::class);
         $this->app->bind(StorePermissions::class, StaffPermissionSync::class);
+        $this->app->bind(StoreStockLedger::class, StockLedgerReconciliation::class);
+        $this->app->bind(StockLocationSelector::class, DefaultStockLocationSelector::class);
         $this->app->bind(TwoFactorRequirement::class, StoreTwoFactorRequirement::class);
         // Per request or job, so a long-running worker never reuses one store's languages for the next.
         $this->app->scoped(StoreLocales::class);
@@ -144,6 +156,7 @@ final class AppServiceProvider extends ServiceProvider
             $catalogue->register(StaffPermission::class);
             $catalogue->register(SettingsPermission::class);
             $catalogue->register(CatalogPermission::class);
+            $catalogue->register(InventoryPermission::class);
 
             return $catalogue;
         });
@@ -261,7 +274,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->singleton(StoreExportRegistry::class, static function (Application $app): StoreExportRegistry {
             $registry = new StoreExportRegistry;
 
-            foreach ([SharedStoreTables::class, IdentityStoreTables::class, SettingsStoreTables::class, CustomerStoreTables::class, DeliveryStoreTables::class, CatalogStoreTables::class] as $storeTables) {
+            foreach ([SharedStoreTables::class, IdentityStoreTables::class, SettingsStoreTables::class, CustomerStoreTables::class, DeliveryStoreTables::class, CatalogStoreTables::class, InventoryStoreTables::class] as $storeTables) {
                 $app->make($storeTables)->classify($registry);
             }
 
@@ -304,6 +317,10 @@ final class AppServiceProvider extends ServiceProvider
             'product_variant' => ProductVariant::class,
             'attribute' => Attribute::class,
             'attribute_value' => AttributeValue::class,
+            'stock_location' => StockLocation::class,
+            'inventory_item' => InventoryItem::class,
+            'stock_item' => StockItem::class,
+            'stock_movement' => StockMovement::class,
         ]);
     }
 

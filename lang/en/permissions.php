@@ -30,6 +30,10 @@ return [
         'view' => 'See the catalog: brands, categories and products, including drafts, archived items and the trash.',
         'manage' => 'Create and change brands, categories and products, move them to the trash and restore them.',
     ],
+    'inventory' => [
+        'view' => 'See stock levels, locations and the history of every stock change.',
+        'adjust' => 'Receive stock, correct stock counts, and change how each variant\'s stock is handled.',
+    ],
 
     'settings' => [
         'view' => 'See the store\'s settings: name, country, currency, languages, tax mode, units and contact details.',

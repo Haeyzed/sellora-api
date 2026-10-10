@@ -49,6 +49,8 @@ final class StoreSettingsResource extends JsonResource
             'require_staff_two_factor' => $settings->require_staff_two_factor,
             'weight_unit' => $settings->weight_unit,
             'dimension_unit' => $settings->dimension_unit,
+            /** The stock level at or below which a variant counts as running low, unless the variant sets its own. */
+            'low_stock_threshold' => $settings->low_stock_threshold,
             'contact_email' => $settings->contact_email,
             /** E.164, such as "+2348012345678". */
             'contact_phone' => $settings->contact_phone,

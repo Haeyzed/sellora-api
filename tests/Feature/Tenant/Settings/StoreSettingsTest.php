@@ -94,7 +94,7 @@ it('starts a store with what it was registered with and its country\'s tax mode 
     $response->assertExactJson(['data' => [
         'name' => 'Ada Fabrics', 'logo' => null, 'country' => 'NG', 'currency' => 'NGN', 'timezone' => 'Africa/Lagos',
         'default_locale' => 'en', 'enabled_locales' => ['en'], 'tax_mode' => 'inclusive', 'pricing_locked' => false, 'require_staff_two_factor' => false,
-        'weight_unit' => 'kg', 'dimension_unit' => 'cm', 'contact_email' => null, 'contact_phone' => null, 'address' => null,
+        'weight_unit' => 'kg', 'dimension_unit' => 'cm', 'low_stock_threshold' => 5, 'contact_email' => null, 'contact_phone' => null, 'address' => null,
         'updated_at' => $updatedAt,
     ]]);
 });
@@ -241,4 +241,10 @@ it('fails loudly when a store has no settings, instead of creating them on read'
 
     expect($this->store->run(static fn (): int => DB::table('store_settings')->count()))->toBe(0)
         ->and(fn () => $this->store->run(static fn () => app(FindStoreSettings::class)->handle()))->toThrow(MissingStoreSettingsException::class);
+});
+
+it('lets staff set the store\'s low-stock threshold, a whole number from 0', function (): void {
+    storeSettingsRequest('PATCH', ['low_stock_threshold' => 3])->assertOk()->assertJsonPath('data.low_stock_threshold', 3);
+    storeSettingsRequest('PATCH', ['low_stock_threshold' => -1])->assertUnprocessable()->assertJsonValidationErrors('low_stock_threshold');
+    storeSettingsRequest('PATCH', ['low_stock_threshold' => '4'])->assertUnprocessable()->assertJsonValidationErrors('low_stock_threshold');
 });

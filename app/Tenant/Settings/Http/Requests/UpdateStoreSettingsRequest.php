@@ -58,6 +58,8 @@ final class UpdateStoreSettingsRequest extends FormRequest
             'tax_mode' => ['sometimes', Rule::enum(TaxMode::class)],
             'weight_unit' => ['sometimes', Rule::enum(WeightUnit::class)],
             'dimension_unit' => ['sometimes', Rule::enum(DimensionUnit::class)],
+            /** The stock level at or below which a variant counts as running low, unless the variant sets its own. */
+            'low_stock_threshold' => ['sometimes', 'integer:strict', 'min:0', 'max:1000000'],
             /** Shown to customers. */
             'contact_email' => ['sometimes', 'nullable', 'string', 'email:rfc', 'max:254'],
             /** In international format (+234…), or national format for the store's country. Stored and returned in E.164. */
@@ -113,7 +115,7 @@ final class UpdateStoreSettingsRequest extends FormRequest
         $changes = [];
         $fields = [
             'name' => 'name', 'country' => 'country_code', 'currency' => 'currency_code', 'timezone' => 'timezone',
-            'default_locale' => 'default_locale', 'tax_mode' => 'tax_mode', 'weight_unit' => 'weight_unit', 'dimension_unit' => 'dimension_unit',
+            'default_locale' => 'default_locale', 'tax_mode' => 'tax_mode', 'weight_unit' => 'weight_unit', 'dimension_unit' => 'dimension_unit', 'low_stock_threshold' => 'low_stock_threshold',
         ];
 
         foreach ($fields as $field => $column) {
