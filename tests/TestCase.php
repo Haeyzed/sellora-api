@@ -12,6 +12,7 @@ use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\ParallelTesting;
 use Illuminate\Support\Str;
+use Tests\Support\ProcessDatabase;
 
 /**
  * The common parent of every test that boots the application.
@@ -28,11 +29,31 @@ abstract class TestCase extends BaseTestCase
     private bool $breachedPasswordServiceIsDown = false;
 
     /**
+     * In a parallel run, switches Laravel's own test database handling off and gives the process its own central database instead (ProcessDatabase).
+     *
+     * Runs before any database trait, as Laravel's handling did.
+     */
+    protected function refreshApplication(): void
+    {
+        parent::refreshApplication();
+
+        ParallelTesting::resolveOptionsUsing(static fn (string $option): mixed => $option === 'without_databases'
+            ? true
+            : ($_SERVER['LARAVEL_PARALLEL_TESTING_'.mb_strtoupper($option)] ?? false));
+
+        $token = ParallelTesting::token();
+
+        if (! empty($_SERVER['LARAVEL_PARALLEL_TESTING']) && is_string($token) && $token !== '') {
+            ProcessDatabase::switchTo(config()->string('database.default'), $token);
+        }
+    }
+
+    /**
      * Tests never call real outside services. The fake breached-password service answers like the real one, from markAsBreached().
      *
      * Store databases get a prefix of their own per test process, so parallel
-     * processes never share or clean up each other's store databases (Laravel
-     * already gives each process its own central database).
+     * processes never share or clean up each other's store databases (each
+     * process also has its own central database, refreshApplication()).
      */
     protected function setUp(): void
     {
