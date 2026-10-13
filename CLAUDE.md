@@ -60,6 +60,8 @@ The legacy code may contain bugs, security holes, shortcuts and wrong business r
 
 **Reference data exception:** world data is the one case where Tenant code may read from the central database. Access it only through the package's models or a thin wrapper in `App\Shared\Geography`, never by writing raw queries against the central connection. **Only `App\Shared\Geography` may use the nnjeim package** (an architecture rule enforces this), and countries, states, currencies and timezones are always identified by ISO codes, never by the package's database IDs, which change when the data is reseeded.
 
+**Second reference data exception: market exchange rates.** The platform fetches market rates once for every store into a central, append-only `exchange_rates` table. Tenant code reads them only through `App\Shared\Money\ExchangeRates` (read-only, by ISO currency code), never by querying the central connection itself. The provider is reached through the `ExchangeRateSource` contract, implemented by a platform-level integration (Open Exchange Rates first). That integration serves the whole platform, so it is **not plan-gated** per store.
+
 ### 2.2 First-time setup: install and publish everything first
 
 On a fresh project, **the first task is installing and configuring all dependencies**, before any feature code. Do it in this order, and stop for my review at the end.
@@ -244,13 +246,29 @@ This platform targets merchants and shoppers worldwide. **Never hard-code anythi
 - **The base currency and the tax mode (inclusive or exclusive) can't be changed once anything is priced**, because stored prices are interpreted through them; changing either later would silently change what customers pay. Domains that hold prices block the change through a Shared guard contract.
 - Number formatting (decimal places, symbol position, right-to-left) comes from ISO 4217 and the locale, never from store settings.
 - Exchange rates are stored with a timestamp, and **an order saves the rate it used**. Later rate changes never alter past orders.
+- **Where rates come from:**
+  - The market rate is fetched hourly for the whole platform, against USD, and every fetch is kept (deleted after a retention period set in config).
+  - A store's rate for a currency is the cross rate from the market plus the store's own margin for that currency. The market rate and the margin are always stored separately, never multiplied into one number.
+  - A merchant may set a manual rate instead. It's audited, and staff always see the market rate beside it.
+  - Rates go in one direction everywhere: an amount in the base currency × rate = the amount in the presentment currency.
+- **Stale rates:** a presentment currency whose market rate is older than the limit in config (48 hours), with no manual rate, stops being offered. Prices are never quoted on an old rate. Platform admins are alerted well before that (after 12 hours without a successful fetch), because a provider outage affects every store at once.
+- **Converted prices** are rounded half-up to the target currency's ISO 4217 decimals per unit, then multiplied by quantity. No "nice" rounding (.99, whole numbers) in core; merchants who want exact figures set fixed prices.
+- **Fixed prices per currency** are optional, per variant, in minor units. When one exists it's used as it is, with no conversion.
+- **Extra currencies are core for every plan**, capped by the plan limit `presentment_currencies` (the base currency never counts). A missing limit means zero, so the store sells in its base currency only.
 - **Precision rule:** everything a customer is charged or sees as a price (unit prices, line totals, discounts, tax, shipping, order totals, refunds) is stored and calculated in **whole minor units**. Only internal figures may carry extra decimals: purchase unit costs (for example bulk supplier costs) and exchange rates. Store those as decimals with a fixed, documented scale, and round them into `Money` (through `brick/money`) before they affect anything a customer pays.
 - **Rounding mode:** customer-facing amounts round **half-up**. Always pass the rounding mode explicitly; never rely on a library default. Splitting an amount (discounts across lines, refunds across items) uses largest-remainder allocation, so the parts always add up exactly to the whole.
 
 **Tax**
 - Support both tax-inclusive pricing (common in Europe and Africa) and tax-exclusive pricing (common in the US), set per store.
 - Tax rules vary by country and region, so tax calculation sits behind a `TaxCalculator` contract. A simple rate-table version lives in core, and external tax services can be added later as integrations.
-- Orders store the tax amounts and rates actually applied, never recalculate them later.
+- **The calculator receives everything it needs as input** (currency, tax mode, origin and destination address, lines with their tax class) and reads no settings itself, so a result can be tested and saved exactly as it was calculated.
+- **Tax classes sit on variants**, with exactly one store default. **Zero-rated and exempt are different classes:** zero-rated is taxable at 0% and still reported; exempt is outside tax. A class still in use can't be deleted.
+- **Rates** are per tax class and region (ISO country code, optional state code). **The most specific rate wins** (a state rate replaces the country rate; they never add up). No rate means zero tax, flagged as "no rate" so staff can see it. Core seeds no country's rates: tax rates change and a wrong one is the merchant's liability, so merchants enter their own.
+- **Rounding is per line, half-up**, on the line's taxable amount (unit price × quantity − discount). The order's tax is the exact sum of its lines. A line with several tax parts is calculated at the combined rate and split by largest remainder.
+- **Inclusive stores selling abroad keep the shown price fixed**: the tax inside it follows the destination's rate, so the merchant's share changes, not the customer's price.
+- **Shipping is a taxable line** with its own tax class from store settings (Standard for new stores; empty means shipping isn't taxed).
+- **Country plug-ins** register a `TaxCalculator` for their destination countries. Core uses one only while its module or integration is Enabled for the store (section 8), and falls back to the rate table otherwise. Plug-ins that are only rules (for example India's GST split) are **modules**; ones that call an outside tax service (for example Avalara or TaxJar) are **integrations**.
+- **Tax-exempt customers** (B2B, reverse charge) come with Customers (Step 10), as information the calculator receives; the calculator's input is designed so adding it changes no plug-in.
 
 **Languages**
 - Customer-facing content must be translatable per locale, using **`spatie/laravel-translatable`** (translations stored as JSON in the same column, for example `{"en": "Shoe", "fr": "Chaussure"}`). Translate product names and descriptions, variant and attribute labels, category and brand names, storefront pages, menus, banners and SEO text. Never translate SKUs, prices, codes or internal notes.
@@ -421,7 +439,8 @@ app/
 │   │   ├── DecimalCast.php           # fixed-scale column; refuses values with too many decimals
 │   │   ├── MoneyResource.php         # {amount, currency, formatted} in every API response
 │   │   ├── Currencies.php            # ISO 4217 list and decimals (the source of truth for currencies)
-│   │   └── PricedRecordsRegistry.php # domains holding prices register here; locks base currency and tax mode once anything is priced
+│   │   ├── PricedRecordsRegistry.php # domains holding prices register here; locks base currency and tax mode once anything is priced
+│   │   └── ExchangeRates/            # read-only market rates (central reference data), the ExchangeRateSource contract and the hourly refresh command
 │   ├── Http/
 │   │   ├── Controller.php            # abstract base controller
 │   │   └── Middleware/               # app-wide middleware only, e.g. ForceJsonResponse
@@ -1257,7 +1276,7 @@ These decisions came out of the legacy review. Follow them, and don't build anyt
 | `Repair` | later | postponed until there's demand |
 | `Projects` | **dropped** | not commerce; don't port |
 
-**Integrations:** payment gateways (Stripe, Paystack, Flutterwave), SMS providers (Termii, Africa's Talking), WhatsApp, push notifications, POS terminals (Moniepoint, OPay), WooCommerce sync and social commerce. Each is its own folder in `integrations/`, never inside `app/Shared`. Country-specific tax rules (such as India's GST split) are plug-ins behind `TaxCalculator`, never inside core.
+**Integrations:** payment gateways (Stripe, Paystack, Flutterwave), SMS providers (Termii, Africa's Talking), WhatsApp, push notifications, POS terminals (Moniepoint, OPay), WooCommerce sync and social commerce. Each is its own folder in `integrations/`, never inside `app/Shared`. Country-specific tax rules (such as India's GST split) are plug-ins behind `TaxCalculator`, never inside core: rule-only plug-ins are modules, outside tax services are integrations (section 3.3). Open Exchange Rates is the platform's market-rate provider, behind `ExchangeRateSource`.
 
 <laravel-boost-guidelines>
 === foundation rules ===
