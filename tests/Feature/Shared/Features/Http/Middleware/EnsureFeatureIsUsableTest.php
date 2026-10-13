@@ -29,11 +29,6 @@ afterEach(function (): void {
     deleteAllStores();
 });
 
-function giveFirstStore(FeatureSnapshot $snapshot): void
-{
-    test()->featureSource->give((string) test()->firstStore->getTenantKey(), $snapshot);
-}
-
 it('serves every module route when the module is enabled', function (): void {
     giveFirstStore(FakeFeatureSource::snapshot(entitled: ['loyalty']));
 

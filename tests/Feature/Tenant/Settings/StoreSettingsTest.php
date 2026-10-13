@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use App\Landlord\Tenancy\Enums\TenantStatus;
 use App\Landlord\Tenancy\Models\Tenant;
-use App\Shared\Auth\AccessTokenIssuer;
 use App\Shared\Auth\Models\Role;
 use App\Shared\Money\Contracts\PricedRecords;
 use App\Shared\Money\PricedRecordsRegistry;
@@ -18,7 +17,6 @@ use App\Tenant\Settings\Models\StoreSettings;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
-use Illuminate\Testing\TestResponse;
 use OwenIt\Auditing\Models\Audit;
 use Tests\Support\TruncatesCentralDatabase;
 
@@ -64,28 +62,6 @@ beforeEach(function (): void {
 afterEach(function (): void {
     deleteAllStores();
 });
-
-/**
- * Sends a request to the store's settings API as the given staff member.
- *
- * @param  array<string, mixed>  $data
- */
-function storeSettingsRequest(string $method, array $data = [], ?StaffMember $as = null): TestResponse
-{
-    forgetSignIns();
-    $token = test()->store->run(static fn (): string => app(AccessTokenIssuer::class)->issue($as ?? test()->owner, StaffMember::GUARD, 'test')->plainTextToken);
-
-    $response = test()->withToken($token)->json($method, storeUrl('settings-store', '/api/v1/staff/store/settings'), $data);
-    tenancy()->end();
-    forgetSignIns();
-
-    return $response;
-}
-
-function currentStoreSettings(): StoreSettings
-{
-    return test()->store->run(static fn (): StoreSettings => app(FindStoreSettings::class)->handle());
-}
 
 it('starts a store with what it was registered with and its country\'s tax mode and units', function (): void {
     $response = storeSettingsRequest('GET')->assertOk();

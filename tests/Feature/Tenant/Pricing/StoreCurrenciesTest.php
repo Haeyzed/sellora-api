@@ -12,8 +12,6 @@ use App\Tenant\Pricing\Actions\FindExchangeRates;
 use App\Tenant\Pricing\Enums\ExchangeRateSource;
 use App\Tenant\Pricing\Models\StoreCurrency;
 use App\Tenant\Pricing\Services\StoreCurrencyLimit;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Testing\TestResponse;
 use OwenIt\Auditing\Models\Audit;
 use Spatie\Permission\Models\Permission;
 use Tests\Fixtures\Features\FakeFeatureSource;
@@ -50,41 +48,6 @@ beforeEach(function (): void {
 afterEach(function (): void {
     deleteAllStores();
 });
-
-/**
- * Market rates, as the hourly fetch records them: units per US dollar.
- *
- * @param  array<string, string>  $unitsPerUsd
- */
-function marketRates(array $unitsPerUsd, int $hoursAgo = 0): void
-{
-    foreach (['USD' => '1', ...$unitsPerUsd] as $currency => $rate) {
-        DB::connection('central')->table('exchange_rates')->insert(['currency' => $currency, 'units_per_usd' => $rate, 'source' => 'fake', 'fetched_at' => now()->subHours($hoursAgo), 'created_at' => now()]);
-    }
-}
-
-/**
- * @param  array<string, mixed>  $data
- */
-function currencyRequest(string $method, string $path, array $data = [], ?StaffMember $as = null): TestResponse
-{
-    forgetSignIns();
-    $token = test()->store->run(static fn (): string => app(AccessTokenIssuer::class)->issue($as ?? test()->owner, StaffMember::GUARD, 'test')->plainTextToken);
-
-    $response = test()->withToken($token)->json($method, storeUrl('currency-store', '/api/v1/staff/pricing/currencies'.$path), $data);
-    tenancy()->end();
-    forgetSignIns();
-
-    return $response;
-}
-
-function storefrontCurrencies(string $query = ''): TestResponse
-{
-    $response = test()->getJson(storeUrl('currency-store', '/api/v1/catalog/currencies'.$query));
-    tenancy()->end();
-
-    return $response;
-}
 
 it('converts at the market rate plus the store\'s margin, shown beside the market rate', function (): void {
     marketRates(['NGN' => '1500', 'EUR' => '0.9']);

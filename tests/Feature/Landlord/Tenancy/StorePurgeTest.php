@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Landlord\Identity\Models\PlatformAdmin;
 use App\Landlord\Legal\Models\LegalAcceptance;
 use App\Landlord\Legal\Models\LegalDocument;
 use App\Landlord\Plans\Models\Plan;
@@ -17,14 +16,11 @@ use App\Landlord\Tenancy\Models\ReleasedSubdomain;
 use App\Landlord\Tenancy\Models\StoreExport;
 use App\Landlord\Tenancy\Models\Tenant;
 use App\Landlord\Tenancy\Services\StoreSubdomains;
-use App\Shared\Auth\AccessTokenIssuer;
-use App\Shared\Auth\Models\Role;
 use Database\Seeders\Landlord\PlatformPermissionSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Testing\TestResponse;
 use Spatie\Activitylog\Models\Activity;
 use Tests\Support\TruncatesCentralDatabase;
 
@@ -51,41 +47,6 @@ afterEach(function (): void {
     File::deleteDirectory(storage_path('tenant'.test()->purgedStore->id));
     deleteAllStores();
 });
-
-function closeStoreForPurging(Tenant $store, DateTimeInterface $purgeAfter): void
-{
-    $store->update([
-        'status' => TenantStatus::Closed,
-        'status_before_closing' => TenantStatus::Active,
-        'closed_at' => now()->subDays(90),
-        'closure_reason' => 'The owner wrote that they are moving abroad',
-        'purge_after' => $purgeAfter,
-    ]);
-}
-
-function purgedStoreDatabaseExists(Tenant $store): bool
-{
-    $databaseConfig = $store->database();
-
-    return $databaseConfig->manager()->databaseExists((string) $databaseConfig->getName());
-}
-
-function restoreForPurgeTest(Tenant $store): TestResponse
-{
-    $role = Role::findOrCreate('Purge test store manager', PlatformAdmin::GUARD);
-    $role->syncPermissions(['stores.view', 'stores.manage']);
-    $platformAdmin = PlatformAdmin::factory()->create();
-    $platformAdmin->assignRole($role);
-    enableTwoFactor($platformAdmin);
-
-    forgetSignIns();
-    $response = test()
-        ->withToken(app(AccessTokenIssuer::class)->issue($platformAdmin, PlatformAdmin::GUARD, 'test')->plainTextToken)
-        ->deleteJson(centralUrl("/api/v1/platform/stores/{$store->public_id}/closure"));
-    forgetSignIns();
-
-    return $response;
-}
 
 it('purges nothing while purging is switched off', function (): void {
     config()->set('tenancy.purge_enabled', false);

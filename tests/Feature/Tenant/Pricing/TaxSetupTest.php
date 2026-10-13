@@ -13,7 +13,6 @@ use App\Tenant\Pricing\Models\TaxClass;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\Testing\TestResponse;
 use OwenIt\Auditing\Models\Audit;
 use Spatie\Permission\Models\Permission;
 use Tests\Support\TruncatesCentralDatabase;
@@ -48,26 +47,6 @@ beforeEach(function (): void {
 afterEach(function (): void {
     deleteAllStores();
 });
-
-/**
- * @param  array<string, mixed>  $data
- */
-function pricingRequest(string $method, string $path, array $data = [], ?StaffMember $as = null): TestResponse
-{
-    forgetSignIns();
-    $token = test()->store->run(static fn (): string => app(AccessTokenIssuer::class)->issue($as ?? test()->owner, StaffMember::GUARD, 'test')->plainTextToken);
-
-    $response = test()->withToken($token)->json($method, storeUrl('tax-setup-store', '/api/v1/staff/pricing'.$path), $data);
-    tenancy()->end();
-    forgetSignIns();
-
-    return $response;
-}
-
-function taxClassId(string $name): string
-{
-    return test()->store->run(static fn (): string => TaxClass::query()->where('name', $name)->sole()->public_id);
-}
 
 it('starts every store with four classes and no rates', function (): void {
     $classes = pricingRequest('GET', '/tax-classes')->assertOk()->assertJsonPath('meta.total', 4)->json('data');

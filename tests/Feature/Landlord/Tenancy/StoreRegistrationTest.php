@@ -16,18 +16,15 @@ use App\Landlord\Tenancy\Models\DatabaseServer;
 use App\Landlord\Tenancy\Models\StoreRegistration;
 use App\Landlord\Tenancy\Models\Tenant;
 use App\Landlord\Tenancy\StoreReadyNotification;
-use App\Landlord\Tenancy\StoreRegistrationCodeNotification;
 use App\Shared\Money\TaxMode;
 use App\Shared\Retention\PurgeExpiredRecords;
 use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Settings\Enums\WeightUnit;
 use App\Tenant\Settings\Models\StoreSettings;
-use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
-use Illuminate\Testing\TestResponse;
 use Spatie\Activitylog\Models\Activity;
 use Tests\Support\TruncatesCentralDatabase;
 
@@ -53,73 +50,6 @@ beforeEach(function (): void {
 afterEach(function (): void {
     deleteAllStores();
 });
-
-/**
- * Everything registration needs: a free plan, a version in force of every legal document, a database server, and the test countries (seedWorld()).
- */
-function openStoreRegistration(): DatabaseServer
-{
-    Plan::factory()->create(['code' => 'free', 'name' => 'Free']);
-
-    foreach (LegalDocumentType::cases() as $type) {
-        LegalDocument::factory()->ofType($type)->inForce()->create();
-    }
-
-    seedWorld();
-
-    return DatabaseServer::factory()->inRegion('africa')->create(['name' => 'africa-1', 'capacity' => 10]);
-}
-
-/**
- * @param  array<string, mixed>  $overrides
- * @return array<string, mixed>
- */
-function storeSignUp(array $overrides = []): array
-{
-    return [
-        'store_name' => 'Ada Fabrics',
-        'subdomain' => 'ada-fabrics',
-        'owner_name' => 'Ada Obi',
-        'email' => 'ada@example.com',
-        'password' => OWNER_PASSWORD,
-        'password_confirmation' => OWNER_PASSWORD,
-        'country_code' => 'NG',
-        'hosting_region' => 'africa',
-        'accepted_legal_documents' => array_map(static fn (LegalDocument $legalDocument): string => $legalDocument->public_id, array_values(LegalDocument::inForce())),
-        ...$overrides,
-    ];
-}
-
-/**
- * @param  array<string, mixed>  $overrides
- */
-function signUpForStore(array $overrides = []): TestResponse
-{
-    return test()->postJson(centralUrl('/api/v1/store-registrations'), storeSignUp($overrides));
-}
-
-function confirmStoreSignUp(string $storeRegistrationId, string $code): TestResponse
-{
-    return test()->postJson(centralUrl("/api/v1/store-registrations/{$storeRegistrationId}/verification"), ['code' => $code]);
-}
-
-/**
- * The last code emailed to the address.
- */
-function lastStoreRegistrationCode(string $email = 'ada@example.com'): string
-{
-    $codes = [];
-
-    Notification::assertSentOnDemand(StoreRegistrationCodeNotification::class, static function (StoreRegistrationCodeNotification $notification, array $channels, AnonymousNotifiable $notifiable) use ($email, &$codes): bool {
-        if ($notifiable->routes['mail'] === $email) {
-            $codes[] = $notification->code();
-        }
-
-        return true;
-    });
-
-    return $codes === [] ? throw new RuntimeException("No code was sent to {$email}.") : end($codes);
-}
 
 it('registers a store, sets it up on a server in its region, and lets the owner sign in', function (): void {
     $this->getJson(centralUrl('/api/v1/hosting-regions'))->assertOk()->assertExactJson(['data' => [['code' => 'africa', 'name' => 'Africa']]]);

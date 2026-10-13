@@ -2,9 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Shared\Auth\AccessTokenIssuer;
 use App\Shared\Features\Contracts\FeatureSource;
-use App\Shared\Features\Features;
 use App\Tenant\Catalog\Actions\ArchiveProduct;
 use App\Tenant\Catalog\Actions\FindProductVariant;
 use App\Tenant\Catalog\Actions\PublishProduct;
@@ -16,7 +14,6 @@ use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Testing\TestResponse;
 use Tests\Fixtures\Features\FakeFeatureSource;
 use Tests\Support\TruncatesCentralDatabase;
 
@@ -49,38 +46,6 @@ beforeEach(function (): void {
 afterEach(function (): void {
     deleteAllStores();
 });
-
-function lifecycleProductLimit(int $limit): void
-{
-    test()->featureSource->give(test()->store->getTenantKey(), FakeFeatureSource::snapshot(limits: ['products' => $limit]));
-    app(Features::class)->forget(test()->store->getTenantKey());
-}
-
-/**
- * @param  array<string, mixed>  $data
- */
-function lifecycleRequest(string $method, string $path, array $data = []): TestResponse
-{
-    forgetSignIns();
-    $token = test()->store->run(static fn (): string => app(AccessTokenIssuer::class)->issue(test()->owner, StaffMember::GUARD, 'test')->plainTextToken);
-
-    $response = test()->withToken($token)->json($method, storeUrl('lifecycle-store', '/api/v1/staff/catalog'.$path), $data);
-    tenancy()->end();
-    forgetSignIns();
-
-    return $response;
-}
-
-/**
- * @param  array<string, mixed>  $variant
- * @return array{product: string, variant: string}
- */
-function lifecycleProduct(string $name = 'Linen shirt', array $variant = ['price' => 1999]): array
-{
-    $response = lifecycleRequest('POST', '/products', ['name' => ['en' => $name], 'variant' => ['weight_grams' => 250, ...$variant]])->assertCreated();
-
-    return ['product' => $response->json('data.id'), 'variant' => $response->json('data.variants.0.id')];
-}
 
 it('publishes a product only with a default-language name and a priced variant', function (): void {
     Event::fake([ProductPublished::class]);

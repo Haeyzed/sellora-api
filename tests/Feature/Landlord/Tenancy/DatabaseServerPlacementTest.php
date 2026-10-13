@@ -15,11 +15,6 @@ use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
  */
 uses(LazilyRefreshDatabase::class);
 
-function storeAwaitingPlacement(string $region = 'africa'): Tenant
-{
-    return Tenant::factory()->provisioning()->create(['hosting_region' => $region]);
-}
-
 it('places a store on the least full server in its region that accepts new stores', function (): void {
     DatabaseServer::factory()->inRegion('africa')->create(['name' => 'busy', 'capacity' => 10])->forceFill(['tenant_count' => 5])->save();
     $quiet = DatabaseServer::factory()->inRegion('africa')->create(['name' => 'quiet', 'capacity' => 10]);

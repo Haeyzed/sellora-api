@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Tests\Support\ProcessDatabase;
 
 /*
@@ -11,26 +10,6 @@ use Tests\Support\ProcessDatabase;
  * created once when missing and never dropped or recreated, so a failed
  * check can't destroy a database that is in use.
  */
-
-/**
- * Runs the work with a scratch database name, dropping whatever was created afterwards.
- */
-function withScratchProcessDatabase(Closure $work): void
-{
-    $connection = config()->string('database.default');
-    $base = config()->string("database.connections.{$connection}.database");
-    $token = 'probe'.Str::lower(Str::random(8));
-    $database = "{$base}_test_{$token}";
-
-    try {
-        $work($connection, $base, $token, $database);
-    } finally {
-        config(["database.connections.{$connection}.database" => $base]);
-        DB::purge($connection);
-        DB::purge('scratch');
-        DB::connection($connection)->statement('drop database if exists "'.$database.'" with (force)');
-    }
-}
 
 it('creates the process database when it is missing, and points the connection at it', function (): void {
     withScratchProcessDatabase(static function (string $connection, string $base, string $token, string $database): void {

@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Shared\Auth\AccessTokenIssuer;
 use App\Shared\Auth\Models\Role;
 use App\Tenant\Catalog\Models\Category;
 use App\Tenant\Catalog\Services\CategoryTree;
@@ -10,7 +9,6 @@ use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Testing\TestResponse;
 use OwenIt\Auditing\Models\Audit;
 use Spatie\Permission\Models\Permission;
 use Tests\Support\TruncatesCentralDatabase;
@@ -46,30 +44,6 @@ beforeEach(function (): void {
 afterEach(function (): void {
     deleteAllStores();
 });
-
-/**
- * @param  array<string, mixed>  $data
- */
-function categoryRequest(string $method, string $path = '', array $data = [], ?StaffMember $as = null, string $subdomain = 'category-store'): TestResponse
-{
-    forgetSignIns();
-    $store = $subdomain === 'category-store' ? test()->store : test()->otherStore;
-    $token = $store->run(static fn (): string => app(AccessTokenIssuer::class)->issue($as ?? test()->owner, StaffMember::GUARD, 'test')->plainTextToken);
-
-    $response = test()->withToken($token)->json($method, storeUrl($subdomain, '/api/v1/staff/catalog/categories'.$path), $data);
-    tenancy()->end();
-    forgetSignIns();
-
-    return $response;
-}
-
-/**
- * Adds a category through the API and returns its public ID.
- */
-function addCategory(string $name, ?string $parent = null): string
-{
-    return categoryRequest('POST', data: ['name' => ['en' => $name], 'parent' => $parent])->assertCreated()->json('data.id');
-}
 
 it('adds categories at the top level or under another, each last among its siblings, with a slug and a public ID', function (): void {
     $clothing = addCategory('Clothing');

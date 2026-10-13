@@ -2,10 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Shared\Money\Money;
-use App\Tenant\Catalog\Enums\ProductStatus;
-use App\Tenant\Catalog\Models\Product;
-use App\Tenant\Catalog\Models\ProductVariant;
 use App\Tenant\Inventory\Actions\AdjustStock;
 use App\Tenant\Inventory\Actions\ChangeInventorySettings;
 use App\Tenant\Inventory\Actions\ReceiveStock;
@@ -41,31 +37,9 @@ afterEach(function (): void {
     deleteAllStores();
 });
 
-/**
- * A published product with priced variants, by SKU.
- *
- * @param  list<string>  $skus
- * @return array<string, ProductVariant>
- */
-function forSale(array $skus, string $slug = 'linen-shirt'): array
-{
-    $product = Product::factory()->create(['name' => ['en' => 'Linen shirt'], 'slug' => $slug]);
-    $product->forceFill(['status' => ProductStatus::Active])->save();
-    $variants = [];
-
-    foreach ($skus as $position => $sku) {
-        $variants[$sku] = ProductVariant::factory()->create([
-            'product_id' => $product->id, 'sku' => $sku, 'price' => Money::ofMinor(1999, 'NGN'), 'currency' => 'NGN',
-            'position' => $position, 'attribute_signature' => $sku,
-        ]);
-    }
-
-    return $variants;
-}
-
 it('tells customers whether each variant can be bought, never how many are left', function (): void {
     $this->store->run(static function (): void {
-        $variants = forSale(['IN', 'OUT', 'MADE', 'LATER', 'HELD']);
+        $variants = variantsForSale(['IN', 'OUT', 'MADE', 'LATER', 'HELD']);
         $location = StockLocation::query()->sole();
         app(ReceiveStock::class)->handle($variants['IN'], $location, 3);
         app(ChangeInventorySettings::class)->handle($variants['MADE'], new InventorySettingsData(tracksStock: false));
@@ -89,7 +63,7 @@ it('announces when a counted variant sells out, comes back and runs low', functi
     Event::fake([StockLevelChanged::class, VariantSoldOut::class, VariantBackInStock::class, StockRunningLow::class]);
 
     $this->store->run(static function (): void {
-        $variant = forSale(['IN'])['IN'];
+        $variant = variantsForSale(['IN'])['IN'];
         $location = StockLocation::query()->sole();
 
         app(ReceiveStock::class)->handle($variant, $location, 10);
@@ -113,7 +87,7 @@ it('never announces a sell-out for variants that can still be ordered', function
     Event::fake([VariantSoldOut::class, StockRunningLow::class]);
 
     $this->store->run(static function (): void {
-        $variants = forSale(['LATER', 'MADE']);
+        $variants = variantsForSale(['LATER', 'MADE']);
         $location = StockLocation::query()->sole();
         app(ChangeInventorySettings::class)->handle($variants['LATER'], new InventorySettingsData(allowsBackorder: true));
         app(ChangeInventorySettings::class)->handle($variants['MADE'], new InventorySettingsData(tracksStock: false));
@@ -135,7 +109,7 @@ it('announces nothing for a change that was rolled back', function (): void {
     });
 
     $this->store->run(static function () use (&$announced): void {
-        $variant = forSale(['IN'])['IN'];
+        $variant = variantsForSale(['IN'])['IN'];
 
         DB::beginTransaction();
         app(ReceiveStock::class)->handle($variant, StockLocation::query()->sole(), 4);
@@ -153,12 +127,12 @@ it('keeps reservations and availability inside their own store', function (): vo
     $buyer = new StockHolder('checkout', 'same-public-id');
 
     $this->store->run(static function () use ($buyer): void {
-        $variant = forSale(['IN'])['IN'];
+        $variant = variantsForSale(['IN'])['IN'];
         app(ReceiveStock::class)->handle($variant, StockLocation::query()->sole(), 1);
         app(ReserveStock::class)->handle($buyer, [new StockLine($variant, 1)]);
     });
     $other->run(static function () use ($buyer): void {
-        $variant = forSale(['IN'])['IN'];
+        $variant = variantsForSale(['IN'])['IN'];
         app(ReceiveStock::class)->handle($variant, StockLocation::query()->sole(), 2);
 
         expect(app(ReserveStock::class)->handle($buyer, [new StockLine($variant, 2)]))->toHaveCount(1)

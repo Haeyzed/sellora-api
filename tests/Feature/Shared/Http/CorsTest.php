@@ -6,17 +6,6 @@ beforeEach(function (): void {
     config(['cors.allowed_origins' => ['https://dashboard.example.com']]);
 });
 
-/**
- * Sends a browser CORS preflight for a GET request from the given origin.
- */
-function preflightFrom(string $origin): Illuminate\Testing\TestResponse
-{
-    return test()->withHeaders([
-        'Origin' => $origin,
-        'Access-Control-Request-Method' => 'GET',
-    ])->options('/api/v1/products');
-}
-
 it('allows a configured dashboard origin', function (): void {
     preflightFrom('https://dashboard.example.com')
         ->assertHeader('Access-Control-Allow-Origin', 'https://dashboard.example.com');
@@ -41,48 +30,6 @@ it('rejects a lookalike domain that only ends with the platform domain', functio
     preflightFrom('https://mystore.'.config('platform.domain').'.evil.net')
         ->assertHeaderMissing('Access-Control-Allow-Origin');
 });
-
-/**
- * Loads config/cors.php as it would be with these environment variables.
- *
- * @param  array<string, string|null>  $environment  Null unsets the variable.
- * @return array<string, mixed>
- */
-function corsConfigWith(array $environment): array
-{
-    $previous = [];
-
-    foreach ($environment as $name => $value) {
-        $previous[$name] = [$_SERVER[$name] ?? null, $_ENV[$name] ?? null, getenv($name)];
-        if ($value === null) {
-            unset($_SERVER[$name], $_ENV[$name]);
-            putenv($name);
-        } else {
-            $_SERVER[$name] = $_ENV[$name] = $value;
-            putenv("{$name}={$value}");
-        }
-    }
-
-    try {
-        return require base_path('config/cors.php');
-    } finally {
-        foreach ($previous as $name => [$server, $env, $process]) {
-            if ($server === null) {
-                unset($_SERVER[$name]);
-            } else {
-                $_SERVER[$name] = $server;
-            }
-
-            if ($env === null) {
-                unset($_ENV[$name]);
-            } else {
-                $_ENV[$name] = $env;
-            }
-
-            putenv($process === false ? $name : "{$name}={$process}");
-        }
-    }
-}
 
 it('lets the API docs on a central domain try the store API on a developer\'s machine only', function (): void {
     $docsOrigin = 'http://'.config()->array('platform.central_domains')[0];

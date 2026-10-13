@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Landlord\Tenancy\Models\Tenant;
 use App\Tenant\Settings\Models\StoreSettings;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -39,14 +38,6 @@ beforeEach(function (): void {
 afterEach(function (): void {
     deleteAllStores();
 });
-
-/**
- * @param  list<string>  $enabledLocales
- */
-function useLanguages(Tenant $store, string $defaultLocale, array $enabledLocales): void
-{
-    $store->run(static fn (): bool => StoreSettings::query()->sole()->update(['default_locale' => $defaultLocale, 'enabled_locales' => $enabledLocales]));
-}
 
 it('falls back to the store\'s default language, then to any language the text has', function (): void {
     $this->englishStore->run(static function (): void {

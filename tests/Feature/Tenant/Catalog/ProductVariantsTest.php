@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Shared\Auth\AccessTokenIssuer;
 use App\Shared\Auth\Models\Role;
 use App\Shared\Features\Contracts\FeatureSource;
 use App\Tenant\Catalog\Actions\AddProductVariant;
@@ -56,58 +55,6 @@ beforeEach(function (): void {
 afterEach(function (): void {
     deleteAllStores();
 });
-
-/**
- * @param  array<string, mixed>  $data
- */
-function catalogRequest(string $method, string $path, array $data = [], ?StaffMember $as = null, string $subdomain = 'variant-store'): TestResponse
-{
-    forgetSignIns();
-    $store = $subdomain === 'variant-store' ? test()->store : test()->otherStore;
-    $token = $store->run(static fn (): string => app(AccessTokenIssuer::class)->issue($as ?? test()->owner, StaffMember::GUARD, 'test')->plainTextToken);
-
-    $response = test()->withToken($token)->json($method, storeUrl($subdomain, '/api/v1/staff/catalog'.$path), $data);
-    tenancy()->end();
-    forgetSignIns();
-
-    return $response;
-}
-
-/**
- * Creates an attribute with values through the API and returns its ID and the value IDs by English label.
- *
- * @param  list<string>  $labels
- * @return array{id: string, values: array<string, string>}
- */
-function attributeWithValues(string $name, array $labels): array
-{
-    $response = catalogRequest('POST', '/attributes', [
-        'name' => ['en' => $name],
-        'values' => array_map(static fn (string $label): array => ['en' => $label], $labels),
-    ])->assertCreated();
-
-    $values = [];
-    foreach ($response->json('data.values') as $value) {
-        $values[$value['label']['en']] = $value['id'];
-    }
-
-    return ['id' => $response->json('data.id'), 'values' => $values];
-}
-
-/**
- * Creates a product with one variant through the API and returns the product and variant IDs.
- *
- * @return array{product: string, variant: string}
- */
-function productWithOneVariant(string $sku = 'TEE-1'): array
-{
-    $response = catalogRequest('POST', '/products', [
-        'name' => ['en' => 'Linen shirt'],
-        'variant' => ['price' => 1999, 'weight_grams' => 250, 'sku' => $sku],
-    ])->assertCreated();
-
-    return ['product' => $response->json('data.id'), 'variant' => $response->json('data.variants.0.id')];
-}
 
 it('manages attributes and their values in the store\'s languages', function (): void {
     $size = attributeWithValues('Size', ['S', 'M']);

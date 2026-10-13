@@ -2,11 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Landlord\Tenancy\Models\Tenant;
 use App\Shared\Tenancy\TenantRoutes;
 use App\Shared\Translations\Rules\TranslatedText;
 use App\Tenant\Settings\Http\Middleware\UseStoreLanguage;
-use App\Tenant\Settings\Models\StoreSettings;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Validator;
@@ -38,23 +36,6 @@ beforeEach(function (): void {
 afterEach(function (): void {
     deleteAllStores();
 });
-
-/**
- * @param  list<string>  $enabledLocales
- */
-function publishIn(Tenant $store, string $defaultLocale, array $enabledLocales): void
-{
-    $store->run(static fn (): bool => StoreSettings::query()->sole()->update(['default_locale' => $defaultLocale, 'enabled_locales' => $enabledLocales]));
-}
-
-function sampleLanguage(string $subdomain, ?string $acceptLanguage = null): Illuminate\Testing\TestResponse
-{
-    $request = $acceptLanguage === null ? test() : test()->withHeader('Accept-Language', $acceptLanguage);
-    $response = $request->getJson(storeUrl($subdomain, '/api/v1/sample-language'));
-    tenancy()->end();
-
-    return $response;
-}
 
 it('answers in the requested language when the store publishes in it, and in the store\'s default otherwise', function (): void {
     sampleLanguage('english-store', 'fr-CA,fr;q=0.9')->assertOk()->assertExactJson(['locale' => 'fr'])->assertHeader('Content-Language', 'fr');

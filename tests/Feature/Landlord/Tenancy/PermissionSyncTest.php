@@ -31,28 +31,6 @@ afterEach(function (): void {
     deleteAllStores();
 });
 
-/**
- * @return list<string>
- */
-function permissionNames(string $guard): array
-{
-    /** @var list<string> $names */
-    $names = Permission::query()->where('guard_name', $guard)->orderBy('name')->pluck('name')->all();
-
-    return $names;
-}
-
-/**
- * @return list<string>
- */
-function platformPermissionNames(): array
-{
-    $names = array_map(static fn (PlatformPermission $permission): string => $permission->value, PlatformPermission::cases());
-    sort($names);
-
-    return $names;
-}
-
 it('gives a new store every staff permission defined in code when it is set up', function (): void {
     $store = createStore('synced-store');
 

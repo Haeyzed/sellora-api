@@ -2,14 +2,11 @@
 
 declare(strict_types=1);
 
-use App\Shared\Auth\AccessTokenIssuer;
 use App\Shared\Auth\Models\Role;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Settings\Actions\FindStoreSettings;
-use Illuminate\Foundation\Auth\User;
-use Illuminate\Testing\TestResponse;
 use OwenIt\Auditing\Models\Audit;
 use Spatie\Activitylog\Models\Activity;
 use Spatie\Permission\Models\Permission;
@@ -53,36 +50,6 @@ beforeEach(function (): void {
 afterEach(function (): void {
     deleteAllStores();
 });
-
-/**
- * Sends a request to the store's API as the given account.
- *
- * @param  array<string, mixed>  $data
- */
-function securedStoreRequest(string $method, string $path, User $as, string $guard = StaffMember::GUARD, array $data = []): TestResponse
-{
-    forgetSignIns();
-    $token = test()->store->run(static fn (): string => app(AccessTokenIssuer::class)->issue($as, $guard, 'test')->plainTextToken);
-
-    $response = test()->withToken($token)->json($method, storeUrl('secured-store', '/api/v1'.$path), $data);
-    tenancy()->end();
-    forgetSignIns();
-
-    return $response;
-}
-
-/**
- * @param  array<string, mixed>  $data
- */
-function requireStaffTwoFactor(bool $required, array $data = [], ?StaffMember $as = null): TestResponse
-{
-    return securedStoreRequest('PUT', '/staff/store/settings/staff-two-factor', $as ?? test()->owner, data: ['required' => $required, 'current_password' => TWO_FACTOR_OWNER_PASSWORD, ...$data]);
-}
-
-function staffTwoFactorIsRequired(): bool
-{
-    return test()->store->run(static fn (): bool => app(FindStoreSettings::class)->handle()->require_staff_two_factor);
-}
 
 it('lets only the owner require it, with their password and a code, once they use it themselves', function (): void {
     requireStaffTwoFactor(true, as: $this->colleague)->assertForbidden();

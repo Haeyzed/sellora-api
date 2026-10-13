@@ -7,18 +7,10 @@ use App\Shared\Features\FeatureDefinition;
 use App\Shared\Features\FeatureKind;
 use App\Shared\Features\FeatureRegistry;
 use App\Shared\Features\Features;
-use App\Shared\Money\Decimal;
-use App\Shared\Money\Money;
 use App\Shared\Money\TaxMode;
 use App\Tenant\Pricing\Actions\CalculateTax;
-use App\Tenant\Pricing\Actions\CreateTaxRate;
-use App\Tenant\Pricing\Data\TaxableLine;
 use App\Tenant\Pricing\Data\TaxAddress;
-use App\Tenant\Pricing\Data\TaxClassData;
-use App\Tenant\Pricing\Data\TaxRequest;
-use App\Tenant\Pricing\Enums\TaxLineKind;
 use App\Tenant\Pricing\Enums\TaxOutcome;
-use App\Tenant\Pricing\Models\TaxClass;
 use App\Tenant\Pricing\TaxCalculatorRegistry;
 use Tests\Fixtures\Features\FakeFeatureSource;
 use Tests\Fixtures\Pricing\ExemptLinesNamed;
@@ -45,40 +37,13 @@ afterEach(function (): void {
     deleteAllStores();
 });
 
-/**
- * The store's class with this name, as a calculator sees it.
- */
-function taxClassNamed(string $name): TaxClassData
-{
-    return TaxClassData::of(TaxClass::query()->where('name', $name)->sole());
-}
-
-function addTaxRate(string $className, string $countryCode, ?string $stateCode, string $rate, string $name = 'VAT'): void
-{
-    app(CreateTaxRate::class)->handle(TaxClass::query()->where('name', $className)->sole(), $countryCode, $stateCode, $name, Decimal::of($rate));
-}
-
-/**
- * @param  array<string, array{0: int, 1: string}>  $lines  Minor amount and class name, by line key.
- */
-function taxFor(array $lines, TaxAddress $destination, TaxMode $taxMode = TaxMode::Exclusive, string $currency = 'NGN'): App\Tenant\Pricing\Data\TaxResult
-{
-    $taxableLines = [];
-
-    foreach ($lines as $key => [$amount, $className]) {
-        $taxableLines[] = new TaxableLine((string) $key, TaxLineKind::Goods, Money::ofMinor($amount, $currency), taxClassNamed($className));
-    }
-
-    return app(CalculateTax::class)->handle(new TaxRequest($currency, $taxMode, new TaxAddress('NG', 'LA'), $destination, $taxableLines));
-}
-
 it('uses the destination state\'s rate over its country\'s, the country\'s elsewhere, and charges nothing without either', function (): void {
     $this->store->run(static function (): void {
         addTaxRate('Standard', 'US', null, '5', 'Federal');
         addTaxRate('Standard', 'US', 'CA', '7.25', 'California sales tax');
         addTaxRate('Reduced', 'US', null, '2');
 
-        $california = taxFor(['shirt' => [10000, 'Standard'], 'book' => [10000, 'Reduced']], new TaxAddress('US', 'CA'));
+        $california = calculatedTaxFor(['shirt' => [10000, 'Standard'], 'book' => [10000, 'Reduced']], new TaxAddress('US', 'CA'));
         expect($california->line('shirt')->tax->minorAmount())->toBe(725)
             ->and($california->line('shirt')->taxes[0]->name)->toBe('California sales tax')
             ->and($california->line('shirt')->taxes[0]->stateCode)->toBe('CA')
@@ -86,9 +51,9 @@ it('uses the destination state\'s rate over its country\'s, the country\'s elsew
             ->and($california->line('book')->tax->minorAmount())->toBe(200)
             ->and($california->calculatedBy)->toBe('rate_table');
 
-        expect(taxFor(['shirt' => [10000, 'Standard']], new TaxAddress('US', 'NY'))->line('shirt')->tax->minorAmount())->toBe(500);
+        expect(calculatedTaxFor(['shirt' => [10000, 'Standard']], new TaxAddress('US', 'NY'))->line('shirt')->tax->minorAmount())->toBe(500);
 
-        $nowhere = taxFor(['shirt' => [10000, 'Standard']], new TaxAddress('DE'));
+        $nowhere = calculatedTaxFor(['shirt' => [10000, 'Standard']], new TaxAddress('DE'));
         expect($nowhere->line('shirt')->outcome)->toBe(TaxOutcome::NoRate)
             ->and($nowhere->totalTax()->isZero())->toBeTrue()
             ->and($nowhere->hasMissingRates())->toBeTrue();
@@ -99,7 +64,7 @@ it('tells zero-rated from exempt, though neither is charged', function (): void 
     $this->store->run(static function (): void {
         addTaxRate('Zero-rated', 'NG', null, '0');
 
-        $result = taxFor(['bread' => [5000, 'Zero-rated'], 'insurance' => [5000, 'Exempt']], new TaxAddress('NG', 'LA'), TaxMode::Inclusive);
+        $result = calculatedTaxFor(['bread' => [5000, 'Zero-rated'], 'insurance' => [5000, 'Exempt']], new TaxAddress('NG', 'LA'), TaxMode::Inclusive);
 
         expect($result->line('bread')->outcome)->toBe(TaxOutcome::ZeroRated)
             ->and($result->line('bread')->taxes)->toHaveCount(1)
@@ -115,8 +80,8 @@ it('keeps the shown price of a tax-inclusive store fixed, whatever the destinati
         addTaxRate('Standard', 'NG', null, '7.5');
         addTaxRate('Standard', 'DE', null, '19');
 
-        $home = taxFor(['shirt' => [10750, 'Standard']], new TaxAddress('NG'), TaxMode::Inclusive);
-        $abroad = taxFor(['shirt' => [10750, 'Standard']], new TaxAddress('DE'), TaxMode::Inclusive);
+        $home = calculatedTaxFor(['shirt' => [10750, 'Standard']], new TaxAddress('NG'), TaxMode::Inclusive);
+        $abroad = calculatedTaxFor(['shirt' => [10750, 'Standard']], new TaxAddress('DE'), TaxMode::Inclusive);
 
         expect([$home->line('shirt')->gross->minorAmount(), $home->line('shirt')->tax->minorAmount()])->toBe([10750, 750])
             // 10750 × 19 / 119 = 1716.39 → 1716: the merchant's share changes, not the customer's price.
@@ -136,13 +101,13 @@ it('uses a country plug-in only while its module or integration is enabled for t
         $lagos = new TaxAddress('NG', 'LA');
 
         $featureSource->give($storeId, FakeFeatureSource::snapshot(entitled: [RecordingTaxPlugIn::FEATURE_KEY]));
-        $enabled = taxFor(['shirt' => [10000, 'Standard']], $lagos);
+        $enabled = calculatedTaxFor(['shirt' => [10000, 'Standard']], $lagos);
         expect($enabled->calculatedBy)->toBe(RecordingTaxPlugIn::FEATURE_KEY)
             ->and(array_map(static fn ($applied): string => $applied->name, $enabled->line('shirt')->taxes))->toBe(['CGST', 'SGST'])
             ->and($enabled->line('shirt')->tax->minorAmount())->toBe(1800);
 
         // Only for the countries it registered for.
-        expect(taxFor(['shirt' => [10000, 'Standard']], new TaxAddress('US'))->calculatedBy)->toBe('rate_table');
+        expect(calculatedTaxFor(['shirt' => [10000, 'Standard']], new TaxAddress('US'))->calculatedBy)->toBe('rate_table');
 
         foreach (['switched off' => FakeFeatureSource::snapshot(entitled: [RecordingTaxPlugIn::FEATURE_KEY], merchantDisabled: [RecordingTaxPlugIn::FEATURE_KEY]),
             'downgraded' => FakeFeatureSource::snapshot(removed: [RecordingTaxPlugIn::FEATURE_KEY]),
@@ -150,7 +115,7 @@ it('uses a country plug-in only while its module or integration is enabled for t
             $featureSource->give($storeId, $snapshot);
             app(Features::class)->forget($storeId);
 
-            $fallback = taxFor(['shirt' => [10000, 'Standard']], $lagos);
+            $fallback = calculatedTaxFor(['shirt' => [10000, 'Standard']], $lagos);
             expect($fallback->calculatedBy)->toBe('rate_table')->and($fallback->line('shirt')->tax->minorAmount())->toBe(750);
         }
     });
@@ -164,7 +129,7 @@ it('settles exempt lines before any calculator is asked, so plug-ins never see t
     app()->tag([ExemptLinesNamed::class], CalculateTax::EXEMPTION_RULES_TAG);
 
     $this->store->run(static function (): void {
-        $result = taxFor(['shirt' => [10000, 'Standard'], 'exempt-shirt' => [10000, 'Standard'], 'insurance' => [10000, 'Exempt']], new TaxAddress('NG'));
+        $result = calculatedTaxFor(['shirt' => [10000, 'Standard'], 'exempt-shirt' => [10000, 'Standard'], 'insurance' => [10000, 'Exempt']], new TaxAddress('NG'));
 
         expect(RecordingTaxPlugIn::$askedAbout)->toBe([['shirt']])
             ->and(array_keys($result->lines))->toBe(['shirt', 'exempt-shirt', 'insurance'])
@@ -173,7 +138,7 @@ it('settles exempt lines before any calculator is asked, so plug-ins never see t
             ->and($result->totalTax()->minorAmount())->toBe(1800);
 
         RecordingTaxPlugIn::$askedAbout = [];
-        expect(taxFor(['exempt-only' => [500, 'Exempt']], new TaxAddress('NG'))->totalTax()->isZero())->toBeTrue()
+        expect(calculatedTaxFor(['exempt-only' => [500, 'Exempt']], new TaxAddress('NG'))->totalTax()->isZero())->toBeTrue()
             ->and(RecordingTaxPlugIn::$askedAbout)->toBe([]);
     });
 });
@@ -184,7 +149,7 @@ it('refuses a plug-in\'s answer about other lines than it was asked', function (
     app()->instance(FeatureSource::class, (new FakeFeatureSource)->give((string) $this->store->getTenantKey(), FakeFeatureSource::snapshot(entitled: ['forgetful'])));
 
     $this->store->run(static function (): void {
-        expect(static fn () => taxFor(['shirt' => [10000, 'Standard']], new TaxAddress('NG')))->toThrow(LogicException::class);
+        expect(static fn () => calculatedTaxFor(['shirt' => [10000, 'Standard']], new TaxAddress('NG')))->toThrow(LogicException::class);
     });
 });
 
@@ -193,8 +158,8 @@ it('works in currencies with no decimals and with three', function (): void {
         addTaxRate('Standard', 'JP', null, '10', 'Consumption tax');
         addTaxRate('Standard', 'KW', null, '5');
 
-        expect(taxFor(['camera' => [19999, 'Standard']], new TaxAddress('JP'), currency: 'JPY')->line('camera')->tax->minorAmount())->toBe(2000)
-            ->and(taxFor(['watch' => [12345, 'Standard']], new TaxAddress('KW'), TaxMode::Inclusive, 'KWD')->line('watch')->tax->minorAmount())->toBe(588);
+        expect(calculatedTaxFor(['camera' => [19999, 'Standard']], new TaxAddress('JP'), currency: 'JPY')->line('camera')->tax->minorAmount())->toBe(2000)
+            ->and(calculatedTaxFor(['watch' => [12345, 'Standard']], new TaxAddress('KW'), TaxMode::Inclusive, 'KWD')->line('watch')->tax->minorAmount())->toBe(588);
     });
 });
 
@@ -203,9 +168,9 @@ it('keeps each store\'s rates to itself', function (): void {
     $this->store->run(static fn () => addTaxRate('Standard', 'NG', null, '7.5'));
 
     $other->run(static function (): void {
-        expect(taxFor(['shirt' => [10000, 'Standard']], new TaxAddress('NG'))->line('shirt')->outcome)->toBe(TaxOutcome::NoRate);
+        expect(calculatedTaxFor(['shirt' => [10000, 'Standard']], new TaxAddress('NG'))->line('shirt')->outcome)->toBe(TaxOutcome::NoRate);
     });
     $this->store->run(static function (): void {
-        expect(taxFor(['shirt' => [10000, 'Standard']], new TaxAddress('NG'))->line('shirt')->tax->minorAmount())->toBe(750);
+        expect(calculatedTaxFor(['shirt' => [10000, 'Standard']], new TaxAddress('NG'))->line('shirt')->tax->minorAmount())->toBe(750);
     });
 });

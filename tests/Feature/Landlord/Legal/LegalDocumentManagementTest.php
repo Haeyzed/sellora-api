@@ -6,10 +6,8 @@ use App\Landlord\Identity\Enums\PlatformPermission;
 use App\Landlord\Identity\Models\PlatformAdmin;
 use App\Landlord\Legal\Enums\LegalDocumentType;
 use App\Landlord\Legal\Models\LegalDocument;
-use App\Shared\Auth\AccessTokenIssuer;
 use Database\Seeders\Landlord\PlatformPermissionSeeder;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
-use Illuminate\Testing\TestResponse;
 use Spatie\Activitylog\Models\Activity;
 
 /*
@@ -26,22 +24,6 @@ beforeEach(function (): void {
     $this->legalAdmin->givePermissionTo(PlatformPermission::LegalDocumentsManage->value);
     enableTwoFactor($this->legalAdmin);
 });
-
-/**
- * Sends a request to the platform's legal documents API as the given admin.
- *
- * @param  array<string, mixed>  $data
- */
-function manageLegalDocuments(string $method, string $path, array $data = [], ?PlatformAdmin $as = null): TestResponse
-{
-    forgetSignIns();
-    $response = test()
-        ->withToken(app(AccessTokenIssuer::class)->issue($as ?? test()->legalAdmin, PlatformAdmin::GUARD, 'test')->plainTextToken)
-        ->json($method, centralUrl('/api/v1/platform/legal-documents'.$path), $data);
-    forgetSignIns();
-
-    return $response;
-}
 
 it('drafts, revises and publishes a version, which then never changes', function (): void {
     $legalDocumentId = manageLegalDocuments('POST', '', ['type' => 'terms_of_service', 'version' => '2026-10', 'title' => 'Terms', 'body' => 'First draft.'])

@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Shared\Auth\AccessTokenIssuer;
 use App\Shared\Auth\Models\Role;
 use App\Shared\Features\Contracts\FeatureSource;
 use App\Shared\Money\Decimal;
@@ -20,8 +19,6 @@ use App\Tenant\Pricing\Models\StoreCurrency;
 use App\Tenant\Pricing\VariantPricer;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
-use Illuminate\Testing\TestResponse;
 use OwenIt\Auditing\Models\Audit;
 use Spatie\Permission\Models\Permission;
 use Tests\Fixtures\Features\FakeFeatureSource;
@@ -62,32 +59,6 @@ beforeEach(function (): void {
 afterEach(function (): void {
     deleteAllStores();
 });
-
-/**
- * A variant of the test product, priced in naira minor units.
- */
-function variantPricedAt(?int $kobo, ?int $compareAtKobo = null, ?string $sku = null): ProductVariant
-{
-    $sku ??= 'SKU-'.Str::random(8);
-
-    return ProductVariant::factory()->create([
-        'product_id' => test()->product->id, 'sku' => $sku, 'attribute_signature' => $sku,
-        'price' => $kobo === null ? null : Money::ofMinor($kobo, 'NGN'),
-        'compare_at_price' => $compareAtKobo === null ? null : Money::ofMinor($compareAtKobo, 'NGN'),
-        'currency' => $kobo === null ? null : 'NGN',
-    ]);
-}
-
-/**
- * @param  list<ProductVariant>  $variants
- * @return list<int|null> Each variant's unit price in minor units, null when left out.
- */
-function unitPricesIn(array $variants, string $currency): array
-{
-    $prices = app(VariantPricer::class)->priceIn($variants, $currency);
-
-    return array_map(static fn (ProductVariant $variant): ?int => ($prices[$variant->id] ?? null)?->unitPrice->minorAmount(), $variants);
-}
 
 it('converts the base price per unit, rounding half-up to each currency\'s decimals', function (): void {
     $this->store->run(static function (): void {
@@ -159,21 +130,6 @@ it('prices a whole list in a fixed number of queries', function (): void {
             ->and($forMany)->toBe($forOne);
     });
 });
-
-/**
- * @param  array<string, mixed>  $data
- */
-function variantPriceRequest(string $method, string $path, array $data = [], ?StaffMember $as = null): TestResponse
-{
-    forgetSignIns();
-    $token = test()->store->run(static fn (): string => app(AccessTokenIssuer::class)->issue($as ?? test()->owner, StaffMember::GUARD, 'test')->plainTextToken);
-
-    $response = test()->withToken($token)->json($method, storeUrl('price-store', '/api/v1/staff/pricing/variants'.$path), $data);
-    tenancy()->end();
-    forgetSignIns();
-
-    return $response;
-}
 
 it('lets staff set and remove fixed prices, and shows what a unit costs in each currency', function (): void {
     $variant = $this->store->run(static fn (): ProductVariant => variantPricedAt(200000));

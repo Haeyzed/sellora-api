@@ -2,11 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Landlord\Identity\Models\PlatformAdmin;
 use App\Landlord\Tenancy\Enums\TenantStatus;
 use App\Landlord\Tenancy\Models\Tenant;
 use App\Landlord\Tenancy\StoreClosedNotification;
-use App\Shared\Auth\AccessTokenIssuer;
 use App\Shared\Auth\Models\Role;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Delivery\Models\Driver;
@@ -17,8 +15,6 @@ use Illuminate\Database\QueryException;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Notification;
-use Illuminate\Testing\TestResponse;
-use Laravel\Sanctum\PersonalAccessToken;
 use Spatie\Activitylog\Models\Activity;
 use Tests\Support\TruncatesCentralDatabase;
 
@@ -52,70 +48,6 @@ beforeEach(function (): void {
 afterEach(function (): void {
     deleteAllStores();
 });
-
-function closingAdminWith(string ...$permissionNames): PlatformAdmin
-{
-    $role = Role::findOrCreate('Closing role with '.implode(', ', $permissionNames), PlatformAdmin::GUARD);
-    $role->syncPermissions($permissionNames);
-
-    $platformAdmin = PlatformAdmin::factory()->create();
-    $platformAdmin->assignRole($role);
-    enableTwoFactor($platformAdmin);
-
-    return $platformAdmin;
-}
-
-/**
- * @param  array<string, mixed>  $data
- */
-function storeClosure(string $method, Tenant $store, array $data = [], ?PlatformAdmin $as = null): TestResponse
-{
-    forgetSignIns();
-    $response = test()
-        ->withToken(app(AccessTokenIssuer::class)->issue($as ?? test()->storeManager, PlatformAdmin::GUARD, 'test')->plainTextToken)
-        ->json($method, centralUrl("/api/v1/platform/stores/{$store->public_id}/closure"), $data);
-    forgetSignIns();
-
-    return $response;
-}
-
-/**
- * Signs a store account in and returns its token, as each kind of account would.
- */
-function closingStoreToken(Tenant $store, StaffMember|Customer|Driver $account, string $guard): string
-{
-    return $store->run(static fn (): string => app(AccessTokenIssuer::class)->issue($account, $guard, 'test')->plainTextToken);
-}
-
-/**
- * The owner closing their own store from the store's dashboard.
- *
- * @param  array<string, mixed>  $data
- */
-function closeOwnStore(array $data, ?StaffMember $as = null): TestResponse
-{
-    forgetSignIns();
-    $token = closingStoreToken(test()->store, $as ?? test()->storeOwner, StaffMember::GUARD);
-    $response = test()->withToken($token)->postJson(storeUrl('closing-store', '/api/v1/staff/store/closure'), $data);
-    tenancy()->end();
-    forgetSignIns();
-
-    return $response;
-}
-
-/**
- * @return array<string, int>
- */
-function closingStoreTokenCounts(Tenant $store): array
-{
-    return $store->run(static fn (): array => PersonalAccessToken::query()
-        ->selectRaw('tokenable_type, count(*) as total')
-        ->groupBy('tokenable_type')
-        ->orderBy('tokenable_type')
-        ->pluck('total', 'tokenable_type')
-        ->map(static fn (mixed $total): int => (int) $total)
-        ->all());
-}
 
 it('closes a store: it stops opening, everyone is signed out, and the owner is emailed the purge date', function (): void {
     [$customer, $driver] = $this->store->run(static fn (): array => [Customer::factory()->create(), Driver::factory()->create()]);

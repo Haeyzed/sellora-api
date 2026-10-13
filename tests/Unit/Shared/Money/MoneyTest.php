@@ -7,15 +7,6 @@ use App\Shared\Money\Decimal;
 use App\Shared\Money\Money;
 use App\Shared\Money\UnknownCurrencyException;
 
-/**
- * @param  array<array-key, Money>  $amounts
- * @return array<array-key, int>
- */
-function minorAmountsOf(array $amounts): array
-{
-    return array_map(static fn (Money $amount): int => $amount->minorAmount(), $amounts);
-}
-
 it('uses each currency\'s own number of decimal places from ISO 4217', function (string $currency, int $expectedDecimalPlaces): void {
     $amount = Money::zero($currency);
 

@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Shared\Auth\AccessTokenIssuer;
 use App\Shared\Auth\Models\Role;
 use App\Shared\Money\Money;
 use App\Shared\Money\PricedRecordsRegistry;
@@ -15,7 +14,6 @@ use App\Tenant\Inventory\Models\InventoryItem;
 use App\Tenant\Inventory\Models\StockMovement;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Testing\TestResponse;
 use OwenIt\Auditing\Models\Audit;
 use Spatie\Permission\Models\Permission;
 use Tests\Support\TruncatesCentralDatabase;
@@ -51,21 +49,6 @@ beforeEach(function (): void {
 afterEach(function (): void {
     deleteAllStores();
 });
-
-/**
- * @param  array<string, mixed>  $data
- */
-function costRequest(string $method, string $path, array $data = [], ?StaffMember $as = null): TestResponse
-{
-    forgetSignIns();
-    $token = test()->store->run(static fn (): string => app(AccessTokenIssuer::class)->issue($as ?? test()->owner, StaffMember::GUARD, 'test')->plainTextToken);
-
-    $response = test()->withToken($token)->json($method, storeUrl('cost-store', '/api/v1/staff/inventory'.$path), $data);
-    tenancy()->end();
-    forgetSignIns();
-
-    return $response;
-}
 
 it('lets only staff with the costs permission see or change a unit cost', function (): void {
     $variant = $this->variant->public_id;

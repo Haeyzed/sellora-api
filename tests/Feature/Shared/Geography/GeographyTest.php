@@ -31,14 +31,6 @@ afterEach(function (): void {
     deleteAllStores();
 });
 
-/**
- * @return array<string, mixed>
- */
-function geographyCountry(string $code, array $countries): array
-{
-    return collect($countries)->firstWhere('code', $code) ?? [];
-}
-
 it('lists the countries stores can use by ISO code, with what a new store there starts with', function (): void {
     $countries = $this->getJson(centralUrl('/api/v1/geography/countries'))->assertOk()->json('data');
 

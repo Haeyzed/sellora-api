@@ -10,12 +10,6 @@ beforeEach(function (): void {
     Route::post('/api/v1/platform/sample-login', static fn (): string => 'ok')->middleware('throttle:login');
 });
 
-function attemptLogin(string $email, string $ip = '203.0.113.10'): Illuminate\Testing\TestResponse
-{
-    return test()->withServerVariables(['REMOTE_ADDR' => $ip])
-        ->postJson('/api/v1/platform/sample-login', ['email' => $email]);
-}
-
 it('blocks sign-in attempts for an account after the limit, with a Retry-After header', function (): void {
     attemptLogin('ada@example.com')->assertOk();
     attemptLogin('ada@example.com')->assertOk();

@@ -4,10 +4,6 @@ declare(strict_types=1);
 
 use App\Landlord\Identity\Models\PlatformAdmin;
 use App\Shared\Auth\AccessTokenIssuer;
-use Dedoc\Scramble\CacheableGenerator;
-use Dedoc\Scramble\Generator;
-use Dedoc\Scramble\GeneratorResult;
-use Dedoc\Scramble\Scramble;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 
 uses(LazilyRefreshDatabase::class);
@@ -17,45 +13,6 @@ uses(LazilyRefreshDatabase::class);
  * platform and registration APIs to the central domain, the store API to
  * the store subdomain the reader fills in.
  */
-
-/**
- * One API's documentation, generated once per test process: the routes and their docs never change during a run, and generating them is slow.
- */
-function generatedApiDocumentation(string $api): GeneratorResult
-{
-    /** @var array<string, GeneratorResult> $generated */
-    static $generated = [];
-
-    return $generated[$api] ??= app(Generator::class)->generate(Scramble::getGeneratorConfig($api));
-}
-
-/**
- * @return array<string, mixed>
- */
-function documentedApi(string $api): array
-{
-    return generatedApiDocumentation($api)->spec();
-}
-
-/**
- * Lets the docs routes serve the documentation generated for this process, through Scramble's own cache, so a test of who may see the docs doesn't generate them again.
- */
-function serveGeneratedApiDocumentation(): void
-{
-    config(['scramble.cache.store' => 'array', 'scramble.cache.key' => 'api-documentation-test']);
-
-    foreach (['default', 'platform', 'registration'] as $api) {
-        CacheableGenerator::store(Scramble::getGeneratorConfig($api), generatedApiDocumentation($api));
-    }
-}
-
-/**
- * @return list<array<string, mixed>>
- */
-function documentedServers(string $api): array
-{
-    return documentedApi($api)['servers'];
-}
 
 it('sends the central APIs to the central domain and the store API to a store subdomain the reader chooses', function (): void {
     $central = 'http://'.config()->array('platform.central_domains')[0];

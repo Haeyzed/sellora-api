@@ -6,7 +6,6 @@ use App\Shared\Auth\AccessTokenIssuer;
 use App\Shared\Auth\Models\Role;
 use App\Shared\Features\Contracts\FeatureSource;
 use App\Shared\Features\Exceptions\UsageLimitReachedException;
-use App\Shared\Features\Features;
 use App\Shared\Money\Money;
 use App\Tenant\Catalog\Actions\CreateProduct;
 use App\Tenant\Catalog\Data\ProductData;
@@ -67,42 +66,6 @@ beforeEach(function (): void {
 afterEach(function (): void {
     deleteAllStores();
 });
-
-function allowProducts(string $tenantId, int $limit): void
-{
-    test()->featureSource->give($tenantId, FakeFeatureSource::snapshot(limits: ['products' => $limit]));
-    app(Features::class)->forget($tenantId);
-}
-
-/**
- * @param  array<string, mixed>  $data
- */
-function productRequest(string $method, string $path = '', array $data = [], ?StaffMember $as = null, string $subdomain = 'product-store'): TestResponse
-{
-    forgetSignIns();
-    $store = $subdomain === 'product-store' ? test()->store : test()->otherStore;
-    $token = $store->run(static fn (): string => app(AccessTokenIssuer::class)->issue($as ?? test()->owner, StaffMember::GUARD, 'test')->plainTextToken);
-
-    $response = test()->withToken($token)->json($method, storeUrl($subdomain, '/api/v1/staff/catalog/products'.$path), $data);
-    tenancy()->end();
-    forgetSignIns();
-
-    return $response;
-}
-
-/**
- * @param  array<string, mixed>  $overrides
- * @param  array<string, mixed>  $variant
- * @return array<string, mixed>
- */
-function newProduct(array $overrides = [], array $variant = []): array
-{
-    return [
-        'name' => ['en' => 'Linen shirt'],
-        'variant' => ['price' => 1999, 'weight_grams' => 250, ...$variant],
-        ...$overrides,
-    ];
-}
 
 it('adds a draft product with its first variant priced in minor units of the store\'s base currency', function (): void {
     $response = productRequest('POST', data: newProduct([

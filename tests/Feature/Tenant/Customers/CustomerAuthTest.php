@@ -17,20 +17,6 @@ afterEach(function (): void {
     deleteAllStores();
 });
 
-/**
- * @return array<string, string>
- */
-function newCustomerDetails(string $email = 'ada@example.com'): array
-{
-    return [
-        'name' => 'Ada Lovelace',
-        'email' => $email,
-        'password' => 'a-long-shopper-password',
-        'password_confirmation' => 'a-long-shopper-password',
-        'device_name' => 'Ada\'s phone',
-    ];
-}
-
 it('creates a customer account at the store and returns a token that works straight away', function (): void {
     $token = $this->postJson(storeUrl('first-store', '/api/v1/customer/auth/accounts'), newCustomerDetails('Ada@Example.com '))
         ->assertCreated()

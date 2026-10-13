@@ -13,15 +13,12 @@ use App\Landlord\Identity\Exceptions\LastSuperAdminException;
 use App\Landlord\Identity\Exceptions\PlatformPermissionsExceedYourOwnException;
 use App\Landlord\Identity\Models\PlatformAdmin;
 use App\Landlord\Identity\Models\PlatformAdminInvitation;
-use App\Landlord\Identity\PlatformAdminInvitationNotification;
 use App\Landlord\Identity\Services\PlatformRolePermissions;
 use App\Shared\Auth\AccessTokenIssuer;
 use App\Shared\Auth\Models\Role;
 use Database\Seeders\Landlord\PlatformPermissionSeeder;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
-use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Notification;
-use Illuminate\Testing\TestResponse;
 use OwenIt\Auditing\Models\Audit;
 use Spatie\Activitylog\Models\Activity;
 
@@ -42,52 +39,6 @@ beforeEach(function (): void {
 
     $this->superAdmin = platformTeamMember('Ada Super', PlatformRole::SuperAdmin->value);
 });
-
-function platformTeamMember(string $name, ?string $roleName = null): PlatformAdmin
-{
-    $platformAdmin = PlatformAdmin::factory()->create(['name' => $name, 'password' => PLATFORM_TEAM_PASSWORD]);
-    enableTwoFactor($platformAdmin);
-
-    if ($roleName !== null) {
-        $platformAdmin->assignRole(Role::findOrCreate($roleName, PlatformAdmin::GUARD));
-    }
-
-    return $platformAdmin;
-}
-
-/**
- * @param  array<string, mixed>  $data
- */
-function platformTeam(string $method, string $path, array $data = [], ?PlatformAdmin $as = null): TestResponse
-{
-    forgetSignIns();
-    $request = test();
-
-    if ($as !== null) {
-        $request = $request->withToken(app(AccessTokenIssuer::class)->issue($as, PlatformAdmin::GUARD, 'test')->plainTextToken);
-    }
-
-    $response = $request->json($method, centralUrl('/api/v1/platform/'.$path), $data);
-    forgetSignIns();
-
-    return $response;
-}
-
-function lastPlatformInvitationToken(string $email): string
-{
-    $tokens = [];
-
-    Notification::assertSentOnDemand(PlatformAdminInvitationNotification::class, static function (PlatformAdminInvitationNotification $notification, array $channels, AnonymousNotifiable $notifiable) use ($email, &$tokens): bool {
-        if ($notifiable->routes['mail'] === $email) {
-            parse_str((string) parse_url($notification->acceptUrl(), PHP_URL_QUERY), $query);
-            $tokens[] = is_string($query['token'] ?? null) ? $query['token'] : '';
-        }
-
-        return true;
-    });
-
-    return $tokens === [] ? throw new RuntimeException("No invitation was sent to {$email}.") : end($tokens);
-}
 
 it('invites someone who joins with their own password and must set up two-factor authentication first', function (): void {
     $support = Role::findOrCreate('Support', PlatformAdmin::GUARD);
