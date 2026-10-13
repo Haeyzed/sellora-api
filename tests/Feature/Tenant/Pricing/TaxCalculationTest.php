@@ -10,6 +10,7 @@ use App\Shared\Features\Features;
 use App\Shared\Money\TaxMode;
 use App\Tenant\Pricing\Actions\CalculateTax;
 use App\Tenant\Pricing\Data\TaxAddress;
+use App\Tenant\Pricing\Data\TaxCustomer;
 use App\Tenant\Pricing\Enums\TaxOutcome;
 use App\Tenant\Pricing\TaxCalculatorRegistry;
 use Tests\Fixtures\Features\FakeFeatureSource;
@@ -140,6 +141,28 @@ it('settles exempt lines before any calculator is asked, so plug-ins never see t
         RecordingTaxPlugIn::$askedAbout = [];
         expect(calculatedTaxFor(['exempt-only' => [500, 'Exempt']], new TaxAddress('NG'))->totalTax()->isZero())->toBeTrue()
             ->and(RecordingTaxPlugIn::$askedAbout)->toBe([]);
+    });
+});
+
+it('exempts everything a tax-exempt customer buys before any calculator is asked, and only theirs', function (): void {
+    app(FeatureRegistry::class)->register(new FeatureDefinition(RecordingTaxPlugIn::FEATURE_KEY, FeatureKind::Module));
+    app(TaxCalculatorRegistry::class)->register(RecordingTaxPlugIn::FEATURE_KEY, ['NG'], RecordingTaxPlugIn::class);
+    app()->instance(FeatureSource::class, (new FakeFeatureSource)->give((string) $this->store->getTenantKey(), FakeFeatureSource::snapshot(entitled: [RecordingTaxPlugIn::FEATURE_KEY])));
+
+    $this->store->run(static function (): void {
+        $lines = ['shirt' => [10000, 'Standard'], 'scarf' => [5000, 'Standard']];
+        $exempt = calculatedTaxFor($lines, new TaxAddress('NG'), customer: new TaxCustomer(isTaxExempt: true, taxId: 'NG12345678', taxIdCountry: 'NG'));
+
+        expect(RecordingTaxPlugIn::$askedAbout)->toBe([])
+            ->and($exempt->line('shirt')->outcome)->toBe(TaxOutcome::Exempt)
+            ->and($exempt->line('scarf')->outcome)->toBe(TaxOutcome::Exempt)
+            ->and($exempt->totalTax()->isZero())->toBeTrue();
+
+        // A tax ID alone, without the store's exemption, changes nothing; the plug-in sees it, for rules such as reverse charge.
+        $customer = new TaxCustomer(isTaxExempt: false, taxId: 'NG12345678', taxIdCountry: 'NG');
+        expect(calculatedTaxFor($lines, new TaxAddress('NG'), customer: $customer)->totalTax()->minorAmount())->toBe(2700)
+            ->and(RecordingTaxPlugIn::$askedAbout)->toBe([['shirt', 'scarf']])
+            ->and(RecordingTaxPlugIn::$lastCustomer)->toBe($customer);
     });
 });
 

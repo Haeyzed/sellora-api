@@ -36,6 +36,10 @@ final class StaffCustomerResource extends JsonResource
             'phone' => $customer->phone,
             /** The language emails to the customer are written in; null for the store's default. */
             'locale' => $customer->locale,
+            /** The tax ID the customer entered; only its format was checked. */
+            'tax_id' => $customer->tax_id,
+            'tax_id_country' => $customer->tax_id_country,
+            'is_tax_exempt' => $customer->is_tax_exempt,
             /** False when staff deactivated the account: the customer can't sign in. */
             'is_active' => $customer->is_active,
             'last_signed_in_at' => $customer->last_signed_in_at?->toIso8601String(),

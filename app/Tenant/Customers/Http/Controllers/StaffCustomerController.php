@@ -6,7 +6,10 @@ namespace App\Tenant\Customers\Http\Controllers;
 
 use App\Shared\Http\Controller;
 use App\Tenant\Customers\Actions\ChangeCustomerStatus;
+use App\Tenant\Customers\Actions\ChangeCustomerTaxExemption;
 use App\Tenant\Customers\Actions\UpdateCustomerAsStaff;
+use App\Tenant\Customers\Exceptions\CustomerTaxIdMissingException;
+use App\Tenant\Customers\Http\Requests\ChangeCustomerTaxExemptionRequest;
 use App\Tenant\Customers\Http\Requests\ListCustomersRequest;
 use App\Tenant\Customers\Http\Requests\ManageCustomerRequest;
 use App\Tenant\Customers\Http\Requests\UpdateCustomerAsStaffRequest;
@@ -101,6 +104,20 @@ final class StaffCustomerController extends Controller
     public function restore(ManageCustomerRequest $request, Customer $customer, ChangeCustomerStatus $changeCustomerStatus): StaffCustomerResource
     {
         return new StaffCustomerResource($changeCustomerStatus->restore($request->actor(), $customer));
+    }
+
+    /**
+     * Change a customer's tax exemption.
+     *
+     * Needs the customers.tax_exemption permission. Check the tax ID the
+     * customer entered first: only its format was checked. A customer without
+     * a tax ID can't be made exempt. Audited.
+     *
+     * @throws CustomerTaxIdMissingException
+     */
+    public function taxExemption(ChangeCustomerTaxExemptionRequest $request, Customer $customer, ChangeCustomerTaxExemption $changeCustomerTaxExemption): StaffCustomerResource
+    {
+        return new StaffCustomerResource($changeCustomerTaxExemption->handle($request->actor(), $customer, $request->boolean('is_tax_exempt')));
     }
 
     /**

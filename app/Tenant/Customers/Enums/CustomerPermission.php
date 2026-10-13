@@ -14,4 +14,7 @@ enum CustomerPermission: string
 
     /** Change customers' profiles, deactivate, reactivate, trash and restore accounts, and add or delete notes. */
     case CustomersManage = 'customers.manage';
+
+    /** Make a customer tax-exempt, or end it, after checking their tax ID. */
+    case CustomersTaxExemption = 'customers.tax_exemption';
 }

@@ -93,6 +93,7 @@ use App\Tenant\Inventory\Models\StockMovement;
 use App\Tenant\Inventory\Models\StockReservation;
 use App\Tenant\Inventory\SettledReservationRetention;
 use App\Tenant\Inventory\StockLedgerReconciliation;
+use App\Tenant\Pricing\Actions\CalculateTax;
 use App\Tenant\Pricing\Enums\PricingPermission;
 use App\Tenant\Pricing\Models\FixedPrice;
 use App\Tenant\Pricing\Models\StoreCurrency;
@@ -102,6 +103,7 @@ use App\Tenant\Pricing\Models\VariantTaxClass;
 use App\Tenant\Pricing\PricingPricedRecords;
 use App\Tenant\Pricing\PricingStoreTables;
 use App\Tenant\Pricing\TaxCalculatorRegistry;
+use App\Tenant\Pricing\TaxExemptCustomerRule;
 use App\Tenant\Settings\Enums\SettingsPermission;
 use App\Tenant\Settings\Models\StoreSettings;
 use App\Tenant\Settings\Policies\StoreLifecyclePolicy;
@@ -163,6 +165,8 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(StockLocationSelector::class, DefaultStockLocationSelector::class);
         // One list of country tax plug-ins, filled in by modules' and integrations' service providers.
         $this->app->singleton(TaxCalculatorRegistry::class);
+        // Lines a tax-exempt customer buys are never taxed; modules may tag rules of their own.
+        $this->app->tag([TaxExemptCustomerRule::class], CalculateTax::EXEMPTION_RULES_TAG);
         $this->app->bind(TwoFactorRequirement::class, StoreTwoFactorRequirement::class);
         // Per request or job, so a long-running worker never reuses one store's languages for the next.
         $this->app->scoped(StoreLocales::class);

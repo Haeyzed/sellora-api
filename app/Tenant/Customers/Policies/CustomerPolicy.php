@@ -21,4 +21,9 @@ final class CustomerPolicy
     {
         return $actor->can(CustomerPermission::CustomersManage->value);
     }
+
+    public function manageTaxExemption(StaffMember $actor): bool
+    {
+        return $actor->can(CustomerPermission::CustomersTaxExemption->value);
+    }
 }

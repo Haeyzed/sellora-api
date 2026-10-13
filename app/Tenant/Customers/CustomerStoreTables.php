@@ -16,7 +16,7 @@ final class CustomerStoreTables implements ClassifiesStoreTables
     {
         $registry->table(
             'customers',
-            include: ['id', 'public_id', 'name', 'email', 'phone', 'locale', 'default_shipping_address_id', 'default_billing_address_id', 'email_verified_at', 'is_active', 'last_signed_in_at', 'created_at', 'updated_at', 'deleted_at'],
+            include: ['id', 'public_id', 'name', 'email', 'phone', 'locale', 'is_tax_exempt', 'tax_id', 'tax_id_country', 'default_shipping_address_id', 'default_billing_address_id', 'email_verified_at', 'is_active', 'last_signed_in_at', 'created_at', 'updated_at', 'deleted_at'],
             exclude: ['password' => 'Password hash, a secret.', 'search_text' => 'A lower-case copy of the name, email and phone, which are exported.'],
         );
 

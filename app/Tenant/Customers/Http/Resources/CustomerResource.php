@@ -21,7 +21,7 @@ final class CustomerResource extends JsonResource
     }
 
     /**
-     * @return array{id: string, name: string, email: string, email_verified: bool, phone: string|null, locale: string|null}
+     * @return array{id: string, name: string, email: string, email_verified: bool, phone: string|null, locale: string|null, tax_id: string|null, tax_id_country: string|null, is_tax_exempt: bool}
      */
     public function toArray(Request $request): array
     {
@@ -35,6 +35,11 @@ final class CustomerResource extends JsonResource
             'phone' => $this->resource->phone,
             /** The language emails to the customer are written in; null for the store's default. */
             'locale' => $this->resource->locale,
+            /** For buying as a business. */
+            'tax_id' => $this->resource->tax_id,
+            'tax_id_country' => $this->resource->tax_id_country,
+            /** Whether the store made the customer tax-exempt; only staff change it. */
+            'is_tax_exempt' => $this->resource->is_tax_exempt,
         ];
     }
 }

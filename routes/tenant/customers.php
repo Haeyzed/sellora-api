@@ -6,6 +6,7 @@ use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
 use App\Tenant\Customers\Http\Controllers\CustomerAccountController;
 use App\Tenant\Customers\Http\Controllers\CustomerAddressController;
 use App\Tenant\Customers\Http\Controllers\CustomerNoteController;
+use App\Tenant\Customers\Http\Controllers\CustomerTaxIdController;
 use App\Tenant\Customers\Http\Controllers\EmailChangeController;
 use App\Tenant\Customers\Http\Controllers\EmailVerificationController;
 use App\Tenant\Customers\Http\Controllers\MarketingConsentController;
@@ -31,6 +32,8 @@ Route::post('customer/auth/email-verifications', [EmailVerificationController::c
 Route::prefix('customer/account')->name('customer.account.')->middleware(['auth:'.Customer::GUARD, 'throttle:api', UseStoreLanguage::class])->group(static function (): void {
     Route::patch('/', [CustomerAccountController::class, 'update'])->name('update');
     Route::apiResource('addresses', CustomerAddressController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
+    Route::put('tax-id', [CustomerTaxIdController::class, 'update'])->name('tax-id.update');
+    Route::delete('tax-id', [CustomerTaxIdController::class, 'destroy'])->name('tax-id.destroy');
     Route::get('marketing-consents', [MarketingConsentController::class, 'index'])->name('marketing-consents.index');
     Route::put('marketing-consents/{channel}', [MarketingConsentController::class, 'update'])->name('marketing-consents.update')->whereIn('channel', ['email', 'sms']);
 
@@ -60,6 +63,7 @@ Route::prefix('staff/customers')
         Route::post('{customer}/deactivate', [StaffCustomerController::class, 'deactivate'])->name('deactivate')->withTrashed();
         Route::post('{customer}/reactivate', [StaffCustomerController::class, 'reactivate'])->name('reactivate')->withTrashed();
         Route::get('{customer}/addresses', [StaffCustomerController::class, 'addresses'])->name('addresses.index')->withTrashed();
+        Route::put('{customer}/tax-exemption', [StaffCustomerController::class, 'taxExemption'])->name('tax-exemption.update')->withTrashed();
         Route::get('{customer}/notes', [CustomerNoteController::class, 'index'])->name('notes.index')->withTrashed();
         Route::post('{customer}/notes', [CustomerNoteController::class, 'store'])->name('notes.store')->withTrashed();
         Route::delete('{customer}/notes/{note}', [CustomerNoteController::class, 'destroy'])->name('notes.destroy')->scopeBindings()->withTrashed();

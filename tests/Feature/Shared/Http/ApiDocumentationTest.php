@@ -150,6 +150,8 @@ it('documents every customer endpoint', function (): void {
         '/staff/customers/{customer}/addresses' => ['get'],
         '/staff/customers/{customer}/notes' => ['get', 'post'],
         '/staff/customers/{customer}/notes/{note}' => ['delete'],
+        '/customer/account/tax-id' => ['put', 'delete'],
+        '/staff/customers/{customer}/tax-exemption' => ['put'],
         '/customer/account/marketing-consents' => ['get'],
         '/customer/account/marketing-consents/{channel}' => ['put'],
         '/staff/customers/{customer}/marketing-consents' => ['get'],
@@ -172,6 +174,7 @@ it('documents every customer endpoint', function (): void {
         ->and(array_keys($store['paths']['/staff/customers']))->not->toContain('post')
         ->and(json_encode($store['paths']['/customer/account/marketing-consents/{channel}']['put']['responses'][422]))->toContain('marketing_contact_missing')
         ->and(array_keys($store['paths']['/staff/customers/{customer}/marketing-consents']))->toBe(['get'])
+        ->and(json_encode($store['paths']['/staff/customers/{customer}/tax-exemption']['put']['responses'][422]))->toContain('customer_tax_id_missing')
         ->and(collect($store['paths']['/staff/customers']['get']['parameters'])->pluck('name')->all())->toContain('search', 'is_active', 'email_verified', 'trashed', 'cursor')
         ->and($store['paths']['/staff/customers/{customer}']['patch']['description'])->toContain('Staff never change a customer\'s');
 });

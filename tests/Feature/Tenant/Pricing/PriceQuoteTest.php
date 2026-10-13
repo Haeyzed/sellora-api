@@ -21,6 +21,7 @@ use App\Tenant\Pricing\Actions\UpdateTaxClass;
 use App\Tenant\Pricing\Data\PricingRequest;
 use App\Tenant\Pricing\Data\TaxAddress;
 use App\Tenant\Pricing\Data\TaxClassChanges;
+use App\Tenant\Pricing\Data\TaxCustomer;
 use App\Tenant\Pricing\Enums\TaxOutcome;
 use App\Tenant\Pricing\Models\StoreCurrency;
 use App\Tenant\Pricing\Models\TaxClass;
@@ -133,6 +134,16 @@ it('taxes shipping at the store\'s shipping class, or not at all without one', f
         expect($untaxed->shipping?->outcome)->toBe(TaxOutcome::Exempt)
             ->and($untaxed->shipping?->tax->isZero())->toBeTrue()
             ->and($untaxed->total()->minorAmount())->toBe(1182500);
+    });
+});
+
+it('charges a tax-exempt customer no tax, on goods or shipping', function (): void {
+    $this->store->run(static function (): void {
+        $basket = priceQuoteFor('NGN', shipping: Money::ofMinor(107500, 'NGN'), customer: new TaxCustomer(isTaxExempt: true, taxId: 'NG12345678', taxIdCountry: 'NG'));
+
+        expect($basket->tax()->isZero())->toBeTrue()
+            ->and($basket->lines['shirt']->tax->outcome)->toBe(TaxOutcome::Exempt)
+            ->and($basket->shipping?->outcome)->toBe(TaxOutcome::Exempt);
     });
 });
 

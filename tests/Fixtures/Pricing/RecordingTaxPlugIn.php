@@ -8,6 +8,7 @@ use App\Shared\Money\Decimal;
 use App\Tenant\Pricing\Contracts\TaxCalculator;
 use App\Tenant\Pricing\Data\LineTax;
 use App\Tenant\Pricing\Data\TaxComponent;
+use App\Tenant\Pricing\Data\TaxCustomer;
 use App\Tenant\Pricing\Data\TaxRequest;
 use App\Tenant\Pricing\Data\TaxResult;
 
@@ -23,9 +24,15 @@ final class RecordingTaxPlugIn implements TaxCalculator
      */
     public static array $askedAbout = [];
 
+    /**
+     * The customer of the last request it was asked about, such as their tax ID for reverse-charge rules.
+     */
+    public static ?TaxCustomer $lastCustomer = null;
+
     public function calculate(TaxRequest $request): TaxResult
     {
         self::$askedAbout[] = array_map(static fn ($line): string => $line->key, $request->lines);
+        self::$lastCustomer = $request->customer;
         $lines = [];
 
         foreach ($request->lines as $line) {

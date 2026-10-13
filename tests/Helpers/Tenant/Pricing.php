@@ -17,6 +17,7 @@ use App\Tenant\Pricing\Data\PricingRequest;
 use App\Tenant\Pricing\Data\TaxableLine;
 use App\Tenant\Pricing\Data\TaxAddress;
 use App\Tenant\Pricing\Data\TaxClassData;
+use App\Tenant\Pricing\Data\TaxCustomer;
 use App\Tenant\Pricing\Data\TaxRequest;
 use App\Tenant\Pricing\Enums\TaxLineKind;
 use App\Tenant\Pricing\Models\TaxClass;
@@ -32,9 +33,9 @@ use Illuminate\Testing\TestResponse;
 |--------------------------------------------------------------------------
 */
 
-function priceQuoteFor(string $currency, int $quantity = 1, ?TaxAddress $destination = null, ?Money $discount = null, ?Money $shipping = null): PricedBasket
+function priceQuoteFor(string $currency, int $quantity = 1, ?TaxAddress $destination = null, ?Money $discount = null, ?Money $shipping = null, ?TaxCustomer $customer = null): PricedBasket
 {
-    return app(PriceCalculator::class)->quote(new PricingRequest($currency, [new PricingLine('shirt', ProductVariant::query()->where('sku', 'SHIRT')->sole(), $quantity, $discount)], $destination, $shipping));
+    return app(PriceCalculator::class)->quote(new PricingRequest($currency, [new PricingLine('shirt', ProductVariant::query()->where('sku', 'SHIRT')->sole(), $quantity, $discount)], $destination, $shipping, $customer));
 }
 
 /**
@@ -131,7 +132,7 @@ function addTaxRate(string $className, string $countryCode, ?string $stateCode, 
 /**
  * @param  array<string, array{0: int, 1: string}>  $lines  Minor amount and class name, by line key.
  */
-function calculatedTaxFor(array $lines, TaxAddress $destination, TaxMode $taxMode = TaxMode::Exclusive, string $currency = 'NGN'): App\Tenant\Pricing\Data\TaxResult
+function calculatedTaxFor(array $lines, TaxAddress $destination, TaxMode $taxMode = TaxMode::Exclusive, string $currency = 'NGN', ?TaxCustomer $customer = null): App\Tenant\Pricing\Data\TaxResult
 {
     $taxableLines = [];
 
@@ -139,7 +140,7 @@ function calculatedTaxFor(array $lines, TaxAddress $destination, TaxMode $taxMod
         $taxableLines[] = new TaxableLine((string) $key, TaxLineKind::Goods, Money::ofMinor($amount, $currency), taxClassNamed($className));
     }
 
-    return app(CalculateTax::class)->handle(new TaxRequest($currency, $taxMode, new TaxAddress('NG', 'LA'), $destination, $taxableLines));
+    return app(CalculateTax::class)->handle(new TaxRequest($currency, $taxMode, new TaxAddress('NG', 'LA'), $destination, $taxableLines, $customer));
 }
 
 /*
