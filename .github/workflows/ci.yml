@@ -1,0 +1,119 @@
+# Section 15: Pint, Larastan, the full Pest suite (architecture and tenant
+# isolation included) and composer audit on every push and pull request.
+# Nothing is merged while it fails.
+#
+# No secrets: the test database accepts local connections without a password,
+# and the app key is generated for each run.
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PHP_VERSION: '8.4'
+  PHP_EXTENSIONS: bcmath, gmp, intl, pdo_pgsql, pgsql, gd, exif, zip
+
+jobs:
+  static-checks:
+    name: Pint, Larastan, composer audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: ${{ env.PHP_EXTENSIONS }}
+          coverage: none
+          tools: composer:v2
+
+      - name: Cache Composer downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache/files
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Install dependencies from the lock file
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Pint
+        run: vendor/bin/pint --test
+
+      - name: Larastan (level 8)
+        run: vendor/bin/phpstan analyse --memory-limit=2G --no-progress
+
+      - name: composer audit
+        run: composer audit --locked
+
+  tests:
+    name: Pest (parallel, PostgreSQL 18)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        # The official image includes the contrib extensions, pg_trgm among them;
+        # store migrations create it in each store database.
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: sellora_central_testing
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: ${{ env.PHP_EXTENSIONS }}
+          coverage: none
+          tools: composer:v2
+
+      - name: Cache Composer downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache/files
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Install dependencies from the lock file
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Make a test .env
+        # phpunit.xml sets the rest (testing databases, array cache and session, sync queue).
+        # Keys are replaced in place: the first value of a key in .env wins, so appending would do nothing.
+        run: |
+          cp .env.example .env
+          sed -i \
+            -e 's/^DB_HOST=.*/DB_HOST=127.0.0.1/' \
+            -e 's/^DB_PORT=.*/DB_PORT=5432/' \
+            -e 's/^DB_USERNAME=.*/DB_USERNAME=postgres/' \
+            -e 's/^DB_PASSWORD=.*/DB_PASSWORD=/' \
+            .env
+          php artisan key:generate --ansi
+
+      - name: Check pg_trgm is available
+        run: psql -h 127.0.0.1 -U postgres -d sellora_central_testing -c "select name, default_version from pg_available_extensions where name = 'pg_trgm'" | grep pg_trgm
+
+      - name: Pest
+        run: vendor/bin/pest --parallel
