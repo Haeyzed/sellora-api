@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
 use App\Tenant\Identity\Models\StaffMember;
+use App\Tenant\Pricing\Http\Controllers\QuoteController;
 use App\Tenant\Pricing\Http\Controllers\StoreCurrencyController;
 use App\Tenant\Pricing\Http\Controllers\StorefrontCurrencyController;
 use App\Tenant\Pricing\Http\Controllers\TaxClassController;
@@ -41,5 +42,6 @@ Route::prefix('staff/pricing')
         Route::patch('currencies/{currency}', [StoreCurrencyController::class, 'update'])->name('currencies.update');
         Route::put('currencies/{currency}/rate', [StoreCurrencyController::class, 'setRate'])->name('currencies.rate.update');
         Route::delete('currencies/{currency}/rate', [StoreCurrencyController::class, 'clearRate'])->name('currencies.rate.destroy');
+        Route::post('quotes', QuoteController::class)->name('quotes.store');
         Route::put('products/{product}/tax-class', [VariantPricingController::class, 'updateProduct'])->name('products.tax-class.update')->withTrashed();
     });

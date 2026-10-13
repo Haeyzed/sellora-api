@@ -136,5 +136,7 @@ return [
     'currency_is_base' => 'This is the store\'s own currency; prices are already in it.',
     'store_currency_exists' => 'The store already has this currency. Change it instead.',
     'currency_not_offered' => 'Prices aren\'t available in :currency right now.',
+    'variant_not_priced' => 'This item has no price yet, so it can\'t be bought.',
+    'discount_exceeds_line' => 'A discount can\'t be more than the line it is on.',
 
 ];

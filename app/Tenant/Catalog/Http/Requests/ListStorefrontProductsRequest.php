@@ -12,10 +12,12 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\Rule;
 
 /**
- * A page of the products customers can buy, optionally searched or narrowed to a category or brand. Anyone may ask.
+ * A page of the products customers can buy, optionally searched or narrowed to a category or brand, in the currency they ask for. Anyone may ask.
  */
 final class ListStorefrontProductsRequest extends CursorListRequest
 {
+    use AsksForCurrency;
+
     public function authorize(): bool
     {
         return true;
@@ -34,6 +36,7 @@ final class ListStorefrontProductsRequest extends CursorListRequest
             'category' => ['sometimes', 'string', Rule::exists(Category::class, 'public_id')->whereNull('deleted_at')],
             /** A brand's ID: only its products. */
             'brand' => ['sometimes', 'string', Rule::exists(Brand::class, 'public_id')->whereNull('deleted_at')],
+            ...$this->currencyRules(),
         ];
     }
 

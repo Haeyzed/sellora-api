@@ -99,6 +99,48 @@ it('documents every list as paged by page number or by cursor, never both and ne
 });
 
 /*
+ * Step 9: every pricing, tax and exchange rate endpoint is documented, with
+ * the storefront's currency fallback spelled out and business errors listed.
+ */
+it('documents every pricing, tax and exchange rate endpoint', function (): void {
+    $store = app(Generator::class)(Scramble::getGeneratorConfig('default'));
+    $platform = app(Generator::class)(Scramble::getGeneratorConfig('platform'));
+
+    $expected = [
+        '/staff/pricing/tax-classes' => ['get', 'post'],
+        // Resource routes take changes as PUT or PATCH; the docs list them under PUT.
+        '/staff/pricing/tax-classes/{taxClass}' => ['get', 'put', 'delete'],
+        '/staff/pricing/tax-rates' => ['get', 'post'],
+        '/staff/pricing/tax-rates/{taxRate}' => ['get', 'put', 'delete'],
+        '/staff/pricing/variants/{variant}' => ['get', 'patch'],
+        '/staff/pricing/variants/{variant}/prices/{currency}' => ['put', 'delete'],
+        '/staff/pricing/products/{product}/tax-class' => ['put'],
+        '/staff/pricing/currencies' => ['get', 'post'],
+        '/staff/pricing/currencies/{currency}' => ['get', 'patch'],
+        '/staff/pricing/currencies/{currency}/rate' => ['put', 'delete'],
+        '/staff/pricing/quotes' => ['post'],
+        '/catalog/currencies' => ['get'],
+    ];
+
+    foreach ($expected as $path => $methods) {
+        expect($store['paths'])->toHaveKey($path)
+            ->and(array_keys($store['paths'][$path]))->toContain(...$methods);
+    }
+
+    expect($platform['paths'])->toHaveKey('/exchange-rates');
+
+    foreach (['/catalog/products', '/catalog/products/{slug}'] as $path) {
+        $currency = collect($store['paths'][$path]['get']['parameters'])->firstWhere('name', 'currency');
+        expect($currency['description'] ?? '')->toContain("store's own currency");
+    }
+
+    expect($store['paths']['/catalog/products']['get']['description'])->toContain("store's own currency")
+        ->and(json_encode($store['paths']['/staff/pricing/quotes']['post']['responses'][422]))->toContain('currency_not_offered')->toContain('discount_exceeds_line')
+        ->and(json_encode($store['paths']['/staff/pricing/tax-classes/{taxClass}']['delete']['responses'][409]))->toContain('tax_class_in_use')
+        ->and(json_encode($store['paths']['/staff/pricing/currencies']['post']['responses'][403]))->toContain('usage_limit_reached');
+});
+
+/*
  * Section 11: the docs are for development. Outside a developer's machine
  * they are shown only to platform admins signed in with two-factor
  * authentication, through their bearer token.

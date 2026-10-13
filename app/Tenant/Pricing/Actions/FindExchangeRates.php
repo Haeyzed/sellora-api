@@ -47,6 +47,20 @@ final readonly class FindExchangeRates
     }
 
     /**
+     * The currency a storefront request is priced in: the one asked for while the store offers it, otherwise the base currency. Prices always carry their currency, so the client sees which it got.
+     */
+    public function forStorefront(?string $requestedCurrency): AppliedExchangeRate
+    {
+        $baseCurrency = $this->findStoreSettings->handle()->currency_code;
+
+        if ($requestedCurrency === null || $requestedCurrency === $baseCurrency) {
+            return AppliedExchangeRate::base($baseCurrency);
+        }
+
+        return $this->handle([$requestedCurrency])[$requestedCurrency] ?? AppliedExchangeRate::base($baseCurrency);
+    }
+
+    /**
      * The rate of every currency customers can buy in now: the base currency first, then the others by code.
      *
      * @return non-empty-list<AppliedExchangeRate>
