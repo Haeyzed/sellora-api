@@ -8,6 +8,7 @@ use App\Shared\Http\Controller;
 use App\Tenant\Catalog\Http\Requests\ListStorefrontProductsRequest;
 use App\Tenant\Catalog\Http\Resources\StorefrontProductResource;
 use App\Tenant\Catalog\Models\Product;
+use App\Tenant\Inventory\Actions\FindVariantAvailability;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 /**
@@ -26,12 +27,16 @@ final class StorefrontProductController extends Controller
      * Newest first. Search the names in any of the store's languages, SKUs,
      * barcodes and brand names, or narrow to a category or brand.
      */
-    public function index(ListStorefrontProductsRequest $request): AnonymousResourceCollection
+    public function index(ListStorefrontProductsRequest $request, FindVariantAvailability $findVariantAvailability): AnonymousResourceCollection
     {
         $query = Product::query()->visibleToCustomers()->with(StorefrontProductResource::relations());
         $request->applyFilters($query);
 
-        return StorefrontProductResource::collection($query->orderByDesc('id')->cursorPaginate($request->perPage()));
+        $page = $query->orderByDesc('id')->cursorPaginate($request->perPage());
+
+        $availability = $findVariantAvailability->handle($this->variantIds($page->items()));
+
+        return StorefrontProductResource::collection($page->through(static fn (Product $product): StorefrontProductResource => new StorefrontProductResource($product, $availability)));
     }
 
     /**
@@ -40,8 +45,28 @@ final class StorefrontProductController extends Controller
      * Found by its slug, such as "linen-shirt". A product customers can't buy
      * is not found.
      */
-    public function show(string $slug): StorefrontProductResource
+    public function show(string $slug, FindVariantAvailability $findVariantAvailability): StorefrontProductResource
     {
-        return new StorefrontProductResource(Product::query()->visibleToCustomers()->where('slug', $slug)->with(StorefrontProductResource::relations())->firstOrFail());
+        $product = Product::query()->visibleToCustomers()->where('slug', $slug)->with(StorefrontProductResource::relations())->firstOrFail();
+
+        return new StorefrontProductResource($product, $findVariantAvailability->handle($this->variantIds([$product])));
+    }
+
+    /**
+     * The IDs of the variants shown for these products.
+     *
+     * @param  array<int, Product>  $products
+     * @return list<int>
+     */
+    private function variantIds(array $products): array
+    {
+        $ids = [];
+        foreach ($products as $product) {
+            foreach ($product->variants as $variant) {
+                $ids[] = $variant->id;
+            }
+        }
+
+        return $ids;
     }
 }

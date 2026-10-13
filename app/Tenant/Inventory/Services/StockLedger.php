@@ -23,6 +23,8 @@ use LogicException;
  */
 final readonly class StockLedger
 {
+    public function __construct(private StockSignals $stockSignals) {}
+
     /**
      * Locks the stock levels of these variants at these locations until the transaction ends, creating any that don't exist yet.
      *
@@ -82,6 +84,7 @@ final readonly class StockLedger
         ?StockSource $source = null,
         ?Decimal $unitCost = null,
     ): StockMovement {
+        $availableBefore = $item->available();
         $item->on_hand += $onHandDelta;
         $item->reserved += $reservedDelta;
 
@@ -109,6 +112,8 @@ final readonly class StockLedger
             'source_id' => $source?->id,
             'unit_cost' => $unitCost,
         ])->save();
+
+        $this->stockSignals->announce($item, $availableBefore);
 
         return $movement;
     }

@@ -39,7 +39,10 @@ final class StorefrontProductResource extends JsonResource
         ];
     }
 
-    public function __construct(Product $product)
+    /**
+     * @param  array<int, bool>  $availability  Whether each variant can be bought now, by variant ID (FindVariantAvailability).
+     */
+    public function __construct(Product $product, private readonly array $availability = [])
     {
         parent::__construct($product);
     }
@@ -50,6 +53,7 @@ final class StorefrontProductResource extends JsonResource
     public function toArray(Request $request): array
     {
         $product = $this->resource;
+        $availability = $this->availability;
         $locale = app()->getLocale();
         $description = $product->getTranslation('description', $locale);
         $brand = $product->brand?->trashed() === false ? $product->brand : null;
@@ -94,6 +98,8 @@ final class StorefrontProductResource extends JsonResource
                 /** One of the product's images, by ID; null when it has none of its own. */
                 'image_id' => $variant->image?->uuid,
                 'requires_shipping' => $variant->requires_shipping,
+                /** Whether it can be bought now: in stock, not counted, or open to backorders. Quantities are never shown. */
+                'available_for_sale' => $availability[$variant->id] ?? false,
             ])->all()),
         ];
     }
