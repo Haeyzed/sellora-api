@@ -10,6 +10,7 @@ use App\Shared\Concerns\HasPublicId;
 use Carbon\CarbonImmutable;
 use Database\Factories\Tenant\CustomerFactory;
 use Illuminate\Contracts\Translation\HasLocalePreference;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -18,6 +19,8 @@ use Illuminate\Foundation\Auth\User;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\Contracts\HasApiTokens as HasApiTokensContract;
 use Laravel\Sanctum\HasApiTokens;
+use OwenIt\Auditing\Auditable;
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
 /**
  * A shopper with an account at one store. The same person at two stores has two separate accounts.
@@ -40,11 +43,16 @@ use Laravel\Sanctum\HasApiTokens;
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property CarbonImmutable|null $deleted_at
+ * @property string $search_text Name, email and phone in lower case, for staff search; kept current when saved.
  * @property-read Collection<int, CustomerEmailToken> $emailTokens
  * @property-read Collection<int, CustomerAddress> $addresses
+ * @property-read Collection<int, CustomerNote> $notes
  */
-final class Customer extends User implements HasApiTokensContract, HasLocalePreference
+final class Customer extends User implements AuditableContract, HasApiTokensContract, HasLocalePreference
 {
+    use Auditable {
+        readyForAuditing as private auditableIsReady;
+    }
     use HasApiTokens;
 
     /** @use HasFactory<CustomerFactory> */
@@ -70,7 +78,20 @@ final class Customer extends User implements HasApiTokensContract, HasLocalePref
 
     protected $hidden = [
         'password',
+        'search_text',
     ];
+
+    /**
+     * Only changes staff make to whether the account may be used are audited. Profile changes go in the activity log without personal data, so no audit record ever holds a customer's details or a secret.
+     *
+     * @var list<string>
+     */
+    protected $auditEvents = ['updated'];
+
+    /**
+     * @var list<string>
+     */
+    protected $auditInclude = ['is_active'];
 
     /**
      * Emails a link into the storefront to choose a new password.
@@ -109,6 +130,41 @@ final class Customer extends User implements HasApiTokensContract, HasLocalePref
     public function addresses(): HasMany
     {
         return $this->hasMany(CustomerAddress::class);
+    }
+
+    /**
+     * Audits an update only when an audited field changed, so signing in or editing the profile writes no empty audit record.
+     */
+    public function readyForAuditing(): bool
+    {
+        return $this->auditableIsReady() && $this->wasChanged($this->auditInclude);
+    }
+
+    /**
+     * @return HasMany<CustomerNote, $this>
+     */
+    public function notes(): HasMany
+    {
+        return $this->hasMany(CustomerNote::class);
+    }
+
+    /**
+     * Customers whose name, email or phone contains every word, ignoring case.
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeMatching(Builder $query, string $words): void
+    {
+        foreach (preg_split('/\s+/', mb_strtolower(trim($words)), -1, PREG_SPLIT_NO_EMPTY) ?: [] as $word) {
+            $query->where('search_text', 'like', '%'.addcslashes($word, '%_\\').'%');
+        }
+    }
+
+    protected static function booted(): void
+    {
+        self::saving(static function (self $customer): void {
+            $customer->search_text = mb_strtolower(implode(' ', array_filter([$customer->name, $customer->email, $customer->phone])));
+        });
     }
 
     protected static function newFactory(): CustomerFactory

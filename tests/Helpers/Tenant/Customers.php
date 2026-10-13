@@ -7,6 +7,7 @@ use App\Shared\Auth\AccessTokenIssuer;
 use App\Tenant\Customers\CustomerEmailLinkNotification;
 use App\Tenant\Customers\Enums\CustomerEmailTokenPurpose;
 use App\Tenant\Customers\Models\Customer;
+use App\Tenant\Identity\Models\StaffMember;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
@@ -120,6 +121,36 @@ function tokyoAddress(array $overrides = []): array
 function londonAddress(array $overrides = []): array
 {
     return [...['recipient_name' => 'Ada Lovelace', 'line1' => '10 Downing Street', 'city' => 'London', 'postal_code' => 'sw1a 1aa', 'country' => 'gb'], ...$overrides];
+}
+
+/*
+|--------------------------------------------------------------------------
+| For StaffCustomerTest.php
+|--------------------------------------------------------------------------
+*/
+
+enum StaffMemberKind
+{
+    case Viewer;
+    case Outsider;
+}
+
+/**
+ * Sends a request to a store's staff customer API, under /api/v1/staff/customers, as a staff member or with a token.
+ *
+ * @param  array<string, mixed>  $data
+ */
+function staffCustomerRequest(string $method, string $path, array $data = [], StaffMember|string|null $as = null, string $subdomain = 'first-store'): TestResponse
+{
+    forgetSignIns();
+    $token = $as instanceof StaffMember ? staffTokenFor($as, $subdomain) : $as;
+    $request = $token === null ? test() : test()->withToken($token);
+
+    $response = $request->json($method, storeUrl($subdomain, '/api/v1/staff/customers'.$path), $data);
+    tenancy()->end();
+    forgetSignIns();
+
+    return $response;
 }
 
 /**

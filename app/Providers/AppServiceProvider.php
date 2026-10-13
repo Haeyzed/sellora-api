@@ -64,6 +64,7 @@ use App\Tenant\Catalog\Models\Product;
 use App\Tenant\Catalog\Models\ProductVariant;
 use App\Tenant\Customers\CustomerEmailTokenRetention;
 use App\Tenant\Customers\CustomerStoreTables;
+use App\Tenant\Customers\Enums\CustomerPermission;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Delivery\DeliveryStoreTables;
 use App\Tenant\Delivery\Models\Driver;
@@ -181,6 +182,7 @@ final class AppServiceProvider extends ServiceProvider
             $catalogue->register(CatalogPermission::class);
             $catalogue->register(InventoryPermission::class);
             $catalogue->register(PricingPermission::class);
+            $catalogue->register(CustomerPermission::class);
 
             return $catalogue;
         });

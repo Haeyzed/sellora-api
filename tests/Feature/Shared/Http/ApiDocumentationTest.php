@@ -47,7 +47,7 @@ const PAGE_NUMBER_LISTS = [
 ];
 
 const CURSOR_LISTS = [
-    'default' => ['/staff/catalog/products', '/catalog/products', '/staff/inventory/levels', '/staff/inventory/variants/{variant}/movements'],
+    'default' => ['/staff/catalog/products', '/catalog/products', '/staff/inventory/levels', '/staff/inventory/variants/{variant}/movements', '/staff/customers', '/staff/customers/{customer}/notes'],
     'platform' => ['/exchange-rates'],
 ];
 
@@ -142,6 +142,14 @@ it('documents every customer endpoint', function (): void {
         '/customer/auth/email-verifications' => ['post'],
         '/customer/account/addresses' => ['get', 'post'],
         '/customer/account/addresses/{address}' => ['get', 'put', 'delete'],
+        '/staff/customers' => ['get'],
+        '/staff/customers/{customer}' => ['get', 'patch', 'delete'],
+        '/staff/customers/{customer}/restore' => ['post'],
+        '/staff/customers/{customer}/deactivate' => ['post'],
+        '/staff/customers/{customer}/reactivate' => ['post'],
+        '/staff/customers/{customer}/addresses' => ['get'],
+        '/staff/customers/{customer}/notes' => ['get', 'post'],
+        '/staff/customers/{customer}/notes/{note}' => ['delete'],
     ];
 
     foreach ($expected as $path => $methods) {
@@ -156,7 +164,10 @@ it('documents every customer endpoint', function (): void {
         ->and($store['paths']['/customer/account/addresses']['post']['requestBody']['content']['application/json']['schema']['$ref'])->toBe('#/components/schemas/CustomerAddressRequest')
         ->and(array_keys($store['components']['schemas']['CustomerAddressRequest']['properties']))
         ->toContain('recipient_name', 'line1', 'city', 'state', 'postal_code', 'country', 'phone', 'is_default_shipping', 'is_default_billing')
-        ->and($store['paths']['/customer/auth/email-verifications']['post']['security'] ?? null)->toBe([]);
+        ->and($store['paths']['/customer/auth/email-verifications']['post']['security'] ?? null)->toBe([])
+        ->and(array_keys($store['paths']['/staff/customers']))->not->toContain('post')
+        ->and(collect($store['paths']['/staff/customers']['get']['parameters'])->pluck('name')->all())->toContain('search', 'is_active', 'email_verified', 'trashed', 'cursor')
+        ->and($store['paths']['/staff/customers/{customer}']['patch']['description'])->toContain('Staff never change a customer\'s');
 });
 
 /*
