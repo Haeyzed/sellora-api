@@ -82,6 +82,7 @@ final class ChangeProductOptionsRequest extends FormRequest
     {
         /** @var list<string> $publicIds */
         $publicIds = $this->validated('attributes');
+
         return array_values(Attribute::query()->whereIn('public_id', $publicIds)->get()
             ->sortBy(static fn (Attribute $attribute): int|false => array_search($attribute->public_id, $publicIds, true))
             ->all());
