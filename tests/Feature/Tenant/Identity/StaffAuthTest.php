@@ -5,13 +5,12 @@ declare(strict_types=1);
 use App\Shared\Auth\PasswordResetLinkNotification;
 use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Notification;
-use Illuminate\Testing\TestResponse;
 use Laravel\Sanctum\PersonalAccessToken;
+use Tests\Support\TruncatesCentralDatabase;
 
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 const STAFF_PASSWORD = 'a-long-staff-password';
 
@@ -28,15 +27,6 @@ beforeEach(function (): void {
 afterEach(function (): void {
     deleteAllStores();
 });
-
-function signInAsStaff(string $subdomain, string $email = 'owner@first-store.test'): TestResponse
-{
-    $response = test()->postJson(storeUrl($subdomain, '/api/v1/staff/auth/tokens'), ['email' => $email, 'password' => STAFF_PASSWORD]);
-    tenancy()->end();
-    forgetSignIns();
-
-    return $response;
-}
 
 it('signs a staff member in to their store and shows their roles', function (): void {
     $token = signInAsStaff('first-store')->assertOk()->json('data.token');

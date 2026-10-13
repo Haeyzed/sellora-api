@@ -6,8 +6,6 @@ use App\Landlord\Legal\Enums\LegalDocumentType;
 use App\Landlord\Legal\Models\LegalAcceptance;
 use App\Landlord\Legal\Models\LegalDocument;
 use App\Landlord\Tenancy\Enums\TenantStatus;
-use App\Landlord\Tenancy\Models\Tenant;
-use App\Shared\Auth\AccessTokenIssuer;
 use App\Shared\Auth\Models\Role;
 use App\Shared\Tenancy\Contracts\StoreOwnerContact;
 use App\Shared\Tenancy\TermsOfServiceAcceptance;
@@ -19,13 +17,12 @@ use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Identity\OwnershipTransferOfferNotification;
 use App\Tenant\Identity\OwnershipTransferredNotification;
 use Illuminate\Database\QueryException;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
-use Illuminate\Testing\TestResponse;
 use Spatie\Activitylog\Models\Activity;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Section 10: ownership moves in two steps. The owner offers the store
@@ -34,7 +31,7 @@ use Spatie\Activitylog\Models\Activity;
  * service in force. Nothing changes before that, the owner can cancel, and a
  * store has one pending transfer at most.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 const OWNERSHIP_PASSWORD = 'a-long-owner-password';
 
@@ -58,62 +55,6 @@ beforeEach(function (): void {
 afterEach(function (): void {
     deleteAllStores();
 });
-
-/**
- * Sends a request to a store's ownership transfer API as the given staff member.
- */
-function ownershipTransfer(string $method, string $path, array $data, StaffMember $as, string $subdomain = 'owned-store'): TestResponse
-{
-    forgetSignIns();
-    $store = Tenant::query()->whereHas('domains', static fn ($query) => $query->where('domain', Tenant::platformDomainFor($subdomain)))->firstOrFail();
-    $token = $store->run(static fn (): string => app(AccessTokenIssuer::class)->issue($as, StaffMember::GUARD, 'test')->plainTextToken);
-
-    $response = test()->withToken($token)->json($method, storeUrl($subdomain, '/api/v1/staff/team/ownership-transfers'.$path), $data);
-    tenancy()->end();
-    forgetSignIns();
-
-    return $response;
-}
-
-/**
- * The owner's offer to the colleague, keeping the given roles.
- *
- * @param  list<string>  $keptRoleIds
- */
-function offerStoreToColleague(array $keptRoleIds = [], array $extra = []): TestResponse
-{
-    return ownershipTransfer('POST', '', [
-        'staff_member' => test()->colleague->public_id,
-        'current_password' => OWNERSHIP_PASSWORD,
-        'roles' => $keptRoleIds,
-        ...$extra,
-    ], test()->owner);
-}
-
-function acceptStore(string $transferId, ?StaffMember $as = null, ?string $termsOfServiceId = null): TestResponse
-{
-    return ownershipTransfer('POST', "/{$transferId}/acceptance", [
-        'accepted_terms_of_service' => $termsOfServiceId ?? test()->termsOfService->public_id,
-    ], $as ?? test()->colleague);
-}
-
-/**
- * @return array{owner: bool, colleague: bool, owner_roles: list<string>, colleague_roles: list<string>}
- */
-function storeOwnershipState(): array
-{
-    return test()->store->run(static function (): array {
-        $owner = StaffMember::query()->findOrFail(test()->owner->id);
-        $colleague = StaffMember::query()->findOrFail(test()->colleague->id);
-
-        return [
-            'owner' => $owner->hasRole(StaffRole::Owner->value),
-            'colleague' => $colleague->hasRole(StaffRole::Owner->value),
-            'owner_roles' => array_values($owner->getRoleNames()->all()),
-            'colleague_roles' => array_values($colleague->getRoleNames()->all()),
-        ];
-    });
-}
 
 it('changes nothing until the colleague accepts, then hands over the store and keeps the chosen roles', function (): void {
     $transferId = offerStoreToColleague([$this->managerRole->public_id])
@@ -257,15 +198,6 @@ it('never lets a transfer of one store be used in another', function (): void {
     ownershipTransfer('POST', "/{$transferId}/acceptance", ['accepted_terms_of_service' => $this->termsOfService->public_id], $otherStaffMember, 'other-store')->assertNotFound();
     expect(storeOwnershipState())->toMatchArray(['owner' => true, 'colleague' => false]);
 });
-
-/**
- * Runs the queued job that brings the platform up to date, in the store's context, as a queue worker would.
- */
-function runOwnerContactSync(SyncStoreOwnerContact $job): void
-{
-    test()->store->run(static fn () => app()->call([$job, 'handle']));
-    tenancy()->end();
-}
 
 it('commits the handover in the store first, then updates the platform, retrying a failure until both agree', function (): void {
     Queue::fake();

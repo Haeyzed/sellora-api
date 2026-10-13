@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 use App\Landlord\Identity\Enums\PlatformRole;
 use App\Landlord\Identity\Models\PlatformAdmin;
-use App\Shared\Auth\AccessTokenIssuer;
 use App\Shared\Auth\Models\Role;
 use App\Shared\Auth\PasswordResetLinkNotification;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
-use PragmaRX\Google2FA\Google2FA;
 use Spatie\Permission\Models\Permission;
 
 uses(LazilyRefreshDatabase::class);
@@ -21,26 +19,6 @@ const PLATFORM_ADMIN_PASSWORD = 'a-long-platform-password';
 beforeEach(function (): void {
     $this->admin = PlatformAdmin::factory()->create(['email' => 'ada@sellora.test', 'password' => PLATFORM_ADMIN_PASSWORD]);
 });
-
-/**
- * Signs in with the password alone, which gives a token only while two-factor authentication isn't set up yet.
- */
-function signInAsPlatformAdmin(string $password = PLATFORM_ADMIN_PASSWORD): string
-{
-    return test()->postJson('/api/v1/platform/auth/tokens', ['email' => 'ada@sellora.test', 'password' => $password])->json('data.token');
-}
-
-/**
- * A token for the test admin with two-factor authentication on, as after a completed two-factor sign-in.
- */
-function fullySignedInPlatformAdminToken(PlatformAdmin $platformAdmin): string
-{
-    if (! $platformAdmin->hasTwoFactorEnabled()) {
-        enableTwoFactor($platformAdmin);
-    }
-
-    return app(AccessTokenIssuer::class)->issue($platformAdmin, PlatformAdmin::GUARD, 'test')->plainTextToken;
-}
 
 it('returns a 24-hour bearer token for the right email and password, whatever the email\'s case', function (): void {
     $this->travelTo(CarbonImmutable::parse('2026-10-06 09:00:00'));
@@ -207,22 +185,6 @@ it('refuses a wrong or reused reset token with the same 422', function (): void 
 
     expect(password_verify(PLATFORM_ADMIN_PASSWORD, $this->admin->fresh()->password))->toBeTrue();
 });
-
-/**
- * Makes new authenticator secrets predictable, so a test can type the code an app would show.
- */
-function useFixedTwoFactorSecret(string $secret): void
-{
-    app()->instance(Google2FA::class, new class($secret) extends Google2FA
-    {
-        public function __construct(private readonly string $fixedSecret) {}
-
-        public function generateSecretKey($length = 32, $prefix = ''): string
-        {
-            return $this->fixedSecret;
-        }
-    });
-}
 
 it('creates the first super admin from the command line, with two-factor authentication set up before the account exists', function (): void {
     $secret = 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';

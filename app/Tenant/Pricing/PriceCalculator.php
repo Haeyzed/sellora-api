@@ -87,7 +87,7 @@ final readonly class PriceCalculator
             $taxableLines[] = new TaxableLine(self::SHIPPING_KEY, TaxLineKind::Shipping, $request->shipping, $shippingClass ?? new TaxClassData('', 'Shipping not taxed', true));
         }
 
-        $tax = $this->calculateTax->handle(new TaxRequest($request->currency, $settings->tax_mode, $origin, $destination, $taxableLines));
+        $tax = $this->calculateTax->handle(new TaxRequest($request->currency, $settings->tax_mode, $origin, $destination, $taxableLines, $request->customer));
         $priced = [];
 
         foreach ($lines as $key => [$line, $price, $subtotal, $discount]) {

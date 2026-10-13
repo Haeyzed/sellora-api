@@ -25,13 +25,6 @@ beforeEach(function (): void {
     })->middleware('idempotent')->name('sample-charges.store');
 });
 
-function chargeWithKey(string $key, array $body = ['amount' => 1000], string $ip = '203.0.113.10'): Illuminate\Testing\TestResponse
-{
-    return test()->withHeader('Idempotency-Key', $key)
-        ->withServerVariables(['REMOTE_ADDR' => $ip])
-        ->postJson('/api/v1/sample-charges', $body);
-}
-
 it('rejects a money request without an Idempotency-Key header', function (): void {
     $this->postJson('/api/v1/sample-charges', ['amount' => 1000])
         ->assertUnprocessable()

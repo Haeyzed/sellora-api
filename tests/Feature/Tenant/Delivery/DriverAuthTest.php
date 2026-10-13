@@ -3,10 +3,9 @@
 declare(strict_types=1);
 
 use App\Tenant\Delivery\Models\Driver;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
-use Illuminate\Testing\TestResponse;
+use Tests\Support\TruncatesCentralDatabase;
 
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     config(['api.rate_limits.login' => 100]);
@@ -17,15 +16,6 @@ beforeEach(function (): void {
 afterEach(function (): void {
     deleteAllStores();
 });
-
-function signInAsDriver(string $phone, string $pin): TestResponse
-{
-    $response = test()->postJson(storeUrl('first-store', '/api/v1/driver/auth/tokens'), ['phone' => $phone, 'pin' => $pin]);
-    tenancy()->end();
-    forgetSignIns();
-
-    return $response;
-}
 
 it('signs a driver in with their phone number in any international format and their PIN', function (string $typedPhone): void {
     $token = signInAsDriver($typedPhone, '482915')->assertOk()->json('data.token');

@@ -16,19 +16,17 @@ use App\Landlord\Tenancy\Models\DatabaseServer;
 use App\Landlord\Tenancy\Models\StoreRegistration;
 use App\Landlord\Tenancy\Models\Tenant;
 use App\Landlord\Tenancy\StoreReadyNotification;
-use App\Landlord\Tenancy\StoreRegistrationCodeNotification;
 use App\Shared\Money\TaxMode;
 use App\Shared\Retention\PurgeExpiredRecords;
 use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Settings\Enums\WeightUnit;
 use App\Tenant\Settings\Models\StoreSettings;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
-use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
-use Illuminate\Testing\TestResponse;
+use Illuminate\Support\Facades\Queue;
 use Spatie\Activitylog\Models\Activity;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Section 9.1: a store is registered in two steps (sign-up, then the emailed
@@ -37,7 +35,7 @@ use Spatie\Activitylog\Models\Activity;
  * merchant's choice, never silently changed; the legal documents in force
  * must all be accepted; and each email may own a limited number of stores.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 const OWNER_PASSWORD = 'a-long-owner-password';
 
@@ -52,73 +50,6 @@ beforeEach(function (): void {
 afterEach(function (): void {
     deleteAllStores();
 });
-
-/**
- * Everything registration needs: a free plan, a version in force of every legal document, a database server, and the test countries (seedWorld()).
- */
-function openStoreRegistration(): DatabaseServer
-{
-    Plan::factory()->create(['code' => 'free', 'name' => 'Free']);
-
-    foreach (LegalDocumentType::cases() as $type) {
-        LegalDocument::factory()->ofType($type)->inForce()->create();
-    }
-
-    seedWorld();
-
-    return DatabaseServer::factory()->inRegion('africa')->create(['name' => 'africa-1', 'capacity' => 10]);
-}
-
-/**
- * @param  array<string, mixed>  $overrides
- * @return array<string, mixed>
- */
-function storeSignUp(array $overrides = []): array
-{
-    return [
-        'store_name' => 'Ada Fabrics',
-        'subdomain' => 'ada-fabrics',
-        'owner_name' => 'Ada Obi',
-        'email' => 'ada@example.com',
-        'password' => OWNER_PASSWORD,
-        'password_confirmation' => OWNER_PASSWORD,
-        'country_code' => 'NG',
-        'hosting_region' => 'africa',
-        'accepted_legal_documents' => array_map(static fn (LegalDocument $legalDocument): string => $legalDocument->public_id, array_values(LegalDocument::inForce())),
-        ...$overrides,
-    ];
-}
-
-/**
- * @param  array<string, mixed>  $overrides
- */
-function signUpForStore(array $overrides = []): TestResponse
-{
-    return test()->postJson(centralUrl('/api/v1/store-registrations'), storeSignUp($overrides));
-}
-
-function confirmStoreSignUp(string $storeRegistrationId, string $code): TestResponse
-{
-    return test()->postJson(centralUrl("/api/v1/store-registrations/{$storeRegistrationId}/verification"), ['code' => $code]);
-}
-
-/**
- * The last code emailed to the address.
- */
-function lastStoreRegistrationCode(string $email = 'ada@example.com'): string
-{
-    $codes = [];
-
-    Notification::assertSentOnDemand(StoreRegistrationCodeNotification::class, static function (StoreRegistrationCodeNotification $notification, array $channels, AnonymousNotifiable $notifiable) use ($email, &$codes): bool {
-        if ($notifiable->routes['mail'] === $email) {
-            $codes[] = $notification->code();
-        }
-
-        return true;
-    });
-
-    return $codes === [] ? throw new RuntimeException("No code was sent to {$email}.") : end($codes);
-}
 
 it('registers a store, sets it up on a server in its region, and lets the owner sign in', function (): void {
     $this->getJson(centralUrl('/api/v1/hosting-regions'))->assertOk()->assertExactJson(['data' => [['code' => 'africa', 'name' => 'Africa']]]);
@@ -173,6 +104,8 @@ it('closes its connection to the database server after creating or dropping a st
 });
 
 it('counts every wrong code, even though the request fails, and needs a new code after five', function (): void {
+    // About the code, not setting the store up (the first test does that for real): the store is only queued for setup.
+    Queue::fake([ProvisionStore::class]);
     $storeRegistrationId = signUpForStore()->json('data.id');
     $code = lastStoreRegistrationCode();
     $wrongCode = $code === '000000' ? '111111' : '000000';
@@ -188,11 +121,14 @@ it('counts every wrong code, even though the request fails, and needs a new code
     $this->postJson(centralUrl("/api/v1/store-registrations/{$storeRegistrationId}/codes"))->assertAccepted();
 
     confirmStoreSignUp($storeRegistrationId, $code)->assertUnprocessable();
-    confirmStoreSignUp($storeRegistrationId, lastStoreRegistrationCode())->assertAccepted()->assertJsonPath('data.status', 'active');
+    confirmStoreSignUp($storeRegistrationId, lastStoreRegistrationCode())->assertAccepted()->assertJsonPath('data.status', 'provisioning');
     confirmStoreSignUp($storeRegistrationId, lastStoreRegistrationCode())->assertUnprocessable()->assertJsonPath('code', 'store_registration_code_invalid');
+    Queue::assertPushed(ProvisionStore::class, 1);
 });
 
 it('refuses an expired code, sends at most one code a minute, and revives an expired sign-up with a new code', function (): void {
+    // About the code, not setting the store up (the first test does that for real): the store is only queued for setup.
+    Queue::fake([ProvisionStore::class]);
     $storeRegistrationId = signUpForStore()->json('data.id');
 
     $this->postJson(centralUrl("/api/v1/store-registrations/{$storeRegistrationId}/codes"))
@@ -204,7 +140,8 @@ it('refuses an expired code, sends at most one code a minute, and revives an exp
     $this->getJson(centralUrl("/api/v1/store-registrations/{$storeRegistrationId}"))->assertOk()->assertJsonPath('data.status', 'expired');
 
     $this->postJson(centralUrl("/api/v1/store-registrations/{$storeRegistrationId}/codes"))->assertAccepted()->assertJsonPath('data.status', 'awaiting_verification');
-    confirmStoreSignUp($storeRegistrationId, lastStoreRegistrationCode())->assertAccepted();
+    confirmStoreSignUp($storeRegistrationId, lastStoreRegistrationCode())->assertAccepted()->assertJsonPath('data.status', 'provisioning');
+    Queue::assertPushed(ProvisionStore::class, 1);
 });
 
 it('holds a subdomain for a sign-up in progress, and refuses taken, reserved and malformed subdomains', function (): void {

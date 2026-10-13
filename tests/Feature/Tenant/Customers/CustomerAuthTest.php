@@ -3,11 +3,11 @@
 declare(strict_types=1);
 
 use App\Tenant\Customers\Models\Customer;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
+use Tests\Support\TruncatesCentralDatabase;
 
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     $this->store = createStore('first-store');
@@ -16,20 +16,6 @@ beforeEach(function (): void {
 afterEach(function (): void {
     deleteAllStores();
 });
-
-/**
- * @return array<string, string>
- */
-function newCustomerDetails(string $email = 'ada@example.com'): array
-{
-    return [
-        'name' => 'Ada Lovelace',
-        'email' => $email,
-        'password' => 'a-long-shopper-password',
-        'password_confirmation' => 'a-long-shopper-password',
-        'device_name' => 'Ada\'s phone',
-    ];
-}
 
 it('creates a customer account at the store and returns a token that works straight away', function (): void {
     $token = $this->postJson(storeUrl('first-store', '/api/v1/customer/auth/accounts'), newCustomerDetails('Ada@Example.com '))

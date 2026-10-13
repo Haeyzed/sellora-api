@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Landlord\Identity\Models\PlatformAdmin;
-use App\Shared\Auth\AccessTokenIssuer;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\DB;
 
@@ -19,23 +18,6 @@ const TWO_FACTOR_ADMIN_PASSWORD = 'a-long-platform-password';
 beforeEach(function (): void {
     $this->admin = PlatformAdmin::factory()->create(['email' => 'ada@sellora.test', 'password' => TWO_FACTOR_ADMIN_PASSWORD]);
 });
-
-function startPlatformAdminSignIn(string $deviceName = 'Ada\'s laptop'): string
-{
-    return test()->postJson('/api/v1/platform/auth/tokens', ['email' => 'ada@sellora.test', 'password' => TWO_FACTOR_ADMIN_PASSWORD, 'device_name' => $deviceName])
-        ->assertAccepted()
-        ->json('data.challenge_token');
-}
-
-function answerPlatformAdminChallenge(string $challengeToken, array $answer): Illuminate\Testing\TestResponse
-{
-    return test()->postJson('/api/v1/platform/auth/two-factor-challenges', ['challenge_token' => $challengeToken, ...$answer]);
-}
-
-function platformAdminToken(PlatformAdmin $platformAdmin): string
-{
-    return app(AccessTokenIssuer::class)->issue($platformAdmin, PlatformAdmin::GUARD, 'test')->plainTextToken;
-}
 
 it('lets a new admin only see their profile, set up two-factor authentication and sign out', function (): void {
     $token = $this->postJson('/api/v1/platform/auth/tokens', ['email' => 'ada@sellora.test', 'password' => TWO_FACTOR_ADMIN_PASSWORD])->assertOk()->json('data.token');

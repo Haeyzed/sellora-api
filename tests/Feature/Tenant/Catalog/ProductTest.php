@@ -6,7 +6,6 @@ use App\Shared\Auth\AccessTokenIssuer;
 use App\Shared\Auth\Models\Role;
 use App\Shared\Features\Contracts\FeatureSource;
 use App\Shared\Features\Exceptions\UsageLimitReachedException;
-use App\Shared\Features\Features;
 use App\Shared\Money\Money;
 use App\Tenant\Catalog\Actions\CreateProduct;
 use App\Tenant\Catalog\Data\ProductData;
@@ -19,13 +18,13 @@ use App\Tenant\Catalog\Services\ProductLimit;
 use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
 use Illuminate\Database\QueryException;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 use OwenIt\Auditing\Models\Audit;
 use Spatie\Permission\Models\Permission;
 use Tests\Fixtures\Features\FakeFeatureSource;
 use Tests\Support\SecondConnection;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Sections 3.3, 8, 11 and 13: a product starts as a draft with its first
@@ -35,7 +34,7 @@ use Tests\Support\SecondConnection;
  * and slugs are unique outside the trash. The primary category is always
  * one of the product's categories. The plan limits products.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     seedWorld();
@@ -67,42 +66,6 @@ beforeEach(function (): void {
 afterEach(function (): void {
     deleteAllStores();
 });
-
-function allowProducts(string $tenantId, int $limit): void
-{
-    test()->featureSource->give($tenantId, FakeFeatureSource::snapshot(limits: ['products' => $limit]));
-    app(Features::class)->forget($tenantId);
-}
-
-/**
- * @param  array<string, mixed>  $data
- */
-function productRequest(string $method, string $path = '', array $data = [], ?StaffMember $as = null, string $subdomain = 'product-store'): TestResponse
-{
-    forgetSignIns();
-    $store = $subdomain === 'product-store' ? test()->store : test()->otherStore;
-    $token = $store->run(static fn (): string => app(AccessTokenIssuer::class)->issue($as ?? test()->owner, StaffMember::GUARD, 'test')->plainTextToken);
-
-    $response = test()->withToken($token)->json($method, storeUrl($subdomain, '/api/v1/staff/catalog/products'.$path), $data);
-    tenancy()->end();
-    forgetSignIns();
-
-    return $response;
-}
-
-/**
- * @param  array<string, mixed>  $overrides
- * @param  array<string, mixed>  $variant
- * @return array<string, mixed>
- */
-function newProduct(array $overrides = [], array $variant = []): array
-{
-    return [
-        'name' => ['en' => 'Linen shirt'],
-        'variant' => ['price' => 1999, 'weight_grams' => 250, ...$variant],
-        ...$overrides,
-    ];
-}
 
 it('adds a draft product with its first variant priced in minor units of the store\'s base currency', function (): void {
     $response = productRequest('POST', data: newProduct([

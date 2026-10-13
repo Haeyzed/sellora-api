@@ -31,4 +31,9 @@ final class CustomerFactory extends Factory
     {
         return $this->state(['is_active' => false]);
     }
+
+    public function verified(): self
+    {
+        return $this->state(['email_verified_at' => now()]);
+    }
 }

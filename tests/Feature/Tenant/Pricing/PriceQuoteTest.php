@@ -18,20 +18,18 @@ use App\Tenant\Pricing\Actions\ChangeStoreCurrency;
 use App\Tenant\Pricing\Actions\CreateTaxRate;
 use App\Tenant\Pricing\Actions\SetFixedPrice;
 use App\Tenant\Pricing\Actions\UpdateTaxClass;
-use App\Tenant\Pricing\Data\PricedBasket;
-use App\Tenant\Pricing\Data\PricingLine;
 use App\Tenant\Pricing\Data\PricingRequest;
 use App\Tenant\Pricing\Data\TaxAddress;
 use App\Tenant\Pricing\Data\TaxClassChanges;
+use App\Tenant\Pricing\Data\TaxCustomer;
 use App\Tenant\Pricing\Enums\TaxOutcome;
 use App\Tenant\Pricing\Models\StoreCurrency;
 use App\Tenant\Pricing\Models\TaxClass;
 use App\Tenant\Pricing\PriceCalculator;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Testing\TestResponse;
 use Spatie\Permission\Models\Permission;
 use Tests\Fixtures\Features\FakeFeatureSource;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Section 3.3: Cart, Checkout and Orders price lines with one calculation:
@@ -41,7 +39,7 @@ use Tests\Fixtures\Features\FakeFeatureSource;
  * in the currency they ask for while the store offers it, and in the store's
  * own currency otherwise.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     seedWorld();
@@ -78,27 +76,14 @@ afterEach(function (): void {
     deleteAllStores();
 });
 
-function quote(string $currency, int $quantity = 1, ?TaxAddress $destination = null, ?Money $discount = null, ?Money $shipping = null): PricedBasket
-{
-    return app(PriceCalculator::class)->quote(new PricingRequest($currency, [new PricingLine('shirt', ProductVariant::query()->where('sku', 'SHIRT')->sole(), $quantity, $discount)], $destination, $shipping));
-}
-
-/**
- * @return array{0: int, 1: int, 2: int, 3: int} Subtotal, discount, tax and total in minor units.
- */
-function totalsOf(PricedBasket $basket): array
-{
-    return [$basket->subtotal()->minorAmount(), $basket->discount()->minorAmount(), $basket->tax()->minorAmount(), $basket->total()->minorAmount()];
-}
-
 it('takes tax out of the price in a tax-inclusive store, per line, after the discount', function (): void {
     $this->store->run(static function (): void {
         // 2 × ₦10,750 = ₦21,500, of which 7.5/107.5 is tax: ₦1,500.
-        expect(totalsOf(quote('NGN', 2)))->toBe([2150000, 0, 150000, 2150000]);
+        expect(basketTotals(priceQuoteFor('NGN', 2)))->toBe([2150000, 0, 150000, 2150000]);
 
         // ₦1,500 off: ₦20,000 × 7.5/107.5 = ₦1,395.348… → ₦1,395.35.
-        $discounted = quote('NGN', 2, discount: Money::ofMinor(150000, 'NGN'));
-        expect(totalsOf($discounted))->toBe([2150000, 150000, 139535, 2000000])
+        $discounted = priceQuoteFor('NGN', 2, discount: Money::ofMinor(150000, 'NGN'));
+        expect(basketTotals($discounted))->toBe([2150000, 150000, 139535, 2000000])
             ->and($discounted->lines['shirt']->tax->net->minorAmount())->toBe(1860465)
             ->and($discounted->taxMode)->toBe(TaxMode::Inclusive)
             ->and($discounted->taxCalculatedBy)->toBe('rate_table');
@@ -109,22 +94,22 @@ it('adds tax on top in a tax-exclusive store', function (): void {
     $this->store->run(static function (): void {
         DB::table('store_settings')->update(['tax_mode' => TaxMode::Exclusive->value]);
 
-        expect(totalsOf(quote('NGN')))->toBe([1075000, 0, 80625, 1155625]);
+        expect(basketTotals(priceQuoteFor('NGN')))->toBe([1075000, 0, 80625, 1155625]);
     });
 });
 
 it('prices and taxes in the customer\'s currency, rounding each to its own decimals', function (): void {
     $this->store->run(static function (): void {
         // $5.375 → $5.38 a unit; California 7.25% inside it: 538 × 7.25 / 107.25 = 36.37 → 36 cents.
-        $dollars = quote('USD', destination: new TaxAddress('US', 'CA'));
-        expect(totalsOf($dollars))->toBe([538, 0, 36, 538])
+        $dollars = priceQuoteFor('USD', destination: new TaxAddress('US', 'CA'));
+        expect(basketTotals($dollars))->toBe([538, 0, 36, 538])
             ->and($dollars->exchangeRate->rate->toString())->toBe('0.000500000000')
             ->and($dollars->lines['shirt']->price->compareAtPrice?->minorAmount())->toBe(645);
 
         // ¥1,075 with 10% inside: 97.7 → ¥98. Three units are priced per unit, then multiplied.
-        expect(totalsOf(quote('JPY', 3, new TaxAddress('JP'))))->toBe([3225, 0, 293, 3225])
+        expect(basketTotals(priceQuoteFor('JPY', 3, new TaxAddress('JP'))))->toBe([3225, 0, 293, 3225])
             // 2.150 KD with 5% inside: 102.38 → 0.102 KD.
-            ->and(totalsOf(quote('KWD', destination: new TaxAddress('KW'))))->toBe([2150, 0, 102, 2150]);
+            ->and(basketTotals(priceQuoteFor('KWD', destination: new TaxAddress('KW'))))->toBe([2150, 0, 102, 2150]);
     });
 });
 
@@ -132,40 +117,35 @@ it('uses a fixed price as it is in the quote', function (): void {
     $this->store->run(function (): void {
         app(SetFixedPrice::class)->handle($this->shirt, StoreCurrency::query()->where('currency_code', 'USD')->sole(), Money::ofMinor(499, 'USD'), null);
 
-        $basket = quote('USD', 2, new TaxAddress('US', 'CA'));
+        $basket = priceQuoteFor('USD', 2, new TaxAddress('US', 'CA'));
         expect($basket->lines['shirt']->price->isFixed)->toBeTrue()
-            ->and(totalsOf($basket))->toBe([998, 0, 67, 998]);
+            ->and(basketTotals($basket))->toBe([998, 0, 67, 998]);
     });
 });
 
 it('taxes shipping at the store\'s shipping class, or not at all without one', function (): void {
     $this->store->run(static function (): void {
-        $basket = quote('NGN', shipping: Money::ofMinor(107500, 'NGN'));
+        $basket = priceQuoteFor('NGN', shipping: Money::ofMinor(107500, 'NGN'));
         expect($basket->shipping?->tax->minorAmount())->toBe(7500)
-            ->and(totalsOf($basket))->toBe([1075000, 0, 82500, 1182500]);
+            ->and(basketTotals($basket))->toBe([1075000, 0, 82500, 1182500]);
 
         app(UpdateTaxClass::class)->handle(TaxClass::query()->where('name', 'Standard')->sole(), new TaxClassChanges(usedForShipping: false));
-        $untaxed = quote('NGN', shipping: Money::ofMinor(107500, 'NGN'));
+        $untaxed = priceQuoteFor('NGN', shipping: Money::ofMinor(107500, 'NGN'));
         expect($untaxed->shipping?->outcome)->toBe(TaxOutcome::Exempt)
             ->and($untaxed->shipping?->tax->isZero())->toBeTrue()
             ->and($untaxed->total()->minorAmount())->toBe(1182500);
     });
 });
 
-/**
- * @param  array<string, mixed>  $data
- */
-function quoteRequest(array $data, ?StaffMember $as = null): TestResponse
-{
-    forgetSignIns();
-    $token = test()->store->run(static fn (): string => app(AccessTokenIssuer::class)->issue($as ?? test()->owner, StaffMember::GUARD, 'test')->plainTextToken);
+it('charges a tax-exempt customer no tax, on goods or shipping', function (): void {
+    $this->store->run(static function (): void {
+        $basket = priceQuoteFor('NGN', shipping: Money::ofMinor(107500, 'NGN'), customer: new TaxCustomer(isTaxExempt: true, taxId: 'NG12345678', taxIdCountry: 'NG'));
 
-    $response = test()->withToken($token)->postJson(storeUrl('quote-store', '/api/v1/staff/pricing/quotes'), $data);
-    tenancy()->end();
-    forgetSignIns();
-
-    return $response;
-}
+        expect($basket->tax()->isZero())->toBeTrue()
+            ->and($basket->lines['shirt']->tax->outcome)->toBe(TaxOutcome::Exempt)
+            ->and($basket->shipping?->outcome)->toBe(TaxOutcome::Exempt);
+    });
+});
 
 it('lets staff preview a quote, with lines that have no rate at the destination marked', function (): void {
     $shirt = $this->shirt->public_id;
@@ -205,14 +185,6 @@ it('refuses currencies not offered, unpriced or trashed variants, and discounts 
     $stranger = $this->store->run(static fn (): StaffMember => StaffMember::factory()->create());
     quoteRequest(['lines' => [['variant' => $unpriced->public_id, 'quantity' => 1]]], as: $stranger)->assertForbidden();
 });
-
-function pricedStorefrontProduct(string $query = ''): TestResponse
-{
-    $response = test()->getJson(storeUrl('quote-store', '/api/v1/catalog/products/linen-shirt'.$query));
-    tenancy()->end();
-
-    return $response;
-}
 
 it('shows customers prices in the currency they ask for while it is offered, and in the store\'s own otherwise', function (): void {
     pricedStorefrontProduct('?currency=USD')->assertOk()->assertJsonPath('data.variants.0.price.amount', 538)->assertJsonPath('data.variants.0.price.currency', 'USD')

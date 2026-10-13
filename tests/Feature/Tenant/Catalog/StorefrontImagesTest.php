@@ -2,11 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Shared\Auth\AccessTokenIssuer;
 use App\Shared\Auth\Models\Role;
 use App\Shared\Features\Contracts\FeatureSource;
 use App\Shared\Features\Exceptions\UsageLimitReachedException;
-use App\Shared\Features\Features;
 use App\Shared\Features\StorageLimit;
 use App\Shared\Media\StorefrontImage;
 use App\Shared\Media\StorefrontImageUploader;
@@ -17,7 +15,6 @@ use App\Tenant\Catalog\Models\Product;
 use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Settings\SettingsStoreFiles;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -27,6 +24,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\Permission\Models\Permission;
 use Tests\Fixtures\Features\FakeFeatureSource;
 use Tests\Support\SecondConnection;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Sections 8 and 14: storefront images (product gallery, variant image,
@@ -35,7 +33,7 @@ use Tests\Support\SecondConnection;
  * towards the plan's storage, are served on the store's own domain, and go
  * into the store export as uploaded.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     seedWorld();
@@ -61,41 +59,6 @@ beforeEach(function (): void {
 afterEach(function (): void {
     deleteAllStores();
 });
-
-function imageStoreLimits(?int $storageInMegabytes): void
-{
-    test()->featureSource->give(test()->store->getTenantKey(), FakeFeatureSource::snapshot(limits: ['products' => 100, 'storage_in_megabytes' => $storageInMegabytes]));
-    app(Features::class)->forget(test()->store->getTenantKey());
-}
-
-/**
- * @param  array<string, mixed>  $data
- */
-function imageRequest(string $method, string $path, array $data = [], ?StaffMember $as = null): TestResponse
-{
-    forgetSignIns();
-    $token = test()->store->run(static fn (): string => app(AccessTokenIssuer::class)->issue($as ?? test()->owner, StaffMember::GUARD, 'test')->plainTextToken);
-
-    $url = storeUrl('image-store', '/api/v1/staff'.$path);
-    // Uploads go as multipart form data; everything else as JSON.
-    $response = $method === 'POST'
-        ? test()->withToken($token)->post($url, $data, ['Accept' => 'application/json'])
-        : test()->withToken($token)->json($method, $url, $data);
-    tenancy()->end();
-    forgetSignIns();
-
-    return $response;
-}
-
-/**
- * @return array{product: string, variant: string}
- */
-function imageProduct(): array
-{
-    $response = imageRequest('POST', '/catalog/products', ['name' => ['en' => 'Linen shirt'], 'variant' => ['price' => 1999, 'weight_grams' => 250]])->assertCreated();
-
-    return ['product' => $response->json('data.id'), 'variant' => $response->json('data.variants.0.id')];
-}
 
 it('keeps a product\'s gallery on the public disk, in order, served on the store\'s own domain', function (): void {
     ['product' => $product] = imageProduct();

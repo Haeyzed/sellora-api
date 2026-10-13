@@ -2,18 +2,16 @@
 
 declare(strict_types=1);
 
-use App\Shared\Auth\AccessTokenIssuer;
 use App\Shared\Auth\Models\Role;
 use App\Tenant\Catalog\Models\Brand;
 use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Settings\Models\StoreSettings;
 use Illuminate\Database\QueryException;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Testing\TestResponse;
 use OwenIt\Auditing\Models\Audit;
 use Spatie\Permission\Models\Permission;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Sections 3.3, 11 and 13: brands have names in the store's languages, a
@@ -21,7 +19,7 @@ use Spatie\Permission\Models\Permission;
  * brand keeps it; slugs are unique only outside the trash, and restoring
  * re-checks. catalog.view lets staff look, catalog.manage lets them change.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     seedWorld();
@@ -45,22 +43,6 @@ beforeEach(function (): void {
 afterEach(function (): void {
     deleteAllStores();
 });
-
-/**
- * @param  array<string, mixed>  $data
- */
-function brandRequest(string $method, string $path = '', array $data = [], ?StaffMember $as = null, string $subdomain = 'brand-store'): TestResponse
-{
-    forgetSignIns();
-    $store = $subdomain === 'brand-store' ? test()->store : test()->otherStore;
-    $token = $store->run(static fn (): string => app(AccessTokenIssuer::class)->issue($as ?? test()->owner, StaffMember::GUARD, 'test')->plainTextToken);
-
-    $response = test()->withToken($token)->json($method, storeUrl($subdomain, '/api/v1/staff/catalog/brands'.$path), $data);
-    tenancy()->end();
-    forgetSignIns();
-
-    return $response;
-}
 
 it('adds a brand with its name in the store\'s languages, a slug from the default-language name and a public ID', function (): void {
     $response = brandRequest('POST', data: ['name' => ['en' => '  Ada Fabrics ', 'fr' => 'Tissus Ada'], 'description' => ['en' => 'Handwoven cloth.']])

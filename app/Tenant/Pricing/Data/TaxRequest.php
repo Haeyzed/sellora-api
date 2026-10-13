@@ -24,6 +24,7 @@ final readonly class TaxRequest
      * @param  TaxAddress  $origin  Where the store sells from: its address.
      * @param  TaxAddress  $destination  Where the order goes: the shipping address, or the store's country before one is known.
      * @param  list<TaxableLine>  $lines
+     * @param  TaxCustomer|null  $customer  Who is buying, when known (Step 10); null for a guest or before checkout.
      *
      * @throws InvalidArgumentException When a line is in another currency, or two lines share a key.
      */
@@ -33,6 +34,7 @@ final readonly class TaxRequest
         public TaxAddress $origin,
         public TaxAddress $destination,
         public array $lines,
+        public ?TaxCustomer $customer = null,
     ) {
         $keys = [];
 
@@ -56,6 +58,6 @@ final readonly class TaxRequest
      */
     public function withLines(array $lines): self
     {
-        return new self($this->currency, $this->taxMode, $this->origin, $this->destination, $lines);
+        return new self($this->currency, $this->taxMode, $this->origin, $this->destination, $lines, $this->customer);
     }
 }

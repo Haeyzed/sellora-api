@@ -7,13 +7,13 @@ use App\Shared\Features\Exceptions\UsageLimitReachedException;
 use App\Shared\Features\Features;
 use App\Shared\Features\FeatureSnapshot;
 use App\Shared\Tenancy\TenantRoutes;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\Route;
 use Tests\Fixtures\Features\FakeFeatureSource;
 use Tests\Fixtures\Features\SampleLoyaltyJob;
 use Tests\Fixtures\Features\SampleLoyaltyModuleServiceProvider;
+use Tests\Support\TruncatesCentralDatabase;
 
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     app()->register(SampleLoyaltyModuleServiceProvider::class);
@@ -28,11 +28,6 @@ beforeEach(function (): void {
 afterEach(function (): void {
     deleteAllStores();
 });
-
-function giveFirstStore(FeatureSnapshot $snapshot): void
-{
-    test()->featureSource->give((string) test()->firstStore->getTenantKey(), $snapshot);
-}
 
 it('serves every module route when the module is enabled', function (): void {
     giveFirstStore(FakeFeatureSource::snapshot(entitled: ['loyalty']));

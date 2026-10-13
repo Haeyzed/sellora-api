@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests;
 
 use GuzzleHttp\Promise\PromiseInterface;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
+use Illuminate\Database\DatabaseManager;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\ParallelTesting;
 use Illuminate\Support\Str;
 use Tests\Support\ProcessDatabase;
+use Tests\Support\StoreDatabaseTemplate;
+use Tests\Support\TruncatesCentralDatabase;
 
 /**
  * The common parent of every test that boots the application.
@@ -59,6 +61,7 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
 
+        StoreDatabaseTemplate::useBasePrefix(config()->string('tenancy.database.prefix'));
         config(['tenancy.database.prefix' => config()->string('tenancy.database.prefix').(ParallelTesting::token() ?: '0').'_']);
 
         Http::preventStrayRequests();
@@ -107,18 +110,29 @@ abstract class TestCase extends BaseTestCase
     }
 
     /**
-     * Tests with real store databases (DatabaseTruncation) also empty the central database when they finish.
+     * Tests with real store databases (TruncatesCentralDatabase) also empty the central database when they finish.
      *
      * Laravel truncates only before each such test, so without this their rows
      * (stores, platform admins, tokens) leak into the next transaction-based
      * test, which then depends on the order tests happen to run in.
+     *
+     * Every database connection the test opened is closed once Laravel has
+     * torn the test down. Laravel only drops the application, so each
+     * connection stayed open until PHP's garbage collector happened to run,
+     * and a long parallel run reached Postgres's connection limit.
      */
     protected function tearDown(): void
     {
-        if (in_array(DatabaseTruncation::class, class_uses_recursive(static::class), true) && method_exists($this, 'truncateTablesForAllConnections')) {
+        if (in_array(TruncatesCentralDatabase::class, class_uses_recursive(static::class), true) && method_exists($this, 'truncateTablesForAllConnections')) {
             $this->truncateTablesForAllConnections();
         }
 
+        $connections = $this->app?->bound('db') ? $this->app->make(DatabaseManager::class)->getConnections() : [];
+
         parent::tearDown();
+
+        foreach ($connections as $connection) {
+            $connection->disconnect();
+        }
     }
 }

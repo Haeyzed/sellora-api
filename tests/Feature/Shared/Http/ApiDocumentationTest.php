@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 use App\Landlord\Identity\Models\PlatformAdmin;
 use App\Shared\Auth\AccessTokenIssuer;
-use Dedoc\Scramble\Generator;
-use Dedoc\Scramble\Scramble;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 
 uses(LazilyRefreshDatabase::class);
@@ -15,16 +13,6 @@ uses(LazilyRefreshDatabase::class);
  * platform and registration APIs to the central domain, the store API to
  * the store subdomain the reader fills in.
  */
-
-/**
- * @return list<array<string, mixed>>
- */
-function documentedServers(string $api): array
-{
-    $document = app(Generator::class)(Scramble::getGeneratorConfig($api));
-
-    return $document['servers'];
-}
 
 it('sends the central APIs to the central domain and the store API to a store subdomain the reader chooses', function (): void {
     $central = 'http://'.config()->array('platform.central_domains')[0];
@@ -59,13 +47,13 @@ const PAGE_NUMBER_LISTS = [
 ];
 
 const CURSOR_LISTS = [
-    'default' => ['/staff/catalog/products', '/catalog/products', '/staff/inventory/levels', '/staff/inventory/variants/{variant}/movements'],
+    'default' => ['/staff/catalog/products', '/catalog/products', '/staff/inventory/levels', '/staff/inventory/variants/{variant}/movements', '/staff/customers', '/staff/customers/{customer}/notes', '/staff/customers/{customer}/marketing-consents'],
     'platform' => ['/exchange-rates'],
 ];
 
 it('documents every list as paged by page number or by cursor, never both and never neither', function (): void {
     foreach (['default', 'platform'] as $api) {
-        $document = app(Generator::class)(Scramble::getGeneratorConfig($api));
+        $document = documentedApi($api);
         $found = ['page' => [], 'cursor' => []];
 
         foreach ($document['paths'] as $path => $operations) {
@@ -103,8 +91,8 @@ it('documents every list as paged by page number or by cursor, never both and ne
  * the storefront's currency fallback spelled out and business errors listed.
  */
 it('documents every pricing, tax and exchange rate endpoint', function (): void {
-    $store = app(Generator::class)(Scramble::getGeneratorConfig('default'));
-    $platform = app(Generator::class)(Scramble::getGeneratorConfig('platform'));
+    $store = documentedApi('default');
+    $platform = documentedApi('platform');
 
     $expected = [
         '/staff/pricing/tax-classes' => ['get', 'post'],
@@ -141,6 +129,57 @@ it('documents every pricing, tax and exchange rate endpoint', function (): void 
 });
 
 /*
+ * Step 10: every customer endpoint is documented, with its business errors.
+ */
+it('documents every customer endpoint', function (): void {
+    $store = documentedApi('default');
+
+    $expected = [
+        '/customer/account' => ['patch'],
+        '/customer/account/email-verifications' => ['post'],
+        '/customer/account/email-changes' => ['post'],
+        '/customer/account/email-changes/confirmations' => ['post'],
+        '/customer/auth/email-verifications' => ['post'],
+        '/customer/account/addresses' => ['get', 'post'],
+        '/customer/account/addresses/{address}' => ['get', 'put', 'delete'],
+        '/staff/customers' => ['get'],
+        '/staff/customers/{customer}' => ['get', 'patch', 'delete'],
+        '/staff/customers/{customer}/restore' => ['post'],
+        '/staff/customers/{customer}/deactivate' => ['post'],
+        '/staff/customers/{customer}/reactivate' => ['post'],
+        '/staff/customers/{customer}/addresses' => ['get'],
+        '/staff/customers/{customer}/notes' => ['get', 'post'],
+        '/staff/customers/{customer}/notes/{note}' => ['delete'],
+        '/customer/account/tax-id' => ['put', 'delete'],
+        '/staff/customers/{customer}/tax-exemption' => ['put'],
+        '/customer/account/marketing-consents' => ['get'],
+        '/customer/account/marketing-consents/{channel}' => ['put'],
+        '/staff/customers/{customer}/marketing-consents' => ['get'],
+        '/staff/customers/{customer}/marketing-consents/withdrawals' => ['post'],
+    ];
+
+    foreach ($expected as $path => $methods) {
+        expect($store['paths'])->toHaveKey($path)
+            ->and(array_keys($store['paths'][$path]))->toContain(...$methods);
+    }
+
+    expect(json_encode($store['paths']['/customer/auth/email-verifications']['post']['responses'][422]))->toContain('customer_email_link_invalid')
+        ->and(json_encode($store['paths']['/customer/account/email-verifications']['post']['responses'][409]))->toContain('customer_email_already_verified')
+        ->and(json_encode($store['paths']['/customer/account/email-changes']['post']['responses'][422]))->toContain('current_password_incorrect')
+        ->and(json_encode($store['paths']['/customer/account/addresses']['post']['responses'][422]))->toContain('customer_address_limit_reached')
+        ->and($store['paths']['/customer/account/addresses']['post']['requestBody']['content']['application/json']['schema']['$ref'])->toBe('#/components/schemas/CustomerAddressRequest')
+        ->and(array_keys($store['components']['schemas']['CustomerAddressRequest']['properties']))
+        ->toContain('recipient_name', 'line1', 'city', 'state', 'postal_code', 'country', 'phone', 'is_default_shipping', 'is_default_billing')
+        ->and($store['paths']['/customer/auth/email-verifications']['post']['security'] ?? null)->toBe([])
+        ->and(array_keys($store['paths']['/staff/customers']))->not->toContain('post')
+        ->and(json_encode($store['paths']['/customer/account/marketing-consents/{channel}']['put']['responses'][422]))->toContain('marketing_contact_missing')
+        ->and(array_keys($store['paths']['/staff/customers/{customer}/marketing-consents']))->toBe(['get'])
+        ->and(json_encode($store['paths']['/staff/customers/{customer}/tax-exemption']['put']['responses'][422]))->toContain('customer_tax_id_missing')
+        ->and(collect($store['paths']['/staff/customers']['get']['parameters'])->pluck('name')->all())->toContain('search', 'is_active', 'email_verified', 'trashed', 'cursor')
+        ->and($store['paths']['/staff/customers/{customer}']['patch']['description'])->toContain('Staff never change a customer\'s');
+});
+
+/*
  * Section 11: the docs are for development. Outside a developer's machine
  * they are shown only to platform admins signed in with two-factor
  * authentication, through their bearer token.
@@ -150,6 +189,7 @@ const API_DOCS_PAGES = ['/docs/api', '/docs/api.json', '/docs/platform', '/docs/
 
 it('shows the API docs to anyone on a developer\'s machine', function (): void {
     app()->detectEnvironment(static fn (): string => 'local');
+    serveGeneratedApiDocumentation();
 
     foreach (API_DOCS_PAGES as $page) {
         $this->get(centralUrl($page))->assertOk();
@@ -158,6 +198,7 @@ it('shows the API docs to anyone on a developer\'s machine', function (): void {
 
 it('shows the API docs elsewhere only to a platform admin signed in with two-factor authentication', function (): void {
     app()->detectEnvironment(static fn (): string => 'production');
+    serveGeneratedApiDocumentation();
     $tokenOf = static fn (PlatformAdmin $admin): string => app(AccessTokenIssuer::class)->issue($admin, PlatformAdmin::GUARD, 'test')->plainTextToken;
 
     $withoutTwoFactor = PlatformAdmin::factory()->create();

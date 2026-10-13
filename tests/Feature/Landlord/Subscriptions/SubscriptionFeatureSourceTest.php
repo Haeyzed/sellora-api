@@ -32,93 +32,78 @@ beforeEach(function (): void {
     $this->starterPlan = Plan::factory()->withFeatures('gift_cards', 'whatsapp')->withLimits(['products' => 250])->create();
 });
 
-function subscribe(Plan $plan, array $attributes = []): Subscription
-{
-    return Subscription::factory()->create(['tenant_id' => test()->store->id, 'plan_id' => $plan->id, ...$attributes]);
-}
-
-function stateOf(string $featureKey): FeatureState
-{
-    return app(Features::class)->stateFor(test()->store->id, $featureKey);
-}
-
-function limitOf(string $limitKey): ?int
-{
-    return app(Features::class)->limitFor(test()->store->id, $limitKey);
-}
-
 it('gives a store the modules, integrations and limits of its plan', function (): void {
-    subscribe($this->growthPlan);
+    subscribeTestStoreTo($this->growthPlan);
 
-    expect(stateOf('loyalty'))->toBe(FeatureState::Enabled)
-        ->and(stateOf('whatsapp'))->toBe(FeatureState::Unavailable)
-        ->and(limitOf('products'))->toBe(5000)
-        ->and(limitOf('locations'))->toBeNull()
-        ->and(limitOf('staff_accounts'))->toBe(0);
+    expect(subscribedFeatureState('loyalty'))->toBe(FeatureState::Enabled)
+        ->and(subscribedFeatureState('whatsapp'))->toBe(FeatureState::Unavailable)
+        ->and(subscribedLimit('products'))->toBe(5000)
+        ->and(subscribedLimit('locations'))->toBeNull()
+        ->and(subscribedLimit('staff_accounts'))->toBe(0);
 });
 
 it('gives a store without a subscription nothing', function (): void {
-    expect(stateOf('loyalty'))->toBe(FeatureState::Unavailable)
-        ->and(limitOf('products'))->toBe(0);
+    expect(subscribedFeatureState('loyalty'))->toBe(FeatureState::Unavailable)
+        ->and(subscribedLimit('products'))->toBe(0);
 });
 
 it('locks features a downgrade removes, keeps shared ones and enables new ones, effective immediately', function (): void {
-    $subscription = subscribe($this->growthPlan);
-    expect(stateOf('loyalty'))->toBe(FeatureState::Enabled);
+    $subscription = subscribeTestStoreTo($this->growthPlan);
+    expect(subscribedFeatureState('loyalty'))->toBe(FeatureState::Enabled);
 
     app(ChangeSubscriptionPlan::class)->handle($subscription, $this->starterPlan);
 
-    expect(stateOf('loyalty'))->toBe(FeatureState::Locked)
-        ->and(stateOf('gift_cards'))->toBe(FeatureState::Enabled)
-        ->and(stateOf('whatsapp'))->toBe(FeatureState::Enabled)
-        ->and(limitOf('products'))->toBe(250);
+    expect(subscribedFeatureState('loyalty'))->toBe(FeatureState::Locked)
+        ->and(subscribedFeatureState('gift_cards'))->toBe(FeatureState::Enabled)
+        ->and(subscribedFeatureState('whatsapp'))->toBe(FeatureState::Enabled)
+        ->and(subscribedLimit('products'))->toBe(250);
     $this->assertDatabaseHas('tenant_features', ['tenant_id' => $this->store->id, 'feature_key' => 'loyalty']);
     $this->assertDatabaseMissing('tenant_features', ['tenant_id' => $this->store->id, 'feature_key' => 'gift_cards']);
 });
 
 it('unlocks a feature when the store moves back to a plan that includes it', function (): void {
-    $subscription = subscribe($this->growthPlan);
+    $subscription = subscribeTestStoreTo($this->growthPlan);
     app(ChangeSubscriptionPlan::class)->handle($subscription, $this->starterPlan);
 
     app(ChangeSubscriptionPlan::class)->handle($subscription, $this->growthPlan);
 
-    expect(stateOf('loyalty'))->toBe(FeatureState::Enabled);
+    expect(subscribedFeatureState('loyalty'))->toBe(FeatureState::Enabled);
 });
 
 it('locks, rather than hides, a feature added to the plan after the store subscribed, when the store downgrades', function (): void {
-    $subscription = subscribe($this->starterPlan);
+    $subscription = subscribeTestStoreTo($this->starterPlan);
     $this->starterPlan->features()->create(['feature_key' => 'loyalty']);
     $basicPlan = Plan::factory()->withFeatures('gift_cards')->create();
 
     app(ChangeSubscriptionPlan::class)->handle($subscription, $basicPlan);
 
-    expect(stateOf('loyalty'))->toBe(FeatureState::Locked);
+    expect(subscribedFeatureState('loyalty'))->toBe(FeatureState::Locked);
 });
 
 it('shows a feature the merchant switched off as disabled', function (): void {
-    subscribe($this->growthPlan);
+    subscribeTestStoreTo($this->growthPlan);
     TenantFeature::query()->create(['tenant_id' => $this->store->id, 'feature_key' => 'loyalty', 'disabled_by_merchant_at' => now()]);
 
-    expect(stateOf('loyalty'))->toBe(FeatureState::Disabled);
+    expect(subscribedFeatureState('loyalty'))->toBe(FeatureState::Disabled);
 });
 
 it('applies a store\'s own limit instead of its plan\'s until the override expires', function (): void {
-    subscribe($this->starterPlan);
+    subscribeTestStoreTo($this->starterPlan);
     TenantLimitOverride::query()->create([
         'tenant_id' => $this->store->id,
         'limit_key' => 'products',
         'limit_value' => 1000,
         'expires_at' => CarbonImmutable::parse('2026-10-07 12:00:00'),
     ]);
-    expect(limitOf('products'))->toBe(1000);
+    expect(subscribedLimit('products'))->toBe(1000);
 
     $this->travelTo(CarbonImmutable::parse('2026-10-07 12:00:01'));
 
-    expect(limitOf('products'))->toBe(250);
+    expect(subscribedLimit('products'))->toBe(250);
 });
 
 it('never stores an override whose value is missing without the unlimited flag', function (): void {
-    subscribe($this->starterPlan);
+    subscribeTestStoreTo($this->starterPlan);
 
     // Its own transaction, so the refused insert doesn't abort the test's.
     $insertWithoutValue = fn () => TenantLimitOverride::query()->getConnection()->transaction(fn (): TenantLimitOverride => TenantLimitOverride::query()->create([
@@ -128,7 +113,7 @@ it('never stores an override whose value is missing without the unlimited flag',
     ]));
 
     expect($insertWithoutValue)->toThrow(QueryException::class, 'tenant_limit_overrides_unlimited_is_explicit')
-        ->and(limitOf('products'))->toBe(250);
+        ->and(subscribedLimit('products'))->toBe(250);
 });
 
 it('reads an override missing its value as zero, never unlimited, if one ever got past the database', function (): void {
@@ -139,9 +124,9 @@ it('reads an override missing its value as zero, never unlimited, if one ever go
 });
 
 it('decides whether an unpaid or cancelled store keeps access', function (array $subscriptionAttributes, FeatureState $expectedState): void {
-    subscribe($this->growthPlan, $subscriptionAttributes);
+    subscribeTestStoreTo($this->growthPlan, $subscriptionAttributes);
 
-    expect(stateOf('loyalty'))->toBe($expectedState);
+    expect(subscribedFeatureState('loyalty'))->toBe($expectedState);
 })->with([
     'trialing' => [['status' => SubscriptionStatus::Trialing, 'trial_ends_at' => '2026-10-20 12:00:00'], FeatureState::Enabled],
     'unpaid within the 7-day grace period' => [['status' => SubscriptionStatus::PastDue, 'past_due_at' => '2026-09-30 12:00:01'], FeatureState::Enabled],
@@ -153,21 +138,21 @@ it('decides whether an unpaid or cancelled store keeps access', function (array 
 ]);
 
 it('suspends a store as soon as its grace period ends, even with its plan cached', function (): void {
-    subscribe($this->growthPlan, ['status' => SubscriptionStatus::PastDue, 'past_due_at' => '2026-09-30 12:00:00']);
-    expect(stateOf('loyalty'))->toBe(FeatureState::Enabled);
+    subscribeTestStoreTo($this->growthPlan, ['status' => SubscriptionStatus::PastDue, 'past_due_at' => '2026-09-30 12:00:00']);
+    expect(subscribedFeatureState('loyalty'))->toBe(FeatureState::Enabled);
 
     $this->travelTo(CarbonImmutable::parse('2026-10-07 12:00:01'));
 
-    expect(stateOf('loyalty'))->toBe(FeatureState::Suspended);
+    expect(subscribedFeatureState('loyalty'))->toBe(FeatureState::Suspended);
 });
 
 it('never lets one store\'s plan or overrides affect another store', function (): void {
-    subscribe($this->growthPlan);
+    subscribeTestStoreTo($this->growthPlan);
     TenantLimitOverride::query()->create(['tenant_id' => $this->store->id, 'limit_key' => 'products', 'limit_value' => null, 'is_unlimited' => true]);
     $otherStore = createStoreRecord();
     Subscription::factory()->create(['tenant_id' => $otherStore->id, 'plan_id' => $this->starterPlan->id]);
 
     expect(app(Features::class)->stateFor($otherStore->id, 'loyalty'))->toBe(FeatureState::Unavailable)
         ->and(app(Features::class)->limitFor($otherStore->id, 'products'))->toBe(250)
-        ->and(limitOf('products'))->toBeNull();
+        ->and(subscribedLimit('products'))->toBeNull();
 });

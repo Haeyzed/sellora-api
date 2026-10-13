@@ -29,6 +29,7 @@ use App\Shared\Auth\TwoFactor\TwoFactorChallenges;
 use App\Shared\Exceptions\ApiErrorResponseDocumentation;
 use App\Shared\Features\Contracts\FeatureSource;
 use App\Shared\Features\FeatureRegistry;
+use App\Shared\Geography\AddressFormats;
 use App\Shared\Http\PaginationDocumentation;
 use App\Shared\Idempotency\IdempotencyKeyRetention;
 use App\Shared\Money\ExchangeRates\ExchangeRateRetention;
@@ -61,7 +62,9 @@ use App\Tenant\Catalog\Models\Brand;
 use App\Tenant\Catalog\Models\Category;
 use App\Tenant\Catalog\Models\Product;
 use App\Tenant\Catalog\Models\ProductVariant;
+use App\Tenant\Customers\CustomerEmailTokenRetention;
 use App\Tenant\Customers\CustomerStoreTables;
+use App\Tenant\Customers\Enums\CustomerPermission;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Delivery\DeliveryStoreTables;
 use App\Tenant\Delivery\Models\Driver;
@@ -90,6 +93,7 @@ use App\Tenant\Inventory\Models\StockMovement;
 use App\Tenant\Inventory\Models\StockReservation;
 use App\Tenant\Inventory\SettledReservationRetention;
 use App\Tenant\Inventory\StockLedgerReconciliation;
+use App\Tenant\Pricing\Actions\CalculateTax;
 use App\Tenant\Pricing\Enums\PricingPermission;
 use App\Tenant\Pricing\Models\FixedPrice;
 use App\Tenant\Pricing\Models\StoreCurrency;
@@ -99,6 +103,7 @@ use App\Tenant\Pricing\Models\VariantTaxClass;
 use App\Tenant\Pricing\PricingPricedRecords;
 use App\Tenant\Pricing\PricingStoreTables;
 use App\Tenant\Pricing\TaxCalculatorRegistry;
+use App\Tenant\Pricing\TaxExemptCustomerRule;
 use App\Tenant\Settings\Enums\SettingsPermission;
 use App\Tenant\Settings\Models\StoreSettings;
 use App\Tenant\Settings\Policies\StoreLifecyclePolicy;
@@ -160,9 +165,13 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(StockLocationSelector::class, DefaultStockLocationSelector::class);
         // One list of country tax plug-ins, filled in by modules' and integrations' service providers.
         $this->app->singleton(TaxCalculatorRegistry::class);
+        // Lines a tax-exempt customer buys are never taxed; modules may tag rules of their own.
+        $this->app->tag([TaxExemptCustomerRule::class], CalculateTax::EXEMPTION_RULES_TAG);
         $this->app->bind(TwoFactorRequirement::class, StoreTwoFactorRequirement::class);
         // Per request or job, so a long-running worker never reuses one store's languages for the next.
         $this->app->scoped(StoreLocales::class);
+        // Per request or job: it remembers the formats it has read, and the states lists can be reseeded.
+        $this->app->scoped(AddressFormats::class);
     }
 
     /**
@@ -177,6 +186,7 @@ final class AppServiceProvider extends ServiceProvider
             $catalogue->register(CatalogPermission::class);
             $catalogue->register(InventoryPermission::class);
             $catalogue->register(PricingPermission::class);
+            $catalogue->register(CustomerPermission::class);
 
             return $catalogue;
         });
@@ -289,6 +299,7 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(ActivityLogRetention::class);
             $registry->register(AuditRetention::class);
             $registry->register(StaffInvitationRetention::class);
+            $registry->register(CustomerEmailTokenRetention::class);
             $registry->register(SettledReservationRetention::class);
             $registry->register(StoreRegistrationRetention::class);
             $registry->register(StoreExportRetention::class);

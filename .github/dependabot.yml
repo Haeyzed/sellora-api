@@ -1,0 +1,8 @@
+# Proposes updates for the GitHub Actions pinned in .github/workflows,
+# keeping their commit hashes and version comments current (section 15).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

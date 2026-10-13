@@ -5,15 +5,15 @@ declare(strict_types=1);
 use App\Landlord\Tenancy\Enums\TenantStatus;
 use App\Landlord\Tenancy\Models\DatabaseServer;
 use App\Landlord\Tenancy\Models\Tenant;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\Artisan;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Section 9.1: running store migrations across every store skips only stores
  * with no database yet; suspended and closed stores stay migrated. Database servers are
  * added to the pool from the command line, only once they answer.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 afterEach(function (): void {
     deleteAllStores();

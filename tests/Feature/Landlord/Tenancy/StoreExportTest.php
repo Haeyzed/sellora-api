@@ -2,37 +2,32 @@
 
 declare(strict_types=1);
 
-use App\Landlord\Identity\Models\PlatformAdmin;
 use App\Landlord\Tenancy\Enums\StoreExportStatus;
 use App\Landlord\Tenancy\Enums\TenantStatus;
 use App\Landlord\Tenancy\Jobs\BuildStoreExport;
 use App\Landlord\Tenancy\Models\StoreExport;
 use App\Landlord\Tenancy\Models\Tenant;
 use App\Landlord\Tenancy\StoreExportRetention;
-use App\Shared\Auth\AccessTokenIssuer;
 use App\Shared\Auth\Models\Role;
 use App\Shared\Privacy\Exceptions\UnclassifiedStoreDataException;
 use App\Shared\Privacy\StoreDataExporter;
 use App\Shared\Privacy\StoreExportRegistry;
 use App\Shared\Tenancy\StoreExportReadyNotification;
 use App\Tenant\Customers\Models\Customer;
-use App\Tenant\Delivery\Models\Driver;
 use App\Tenant\Identity\Enums\StaffRole;
-use App\Tenant\Identity\Models\StaffInvitation;
 use App\Tenant\Identity\Models\StaffMember;
 use Carbon\CarbonImmutable;
 use Database\Seeders\Landlord\PlatformPermissionSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Illuminate\Testing\TestResponse;
 use Spatie\Activitylog\Models\Activity;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Section 9.1: a store export is a ZIP of JSON Lines files plus a manifest,
@@ -41,7 +36,7 @@ use Spatie\Activitylog\Models\Activity;
  * Contents are decided column by column and fail closed: secrets never leave
  * the store, not even inside audit and activity records.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 const EXPORT_OWNER_PASSWORD = 'a-long-export-owner-password';
 
@@ -64,108 +59,6 @@ beforeEach(function (): void {
 afterEach(function (): void {
     deleteAllStores();
 });
-
-function exportAdminWith(string ...$permissionNames): PlatformAdmin
-{
-    $role = Role::findOrCreate('Export role with '.implode(', ', $permissionNames), PlatformAdmin::GUARD);
-    $role->syncPermissions($permissionNames);
-
-    $platformAdmin = PlatformAdmin::factory()->create();
-    $platformAdmin->assignRole($role);
-    enableTwoFactor($platformAdmin);
-
-    return $platformAdmin;
-}
-
-function platformExports(string $method, Tenant $store, string $path = '', ?PlatformAdmin $as = null): TestResponse
-{
-    forgetSignIns();
-    $response = test()
-        ->withToken(app(AccessTokenIssuer::class)->issue($as ?? test()->exporter, PlatformAdmin::GUARD, 'test')->plainTextToken)
-        ->json($method, centralUrl("/api/v1/platform/stores/{$store->public_id}/exports{$path}"));
-    forgetSignIns();
-
-    return $response;
-}
-
-function ownerExports(string $method, string $path = '', ?StaffMember $as = null, string $subdomain = 'exported-store'): TestResponse
-{
-    forgetSignIns();
-    $store = Tenant::query()->whereHas('domains', static fn ($query) => $query->where('domain', Tenant::platformDomainFor($subdomain)))->firstOrFail();
-    $token = $store->run(static fn (): string => app(AccessTokenIssuer::class)->issue($as ?? test()->exportOwner, StaffMember::GUARD, 'test')->plainTextToken);
-
-    $response = test()->withToken($token)->json($method, storeUrl($subdomain, "/api/v1/staff/store/exports{$path}"));
-    tenancy()->end();
-    forgetSignIns();
-
-    return $response;
-}
-
-/**
- * Every file in a downloaded export, by path.
- *
- * @return array<string, string>
- */
-function exportedFiles(TestResponse $download): array
-{
-    $zipPath = tempnam(sys_get_temp_dir(), 'export-test');
-    file_put_contents($zipPath, $download->streamedContent());
-
-    $zip = new ZipArchive;
-    $zip->open($zipPath);
-    $files = [];
-
-    for ($index = 0; $index < $zip->numFiles; $index++) {
-        $name = (string) $zip->getNameIndex($index);
-        $files[$name] = (string) $zip->getFromName($name);
-    }
-
-    $zip->close();
-    unlink($zipPath);
-
-    return $files;
-}
-
-/**
- * Plants every kind of secret a store holds, and returns them, so a test can prove none is exported.
- *
- * @return list<string>
- */
-function plantStoreSecrets(Tenant $store): array
-{
-    return $store->run(static function (): array {
-        $staffMember = StaffMember::query()->firstOrFail();
-        $twoFactorSecret = enableTwoFactor($staffMember, 'recovery-code-one');
-        $customer = Customer::factory()->create(['name' => 'Chidi Customer', 'email' => 'chidi@shopper.example']);
-        $driver = Driver::factory()->create(['name' => 'Dayo Driver']);
-        $invitation = StaffInvitation::factory()->create();
-        $accessToken = app(AccessTokenIssuer::class)->issue($customer, Customer::GUARD, 'phone');
-
-        DB::table('staff_member_password_reset_tokens')->insert(['email' => $staffMember->email, 'token' => 'reset-token-secret-value', 'created_at' => now()]);
-        DB::table('audits')->insert([
-            'event' => 'updated', 'auditable_type' => 'customer', 'auditable_id' => $customer->id,
-            'old_values' => json_encode(['password' => 'audited-old-password-hash', 'name' => 'Old Name']),
-            'new_values' => json_encode(['password' => 'audited-new-password-hash', 'name' => 'Chidi Customer']),
-            'created_at' => now(), 'updated_at' => now(),
-        ]);
-        activity('test')->withProperties(['api_key' => 'activity-api-key-secret', 'note' => 'kept in the export'])->log('Connected a gateway');
-
-        return [
-            $staffMember->getRawOriginal('password'),
-            $twoFactorSecret,
-            (string) $staffMember->getRawOriginal('two_factor_secret'),
-            app(App\Shared\Auth\TwoFactor\TwoFactorAuthenticator::class)->hashRecoveryCode('recovery-code-one'),
-            $customer->getRawOriginal('password'),
-            $driver->getRawOriginal('pin'),
-            $invitation->token_hash,
-            hash('sha256', explode('|', $accessToken->plainTextToken, 2)[1]),
-            'reset-token-secret-value',
-            'audited-old-password-hash',
-            'audited-new-password-hash',
-            'activity-api-key-secret',
-        ];
-    });
-}
 
 it('classifies every column of every store table', function (): void {
     $unclassified = $this->store->run(static fn (): array => app(StoreExportRegistry::class)->unclassified(app(StoreDataExporter::class)->storeColumns(DB::connection())));

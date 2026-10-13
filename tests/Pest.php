@@ -28,11 +28,31 @@ pest()->extend(TestCase::class)->in('Feature', '../integrations/OpenExchangeRate
 
 /*
 |--------------------------------------------------------------------------
+| Helpers
+|--------------------------------------------------------------------------
+|
+| Test files never declare functions (section 15): Pest loads every file into
+| the same process, so two files declaring the same name crash the whole run.
+| Helpers live here and in tests/Helpers, one file per area, named for what
+| they build. An architecture test enforces this.
+|
+*/
+
+$helperFiles = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(__DIR__.'/Helpers', FilesystemIterator::SKIP_DOTS));
+
+foreach ($helperFiles as $helperFile) {
+    if ($helperFile instanceof SplFileInfo && $helperFile->getExtension() === 'php') {
+        require_once $helperFile->getPathname();
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
 | Store helpers
 |--------------------------------------------------------------------------
 |
 | Tests that create stores get real tenant databases, so they use
-| DatabaseTruncation (PostgreSQL can't create a database inside a
+| TruncatesCentralDatabase (PostgreSQL can't create a database inside a
 | transaction) and delete their stores afterwards, which drops the databases.
 | Each store database is a copy of one prepared per process, or a used copy
 | reset to be identical to it (StoreDatabaseTemplate), never migrated from

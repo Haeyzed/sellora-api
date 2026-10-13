@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use App\Shared\Auth\Http\Middleware\EnsureTwoFactorIsEnabled;
 use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
-use Illuminate\Routing\Route as RouteDefinition;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -12,28 +11,6 @@ use Illuminate\Support\Facades\Route;
  * routes only ever use their own guards. Checked against every registered
  * route, so a new route can't slip through.
  */
-
-/**
- * @return list<RouteDefinition>
- */
-function applicationRoutes(): array
-{
-    return array_values(array_filter(
-        Route::getRoutes()->getRoutes(),
-        static fn (RouteDefinition $route): bool => str_starts_with($route->uri(), 'api/') || str_starts_with($route->uri(), 'webhooks'),
-    ));
-}
-
-/**
- * @return list<string>
- */
-function authMiddlewareOf(RouteDefinition $route): array
-{
-    return array_values(array_filter(
-        $route->gatherMiddleware(),
-        static fn (mixed $middleware): bool => is_string($middleware) && ($middleware === 'auth' || str_starts_with($middleware, 'auth:')),
-    ));
-}
 
 it('never protects a route with a bare auth or auth:sanctum middleware', function (): void {
     foreach (applicationRoutes() as $route) {

@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Shared\Auth\AccessTokenIssuer;
 use App\Shared\Auth\Models\Role;
 use App\Tenant\Catalog\Models\ProductVariant;
 use App\Tenant\Identity\Enums\StaffRole;
@@ -17,13 +16,12 @@ use App\Tenant\Inventory\Models\StockMovement;
 use App\Tenant\Inventory\Services\StockLedger;
 use App\Tenant\Settings\Models\StoreSettings;
 use Illuminate\Database\QueryException;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Testing\TestResponse;
 use OwenIt\Auditing\Models\Audit;
 use Spatie\Permission\Models\Permission;
 use Tests\Support\SecondConnection;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Section 13: stock is counted in whole units per variant per location,
@@ -32,7 +30,7 @@ use Tests\Support\SecondConnection;
  * and a scheduled reconciliation reports any level that doesn't match its
  * ledger. Inventory settings are audited; stock levels aren't (section 2.1).
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     $this->store = createStore('stock-store');
@@ -53,22 +51,6 @@ beforeEach(function (): void {
 afterEach(function (): void {
     deleteAllStores();
 });
-
-/**
- * @param  array<string, mixed>  $data
- */
-function inventoryRequest(string $method, string $path, array $data = [], ?StaffMember $as = null, string $subdomain = 'stock-store'): TestResponse
-{
-    forgetSignIns();
-    $store = $subdomain === 'stock-store' ? test()->store : test()->otherStore;
-    $token = $store->run(static fn (): string => app(AccessTokenIssuer::class)->issue($as ?? test()->owner, StaffMember::GUARD, 'test')->plainTextToken);
-
-    $response = test()->withToken($token)->json($method, storeUrl($subdomain, '/api/v1/staff/inventory'.$path), $data);
-    tenancy()->end();
-    forgetSignIns();
-
-    return $response;
-}
 
 it('gives every store exactly one default location, which stays active', function (): void {
     inventoryRequest('GET', '/locations', as: $this->viewer)

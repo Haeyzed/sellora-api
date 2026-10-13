@@ -2,12 +2,11 @@
 
 declare(strict_types=1);
 
-use App\Landlord\Tenancy\Models\Tenant;
 use App\Tenant\Settings\Models\StoreSettings;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\Schema;
 use Tests\Fixtures\Translations\TranslatedSample;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Section 3.3: customer-facing text is stored per language and falls back to
@@ -15,7 +14,7 @@ use Tests\Fixtures\Translations\TranslatedSample;
  * default is its own, even when one process works in several stores.
  * Disabling a language never deletes its translations.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     seedWorld();
@@ -39,14 +38,6 @@ beforeEach(function (): void {
 afterEach(function (): void {
     deleteAllStores();
 });
-
-/**
- * @param  list<string>  $enabledLocales
- */
-function useLanguages(Tenant $store, string $defaultLocale, array $enabledLocales): void
-{
-    $store->run(static fn (): bool => StoreSettings::query()->sole()->update(['default_locale' => $defaultLocale, 'enabled_locales' => $enabledLocales]));
-}
 
 it('falls back to the store\'s default language, then to any language the text has', function (): void {
     $this->englishStore->run(static function (): void {

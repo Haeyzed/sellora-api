@@ -10,6 +10,7 @@ return [
 
     'unknown_country' => 'The :attribute is not a country we support.',
     'unknown_state' => 'The :attribute is not a state, province or region of that country.',
+    'invalid_postal_code' => 'The :attribute is not a postcode in that country\'s format.',
     'unknown_timezone' => 'The :attribute is not a known timezone.',
     'unknown_currency' => 'The :attribute is not a currency in use today.',
     'unknown_locale' => 'The :attribute is not a language stores can publish in.',

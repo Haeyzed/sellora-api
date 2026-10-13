@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Landlord\Tenancy\Models\Domain;
-use App\Landlord\Tenancy\Models\Tenant;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Spatie\Activitylog\Models\Activity;
@@ -18,14 +17,6 @@ uses(LazilyRefreshDatabase::class);
 beforeEach(function (): void {
     config()->set('platform.domain', 'sellora-api.test');
 });
-
-function storeWithDomain(string $domain): Tenant
-{
-    $store = Tenant::factory()->create();
-    $store->domains()->create(['domain' => $domain]);
-
-    return $store;
-}
 
 it('moves every store subdomain on the old platform domain to the current one, and only those', function (): void {
     $moved = storeWithDomain('shoprite-nigeria.sellora.test');

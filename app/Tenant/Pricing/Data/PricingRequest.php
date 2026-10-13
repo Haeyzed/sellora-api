@@ -16,11 +16,13 @@ final readonly class PricingRequest
      * @param  list<PricingLine>  $lines
      * @param  TaxAddress|null  $destination  The shipping address; null before one is known, which prices to the store's own country.
      * @param  Money|null  $shipping  The delivery charge in the quote's currency, after shipping discounts, taxed at the store's shipping tax class.
+     * @param  TaxCustomer|null  $customer  The signed-in customer buying (Customer::taxCustomer()); null for a guest.
      */
     public function __construct(
         public string $currency,
         public array $lines,
         public ?TaxAddress $destination = null,
         public ?Money $shipping = null,
+        public ?TaxCustomer $customer = null,
     ) {}
 }

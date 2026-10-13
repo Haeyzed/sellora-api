@@ -9,9 +9,9 @@ use App\Shared\Geography\Rules\CountryCode;
 use App\Shared\Geography\Rules\CurrencyCode;
 use App\Shared\Geography\Rules\StateCode;
 use App\Shared\Geography\Rules\Timezone;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Section 2.1 and 3.3: world reference data is read only through
@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Validator;
  * served on the central domain and on every store's domain, cached and
  * rate-limited.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     seedWorld();
@@ -30,14 +30,6 @@ beforeEach(function (): void {
 afterEach(function (): void {
     deleteAllStores();
 });
-
-/**
- * @return array<string, mixed>
- */
-function geographyCountry(string $code, array $countries): array
-{
-    return collect($countries)->firstWhere('code', $code) ?? [];
-}
 
 it('lists the countries stores can use by ISO code, with what a new store there starts with', function (): void {
     $countries = $this->getJson(centralUrl('/api/v1/geography/countries'))->assertOk()->json('data');

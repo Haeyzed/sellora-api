@@ -34,14 +34,6 @@ beforeEach(function (): void {
     Event::listen(MessageLogged::class, fn (MessageLogged $message) => $this->logged[] = [$message->level, $message->message]);
 });
 
-/**
- * @return list<string>
- */
-function loggedAt(string $level): array
-{
-    return array_values(array_map(static fn (array $entry): string => $entry[1], array_filter(test()->logged, static fn (array $entry): bool => $entry[0] === $level)));
-}
-
 it('records every currency against the dollar, the dollar included, and keeps earlier fetches', function (): void {
     $this->artisan(RefreshExchangeRatesCommand::class)->assertSuccessful();
     CarbonImmutable::setTestNow(now()->addHour());
@@ -77,12 +69,12 @@ it('keeps the last rates when a fetch fails, and reports an error once none has 
 
     CarbonImmutable::setTestNow(now()->addHours(11));
     $this->artisan(RefreshExchangeRatesCommand::class)->assertFailed();
-    expect(loggedAt('warning'))->toHaveCount(1)->and(loggedAt('error'))->toBe([]);
+    expect(messagesLoggedAt('warning'))->toHaveCount(1)->and(messagesLoggedAt('error'))->toBe([]);
 
     CarbonImmutable::setTestNow(now()->addHours(2));
     $this->artisan(RefreshExchangeRatesCommand::class)->assertFailed();
-    expect(loggedAt('error'))->toHaveCount(1)
-        ->and(loggedAt('error')[0])->toContain('12 hours')
+    expect(messagesLoggedAt('error'))->toHaveCount(1)
+        ->and(messagesLoggedAt('error')[0])->toContain('12 hours')
         ->and(ExchangeRate::query()->where('currency', 'NGN')->count())->toBe(1);
     CarbonImmutable::setTestNow();
 });
@@ -90,11 +82,11 @@ it('keeps the last rates when a fetch fails, and reports an error once none has 
 it('reports an error when rates have never been fetched or no source is installed', function (): void {
     $this->source->fails = true;
     $this->artisan(RefreshExchangeRatesCommand::class)->assertFailed();
-    expect(loggedAt('error'))->toHaveCount(1);
+    expect(messagesLoggedAt('error'))->toHaveCount(1);
 
     app()->offsetUnset(ExchangeRateSource::class);
     $this->artisan(RefreshExchangeRatesCommand::class)->assertFailed()->expectsOutputToContain('No exchange rate source');
-    expect(loggedAt('error'))->toHaveCount(2);
+    expect(messagesLoggedAt('error'))->toHaveCount(2);
 });
 
 it('never changes a recorded rate, and deletes old ones only through retention', function (): void {

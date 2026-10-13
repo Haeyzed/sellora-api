@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Landlord\Identity\Enums\PlatformPermission;
-use App\Landlord\Identity\Models\PlatformAdmin;
 use App\Landlord\Plans\Models\Plan;
 use App\Landlord\Subscriptions\Enums\SubscriptionStatus;
 use App\Landlord\Subscriptions\Models\FeatureGrant;
@@ -12,19 +11,16 @@ use App\Landlord\Subscriptions\Models\TenantLimitOverride;
 use App\Landlord\Tenancy\Enums\TenantStatus;
 use App\Landlord\Tenancy\Jobs\ProvisionStore;
 use App\Landlord\Tenancy\Models\Tenant;
-use App\Shared\Auth\AccessTokenIssuer;
-use App\Shared\Auth\Models\Role;
 use App\Shared\Features\FeatureDefinition;
 use App\Shared\Features\FeatureKind;
 use App\Shared\Features\FeatureRegistry;
 use App\Shared\Features\Features;
 use App\Shared\Features\FeatureState;
 use Database\Seeders\Landlord\PlatformPermissionSeeder;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\Queue;
-use Illuminate\Testing\TestResponse;
 use OwenIt\Auditing\Models\Audit;
 use Spatie\Activitylog\Models\Activity;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Section 8 and 10: Sellora's team sees every store, suspends and reactivates
@@ -32,7 +28,7 @@ use Spatie\Activitylog\Models\Activity;
  * features or limits outside its plan through Features, never by editing
  * plans. A grant that ends locks its feature like a downgrade.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     $this->seed(PlatformPermissionSeeder::class);
@@ -49,45 +45,6 @@ beforeEach(function (): void {
 afterEach(function (): void {
     deleteAllStores();
 });
-
-function platformAdminWith(string ...$permissionNames): PlatformAdmin
-{
-    $role = Role::findOrCreate('Role with '.implode(', ', $permissionNames), PlatformAdmin::GUARD);
-    $role->syncPermissions($permissionNames);
-
-    $platformAdmin = PlatformAdmin::factory()->create();
-    $platformAdmin->assignRole($role);
-    enableTwoFactor($platformAdmin);
-
-    return $platformAdmin;
-}
-
-function subscribedStore(?string $subdomain = null): Tenant
-{
-    $store = $subdomain === null ? createStoreRecord() : createStore($subdomain);
-    Subscription::factory()->create(['tenant_id' => $store->id, 'plan_id' => test()->plan->id, 'status' => SubscriptionStatus::Active]);
-
-    return $store;
-}
-
-/**
- * @param  array<string, mixed>  $data
- */
-function manageStores(string $method, string $path, array $data = [], ?PlatformAdmin $as = null): TestResponse
-{
-    forgetSignIns();
-    $response = test()
-        ->withToken(app(AccessTokenIssuer::class)->issue($as ?? test()->operator, PlatformAdmin::GUARD, 'test')->plainTextToken)
-        ->json($method, centralUrl('/api/v1/platform/stores'.$path), $data);
-    forgetSignIns();
-
-    return $response;
-}
-
-function storeFeatureState(Tenant $store, string $featureKey): FeatureState
-{
-    return app(Features::class)->stateFor($store->id, $featureKey);
-}
 
 it('lists stores newest first, by status or matching a search', function (): void {
     $ada = subscribedStore();

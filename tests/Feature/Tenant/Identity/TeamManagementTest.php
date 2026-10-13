@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Landlord\Identity\Enums\PlatformPermission;
-use App\Shared\Auth\AccessTokenIssuer;
 use App\Shared\Auth\Models\Role;
 use App\Shared\Features\Contracts\FeatureSource;
 use App\Shared\Retention\PurgeExpiredRecords;
@@ -12,14 +11,12 @@ use App\Tenant\Identity\Models\StaffInvitation;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Identity\StaffInvitationNotification;
 use App\Tenant\Identity\StaffPermissionCatalogue;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
-use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Notification;
-use Illuminate\Testing\TestResponse;
 use OwenIt\Auditing\Models\Audit;
 use Spatie\Activitylog\Models\Activity;
 use Tests\Fixtures\Features\FakeFeatureSource;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Section 10 and 14: staff join only by invitation and choose their own
@@ -28,7 +25,7 @@ use Tests\Fixtures\Features\FakeFeatureSource;
  * plan's staff limit counts active staff and pending invitations; and nothing
  * (links, role IDs) crosses from one store to another.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 const TEAM_PASSWORD = 'a-long-staff-password';
 
@@ -51,95 +48,10 @@ afterEach(function (): void {
     deleteAllStores();
 });
 
-function allowStaffAccounts(string $tenantId, int $limit): void
-{
-    test()->featureSource->give($tenantId, FakeFeatureSource::snapshot(limits: ['staff_accounts' => $limit]));
-    app(App\Shared\Features\Features::class)->forget($tenantId);
-}
-
-/**
- * Sends a request to a store's team API as the given staff member, or with no token.
- */
-function team(string $method, string $path, array $data = [], ?StaffMember $as = null, string $subdomain = 'first-store'): TestResponse
-{
-    $request = test();
-
-    if ($as !== null) {
-        $request = $request->withToken(staffTokenFor($as, $subdomain));
-    }
-
-    $response = $request->json($method, storeUrl($subdomain, '/api/v1/staff/'.$path), $data);
-    tenancy()->end();
-    forgetSignIns();
-
-    return $response;
-}
-
-function staffTokenFor(StaffMember $staffMember, string $subdomain): string
-{
-    $store = App\Landlord\Tenancy\Models\Tenant::query()
-        ->whereHas('domains', static fn ($query) => $query->where('domain', $subdomain.'.'.config('platform.domain')))
-        ->firstOrFail();
-
-    return $store->run(static fn (): string => app(AccessTokenIssuer::class)->issue($staffMember, StaffMember::GUARD, 'test')->plainTextToken);
-}
-
-/**
- * A role in the first store with exactly these permissions, created directly.
- *
- * @param  list<string>  $permissions
- */
-function roleWith(string $name, array $permissions): Role
-{
-    return test()->store->run(static function () use ($name, $permissions): Role {
-        $role = Role::findOrCreate($name, StaffMember::GUARD);
-        $role->syncPermissions(array_map(static fn (string $permission) => Spatie\Permission\Models\Permission::findOrCreate($permission, StaffMember::GUARD), $permissions));
-
-        return $role;
-    });
-}
-
-/**
- * A staff member of the first store holding the given roles.
- */
-function colleagueWith(string $email, Role ...$roles): StaffMember
-{
-    return test()->store->run(static function () use ($email, $roles): StaffMember {
-        $staffMember = StaffMember::factory()->create(['email' => $email, 'password' => TEAM_PASSWORD]);
-        $staffMember->syncRoles($roles);
-
-        return $staffMember;
-    });
-}
-
-/**
- * Invites someone as the owner and returns the token from the emailed link.
- *
- * @param  list<string>  $roleIds
- */
-function inviteAndCaptureToken(string $email, array $roleIds = []): string
-{
-    team('POST', 'team/invitations', ['email' => $email, 'roles' => $roleIds], test()->owner)->assertCreated();
-
-    $token = null;
-    Notification::assertSentOnDemand(StaffInvitationNotification::class, static function (StaffInvitationNotification $notification, array $channels, AnonymousNotifiable $notifiable) use ($email, &$token): bool {
-        if ($notifiable->routeNotificationFor('mail') !== $email) {
-            return false;
-        }
-
-        parse_str((string) parse_url($notification->acceptUrl(), PHP_URL_QUERY), $query);
-        $token = is_string($query['token'] ?? null) ? $query['token'] : null;
-
-        return true;
-    });
-
-    return (string) $token;
-}
-
 it('invites by email without creating an account, and the person joins with their own password and roles', function (): void {
     $cashier = roleWith('Cashier', []);
 
-    $invitation = team('POST', 'team/invitations', ['email' => ' Sam@Example.com', 'name' => 'Sam', 'roles' => [$cashier->public_id]], $this->owner)
+    $invitation = teamRequest('POST', 'team/invitations', ['email' => ' Sam@Example.com', 'name' => 'Sam', 'roles' => [$cashier->public_id]], $this->owner)
         ->assertCreated()
         ->assertJsonPath('data.email', 'sam@example.com')
         ->assertJsonPath('data.status', 'pending')
@@ -158,12 +70,12 @@ it('invites by email without creating an account, and the person joins with thei
     });
     expect($this->store->run(static fn (): string => StaffInvitation::query()->sole()->token_hash))->toBe(hash('sha256', $token));
 
-    team('POST', 'auth/invitation-previews', ['token' => $token])
+    teamRequest('POST', 'auth/invitation-previews', ['token' => $token])
         ->assertOk()
         ->assertJsonPath('data.email', 'sam@example.com')
         ->assertJsonPath('data.roles', ['Cashier']);
 
-    $accessToken = team('POST', 'auth/invitation-acceptances', ['token' => $token, 'name' => 'Sam Smith', 'password' => TEAM_PASSWORD, 'password_confirmation' => TEAM_PASSWORD])
+    $accessToken = teamRequest('POST', 'auth/invitation-acceptances', ['token' => $token, 'name' => 'Sam Smith', 'password' => TEAM_PASSWORD, 'password_confirmation' => TEAM_PASSWORD])
         ->assertCreated()
         ->json('data.token');
 
@@ -174,7 +86,7 @@ it('invites by email without creating an account, and the person joins with thei
         ->assertJsonPath('data.roles', ['Cashier']);
     tenancy()->end();
 
-    team('POST', 'auth/invitation-acceptances', ['token' => $token, 'name' => 'Someone Else', 'password' => TEAM_PASSWORD, 'password_confirmation' => TEAM_PASSWORD])
+    teamRequest('POST', 'auth/invitation-acceptances', ['token' => $token, 'name' => 'Someone Else', 'password' => TEAM_PASSWORD, 'password_confirmation' => TEAM_PASSWORD])
         ->assertUnprocessable()
         ->assertJsonPath('code', 'staff_invitation_invalid');
     expect($invitation['id'])->toBeString();
@@ -185,73 +97,73 @@ it('refuses expired, cancelled and unknown links with the same error', function 
     $this->travel(8)->days();
     $cancelledToken = inviteAndCaptureToken('cancelled@example.com');
     $cancelled = $this->store->run(static fn (): StaffInvitation => StaffInvitation::query()->where('email', 'cancelled@example.com')->sole());
-    team('DELETE', 'team/invitations/'.$cancelled->public_id, as: $this->owner)->assertNoContent();
+    teamRequest('DELETE', 'team/invitations/'.$cancelled->public_id, as: $this->owner)->assertNoContent();
 
     foreach ([$expiredToken, $cancelledToken, str_repeat('x', 64)] as $token) {
-        team('POST', 'auth/invitation-acceptances', ['token' => $token, 'name' => 'Late', 'password' => TEAM_PASSWORD, 'password_confirmation' => TEAM_PASSWORD])
+        teamRequest('POST', 'auth/invitation-acceptances', ['token' => $token, 'name' => 'Late', 'password' => TEAM_PASSWORD, 'password_confirmation' => TEAM_PASSWORD])
             ->assertUnprocessable()
             ->assertJsonPath('code', 'staff_invitation_invalid');
     }
 
-    team('DELETE', 'team/invitations/'.$cancelled->public_id, as: $this->owner)->assertConflict()->assertJsonPath('code', 'staff_invitation_not_pending');
+    teamRequest('DELETE', 'team/invitations/'.$cancelled->public_id, as: $this->owner)->assertConflict()->assertJsonPath('code', 'staff_invitation_not_pending');
 });
 
 it('refuses to invite a current staff member or someone already invited, and resending replaces the link', function (): void {
-    team('POST', 'team/invitations', ['email' => 'owner@example.com', 'roles' => []], $this->owner)->assertConflict()->assertJsonPath('code', 'staff_member_already_exists');
+    teamRequest('POST', 'team/invitations', ['email' => 'owner@example.com', 'roles' => []], $this->owner)->assertConflict()->assertJsonPath('code', 'staff_member_already_exists');
 
     $firstToken = inviteAndCaptureToken('sam@example.com');
-    team('POST', 'team/invitations', ['email' => 'SAM@example.com', 'roles' => []], $this->owner)->assertConflict()->assertJsonPath('code', 'staff_invitation_already_pending');
+    teamRequest('POST', 'team/invitations', ['email' => 'SAM@example.com', 'roles' => []], $this->owner)->assertConflict()->assertJsonPath('code', 'staff_invitation_already_pending');
 
     $invitation = $this->store->run(static fn (): StaffInvitation => StaffInvitation::query()->sole());
     Notification::fake();
-    team('POST', 'team/invitations/'.$invitation->public_id.'/resend', as: $this->owner)->assertOk();
+    teamRequest('POST', 'team/invitations/'.$invitation->public_id.'/resend', as: $this->owner)->assertOk();
     Notification::assertSentOnDemandTimes(StaffInvitationNotification::class, 1);
 
-    team('POST', 'auth/invitation-previews', ['token' => $firstToken])->assertUnprocessable()->assertJsonPath('code', 'staff_invitation_invalid');
+    teamRequest('POST', 'auth/invitation-previews', ['token' => $firstToken])->assertUnprocessable()->assertJsonPath('code', 'staff_invitation_invalid');
 });
 
 it('counts active staff and pending invitations towards the plan\'s staff limit, but not the owner or deactivated staff', function (): void {
     // One place beyond the owner, who never counts.
     allowStaffAccounts($this->store->getTenantKey(), 1);
 
-    team('POST', 'team/invitations', ['email' => 'first@example.com', 'roles' => []], $this->owner)->assertCreated();
-    team('POST', 'team/invitations', ['email' => 'second@example.com', 'roles' => []], $this->owner)
+    teamRequest('POST', 'team/invitations', ['email' => 'first@example.com', 'roles' => []], $this->owner)->assertCreated();
+    teamRequest('POST', 'team/invitations', ['email' => 'second@example.com', 'roles' => []], $this->owner)
         ->assertForbidden()
         ->assertJsonPath('code', 'usage_limit_reached');
 
     $first = $this->store->run(static fn (): StaffInvitation => StaffInvitation::query()->sole());
-    team('DELETE', 'team/invitations/'.$first->public_id, as: $this->owner)->assertNoContent();
-    team('POST', 'team/invitations', ['email' => 'second@example.com', 'roles' => []], $this->owner)->assertCreated();
+    teamRequest('DELETE', 'team/invitations/'.$first->public_id, as: $this->owner)->assertNoContent();
+    teamRequest('POST', 'team/invitations', ['email' => 'second@example.com', 'roles' => []], $this->owner)->assertCreated();
 
     $deactivated = $this->store->run(static fn (): StaffMember => StaffMember::factory()->deactivated()->create());
-    team('POST', 'team/members/'.$deactivated->public_id.'/reactivate', as: $this->owner)->assertForbidden()->assertJsonPath('code', 'usage_limit_reached');
+    teamRequest('POST', 'team/members/'.$deactivated->public_id.'/reactivate', as: $this->owner)->assertForbidden()->assertJsonPath('code', 'usage_limit_reached');
 });
 
 it('never lets staff grant permissions they don\'t hold, through a role or an invitation', function (): void {
     $roleEditor = colleagueWith('editor@example.com', roleWith('Role editor', ['roles.view', 'roles.manage', 'staff.invite']));
     $powerful = roleWith('Powerful', ['staff.manage']);
 
-    team('POST', 'team/roles', ['name' => 'Sneaky', 'permissions' => ['roles.manage', 'staff.manage']], $roleEditor)
+    teamRequest('POST', 'team/roles', ['name' => 'Sneaky', 'permissions' => ['roles.manage', 'staff.manage']], $roleEditor)
         ->assertForbidden()
         ->assertJsonPath('code', 'permissions_exceed_your_own');
-    team('PUT', 'team/roles/'.$powerful->public_id, ['name' => 'Powerful', 'permissions' => []], $roleEditor)
+    teamRequest('PUT', 'team/roles/'.$powerful->public_id, ['name' => 'Powerful', 'permissions' => []], $roleEditor)
         ->assertForbidden()
         ->assertJsonPath('code', 'permissions_exceed_your_own');
-    team('POST', 'team/invitations', ['email' => 'friend@example.com', 'roles' => [$powerful->public_id]], $roleEditor)
+    teamRequest('POST', 'team/invitations', ['email' => 'friend@example.com', 'roles' => [$powerful->public_id]], $roleEditor)
         ->assertForbidden()
         ->assertJsonPath('code', 'permissions_exceed_your_own');
 
-    team('POST', 'team/roles', ['name' => 'Helper', 'permissions' => ['roles.view']], $roleEditor)->assertCreated();
+    teamRequest('POST', 'team/roles', ['name' => 'Helper', 'permissions' => ['roles.view']], $roleEditor)->assertCreated();
 });
 
 it('never gives the Owner role by invitation or role change', function (): void {
     $ownerRole = $this->store->run(static fn (): Role => Role::findByName(StaffRole::Owner->value, StaffMember::GUARD));
     $colleague = colleagueWith('sam@example.com');
 
-    team('POST', 'team/invitations', ['email' => 'friend@example.com', 'roles' => [$ownerRole->public_id]], $this->owner)
+    teamRequest('POST', 'team/invitations', ['email' => 'friend@example.com', 'roles' => [$ownerRole->public_id]], $this->owner)
         ->assertUnprocessable()
         ->assertJsonPath('code', 'role_not_assignable');
-    team('PUT', 'team/members/'.$colleague->public_id.'/roles', ['roles' => [$ownerRole->public_id]], $this->owner)
+    teamRequest('PUT', 'team/members/'.$colleague->public_id.'/roles', ['roles' => [$ownerRole->public_id]], $this->owner)
         ->assertUnprocessable()
         ->assertJsonPath('code', 'role_not_assignable');
 });
@@ -260,9 +172,9 @@ it('never lets staff manage themselves, the owner, or someone more powerful', fu
     $manager = colleagueWith('manager@example.com', roleWith('Manager', ['staff.view', 'staff.manage']));
     $supervisor = colleagueWith('supervisor@example.com', roleWith('Supervisor', ['staff.view', 'staff.manage', 'roles.manage']));
 
-    team('PUT', 'team/members/'.$manager->public_id.'/roles', ['roles' => []], $manager)->assertForbidden()->assertJsonPath('code', 'cannot_manage_own_account');
-    team('POST', 'team/members/'.$this->owner->public_id.'/deactivate', as: $manager)->assertForbidden()->assertJsonPath('code', 'store_owner_protected');
-    team('POST', 'team/members/'.$supervisor->public_id.'/deactivate', as: $manager)->assertForbidden()->assertJsonPath('code', 'permissions_exceed_your_own');
+    teamRequest('PUT', 'team/members/'.$manager->public_id.'/roles', ['roles' => []], $manager)->assertForbidden()->assertJsonPath('code', 'cannot_manage_own_account');
+    teamRequest('POST', 'team/members/'.$this->owner->public_id.'/deactivate', as: $manager)->assertForbidden()->assertJsonPath('code', 'store_owner_protected');
+    teamRequest('POST', 'team/members/'.$supervisor->public_id.'/deactivate', as: $manager)->assertForbidden()->assertJsonPath('code', 'permissions_exceed_your_own');
 });
 
 it('deactivates a colleague, signing them out at once, and reactivates them with their roles', function (): void {
@@ -270,11 +182,11 @@ it('deactivates a colleague, signing them out at once, and reactivates them with
     $colleague = colleagueWith('sam@example.com', $cashierRole);
     $colleagueToken = staffTokenFor($colleague, 'first-store');
 
-    team('POST', 'team/members/'.$colleague->public_id.'/deactivate', as: $this->owner)->assertOk()->assertJsonPath('data.is_active', false);
+    teamRequest('POST', 'team/members/'.$colleague->public_id.'/deactivate', as: $this->owner)->assertOk()->assertJsonPath('data.is_active', false);
     $this->withToken($colleagueToken)->getJson(storeUrl('first-store', '/api/v1/staff/auth/me'))->assertUnauthorized();
     tenancy()->end();
 
-    team('POST', 'team/members/'.$colleague->public_id.'/reactivate', as: $this->owner)
+    teamRequest('POST', 'team/members/'.$colleague->public_id.'/reactivate', as: $this->owner)
         ->assertOk()
         ->assertJsonPath('data.is_active', true)
         ->assertJsonPath('data.roles.0.name', 'Cashier');
@@ -291,7 +203,7 @@ it('changes a colleague\'s roles, which applies to their very next request', fun
     tenancy()->end();
     forgetSignIns();
 
-    team('PUT', 'team/members/'.$colleague->public_id.'/roles', ['roles' => [$viewer->public_id]], $this->owner)->assertOk()->assertJsonPath('data.roles.0.name', 'Team viewer');
+    teamRequest('PUT', 'team/members/'.$colleague->public_id.'/roles', ['roles' => [$viewer->public_id]], $this->owner)->assertOk()->assertJsonPath('data.roles.0.name', 'Team viewer');
 
     $this->withToken($colleagueToken)->getJson(storeUrl('first-store', '/api/v1/staff/team/members'))->assertOk()->assertJsonCount(2, 'data');
 });
@@ -302,7 +214,7 @@ it('refuses every team endpoint to staff without the matching permission', funct
     $role = roleWith('Cashier', []);
     $path = strtr($path, ['{member}' => $colleague->public_id, '{role}' => $role->public_id]);
 
-    team($method, $path, ['email' => 'x@example.com', 'name' => 'Some role', 'roles' => [], 'permissions' => []], $nobody)->assertForbidden();
+    teamRequest($method, $path, ['email' => 'x@example.com', 'name' => 'Some role', 'roles' => [], 'permissions' => []], $nobody)->assertForbidden();
 })->with([
     'list members' => ['GET', 'team/members'],
     'change roles' => ['PUT', 'team/members/{member}/roles'],
@@ -319,18 +231,18 @@ it('refuses every team endpoint to staff without the matching permission', funct
 it('manages roles: unique names ignoring case, a protected Owner role, and no deleting roles in use', function (): void {
     $ownerRole = $this->store->run(static fn (): Role => Role::findByName(StaffRole::Owner->value, StaffMember::GUARD));
 
-    $role = team('POST', 'team/roles', ['name' => 'Cashier', 'permissions' => ['staff.view']], $this->owner)
+    $role = teamRequest('POST', 'team/roles', ['name' => 'Cashier', 'permissions' => ['staff.view']], $this->owner)
         ->assertCreated()
         ->assertJsonPath('data.permissions', ['staff.view'])
         ->json('data');
 
-    team('POST', 'team/roles', ['name' => 'cashier', 'permissions' => []], $this->owner)->assertUnprocessable()->assertJsonValidationErrors('name')->assertJsonPath('code', 'role_name_taken');
-    team('POST', 'team/roles', ['name' => 'OWNER', 'permissions' => []], $this->owner)->assertJsonPath('code', 'role_name_taken');
-    team('POST', 'team/roles', ['name' => 'Typo', 'permissions' => ['staff.everything']], $this->owner)->assertJsonValidationErrors('permissions.0');
-    team('PUT', 'team/roles/'.$ownerRole->public_id, ['name' => 'Boss', 'permissions' => []], $this->owner)->assertConflict()->assertJsonPath('code', 'role_protected');
-    team('DELETE', 'team/roles/'.$ownerRole->public_id, as: $this->owner)->assertConflict()->assertJsonPath('code', 'role_protected');
+    teamRequest('POST', 'team/roles', ['name' => 'cashier', 'permissions' => []], $this->owner)->assertUnprocessable()->assertJsonValidationErrors('name')->assertJsonPath('code', 'role_name_taken');
+    teamRequest('POST', 'team/roles', ['name' => 'OWNER', 'permissions' => []], $this->owner)->assertJsonPath('code', 'role_name_taken');
+    teamRequest('POST', 'team/roles', ['name' => 'Typo', 'permissions' => ['staff.everything']], $this->owner)->assertJsonValidationErrors('permissions.0');
+    teamRequest('PUT', 'team/roles/'.$ownerRole->public_id, ['name' => 'Boss', 'permissions' => []], $this->owner)->assertConflict()->assertJsonPath('code', 'role_protected');
+    teamRequest('DELETE', 'team/roles/'.$ownerRole->public_id, as: $this->owner)->assertConflict()->assertJsonPath('code', 'role_protected');
 
-    team('PUT', 'team/roles/'.$role['id'], ['name' => 'Senior cashier', 'permissions' => ['staff.view', 'roles.view']], $this->owner)
+    teamRequest('PUT', 'team/roles/'.$role['id'], ['name' => 'Senior cashier', 'permissions' => ['staff.view', 'roles.view']], $this->owner)
         ->assertOk()
         ->assertJsonPath('data.name', 'Senior cashier')
         ->assertJsonPath('data.permissions', ['roles.view', 'staff.view']);
@@ -340,9 +252,9 @@ it('manages roles: unique names ignoring case, a protected Owner role, and no de
         ->and(json_encode($audits))->toContain('roles.view');
 
     colleagueWith('sam@example.com', $this->store->run(static fn (): Role => Role::findByName('Senior cashier', StaffMember::GUARD)));
-    team('DELETE', 'team/roles/'.$role['id'], as: $this->owner)->assertConflict()->assertJsonPath('code', 'role_in_use');
+    teamRequest('DELETE', 'team/roles/'.$role['id'], as: $this->owner)->assertConflict()->assertJsonPath('code', 'role_in_use');
 
-    team('GET', 'team/roles', as: $this->owner)
+    teamRequest('GET', 'team/roles', as: $this->owner)
         ->assertOk()
         ->assertJsonPath('data.0.name', 'owner')
         ->assertJsonPath('data.0.grants_everything', true)
@@ -364,7 +276,7 @@ it('holds case-insensitive role names in the store database, and audits changes 
 });
 
 it('lists the permissions roles can grant, with descriptions', function (): void {
-    team('GET', 'team/permissions', as: $this->owner)
+    teamRequest('GET', 'team/permissions', as: $this->owner)
         ->assertOk()
         ->assertJsonFragment(['name' => 'staff.invite', 'description' => __('permissions.staff.invite')]);
 });
@@ -388,9 +300,9 @@ it('keeps invitations and roles inside their own store', function (): void {
 
     $token = inviteAndCaptureToken('sam@example.com');
 
-    team('POST', 'auth/invitation-previews', ['token' => $token], subdomain: 'second-store')->assertUnprocessable()->assertJsonPath('code', 'staff_invitation_invalid');
-    team('POST', 'team/invitations', ['email' => 'x@example.com', 'roles' => [$secondStoreRole->public_id]], $this->owner)->assertJsonValidationErrors('roles.0');
-    team('GET', 'team/members', as: $secondOwner, subdomain: 'second-store')->assertOk()->assertJsonCount(1, 'data');
+    teamRequest('POST', 'auth/invitation-previews', ['token' => $token], subdomain: 'second-store')->assertUnprocessable()->assertJsonPath('code', 'staff_invitation_invalid');
+    teamRequest('POST', 'team/invitations', ['email' => 'x@example.com', 'roles' => [$secondStoreRole->public_id]], $this->owner)->assertJsonValidationErrors('roles.0');
+    teamRequest('GET', 'team/members', as: $secondOwner, subdomain: 'second-store')->assertOk()->assertJsonCount(1, 'data');
 });
 
 it('deletes invitations from the store once their link has been expired for the retention period', function (): void {
@@ -410,9 +322,9 @@ it('gives a team member permissions directly, on top of their roles, audited and
     $manager = colleagueWith('manager@example.com', roleWith('Manager', ['staff.view', 'staff.manage', 'catalog.view', 'settings.view']));
     $cashier = colleagueWith('cashier@example.com', roleWith('Cashier', ['settings.view']));
 
-    team('GET', 'catalog/brands', as: $cashier)->assertForbidden();
+    teamRequest('GET', 'catalog/brands', as: $cashier)->assertForbidden();
 
-    team('PUT', "team/members/{$cashier->public_id}/permissions", ['permissions' => ['catalog.view']], $manager)
+    teamRequest('PUT', "team/members/{$cashier->public_id}/permissions", ['permissions' => ['catalog.view']], $manager)
         ->assertOk()
         ->assertJsonPath('data.holds_every_permission', false)
         ->assertJsonPath('data.permissions', [
@@ -420,7 +332,7 @@ it('gives a team member permissions directly, on top of their roles, audited and
             ['name' => 'settings.view', 'description' => __('permissions.settings.view'), 'sources' => [['type' => 'role', 'role' => 'Cashier']]],
         ]);
 
-    team('GET', 'catalog/brands', as: $cashier)->assertOk();
+    teamRequest('GET', 'catalog/brands', as: $cashier)->assertOk();
 
     $this->store->run(function () use ($cashier, $manager): void {
         $audit = Audit::query()->where('auditable_type', 'staff_member')->where('auditable_id', $cashier->id)->sole();
@@ -432,8 +344,8 @@ it('gives a team member permissions directly, on top of their roles, audited and
             ->and($activity->properties->all())->toBe(['previous_permissions' => [], 'permissions' => ['catalog.view']]);
     });
 
-    team('PUT', "team/members/{$cashier->public_id}/permissions", ['permissions' => []], $manager)->assertOk()->assertJsonCount(1, 'data.permissions');
-    team('GET', 'catalog/brands', as: $cashier)->assertForbidden();
+    teamRequest('PUT', "team/members/{$cashier->public_id}/permissions", ['permissions' => []], $manager)->assertOk()->assertJsonCount(1, 'data.permissions');
+    teamRequest('GET', 'catalog/brands', as: $cashier)->assertForbidden();
 });
 
 it('shows where each permission comes from: every role that gives it, and direct', function (): void {
@@ -441,12 +353,12 @@ it('shows where each permission comes from: every role that gives it, and direct
     $both = colleagueWith('both@example.com', roleWith('Packer', ['catalog.view']), roleWith('Picker', ['catalog.view']));
     $this->store->run(static fn () => $both->givePermissionTo('catalog.view'));
 
-    team('GET', "team/members/{$both->public_id}/permissions", as: $viewer)
+    teamRequest('GET', "team/members/{$both->public_id}/permissions", as: $viewer)
         ->assertOk()
         ->assertJsonPath('data.permissions.0.name', 'catalog.view')
         ->assertJsonPath('data.permissions.0.sources', [['type' => 'role', 'role' => 'Packer'], ['type' => 'role', 'role' => 'Picker'], ['type' => 'direct', 'role' => null]]);
 
-    $owner = team('GET', "team/members/{$this->owner->public_id}/permissions", as: $viewer)->assertOk()->assertJsonPath('data.holds_every_permission', true);
+    $owner = teamRequest('GET', "team/members/{$this->owner->public_id}/permissions", as: $viewer)->assertOk()->assertJsonPath('data.holds_every_permission', true);
     expect($owner->json('data.permissions.*.name'))->toBe(app(StaffPermissionCatalogue::class)->all())
         ->and(collect($owner->json('data.permissions.*.sources'))->unique()->values()->all())->toBe([[['type' => 'role', 'role' => 'owner']]]);
 });
@@ -458,13 +370,13 @@ it('gives direct permissions under the same rules as roles', function (): void {
     $viewer = colleagueWith('viewer@example.com', roleWith('Viewer', ['staff.view']));
     $permissions = static fn (StaffMember $staffMember): string => "team/members/{$staffMember->public_id}/permissions";
 
-    team('PUT', $permissions($cashier), ['permissions' => ['catalog.manage']], $manager)->assertForbidden()->assertJsonPath('code', 'permissions_exceed_your_own');
-    team('PUT', $permissions($manager), ['permissions' => ['staff.view']], $manager)->assertForbidden()->assertJsonPath('code', 'cannot_manage_own_account');
-    team('PUT', $permissions($this->owner), ['permissions' => []], $manager)->assertForbidden()->assertJsonPath('code', 'store_owner_protected');
-    team('PUT', $permissions($supervisor), ['permissions' => []], $manager)->assertForbidden()->assertJsonPath('code', 'permissions_exceed_your_own');
-    team('PUT', $permissions($cashier), ['permissions' => ['staff.everything']], $manager)->assertUnprocessable()->assertJsonValidationErrors('permissions.0');
-    team('PUT', $permissions($cashier), ['permissions' => ['staff.view']], $viewer)->assertForbidden();
-    team('GET', $permissions($cashier), as: $cashier)->assertForbidden();
+    teamRequest('PUT', $permissions($cashier), ['permissions' => ['catalog.manage']], $manager)->assertForbidden()->assertJsonPath('code', 'permissions_exceed_your_own');
+    teamRequest('PUT', $permissions($manager), ['permissions' => ['staff.view']], $manager)->assertForbidden()->assertJsonPath('code', 'cannot_manage_own_account');
+    teamRequest('PUT', $permissions($this->owner), ['permissions' => []], $manager)->assertForbidden()->assertJsonPath('code', 'store_owner_protected');
+    teamRequest('PUT', $permissions($supervisor), ['permissions' => []], $manager)->assertForbidden()->assertJsonPath('code', 'permissions_exceed_your_own');
+    teamRequest('PUT', $permissions($cashier), ['permissions' => ['staff.everything']], $manager)->assertUnprocessable()->assertJsonValidationErrors('permissions.0');
+    teamRequest('PUT', $permissions($cashier), ['permissions' => ['staff.view']], $viewer)->assertForbidden();
+    teamRequest('GET', $permissions($cashier), as: $cashier)->assertForbidden();
 
     expect($this->store->run(static fn (): int => $cashier->permissions()->count()))->toBe(0);
 });

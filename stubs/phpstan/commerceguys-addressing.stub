@@ -1,0 +1,21 @@
+<?php
+
+namespace CommerceGuys\Addressing\AddressFormat;
+
+/*
+ * The package documents these lists as AddressField[], but AddressField is a
+ * class of string constants and the lists hold those strings, such as
+ * "administrativeArea". Only the return types are corrected here.
+ */
+final class AddressFormat
+{
+    /**
+     * @return list<string>
+     */
+    public function getUsedFields(): array {}
+
+    /**
+     * @return list<string>
+     */
+    public function getRequiredFields(): array {}
+}

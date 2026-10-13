@@ -36,6 +36,12 @@ return [
         'costs' => 'See and change what each unit costs the store. Costs are internal and never shown to customers.',
     ],
 
+    'customers' => [
+        'view' => 'See customers, their profiles, addresses and staff notes, including deactivated and trashed accounts.',
+        'manage' => 'Change customers\' profiles, deactivate, reactivate, trash and restore accounts, and add or delete notes.',
+        'tax_exemption' => 'Make a customer tax-exempt, or end it, after checking their tax ID.',
+    ],
+
     'pricing' => [
         'view' => 'See tax classes, tax rates, which class each variant is in, and the store\'s currencies and exchange rates.',
         'manage' => 'Change tax classes, tax rates, variants\' tax classes, the store\'s currencies, exchange rates and fixed prices.',
