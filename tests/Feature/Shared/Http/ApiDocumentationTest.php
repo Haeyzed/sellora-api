@@ -129,6 +129,31 @@ it('documents every pricing, tax and exchange rate endpoint', function (): void 
 });
 
 /*
+ * Step 10: every customer endpoint is documented, with its business errors.
+ */
+it('documents every customer endpoint', function (): void {
+    $store = documentedApi('default');
+
+    $expected = [
+        '/customer/account' => ['patch'],
+        '/customer/account/email-verifications' => ['post'],
+        '/customer/account/email-changes' => ['post'],
+        '/customer/account/email-changes/confirmations' => ['post'],
+        '/customer/auth/email-verifications' => ['post'],
+    ];
+
+    foreach ($expected as $path => $methods) {
+        expect($store['paths'])->toHaveKey($path)
+            ->and(array_keys($store['paths'][$path]))->toContain(...$methods);
+    }
+
+    expect(json_encode($store['paths']['/customer/auth/email-verifications']['post']['responses'][422]))->toContain('customer_email_link_invalid')
+        ->and(json_encode($store['paths']['/customer/account/email-verifications']['post']['responses'][409]))->toContain('customer_email_already_verified')
+        ->and(json_encode($store['paths']['/customer/account/email-changes']['post']['responses'][422]))->toContain('current_password_incorrect')
+        ->and($store['paths']['/customer/auth/email-verifications']['post']['security'] ?? null)->toBe([]);
+});
+
+/*
  * Section 11: the docs are for development. Outside a developer's machine
  * they are shown only to platform admins signed in with two-factor
  * authentication, through their bearer token.

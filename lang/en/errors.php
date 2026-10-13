@@ -138,5 +138,7 @@ return [
     'currency_not_offered' => 'Prices aren\'t available in :currency right now.',
     'variant_not_priced' => 'This item has no price yet, so it can\'t be bought.',
     'discount_exceeds_line' => 'A discount can\'t be more than the line it is on.',
+    'customer_email_already_verified' => 'Your email address is already confirmed.',
+    'customer_email_link_invalid' => 'This link is invalid or has expired. Ask for a new one.',
 
 ];

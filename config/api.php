@@ -51,6 +51,7 @@ return [
         'login' => (int) env('RATE_LIMIT_LOGIN', 5),
         'password_reset' => (int) env('RATE_LIMIT_PASSWORD_RESET', 3),
         'one_time_password' => (int) env('RATE_LIMIT_ONE_TIME_PASSWORD', 5),
+        'account_emails' => (int) env('RATE_LIMIT_ACCOUNT_EMAILS', 3),
         'registration' => (int) env('RATE_LIMIT_REGISTRATION', 3),
         'checkout' => (int) env('RATE_LIMIT_CHECKOUT', 10),
         'coupon_redemption' => (int) env('RATE_LIMIT_COUPON_REDEMPTION', 10),

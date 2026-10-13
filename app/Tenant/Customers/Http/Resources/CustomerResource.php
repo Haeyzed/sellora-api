@@ -21,7 +21,7 @@ final class CustomerResource extends JsonResource
     }
 
     /**
-     * @return array{id: string, name: string, email: string}
+     * @return array{id: string, name: string, email: string, email_verified: bool, phone: string|null, locale: string|null}
      */
     public function toArray(Request $request): array
     {
@@ -29,6 +29,12 @@ final class CustomerResource extends JsonResource
             'id' => $this->resource->public_id,
             'name' => $this->resource->name,
             'email' => $this->resource->email,
+            /** Whether the customer confirmed they receive mail at this email. Unverified accounts can't link guest orders or download their data. */
+            'email_verified' => $this->resource->hasVerifiedEmail(),
+            /** In E.164 format. */
+            'phone' => $this->resource->phone,
+            /** The language emails to the customer are written in; null for the store's default. */
+            'locale' => $this->resource->locale,
         ];
     }
 }

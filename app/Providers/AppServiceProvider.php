@@ -61,6 +61,7 @@ use App\Tenant\Catalog\Models\Brand;
 use App\Tenant\Catalog\Models\Category;
 use App\Tenant\Catalog\Models\Product;
 use App\Tenant\Catalog\Models\ProductVariant;
+use App\Tenant\Customers\CustomerEmailTokenRetention;
 use App\Tenant\Customers\CustomerStoreTables;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Delivery\DeliveryStoreTables;
@@ -289,6 +290,7 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(ActivityLogRetention::class);
             $registry->register(AuditRetention::class);
             $registry->register(StaffInvitationRetention::class);
+            $registry->register(CustomerEmailTokenRetention::class);
             $registry->register(SettledReservationRetention::class);
             $registry->register(StoreRegistrationRetention::class);
             $registry->register(StoreExportRetention::class);

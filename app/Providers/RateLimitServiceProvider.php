@@ -37,6 +37,8 @@ final class RateLimitServiceProvider extends ServiceProvider
         RateLimiter::for('registration', fn (Request $request): Limit => $this->perMinute('registration')->by($this->ipKey('registration', $request)));
         RateLimiter::for('checkout', fn (Request $request): Limit => $this->perMinute('checkout')->by($this->requesterKey('checkout', $request)));
         RateLimiter::for('coupon-redemption', fn (Request $request): Limit => $this->perMinute('coupon_redemption')->by($this->requesterKey('coupon-redemption', $request)));
+        // Emails a signed-in account asks to be sent (verification and email-change links), so a token can't be used to flood a mailbox.
+        RateLimiter::for('account-emails', fn (Request $request): Limit => $this->perMinute('account_emails')->by($this->requesterKey('account-emails', $request)));
     }
 
     /**

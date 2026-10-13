@@ -9,7 +9,10 @@ use App\Shared\Concerns\HasNormalisedEmail;
 use App\Shared\Concerns\HasPublicId;
 use Carbon\CarbonImmutable;
 use Database\Factories\Tenant\CustomerFactory;
+use Illuminate\Contracts\Translation\HasLocalePreference;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User;
 use Illuminate\Notifications\Notifiable;
@@ -26,14 +29,18 @@ use Laravel\Sanctum\HasApiTokens;
  * @property string $public_id
  * @property string $name
  * @property string $email
+ * @property string|null $phone In E.164 format, such as +2348012345678.
+ * @property string|null $locale One of the store's content languages; emails to the customer use it.
+ * @property CarbonImmutable|null $email_verified_at When the customer proved they receive mail at their current email.
  * @property string $password
  * @property bool $is_active
  * @property CarbonImmutable|null $last_signed_in_at
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property CarbonImmutable|null $deleted_at
+ * @property-read Collection<int, CustomerEmailToken> $emailTokens
  */
-final class Customer extends User implements HasApiTokensContract
+final class Customer extends User implements HasApiTokensContract, HasLocalePreference
 {
     use HasApiTokens;
 
@@ -52,6 +59,8 @@ final class Customer extends User implements HasApiTokensContract
     protected $fillable = [
         'name',
         'email',
+        'phone',
+        'locale',
         'password',
         'is_active',
     ];
@@ -70,6 +79,27 @@ final class Customer extends User implements HasApiTokensContract
         $this->notify(PasswordResetLinkNotification::forBroker(self::PASSWORD_BROKER, $token, $this->email));
     }
 
+    /**
+     * The language emails to the customer are written in; without one, the language of the request that sends them.
+     */
+    public function preferredLocale(): ?string
+    {
+        return $this->locale;
+    }
+
+    public function hasVerifiedEmail(): bool
+    {
+        return $this->email_verified_at !== null;
+    }
+
+    /**
+     * @return HasMany<CustomerEmailToken, $this>
+     */
+    public function emailTokens(): HasMany
+    {
+        return $this->hasMany(CustomerEmailToken::class);
+    }
+
     protected static function newFactory(): CustomerFactory
     {
         return CustomerFactory::new();
@@ -83,6 +113,7 @@ final class Customer extends User implements HasApiTokensContract
         return [
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'email_verified_at' => 'immutable_datetime',
             'last_signed_in_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
