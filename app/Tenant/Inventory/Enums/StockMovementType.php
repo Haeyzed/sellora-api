@@ -14,4 +14,16 @@ enum StockMovementType: string
 
     /** Staff corrected the count, with a reason such as damage or a recount. */
     case Adjusted = 'adjusted';
+
+    /** Held for a checkout or an order, or the amount held changed. */
+    case Reserved = 'reserved';
+
+    /** A hold was given back, such as a cancelled order. */
+    case Released = 'released';
+
+    /** Held stock left the shelf: the order was fulfilled. */
+    case Committed = 'committed';
+
+    /** A hold ran out and was given back, such as a checkout left open. */
+    case Expired = 'expired';
 }

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Shared\Tenancy;
 
 /**
- * A stock level that doesn't match the sum of its movements, found by reconciling a store's stock ledger.
+ * A stock level that doesn't match the sum of its movements, or whose reserved count doesn't match its active reservations, found by reconciling a store's stock ledger.
  */
 final readonly class StockLevelMismatch
 {
@@ -16,5 +16,6 @@ final readonly class StockLevelMismatch
         public int $onHandFromLedger,
         public int $reserved,
         public int $reservedFromLedger,
+        public int $reservedByReservations,
     ) {}
 }

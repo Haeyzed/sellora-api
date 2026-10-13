@@ -7,6 +7,7 @@ use App\Landlord\Tenancy\AddDatabaseServerCommand;
 use App\Landlord\Tenancy\Console\MovePlatformDomainCommand;
 use App\Landlord\Tenancy\Console\PurgeClosedStoresCommand;
 use App\Landlord\Tenancy\Console\ReconcileStockLevelsCommand;
+use App\Landlord\Tenancy\Console\ReleaseExpiredReservationsCommand;
 use App\Landlord\Tenancy\Console\SendPurgeRemindersCommand;
 use App\Landlord\Tenancy\Console\SyncPermissionsCommand;
 use App\Shared\Exceptions\ApiErrorRenderer;
@@ -65,6 +66,7 @@ return Application::configure(basePath: dirname(__DIR__))
         MovePlatformDomainCommand::class,
         SyncPermissionsCommand::class,
         ReconcileStockLevelsCommand::class,
+        ReleaseExpiredReservationsCommand::class,
         PurgeExpiredRecordsCommand::class,
     ])
     ->withMiddleware(static function (Middleware $middleware): void {

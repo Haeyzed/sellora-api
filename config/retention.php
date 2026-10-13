@@ -21,6 +21,8 @@ return [
         'expired_tokens' => (int) env('RETENTION_EXPIRED_TOKENS_DAYS', 7),
         'expired_password_reset_tokens' => (int) env('RETENTION_EXPIRED_PASSWORD_RESET_TOKENS_DAYS', 1),
         'staff_invitations' => (int) env('RETENTION_STAFF_INVITATIONS_DAYS', 30),
+        // Reservations that ended; the stock movements they caused are kept for good.
+        'settled_stock_reservations' => (int) env('RETENTION_SETTLED_STOCK_RESERVATIONS_DAYS', 90),
         'store_registrations' => (int) env('RETENTION_STORE_REGISTRATIONS_DAYS', 7),
         'store_exports' => (int) env('RETENTION_STORE_EXPORTS_DAYS', 7),
         'activity_log' => (int) env('RETENTION_ACTIVITY_LOG_DAYS', 365),

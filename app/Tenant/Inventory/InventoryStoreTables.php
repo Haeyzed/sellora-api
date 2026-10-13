@@ -34,5 +34,13 @@ final class InventoryStoreTables implements ClassifiesStoreTables
                 'source_type', 'source_id', 'created_at',
             ],
         );
+
+        $registry->table(
+            'stock_reservations',
+            include: [
+                'id', 'public_id', 'product_variant_id', 'stock_location_id', 'holder_type', 'holder_id', 'quantity',
+                'backordered_quantity', 'status', 'expires_at', 'settled_at', 'created_at', 'updated_at',
+            ],
+        );
     }
 }

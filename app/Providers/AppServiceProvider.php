@@ -48,6 +48,7 @@ use App\Shared\Tenancy\Contracts\StoreProfile;
 use App\Shared\Tenancy\Contracts\StoreSessions;
 use App\Shared\Tenancy\Contracts\StoreSettingsSetup;
 use App\Shared\Tenancy\Contracts\StoreStockLedger;
+use App\Shared\Tenancy\Contracts\StoreStockReservations;
 use App\Tenant\Catalog\CatalogPricedRecords;
 use App\Tenant\Catalog\CatalogStoreFiles;
 use App\Tenant\Catalog\CatalogStoreTables;
@@ -77,11 +78,14 @@ use App\Tenant\Identity\StoreSignOut;
 use App\Tenant\Inventory\Contracts\StockLocationSelector;
 use App\Tenant\Inventory\DefaultStockLocationSelector;
 use App\Tenant\Inventory\Enums\InventoryPermission;
+use App\Tenant\Inventory\ExpiredReservationSweep;
 use App\Tenant\Inventory\InventoryStoreTables;
 use App\Tenant\Inventory\Models\InventoryItem;
 use App\Tenant\Inventory\Models\StockItem;
 use App\Tenant\Inventory\Models\StockLocation;
 use App\Tenant\Inventory\Models\StockMovement;
+use App\Tenant\Inventory\Models\StockReservation;
+use App\Tenant\Inventory\SettledReservationRetention;
 use App\Tenant\Inventory\StockLedgerReconciliation;
 use App\Tenant\Settings\Enums\SettingsPermission;
 use App\Tenant\Settings\Models\StoreSettings;
@@ -140,6 +144,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(StoreSettingsSetup::class, StoreSettingsDefaults::class);
         $this->app->bind(StorePermissions::class, StaffPermissionSync::class);
         $this->app->bind(StoreStockLedger::class, StockLedgerReconciliation::class);
+        $this->app->bind(StoreStockReservations::class, ExpiredReservationSweep::class);
         $this->app->bind(StockLocationSelector::class, DefaultStockLocationSelector::class);
         $this->app->bind(TwoFactorRequirement::class, StoreTwoFactorRequirement::class);
         // Per request or job, so a long-running worker never reuses one store's languages for the next.
@@ -265,6 +270,7 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(ActivityLogRetention::class);
             $registry->register(AuditRetention::class);
             $registry->register(StaffInvitationRetention::class);
+            $registry->register(SettledReservationRetention::class);
             $registry->register(StoreRegistrationRetention::class);
             $registry->register(StoreExportRetention::class);
 
@@ -321,6 +327,7 @@ final class AppServiceProvider extends ServiceProvider
             'inventory_item' => InventoryItem::class,
             'stock_item' => StockItem::class,
             'stock_movement' => StockMovement::class,
+            'stock_reservation' => StockReservation::class,
         ]);
     }
 

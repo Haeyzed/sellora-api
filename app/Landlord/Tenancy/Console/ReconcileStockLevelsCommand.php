@@ -68,12 +68,13 @@ final class ReconcileStockLevelsCommand extends Command
             'on_hand_from_ledger' => $mismatch->onHandFromLedger,
             'reserved' => $mismatch->reserved,
             'reserved_from_ledger' => $mismatch->reservedFromLedger,
+            'reserved_by_reservations' => $mismatch->reservedByReservations,
         ];
 
         Log::warning('A stock level does not match its movement ledger.', $context);
         $this->components->error(sprintf(
-            'Store %s, variant %s at %s: on hand %d (ledger %d), reserved %d (ledger %d).',
-            $storeId, $mismatch->variantId, $mismatch->locationId, $mismatch->onHand, $mismatch->onHandFromLedger, $mismatch->reserved, $mismatch->reservedFromLedger,
+            'Store %s, variant %s at %s: on hand %d (ledger %d), reserved %d (ledger %d, active reservations %d).',
+            $storeId, $mismatch->variantId, $mismatch->locationId, $mismatch->onHand, $mismatch->onHandFromLedger, $mismatch->reserved, $mismatch->reservedFromLedger, $mismatch->reservedByReservations,
         ));
     }
 }

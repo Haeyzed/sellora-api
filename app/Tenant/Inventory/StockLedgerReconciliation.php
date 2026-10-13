@@ -9,7 +9,7 @@ use App\Shared\Tenancy\StockLevelMismatch;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Recalculates every stock level of the current store from its movements and lists those that don't match.
+ * Recalculates every stock level of the current store from its movements, and its reserved count from its active reservations, and lists those that don't match.
  *
  * Every change to a level is written with a movement in the same transaction
  * (Services\StockLedger), so a mismatch means something changed a level
@@ -23,13 +23,19 @@ final readonly class StockLedgerReconciliation implements StoreStockLedger
             ->groupBy('stock_item_id')
             ->selectRaw('stock_item_id, sum(on_hand_delta) as on_hand, sum(reserved_delta) as reserved');
 
+        $held = DB::connection()->table('stock_reservations')
+            ->where('status', 'active')
+            ->groupBy('stock_location_id', 'product_variant_id')
+            ->selectRaw('stock_location_id, product_variant_id, sum(quantity) as quantity');
+
         $rows = DB::connection()->table('stock_items as si')
             ->join('product_variants as v', 'v.id', '=', 'si.product_variant_id')
             ->join('stock_locations as l', 'l.id', '=', 'si.stock_location_id')
             ->leftJoinSub($ledger, 'm', 'm.stock_item_id', '=', 'si.id')
-            ->whereRaw('(si.on_hand <> coalesce(m.on_hand, 0) or si.reserved <> coalesce(m.reserved, 0))')
+            ->leftJoinSub($held, 'r', static fn ($join) => $join->on('r.stock_location_id', '=', 'si.stock_location_id')->on('r.product_variant_id', '=', 'si.product_variant_id'))
+            ->whereRaw('(si.on_hand <> coalesce(m.on_hand, 0) or si.reserved <> coalesce(m.reserved, 0) or si.reserved <> coalesce(r.quantity, 0))')
             ->orderBy('si.id')
-            ->get(['v.public_id as variant_id', 'l.public_id as location_id', 'si.on_hand', 'si.reserved', DB::raw('coalesce(m.on_hand, 0) as ledger_on_hand'), DB::raw('coalesce(m.reserved, 0) as ledger_reserved')]);
+            ->get(['v.public_id as variant_id', 'l.public_id as location_id', 'si.on_hand', 'si.reserved', DB::raw('coalesce(m.on_hand, 0) as ledger_on_hand'), DB::raw('coalesce(m.reserved, 0) as ledger_reserved'), DB::raw('coalesce(r.quantity, 0) as held')]);
 
         return array_values($rows->map(static fn (object $row): StockLevelMismatch => new StockLevelMismatch(
             variantId: (string) $row->variant_id,
@@ -38,6 +44,7 @@ final readonly class StockLedgerReconciliation implements StoreStockLedger
             onHandFromLedger: (int) $row->ledger_on_hand,
             reserved: (int) $row->reserved,
             reservedFromLedger: (int) $row->ledger_reserved,
+            reservedByReservations: (int) $row->held,
         ))->all());
     }
 }
