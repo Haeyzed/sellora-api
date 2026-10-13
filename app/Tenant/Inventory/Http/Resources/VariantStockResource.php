@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tenant\Inventory\Http\Resources;
 
+use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Inventory\Data\VariantStock;
+use App\Tenant\Inventory\Models\StockItem;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -35,7 +37,23 @@ final class VariantStockResource extends JsonResource
             'allows_backorder' => $stock->allowsBackorder,
             /** Its own threshold; null when it uses the store's. */
             'low_stock_threshold' => $stock->ownLowStockThreshold,
+            /**
+             * What one unit costs the store, such as {"amount": "4.250000", "currency": "NGN"}; null when not set. Only for staff who may see costs.
+             *
+             * @var array{amount: string, currency: string}|null
+             */
+            'unit_cost' => $this->when(
+                self::maySeeCosts($request),
+                static fn (): ?array => $stock->unitCost === null ? null : ['amount' => $stock->unitCost->toString(), 'currency' => $stock->currency],
+            ),
             'levels' => StockLevelResource::collection($stock->levels),
         ];
+    }
+
+    private static function maySeeCosts(Request $request): bool
+    {
+        $actor = $request->user();
+
+        return $actor instanceof StaffMember && $actor->can('viewCosts', StockItem::class);
     }
 }

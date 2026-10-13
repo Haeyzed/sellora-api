@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tenant\Inventory\Services;
 
 use App\Shared\Auth\AccountReference;
+use App\Shared\Money\Decimal;
 use App\Tenant\Inventory\Data\StockSource;
 use App\Tenant\Inventory\Enums\StockMovementType;
 use App\Tenant\Inventory\Models\StockItem;
@@ -79,6 +80,7 @@ final readonly class StockLedger
         ?string $note = null,
         ?AccountReference $causer = null,
         ?StockSource $source = null,
+        ?Decimal $unitCost = null,
     ): StockMovement {
         $item->on_hand += $onHandDelta;
         $item->reserved += $reservedDelta;
@@ -105,6 +107,7 @@ final readonly class StockLedger
             'causer_id' => $causer?->publicId,
             'source_type' => $source?->type,
             'source_id' => $source?->id,
+            'unit_cost' => $unitCost,
         ])->save();
 
         return $movement;

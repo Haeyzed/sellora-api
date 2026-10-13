@@ -8,13 +8,17 @@ use App\Tenant\Catalog\Models\ProductVariant;
 use App\Tenant\Inventory\Data\VariantStock;
 use App\Tenant\Inventory\Models\InventoryItem;
 use App\Tenant\Inventory\Models\StockLocation;
+use App\Tenant\Settings\Actions\FindStoreSettings;
 
 /**
  * Puts together one variant's stock for its screen: settings (or the defaults) and its level at every active location.
  */
 final readonly class VariantStocks
 {
-    public function __construct(private StockLevels $stockLevels) {}
+    public function __construct(
+        private StockLevels $stockLevels,
+        private FindStoreSettings $findStoreSettings,
+    ) {}
 
     public function of(ProductVariant $variant): VariantStock
     {
@@ -35,6 +39,8 @@ final readonly class VariantStocks
             allowsBackorder: $item->allows_backorder ?? false,
             ownLowStockThreshold: $item?->low_stock_threshold,
             levels: $levels,
+            unitCost: $item?->unit_cost,
+            currency: $this->findStoreSettings->handle()->currency_code,
         );
     }
 }

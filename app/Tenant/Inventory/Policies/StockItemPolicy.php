@@ -17,6 +17,11 @@ final class StockItemPolicy
         return $actor->can(InventoryPermission::InventoryView->value);
     }
 
+    public function viewCosts(StaffMember $actor): bool
+    {
+        return $actor->can(InventoryPermission::InventoryCosts->value);
+    }
+
     public function update(StaffMember $actor): bool
     {
         return $actor->can(InventoryPermission::InventoryAdjust->value);

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tenant\Inventory\Http\Resources;
 
+use App\Tenant\Identity\Models\StaffMember;
+use App\Tenant\Inventory\Models\StockItem;
 use App\Tenant\Inventory\Models\StockMovement;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -50,7 +52,16 @@ final class StockMovementResource extends JsonResource
              * @var array{type: string, id: string}|null
              */
             'source' => $movement->source_type === null ? null : ['type' => $movement->source_type, 'id' => $movement->source_id],
+            /** What each unit cost, on a receipt that recorded it, in the store's base currency. Only for staff who may see costs. */
+            'unit_cost' => $this->when(self::maySeeCosts($request), static fn (): ?string => $movement->unit_cost?->toString()),
             'created_at' => $movement->created_at?->toIso8601String(),
         ];
+    }
+
+    private static function maySeeCosts(Request $request): bool
+    {
+        $actor = $request->user();
+
+        return $actor instanceof StaffMember && $actor->can('viewCosts', StockItem::class);
     }
 }

@@ -18,7 +18,7 @@ final class InventoryStoreTables implements ClassifiesStoreTables
 
         $registry->table(
             'inventory_items',
-            include: ['id', 'product_variant_id', 'tracks_stock', 'allows_backorder', 'low_stock_threshold', 'created_at', 'updated_at'],
+            include: ['id', 'product_variant_id', 'tracks_stock', 'allows_backorder', 'low_stock_threshold', 'unit_cost', 'created_at', 'updated_at'],
         );
 
         $registry->table(
@@ -31,7 +31,7 @@ final class InventoryStoreTables implements ClassifiesStoreTables
             include: [
                 'id', 'public_id', 'stock_item_id', 'product_variant_id', 'stock_location_id', 'type', 'reason', 'note',
                 'on_hand_delta', 'reserved_delta', 'on_hand_after', 'reserved_after', 'causer_type', 'causer_id',
-                'source_type', 'source_id', 'created_at',
+                'source_type', 'source_id', 'unit_cost', 'created_at',
             ],
         );
 

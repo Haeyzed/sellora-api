@@ -14,4 +14,7 @@ enum InventoryPermission: string
 
     /** Receive stock, correct counts, and change how each variant's stock is handled. */
     case InventoryAdjust = 'inventory.adjust';
+
+    /** See and change what each unit costs the store. Costs are internal and never shown to customers. */
+    case InventoryCosts = 'inventory.costs';
 }

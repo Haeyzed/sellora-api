@@ -9,7 +9,7 @@ use App\Tenant\Inventory\Data\InventorySettingsData;
 use App\Tenant\Inventory\Models\InventoryItem;
 
 /**
- * Changes how a variant's stock is handled: whether it is counted, whether it may be sold when none is left, and its own low-stock threshold. Audited.
+ * Changes how a variant's stock is handled: whether it is counted, whether it may be sold when none is left, its own low-stock threshold, and its unit cost. Audited.
  *
  * Turning backorders off keeps reservations already made beyond the stock;
  * it only refuses new ones (section 13).
@@ -37,6 +37,12 @@ final readonly class ChangeInventorySettings
             $item->low_stock_threshold = null;
         } elseif ($changes->lowStockThreshold !== null) {
             $item->low_stock_threshold = $changes->lowStockThreshold;
+        }
+
+        if ($changes->removesUnitCost) {
+            $item->unit_cost = null;
+        } elseif ($changes->unitCost !== null) {
+            $item->unit_cost = $changes->unitCost;
         }
 
         $item->save();

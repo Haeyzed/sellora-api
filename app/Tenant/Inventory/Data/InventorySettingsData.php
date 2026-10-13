@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tenant\Inventory\Data;
 
+use App\Shared\Money\Decimal;
+
 /**
  * What changes about how a variant's stock is handled. Anything left null stays as it is.
  */
@@ -14,5 +16,7 @@ final readonly class InventorySettingsData
         public ?bool $allowsBackorder = null,
         public ?int $lowStockThreshold = null,
         public bool $usesStoreThreshold = false,
+        public ?Decimal $unitCost = null,
+        public bool $removesUnitCost = false,
     ) {}
 }

@@ -33,6 +33,7 @@ return [
     'inventory' => [
         'view' => 'See stock levels, locations and the history of every stock change.',
         'adjust' => 'Receive stock, correct stock counts, and change how each variant\'s stock is handled.',
+        'costs' => 'See and change what each unit costs the store. Costs are internal and never shown to customers.',
     ],
 
     'settings' => [

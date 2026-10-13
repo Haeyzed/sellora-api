@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Tenant\Inventory\Models;
 
 use App\Shared\Concerns\HasPublicId;
+use App\Shared\Money\Decimal;
+use App\Shared\Money\DecimalCast;
 use App\Tenant\Inventory\Enums\StockMovementType;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
@@ -33,6 +35,7 @@ use LogicException;
  * @property string|null $causer_id That account's public ID.
  * @property string|null $source_type What it belongs to, such as a reservation or an order, by morph name.
  * @property string|null $source_id That record's public ID.
+ * @property Decimal|null $unit_cost What each unit cost, on a receipt; base currency, six decimal places.
  * @property CarbonImmutable|null $created_at
  * @property-read StockLocation $location
  */
@@ -70,6 +73,7 @@ final class StockMovement extends Model
             'reserved_delta' => 'integer',
             'on_hand_after' => 'integer',
             'reserved_after' => 'integer',
+            'unit_cost' => DecimalCast::class.':6',
             'created_at' => 'immutable_datetime',
         ];
     }

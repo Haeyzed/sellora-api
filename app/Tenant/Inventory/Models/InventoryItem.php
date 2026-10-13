@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tenant\Inventory\Models;
 
+use App\Shared\Money\Decimal;
+use App\Shared\Money\DecimalCast;
 use App\Tenant\Catalog\Models\ProductVariant;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
@@ -23,6 +25,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property bool $tracks_stock False for things never counted, such as made-to-order items: always available.
  * @property bool $allows_backorder Whether it may still be ordered when none is available.
  * @property int|null $low_stock_threshold Null to use the store's threshold.
+ * @property Decimal|null $unit_cost What one unit costs the store, in its base currency, six decimal places. Internal: never shown to customers.
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property-read ProductVariant $variant
@@ -64,6 +67,7 @@ final class InventoryItem extends Model implements AuditableContract
             'tracks_stock' => 'boolean',
             'allows_backorder' => 'boolean',
             'low_stock_threshold' => 'integer',
+            'unit_cost' => DecimalCast::class.':6',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];

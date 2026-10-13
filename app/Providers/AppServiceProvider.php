@@ -79,6 +79,7 @@ use App\Tenant\Inventory\Contracts\StockLocationSelector;
 use App\Tenant\Inventory\DefaultStockLocationSelector;
 use App\Tenant\Inventory\Enums\InventoryPermission;
 use App\Tenant\Inventory\ExpiredReservationSweep;
+use App\Tenant\Inventory\InventoryPricedRecords;
 use App\Tenant\Inventory\InventoryStoreTables;
 use App\Tenant\Inventory\Models\InventoryItem;
 use App\Tenant\Inventory\Models\StockItem;
@@ -258,6 +259,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->singleton(PricedRecordsRegistry::class, static function (Application $app): PricedRecordsRegistry {
             $registry = new PricedRecordsRegistry($app);
             $registry->register(CatalogPricedRecords::class);
+            $registry->register(InventoryPricedRecords::class);
 
             return $registry;
         });

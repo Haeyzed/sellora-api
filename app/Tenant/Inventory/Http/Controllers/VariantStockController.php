@@ -77,7 +77,7 @@ final class VariantStockController extends Controller
      */
     public function receive(ReceiveStockRequest $request, ProductVariant $variant, ReceiveStock $receiveStock, VariantStocks $variantStocks): JsonResponse
     {
-        $receiveStock->handle($variant, $request->stockLocation(), $request->quantity(), $request->note(), AccountReference::to($request->actor()));
+        $receiveStock->handle($variant, $request->stockLocation(), $request->quantity(), $request->note(), AccountReference::to($request->actor()), unitCost: $request->unitCost());
 
         return (new VariantStockResource($variantStocks->of($variant)))->response()->setStatusCode(Response::HTTP_CREATED);
     }
