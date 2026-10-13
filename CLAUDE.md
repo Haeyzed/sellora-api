@@ -98,6 +98,7 @@ On a fresh project, **the first task is installing and configuring all dependenc
 | Static analysis (dev) | `larastan/larastan` | **level 8**, with a `phpstan.neon` |
 | Formatting (dev) | `laravel/pint` | with a `pint.json` |
 | S3 storage | `league/flysystem-aws-s3-v3` | Laravel's official S3 adapter, for per-region disks (approved in Step 5c) |
+| Address formats | `commerceguys/addressing` | per-country address rules (required fields, postcode patterns) from Google's address data; used only inside `App\Shared\Geography` (approved in Step 10, if compatible with PHP 8.4) |
 
 If a package's skill gives install steps, the skill's steps win over this table. Don't install anything not listed here without asking.
 
@@ -286,7 +287,8 @@ This platform targets merchants and shoppers worldwide. **Never hard-code anythi
 
 **Addresses, phones and units**
 - Phone numbers are validated and formatted with `propaganistas/laravel-phone` (already installed; it includes libphonenumber), never a second phone library.
-- Address formats differ by country: states, postcodes and city rules are not universal. Validate per country using `nnjeim/world` data, and never require fields a country doesn't use.
+- Address formats differ by country: states, postcodes and city rules are not universal. Validate per country, and never require fields a country doesn't use. Countries and states come from `nnjeim/world`; which fields a country requires and its postcode pattern come from `commerceguys/addressing`. Both are used only through `App\Shared\Geography`. Cities are free text.
+- **Addresses are copied onto orders, never linked**, so editing or deleting a saved address never changes a past order.
 - Phone numbers are stored in E.164 format (`+2348012345678`, `+14155550123`).
 - Store weights and dimensions in metric internally, and let each store choose display units.
 - **Country defaults** (content language, tax mode, display units) live in `config/geography.php` and apply only at sign-up. Where reference data can't identify something (for example a state with no ISO code), never make that field required for that country; fall back to optional free text.
@@ -297,6 +299,10 @@ This platform targets merchants and shoppers worldwide. **Never hard-code anythi
 - Collect only the personal data a feature needs. Never log personal data or secrets.
 - **Retention:** every store of personal data that isn't a core business record has a retention period and a scheduled purge. That includes webhook payload logs, activity and audit logs, driver location history, abandoned carts and expired tokens. The periods live in config, not code.
 - **Privacy registry:** each domain or module that stores personal data registers its own export and erase handlers in one central registry, so "export my data" and "delete my data" requests cover every feature automatically, including modules added later. Orders are anonymised rather than deleted, because they're financial records.
+- **What a person's data export contains:** everything the store holds about them, including staff notes about them (staff write notes knowing the customer can ask to see them). Only secrets (password hashes, tokens) are left out.
+- **Erasure is all or nothing** inside the store database; files are deleted only after it commits. Erased customer rows are kept (with every personal field cleared) so past orders still point at something, and the email can be used again.
+- **Trashed customers** are erased automatically after a retention period in config (90 days). Long-inactive accounts are never erased automatically by core.
+- **Marketing consent** is recorded as events that are never edited (channel, contact, granted or withdrawn, source, the exact wording shown, when). Staff can record a withdrawal on a customer's request but never grant consent for them. Consent events are deleted only by erasure. Guests can give consent at checkout too, so a consent event may belong to a contact without an account. Single opt-in with the wording stored for now; double opt-in becomes a store setting with Messaging (Step 20).
 
 If the legacy project hard-codes anything covered here (one currency, one gateway, one country's address format, server-timezone dates), flag it in the review and port the behaviour in the global-ready form.
 
@@ -935,6 +941,9 @@ There are four guards, all on Sanctum. Each guard has its own model, provider, l
 - **Permissions are defined in code** (one enum per domain, registered with its guard's permission catalogue; the code is the single source of truth) and **synced into the database** by an idempotent command: into the central database for `platform`, and into every store database for `staff`. It runs at store setup and on every deploy, so a permission added in a later step reaches every existing store. A permission row that exists in no enum is removed by the sync only after being taken off every role and person.
 - **Direct permissions:** besides roles, a staff member or platform admin may be given extra permissions individually (for example one Cashier who may also issue refunds). The same rules as roles apply: nobody grants a permission they don't hold, nobody changes their own permissions, the owner and super admins are protected, and every change is audited and goes in the activity log. The API shows each person's effective permissions and where each comes from (which role, or direct), so "why can Ada do this?" is always answerable.
 - **Customers** can only access their own data (orders, addresses, profile). This is enforced with Policies and scoped queries, not roles.
+- **Guest checkout** is a store setting, on by default. The `customers` table holds accounts only; a guest order keeps its own copy of the contact details. Guest orders are linked to an account only when the account's **verified** email matches the order's email, never on an unverified one, or anyone could claim another person's orders by signing up with their email.
+- **Unverified customers** can sign in and shop, but can't link guest orders or download a data export.
+- **Changing a customer's email** needs the current password, takes effect only when a link sent to the new address is used, tells the old address, and signs out every other device.
 - **Drivers** can only see and update deliveries assigned to them. Authorization is by assignment, through Policies, not staff roles. A driver never sees other drivers' deliveries, unassigned orders, prices beyond what delivery needs, or store settings.
 
 **Delivery and drivers**
@@ -1213,9 +1222,12 @@ If you notice a security problem anywhere, in the legacy project, in this reposi
 - **Unpushed commits may be cleaned up** (for example folding a fix into the commit that introduced the bug); pushed commits are never rewritten.
 - **Every commit must pass on its own.** Before each commit, clear Larastan's result cache and run Larastan plus that commit's tests with only that commit's changes in place. A test may never depend on code from a later commit.
 - Claude Code never edits this `CLAUDE.md` itself; proposed changes go in the report (section 2.3).
-- **Keep the full test suite fast** enough to run before every push (aim for under 10 minutes): test stores get a copy of a prepared template database, or a used copy that has been reset and verified identical to the template (schema, rows, ID counters and extensions); tests run in parallel. Time the suite on mains power, and on Linux in CI. A slow suite stops being run, and an unrun suite protects nothing.
+- **Keep the full test suite fast** enough to run before every push (aim for under 10 minutes): test stores get a copy of a prepared template database, or a used copy that has been reset and verified identical to the template (schema, rows, ID counters and extensions); tests run in parallel. The template is built once before the parallel workers start, never inside a test. Time the suite on mains power, and on Linux in CI. A slow suite stops being run, and an unrun suite protects nothing.
+- **Test helper functions** are never declared in individual test files, because Pest loads every file into the same process and two files with the same helper name crash the whole run. Shared helpers live in `tests/Pest.php` or a helpers file it loads, with names that say exactly what they build.
 - **Verification copies (worktrees or clones) never touch the main checkout.** Scripts that check out other commits refuse to run in it, so uncommitted work there is never at risk.
-- A CI pipeline (for example GitHub Actions) runs Pint, Larastan, Pest (including architecture and tenant-isolation tests) and `composer audit` on every push. Nothing is merged while CI fails.
+- A CI pipeline (GitHub Actions, `.github/workflows/ci.yml`) runs Pint, Larastan, Pest (including architecture and tenant-isolation tests) and `composer audit` on every push. Nothing is merged while CI fails.
+- **Third-party GitHub Actions are pinned to a full commit hash** (with the version in a comment), and Dependabot proposes updates. A version tag can be moved to malicious code by whoever controls the action; a commit hash can't.
+- **Each build step is done on its own branch** (for example `step-10-customers`). Pushing the branch is always safe and runs CI. The branch is merged into `main` only after my review and a green CI run, and `main` is protected on GitHub so nothing reaches it any other way.
 
 ## 16. Decisions still open
 
