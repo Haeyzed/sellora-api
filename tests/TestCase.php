@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests;
 
 use GuzzleHttp\Promise\PromiseInterface;
+use Illuminate\Database\DatabaseManager;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
@@ -114,6 +115,11 @@ abstract class TestCase extends BaseTestCase
      * Laravel truncates only before each such test, so without this their rows
      * (stores, platform admins, tokens) leak into the next transaction-based
      * test, which then depends on the order tests happen to run in.
+     *
+     * Every database connection the test opened is closed once Laravel has
+     * torn the test down. Laravel only drops the application, so each
+     * connection stayed open until PHP's garbage collector happened to run,
+     * and a long parallel run reached Postgres's connection limit.
      */
     protected function tearDown(): void
     {
@@ -121,6 +127,12 @@ abstract class TestCase extends BaseTestCase
             $this->truncateTablesForAllConnections();
         }
 
+        $connections = $this->app?->bound('db') ? $this->app->make(DatabaseManager::class)->getConnections() : [];
+
         parent::tearDown();
+
+        foreach ($connections as $connection) {
+            $connection->disconnect();
+        }
     }
 }
