@@ -12,6 +12,7 @@ use App\Tenant\Inventory\Actions\ChangeInventorySettings;
 use App\Tenant\Inventory\Actions\ReceiveStock;
 use App\Tenant\Inventory\Exceptions\StockWouldGoNegativeException;
 use App\Tenant\Inventory\Http\Requests\AdjustStockRequest;
+use App\Tenant\Inventory\Http\Requests\ListStockMovementsRequest;
 use App\Tenant\Inventory\Http\Requests\ReceiveStockRequest;
 use App\Tenant\Inventory\Http\Requests\UpdateInventorySettingsRequest;
 use App\Tenant\Inventory\Http\Requests\ViewStockRequest;
@@ -88,7 +89,7 @@ final class VariantStockController extends Controller
      * Needs the inventory.view permission. Every change, newest first, with
      * who or what caused it. Also for a variant in the trash.
      */
-    public function movements(ViewStockRequest $request, ProductVariant $variant): AnonymousResourceCollection
+    public function movements(ListStockMovementsRequest $request, ProductVariant $variant): AnonymousResourceCollection
     {
         $movements = StockMovement::query()
             ->with('location:id,public_id')

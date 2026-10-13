@@ -7,14 +7,14 @@ namespace App\Landlord\Tenancy\Http\Requests;
 use App\Landlord\Identity\Http\Requests\ActsAsPlatformAdmin;
 use App\Landlord\Tenancy\Enums\TenantStatus;
 use App\Landlord\Tenancy\Models\Tenant;
-use App\Shared\Http\PaginatedListRequest;
+use App\Shared\Http\PageListRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
 
 /**
  * A page of stores, optionally by status or matching a search.
  */
-final class ListStoresRequest extends PaginatedListRequest
+final class ListStoresRequest extends PageListRequest
 {
     use ActsAsPlatformAdmin;
 

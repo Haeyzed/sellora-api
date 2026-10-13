@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Tenant\Identity\Http\Requests;
 
-use App\Shared\Http\PaginatedListRequest;
+use App\Shared\Http\PageListRequest;
 use App\Tenant\Identity\Concerns\ActsAsStaffMember;
 use App\Tenant\Identity\Models\StaffMember;
 
 /**
  * A page of the store's team, optionally only active or only deactivated members.
  */
-final class ListTeamMembersRequest extends PaginatedListRequest
+final class ListTeamMembersRequest extends PageListRequest
 {
     use ActsAsStaffMember;
 

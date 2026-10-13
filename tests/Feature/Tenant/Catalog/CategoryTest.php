@@ -188,7 +188,7 @@ it('lists one level of the tree, every category, or the trash, a page at a time'
 
     expect(categoryRequest('GET', '?parent=root')->json('data'))->toHaveCount(2)
         ->and(categoryRequest('GET')->json('data'))->toHaveCount(3)
-        ->and(categoryRequest('GET', '?per_page=1')->json('meta.next_cursor'))->toBeString();
+        ->and(categoryRequest('GET', '?per_page=1')->json('meta.last_page'))->toBe(3);
 
     categoryRequest('GET', '?parent=01J00000000000000000000000')->assertUnprocessable()->assertJsonValidationErrors('parent');
 });

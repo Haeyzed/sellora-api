@@ -9,9 +9,10 @@ use Illuminate\Foundation\Http\FormRequest;
 /**
  * The common parent of every list endpoint's request, so no list can ever be fetched unbounded.
  *
- * Clients may choose a page size up to the configured maximum and pass the
- * cursor returned by the previous page. Subclasses add their own filters
- * with `[...parent::rules(), ...]`.
+ * Clients may choose a page size up to the configured maximum. A list extends
+ * PageListRequest (page numbers, with a total) or CursorListRequest (next and
+ * previous only), never this class directly (section 11). Subclasses add
+ * their own filters with `[...parent::rules(), ...]`.
  */
 abstract class PaginatedListRequest extends FormRequest
 {
@@ -24,7 +25,6 @@ abstract class PaginatedListRequest extends FormRequest
     {
         return [
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:'.config()->integer('api.pagination.max_per_page')],
-            'cursor' => ['sometimes', 'string', 'max:512'],
         ];
     }
 

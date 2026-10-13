@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tenant\Catalog\Http\Requests;
 
-use App\Shared\Http\PaginatedListRequest;
+use App\Shared\Http\CursorListRequest;
 use App\Tenant\Catalog\Enums\ProductStatus;
 use App\Tenant\Catalog\Models\Brand;
 use App\Tenant\Catalog\Models\Category;
@@ -16,7 +16,7 @@ use Illuminate\Validation\Rule;
 /**
  * A page of the store's products, newest first, optionally searched or narrowed by status, brand or category, or those in the trash.
  */
-final class ListProductsRequest extends PaginatedListRequest
+final class ListProductsRequest extends CursorListRequest
 {
     use ActsAsStaffMember;
 

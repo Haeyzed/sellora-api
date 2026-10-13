@@ -36,7 +36,7 @@ final class AttributeController extends Controller
             ->with('values')
             ->orderBy('position')
             ->orderBy('id')
-            ->cursorPaginate($request->perPage());
+            ->paginate($request->perPage());
 
         return AttributeResource::collection($attributes);
     }

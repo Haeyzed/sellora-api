@@ -38,6 +38,66 @@ it('sends the central APIs to the central domain and the store API to a store su
 });
 
 /*
+ * Section 11: every list is paged by page number or by cursor, chosen when
+ * it is built, and its docs say which. Changing a list's type later breaks
+ * API clients, so this table is the record: a new list must be added here.
+ */
+
+const PAGE_NUMBER_LISTS = [
+    'default' => [
+        '/staff/team/members', '/staff/team/roles', '/staff/team/invitations',
+        '/staff/catalog/brands', '/staff/catalog/categories', '/staff/catalog/attributes',
+        '/catalog/brands', '/catalog/categories',
+        '/staff/inventory/locations',
+    ],
+    'platform' => [
+        '/team/admins', '/team/roles', '/team/invitations',
+        '/stores', '/stores/{store}/feature-grants', '/stores/{store}/exports',
+        '/legal-documents',
+    ],
+];
+
+const CURSOR_LISTS = [
+    'default' => ['/staff/catalog/products', '/catalog/products', '/staff/inventory/levels', '/staff/inventory/variants/{variant}/movements'],
+    'platform' => [],
+];
+
+it('documents every list as paged by page number or by cursor, never both and never neither', function (): void {
+    foreach (['default', 'platform'] as $api) {
+        $document = app(Generator::class)(Scramble::getGeneratorConfig($api));
+        $found = ['page' => [], 'cursor' => []];
+
+        foreach ($document['paths'] as $path => $operations) {
+            $list = $operations['get'] ?? null;
+            $meta = $list['responses'][200]['content']['application/json']['schema']['properties']['meta']['properties'] ?? null;
+            $parameters = array_column($list['parameters'] ?? [], 'name');
+
+            if ($meta === null && ! in_array('per_page', $parameters, true)) {
+                continue;
+            }
+
+            $type = in_array('page', $parameters, true) ? 'page' : 'cursor';
+            $found[$type][] = $path;
+
+            if ($type === 'page') {
+                expect($meta)->toHaveKeys(['total', 'last_page', 'current_page'], "{$path} is paged by number")->not->toHaveKey('next_cursor')
+                    ->and($parameters)->not->toContain('cursor')
+                    ->and($list['description'])->toContain('Paged by page number');
+            } else {
+                expect($meta)->toHaveKeys(['next_cursor', 'prev_cursor'], "{$path} is paged by cursor")->not->toHaveKey('total')
+                    ->and($parameters)->toContain('cursor')
+                    ->and($list['description'])->toContain('Paged by cursor');
+            }
+
+            expect($list['description'])->toContain('Up to '.config()->integer('api.pagination.max_per_page').' records per page');
+        }
+
+        expect($found['page'])->toEqualCanonicalizing(PAGE_NUMBER_LISTS[$api])
+            ->and($found['cursor'])->toEqualCanonicalizing(CURSOR_LISTS[$api]);
+    }
+});
+
+/*
  * Section 11: the docs are for development. Outside a developer's machine
  * they are shown only to platform admins signed in with two-factor
  * authentication, through their bearer token.

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tenant\Catalog\Http\Requests;
 
-use App\Shared\Http\PaginatedListRequest;
+use App\Shared\Http\CursorListRequest;
 use App\Tenant\Catalog\Models\Brand;
 use App\Tenant\Catalog\Models\Category;
 use App\Tenant\Catalog\Models\Product;
@@ -14,7 +14,7 @@ use Illuminate\Validation\Rule;
 /**
  * A page of the products customers can buy, optionally searched or narrowed to a category or brand. Anyone may ask.
  */
-final class ListStorefrontProductsRequest extends PaginatedListRequest
+final class ListStorefrontProductsRequest extends CursorListRequest
 {
     public function authorize(): bool
     {

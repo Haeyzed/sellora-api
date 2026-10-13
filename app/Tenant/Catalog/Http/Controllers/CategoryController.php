@@ -44,7 +44,7 @@ final class CategoryController extends Controller
             ->when($request->wantsTrashed(), static fn ($query) => $query->onlyTrashed());
         $request->applyParentFilter($query);
 
-        return CategoryResource::collection($query->orderBy('position')->orderBy('slug')->orderBy('id')->cursorPaginate($request->perPage()));
+        return CategoryResource::collection($query->orderBy('position')->orderBy('slug')->orderBy('id')->paginate($request->perPage()));
     }
 
     /**

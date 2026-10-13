@@ -29,6 +29,7 @@ use App\Shared\Auth\TwoFactor\TwoFactorChallenges;
 use App\Shared\Exceptions\ApiErrorResponseDocumentation;
 use App\Shared\Features\Contracts\FeatureSource;
 use App\Shared\Features\FeatureRegistry;
+use App\Shared\Http\PaginationDocumentation;
 use App\Shared\Idempotency\IdempotencyKeyRetention;
 use App\Shared\Money\PricedRecordsRegistry;
 use App\Shared\Privacy\PersonalDataRegistry;
@@ -207,6 +208,8 @@ final class AppServiceProvider extends ServiceProvider
     private function registerApiDocumentation(): void
     {
         Scramble::registerExtension(ApiErrorResponseDocumentation::class);
+        // Before registering the other APIs, which copy the default API's operation transformers.
+        Scramble::configure()->withOperationTransformers(PaginationDocumentation::class);
 
         // "Try it" sends requests here: the central APIs to the first central domain, the store API to a store's subdomain chosen in the docs.
         $scheme = parse_url(config()->string('app.url'), PHP_URL_SCHEME) ?: 'https';

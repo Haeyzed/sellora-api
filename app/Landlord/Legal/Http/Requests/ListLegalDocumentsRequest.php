@@ -7,14 +7,14 @@ namespace App\Landlord\Legal\Http\Requests;
 use App\Landlord\Identity\Http\Requests\ActsAsPlatformAdmin;
 use App\Landlord\Legal\Enums\LegalDocumentType;
 use App\Landlord\Legal\Models\LegalDocument;
-use App\Shared\Http\PaginatedListRequest;
+use App\Shared\Http\PageListRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
 
 /**
  * A page of legal document versions, drafts included, optionally of one type.
  */
-final class ListLegalDocumentsRequest extends PaginatedListRequest
+final class ListLegalDocumentsRequest extends PageListRequest
 {
     use ActsAsPlatformAdmin;
 

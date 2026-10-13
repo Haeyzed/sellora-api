@@ -45,7 +45,7 @@ final class TeamMemberController extends Controller
             ->when($request->activeFilter() !== null, static fn ($query) => $query->where('is_active', $request->activeFilter()))
             ->orderBy('name')
             ->orderBy('id')
-            ->cursorPaginate($request->perPage());
+            ->paginate($request->perPage());
 
         return TeamMemberResource::collection($staffMembers);
     }

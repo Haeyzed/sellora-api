@@ -38,7 +38,7 @@ final class ManagedStoreController extends Controller
             }))
             ->orderByDesc('created_at')
             ->orderByDesc('id')
-            ->cursorPaginate($request->perPage());
+            ->paginate($request->perPage());
 
         return ManagedStoreResource::collection($stores);
     }

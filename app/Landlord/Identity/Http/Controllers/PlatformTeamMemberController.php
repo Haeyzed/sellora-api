@@ -42,7 +42,7 @@ final class PlatformTeamMemberController extends Controller
      */
     public function index(ListPlatformTeamRequest $request): AnonymousResourceCollection
     {
-        $platformAdmins = PlatformAdmin::query()->with('roles')->orderBy('name')->orderBy('id')->cursorPaginate($request->perPage());
+        $platformAdmins = PlatformAdmin::query()->with('roles')->orderBy('name')->orderBy('id')->paginate($request->perPage());
 
         return PlatformTeamMemberResource::collection($platformAdmins);
     }

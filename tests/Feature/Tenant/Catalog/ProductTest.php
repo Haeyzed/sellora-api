@@ -352,6 +352,34 @@ it('lists products newest first, by status, brand, category or the trash, a page
         ->and(productRequest('GET', '?trashed=1')->json('data'))->toHaveCount(0);
 });
 
+/*
+ * Section 11: large, fast-growing lists are paged by cursor, next and
+ * previous only, with no total, so deep pages stay fast and rows don't shift.
+ */
+it('pages products by cursor, with no total and a maximum page size', function (): void {
+    $ids = [];
+
+    foreach (['First', 'Second', 'Third'] as $name) {
+        $ids[] = productRequest('POST', data: newProduct(['name' => ['en' => $name]]))->json('data.id');
+    }
+
+    $firstPage = productRequest('GET', '?per_page=2')->assertOk();
+    expect(array_column($firstPage->json('data'), 'id'))->toBe([$ids[2], $ids[1]])
+        ->and($firstPage->json('meta'))->not->toHaveKey('total')->not->toHaveKey('last_page')
+        ->and($firstPage->json('meta.prev_cursor'))->toBeNull();
+
+    $secondPage = productRequest('GET', '?per_page=2&cursor='.$firstPage->json('meta.next_cursor'))->assertOk();
+    expect(array_column($secondPage->json('data'), 'id'))->toBe([$ids[0]])
+        ->and($secondPage->json('meta.next_cursor'))->toBeNull();
+
+    $backAgain = productRequest('GET', '?per_page=2&cursor='.$secondPage->json('meta.prev_cursor'))->assertOk();
+    expect(array_column($backAgain->json('data'), 'id'))->toBe([$ids[2], $ids[1]]);
+
+    $maximum = config()->integer('api.pagination.max_per_page');
+    productRequest('GET', '?per_page='.$maximum)->assertOk();
+    productRequest('GET', '?per_page='.($maximum + 1))->assertUnprocessable()->assertJsonValidationErrors('per_page');
+});
+
 it('lets catalog.view look but not change', function (): void {
     $product = productRequest('POST', data: newProduct())->json('data');
 

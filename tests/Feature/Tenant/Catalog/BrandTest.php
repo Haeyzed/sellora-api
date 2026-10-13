@@ -127,16 +127,30 @@ it('moves a brand to the trash, where it is kept, freeing its slug, and restores
     brandRequest('GET')->assertJsonCount(2, 'data');
 });
 
-it('lists brands a page at a time, sorted by slug', function (): void {
+/*
+ * Section 11: small dashboard lists are paged by number, with a total and a
+ * last page, so a table can show "page 2 of 2" and jump to any page.
+ */
+it('lists brands by page number, sorted by slug, with a total and a maximum page size', function (): void {
     foreach (['Zebra', 'Apple', 'Mango'] as $name) {
         brandRequest('POST', data: ['name' => ['en' => $name]])->assertCreated();
     }
 
     $firstPage = brandRequest('GET', '?per_page=2')->assertOk();
-    expect(array_column($firstPage->json('data'), 'slug'))->toBe(['apple', 'mango']);
+    expect(array_column($firstPage->json('data'), 'slug'))->toBe(['apple', 'mango'])
+        ->and($firstPage->json('meta'))->toMatchArray(['current_page' => 1, 'last_page' => 2, 'per_page' => 2, 'total' => 3])
+        ->and($firstPage->json('meta'))->not->toHaveKey('next_cursor');
 
-    $cursor = $firstPage->json('meta.next_cursor');
-    expect(array_column(brandRequest('GET', '?per_page=2&cursor='.$cursor)->json('data'), 'slug'))->toBe(['zebra']);
+    $secondPage = brandRequest('GET', '?per_page=2&page=2')->assertOk();
+    expect(array_column($secondPage->json('data'), 'slug'))->toBe(['zebra'])
+        ->and($secondPage->json('meta'))->toMatchArray(['current_page' => 2, 'total' => 3]);
+
+    expect(brandRequest('GET', '?per_page=2&page=3')->assertOk()->json('data'))->toBe([]);
+
+    $maximum = config()->integer('api.pagination.max_per_page');
+    brandRequest('GET', '?per_page='.$maximum)->assertOk();
+    brandRequest('GET', '?per_page='.($maximum + 1))->assertUnprocessable()->assertJsonValidationErrors('per_page');
+    brandRequest('GET', '?page=0')->assertUnprocessable()->assertJsonValidationErrors('page');
 });
 
 it('lets catalog.view look but not change, and refuses staff without it', function (): void {

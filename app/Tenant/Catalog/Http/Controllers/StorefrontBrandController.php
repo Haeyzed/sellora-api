@@ -23,6 +23,6 @@ final class StorefrontBrandController extends Controller
      */
     public function index(ListStorefrontCatalogRequest $request): AnonymousResourceCollection
     {
-        return StorefrontBrandResource::collection(Brand::query()->with('media')->orderBy('slug')->orderBy('id')->cursorPaginate($request->perPage()));
+        return StorefrontBrandResource::collection(Brand::query()->with('media')->orderBy('slug')->orderBy('id')->paginate($request->perPage()));
     }
 }

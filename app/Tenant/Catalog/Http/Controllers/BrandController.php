@@ -39,7 +39,7 @@ final class BrandController extends Controller
             ->when($request->wantsTrashed(), static fn ($query) => $query->onlyTrashed())
             ->orderBy('slug')
             ->orderBy('id')
-            ->cursorPaginate($request->perPage());
+            ->paginate($request->perPage());
 
         return BrandResource::collection($brands);
     }

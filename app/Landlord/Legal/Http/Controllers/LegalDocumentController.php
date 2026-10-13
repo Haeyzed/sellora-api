@@ -35,7 +35,7 @@ final class LegalDocumentController extends Controller
         $legalDocuments = LegalDocument::query()
             ->when($request->type() !== null, static fn ($query) => $query->where('type', $request->type()))
             ->orderByDesc('id')
-            ->cursorPaginate($request->perPage());
+            ->paginate($request->perPage());
 
         return ManagedLegalDocumentResource::collection($legalDocuments);
     }

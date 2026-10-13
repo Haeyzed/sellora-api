@@ -11,7 +11,7 @@ use App\Landlord\Subscriptions\Exceptions\FeatureGrantNotActiveException;
 use App\Landlord\Subscriptions\Models\FeatureGrant;
 use App\Landlord\Tenancy\Http\Requests\ChangeStoreAllowancesRequest;
 use App\Landlord\Tenancy\Http\Requests\GrantFeatureRequest;
-use App\Landlord\Tenancy\Http\Requests\ViewStoreRequest;
+use App\Landlord\Tenancy\Http\Requests\ListFeatureGrantsRequest;
 use App\Landlord\Tenancy\Http\Resources\FeatureGrantResource;
 use App\Landlord\Tenancy\Models\Tenant;
 use App\Shared\Http\Controller;
@@ -29,9 +29,9 @@ final class FeatureGrantController extends Controller
      *
      * Needs the stores.view permission. Active and ended, newest first.
      */
-    public function index(ViewStoreRequest $request, Tenant $store): AnonymousResourceCollection
+    public function index(ListFeatureGrantsRequest $request, Tenant $store): AnonymousResourceCollection
     {
-        return FeatureGrantResource::collection($store->featureGrants()->with(['grantedBy', 'revokedBy'])->orderByDesc('id')->get());
+        return FeatureGrantResource::collection($store->featureGrants()->with(['grantedBy', 'revokedBy'])->orderByDesc('id')->paginate($request->perPage()));
     }
 
     /**

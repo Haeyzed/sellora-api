@@ -27,7 +27,7 @@ final class StorefrontCategoryController extends Controller
             ->with(['parent:id,public_id', 'media'])
             ->orderBy('position')
             ->orderBy('id')
-            ->cursorPaginate($request->perPage());
+            ->paginate($request->perPage());
 
         return StorefrontCategoryResource::collection($categories);
     }

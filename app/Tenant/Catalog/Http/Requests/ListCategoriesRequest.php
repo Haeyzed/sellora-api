@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tenant\Catalog\Http\Requests;
 
-use App\Shared\Http\PaginatedListRequest;
+use App\Shared\Http\PageListRequest;
 use App\Tenant\Catalog\Models\Category;
 use App\Tenant\Identity\Concerns\ActsAsStaffMember;
 use Illuminate\Database\Eloquent\Builder;
@@ -13,7 +13,7 @@ use Illuminate\Validation\Rule;
 /**
  * A page of the store's categories: all of them, the top level, one category's subcategories, or those in the trash.
  */
-final class ListCategoriesRequest extends PaginatedListRequest
+final class ListCategoriesRequest extends PageListRequest
 {
     use ActsAsStaffMember;
 

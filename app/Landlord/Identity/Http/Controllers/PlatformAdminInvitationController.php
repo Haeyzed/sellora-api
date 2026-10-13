@@ -37,7 +37,7 @@ final class PlatformAdminInvitationController extends Controller
             ->open()
             ->with(['roles', 'invitedBy'])
             ->orderByDesc('id')
-            ->cursorPaginate($request->perPage());
+            ->paginate($request->perPage());
 
         return PlatformAdminInvitationResource::collection($platformAdminInvitations);
     }

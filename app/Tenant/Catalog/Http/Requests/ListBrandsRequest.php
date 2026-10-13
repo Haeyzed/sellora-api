@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Tenant\Catalog\Http\Requests;
 
-use App\Shared\Http\PaginatedListRequest;
+use App\Shared\Http\PageListRequest;
 use App\Tenant\Catalog\Models\Brand;
 use App\Tenant\Identity\Concerns\ActsAsStaffMember;
 
 /**
  * A page of the store's brands, or of the brands in the trash.
  */
-final class ListBrandsRequest extends PaginatedListRequest
+final class ListBrandsRequest extends PageListRequest
 {
     use ActsAsStaffMember;
 

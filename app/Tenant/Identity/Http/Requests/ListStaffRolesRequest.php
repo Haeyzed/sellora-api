@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Tenant\Identity\Http\Requests;
 
-use App\Shared\Http\PaginatedListRequest;
+use App\Shared\Http\PageListRequest;
 use App\Tenant\Identity\Concerns\ActsAsStaffMember;
 use App\Tenant\Identity\Enums\StaffPermission;
 
 /**
  * A page of the store's roles.
  */
-final class ListStaffRolesRequest extends PaginatedListRequest
+final class ListStaffRolesRequest extends PageListRequest
 {
     use ActsAsStaffMember;
 

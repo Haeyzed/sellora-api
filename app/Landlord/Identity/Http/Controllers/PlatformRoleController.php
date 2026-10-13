@@ -35,7 +35,7 @@ final class PlatformRoleController extends Controller
      */
     public function index(ListPlatformTeamRequest $request): AnonymousResourceCollection
     {
-        return PlatformRoleResource::collection(PlatformRoleQueries::withAdminCounts()->orderBy('name')->orderBy('id')->cursorPaginate($request->perPage()));
+        return PlatformRoleResource::collection(PlatformRoleQueries::withAdminCounts()->orderBy('name')->orderBy('id')->paginate($request->perPage()));
     }
 
     /**

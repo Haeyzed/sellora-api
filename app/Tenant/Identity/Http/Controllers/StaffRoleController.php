@@ -38,7 +38,7 @@ final class StaffRoleController extends Controller
      */
     public function index(ListStaffRolesRequest $request): AnonymousResourceCollection
     {
-        $roles = StaffRoleQueries::withStaffCounts()->orderBy('name')->orderBy('id')->cursorPaginate($request->perPage());
+        $roles = StaffRoleQueries::withStaffCounts()->orderBy('name')->orderBy('id')->paginate($request->perPage());
 
         return StaffRoleResource::collection($roles);
     }

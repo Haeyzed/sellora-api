@@ -9,6 +9,7 @@ use App\Landlord\Tenancy\Actions\OpenStoreExport;
 use App\Landlord\Tenancy\Actions\RequestStoreExport;
 use App\Landlord\Tenancy\Exceptions\StoreStatusConflictException;
 use App\Landlord\Tenancy\Http\Requests\ExportStoreRequest;
+use App\Landlord\Tenancy\Http\Requests\ListStoreExportsRequest;
 use App\Landlord\Tenancy\Http\Resources\StoreExportResource;
 use App\Landlord\Tenancy\Models\StoreExport;
 use App\Landlord\Tenancy\Models\Tenant;
@@ -34,15 +35,15 @@ final class StoreExportController extends Controller
      * Needs the stores.export permission. Only the exports you requested,
      * newest first; each is kept for 7 days.
      */
-    public function index(ExportStoreRequest $request, Tenant $store): AnonymousResourceCollection
+    public function index(ListStoreExportsRequest $request, Tenant $store): AnonymousResourceCollection
     {
         $storeExports = StoreExport::query()
             ->where('tenant_id', $store->id)
             ->requestedBy($request->requester())
             ->orderByDesc('id')
-            ->get();
+            ->paginate($request->perPage());
 
-        return StoreExportResource::collection($storeExports->map(PlatformStoreExports::summaryOf(...)));
+        return StoreExportResource::collection($storeExports->through(PlatformStoreExports::summaryOf(...)));
     }
 
     /**

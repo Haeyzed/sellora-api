@@ -7,7 +7,7 @@ namespace App\Landlord\Tenancy\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Seeing one store and its grants and limit overrides.
+ * Seeing one store and its limit overrides.
  */
 final class ViewStoreRequest extends FormRequest
 {

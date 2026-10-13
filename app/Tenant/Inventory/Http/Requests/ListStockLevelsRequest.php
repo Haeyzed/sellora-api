@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tenant\Inventory\Http\Requests;
 
-use App\Shared\Http\PaginatedListRequest;
+use App\Shared\Http\CursorListRequest;
 use App\Tenant\Catalog\Models\Product;
 use App\Tenant\Identity\Concerns\ActsAsStaffMember;
 use App\Tenant\Inventory\Models\StockItem;
@@ -13,7 +13,7 @@ use Illuminate\Validation\Rule;
 /**
  * A page of stock levels at one location, optionally only those running low or out of stock, or one product's.
  */
-final class ListStockLevelsRequest extends PaginatedListRequest
+final class ListStockLevelsRequest extends CursorListRequest
 {
     use ActsAsStaffMember;
     use ChoosesStockLocation;
