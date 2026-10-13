@@ -20,6 +20,7 @@ require __DIR__.'/tenant/staff.php';
 require __DIR__.'/tenant/customers.php';
 require __DIR__.'/tenant/catalog.php';
 require __DIR__.'/tenant/inventory.php';
+require __DIR__.'/tenant/pricing.php';
 require __DIR__.'/tenant/promotions.php';
 require __DIR__.'/tenant/cart.php';
 require __DIR__.'/tenant/checkout.php';

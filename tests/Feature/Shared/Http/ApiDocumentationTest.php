@@ -49,6 +49,7 @@ const PAGE_NUMBER_LISTS = [
         '/staff/catalog/brands', '/staff/catalog/categories', '/staff/catalog/attributes',
         '/catalog/brands', '/catalog/categories',
         '/staff/inventory/locations',
+        '/staff/pricing/tax-classes', '/staff/pricing/tax-rates',
     ],
     'platform' => [
         '/team/admins', '/team/roles', '/team/invitations',

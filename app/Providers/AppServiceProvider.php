@@ -89,6 +89,12 @@ use App\Tenant\Inventory\Models\StockMovement;
 use App\Tenant\Inventory\Models\StockReservation;
 use App\Tenant\Inventory\SettledReservationRetention;
 use App\Tenant\Inventory\StockLedgerReconciliation;
+use App\Tenant\Pricing\Enums\PricingPermission;
+use App\Tenant\Pricing\Models\TaxClass;
+use App\Tenant\Pricing\Models\TaxRate;
+use App\Tenant\Pricing\Models\VariantTaxClass;
+use App\Tenant\Pricing\PricingStoreTables;
+use App\Tenant\Pricing\TaxCalculatorRegistry;
 use App\Tenant\Settings\Enums\SettingsPermission;
 use App\Tenant\Settings\Models\StoreSettings;
 use App\Tenant\Settings\Policies\StoreLifecyclePolicy;
@@ -148,6 +154,8 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(StoreStockLedger::class, StockLedgerReconciliation::class);
         $this->app->bind(StoreStockReservations::class, ExpiredReservationSweep::class);
         $this->app->bind(StockLocationSelector::class, DefaultStockLocationSelector::class);
+        // One list of country tax plug-ins, filled in by modules' and integrations' service providers.
+        $this->app->singleton(TaxCalculatorRegistry::class);
         $this->app->bind(TwoFactorRequirement::class, StoreTwoFactorRequirement::class);
         // Per request or job, so a long-running worker never reuses one store's languages for the next.
         $this->app->scoped(StoreLocales::class);
@@ -164,6 +172,7 @@ final class AppServiceProvider extends ServiceProvider
             $catalogue->register(SettingsPermission::class);
             $catalogue->register(CatalogPermission::class);
             $catalogue->register(InventoryPermission::class);
+            $catalogue->register(PricingPermission::class);
 
             return $catalogue;
         });
@@ -285,7 +294,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->singleton(StoreExportRegistry::class, static function (Application $app): StoreExportRegistry {
             $registry = new StoreExportRegistry;
 
-            foreach ([SharedStoreTables::class, IdentityStoreTables::class, SettingsStoreTables::class, CustomerStoreTables::class, DeliveryStoreTables::class, CatalogStoreTables::class, InventoryStoreTables::class] as $storeTables) {
+            foreach ([SharedStoreTables::class, IdentityStoreTables::class, SettingsStoreTables::class, CustomerStoreTables::class, DeliveryStoreTables::class, CatalogStoreTables::class, InventoryStoreTables::class, PricingStoreTables::class] as $storeTables) {
                 $app->make($storeTables)->classify($registry);
             }
 
@@ -333,6 +342,9 @@ final class AppServiceProvider extends ServiceProvider
             'stock_item' => StockItem::class,
             'stock_movement' => StockMovement::class,
             'stock_reservation' => StockReservation::class,
+            'tax_class' => TaxClass::class,
+            'tax_rate' => TaxRate::class,
+            'variant_tax_class' => VariantTaxClass::class,
         ]);
     }
 

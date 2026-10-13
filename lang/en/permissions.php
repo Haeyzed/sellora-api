@@ -36,6 +36,11 @@ return [
         'costs' => 'See and change what each unit costs the store. Costs are internal and never shown to customers.',
     ],
 
+    'pricing' => [
+        'view' => 'See tax classes, tax rates, which class each variant is in, and the store\'s currencies and exchange rates.',
+        'manage' => 'Change tax classes, tax rates, variants\' tax classes, the store\'s currencies, exchange rates and fixed prices.',
+    ],
+
     'settings' => [
         'view' => 'See the store\'s settings: name, country, currency, languages, tax mode, units and contact details.',
         'manage' => 'Change the store\'s settings. Requiring two-factor authentication for staff stays with the owner.',

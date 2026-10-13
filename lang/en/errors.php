@@ -130,5 +130,8 @@ return [
     'product_image_order_mismatch' => 'List every image of the product exactly once.',
     'product_needs_a_variant' => 'A product needs at least one variant outside the trash. Move the product to the trash instead.',
     'attribute_value_in_use' => 'A variant, perhaps one in the trash, has this value. Change that variant first.',
+    'tax_class_in_use' => 'This tax class is still used: by a variant (perhaps one in the trash), by a tax rate, as the default class, or for shipping. Move those to another class first.',
+    'tax_class_name_taken' => 'Another tax class already has this name.',
+    'tax_rate_exists' => 'This tax class already has a rate for that region. Change that rate instead.',
 
 ];
