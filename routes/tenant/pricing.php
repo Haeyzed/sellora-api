@@ -33,6 +33,8 @@ Route::prefix('staff/pricing')
         Route::apiResource('tax-rates', TaxRateController::class)->parameters(['tax-rates' => 'taxRate']);
         Route::get('variants/{variant}', [VariantPricingController::class, 'show'])->name('variants.show')->withTrashed();
         Route::patch('variants/{variant}', [VariantPricingController::class, 'update'])->name('variants.update')->withTrashed();
+        Route::put('variants/{variant}/prices/{currency}', [VariantPricingController::class, 'setFixedPrice'])->name('variants.prices.update')->withTrashed();
+        Route::delete('variants/{variant}/prices/{currency}', [VariantPricingController::class, 'removeFixedPrice'])->name('variants.prices.destroy')->withTrashed();
         Route::get('currencies', [StoreCurrencyController::class, 'index'])->name('currencies.index');
         Route::post('currencies', [StoreCurrencyController::class, 'store'])->name('currencies.store');
         Route::get('currencies/{currency}', [StoreCurrencyController::class, 'show'])->name('currencies.show');

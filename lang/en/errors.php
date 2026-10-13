@@ -135,5 +135,6 @@ return [
     'tax_rate_exists' => 'This tax class already has a rate for that region. Change that rate instead.',
     'currency_is_base' => 'This is the store\'s own currency; prices are already in it.',
     'store_currency_exists' => 'The store already has this currency. Change it instead.',
+    'currency_not_offered' => 'Prices aren\'t available in :currency right now.',
 
 ];

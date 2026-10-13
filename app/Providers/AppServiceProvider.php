@@ -91,6 +91,7 @@ use App\Tenant\Inventory\Models\StockReservation;
 use App\Tenant\Inventory\SettledReservationRetention;
 use App\Tenant\Inventory\StockLedgerReconciliation;
 use App\Tenant\Pricing\Enums\PricingPermission;
+use App\Tenant\Pricing\Models\FixedPrice;
 use App\Tenant\Pricing\Models\StoreCurrency;
 use App\Tenant\Pricing\Models\TaxClass;
 use App\Tenant\Pricing\Models\TaxRate;
@@ -351,6 +352,7 @@ final class AppServiceProvider extends ServiceProvider
             'tax_rate' => TaxRate::class,
             'variant_tax_class' => VariantTaxClass::class,
             'store_currency' => StoreCurrency::class,
+            'fixed_price' => FixedPrice::class,
         ]);
     }
 
