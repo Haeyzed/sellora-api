@@ -100,6 +100,19 @@ arch('integrations use Geography, never the world reference data package')
     ->expect('Integrations')
     ->not->toUse('Nnjeim\World');
 
+arch('only the Geography wrapper uses the address format package, so it stays replaceable')
+    ->expect('App')
+    ->not->toUse('CommerceGuys\Addressing')
+    ->ignoring('App\Shared\Geography');
+
+arch('modules use Geography, never the address format package')
+    ->expect('Modules')
+    ->not->toUse('CommerceGuys\Addressing');
+
+arch('integrations use Geography, never the address format package')
+    ->expect('Integrations')
+    ->not->toUse('CommerceGuys\Addressing');
+
 arch('only the exchange rates reader touches the central market rates, which stores read by ISO code through it')
     ->expect('App\Shared\Money\ExchangeRates\Models\ExchangeRate')
     ->toOnlyBeUsedIn('App\Shared\Money\ExchangeRates');

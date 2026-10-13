@@ -32,6 +32,8 @@ use Laravel\Sanctum\HasApiTokens;
  * @property string|null $phone In E.164 format, such as +2348012345678.
  * @property string|null $locale One of the store's content languages; emails to the customer use it.
  * @property CarbonImmutable|null $email_verified_at When the customer proved they receive mail at their current email.
+ * @property int|null $default_shipping_address_id Always one of the customer's own addresses (a database constraint).
+ * @property int|null $default_billing_address_id Always one of the customer's own addresses (a database constraint).
  * @property string $password
  * @property bool $is_active
  * @property CarbonImmutable|null $last_signed_in_at
@@ -39,6 +41,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property CarbonImmutable|null $updated_at
  * @property CarbonImmutable|null $deleted_at
  * @property-read Collection<int, CustomerEmailToken> $emailTokens
+ * @property-read Collection<int, CustomerAddress> $addresses
  */
 final class Customer extends User implements HasApiTokensContract, HasLocalePreference
 {
@@ -98,6 +101,14 @@ final class Customer extends User implements HasApiTokensContract, HasLocalePref
     public function emailTokens(): HasMany
     {
         return $this->hasMany(CustomerEmailToken::class);
+    }
+
+    /**
+     * @return HasMany<CustomerAddress, $this>
+     */
+    public function addresses(): HasMany
+    {
+        return $this->hasMany(CustomerAddress::class);
     }
 
     protected static function newFactory(): CustomerFactory

@@ -13,6 +13,7 @@ use App\Landlord\Tenancy\Console\SyncPermissionsCommand;
 use App\Shared\Exceptions\ApiErrorRenderer;
 use App\Shared\Features\Http\Middleware\EnsureIntegrationIsEnabled;
 use App\Shared\Features\Http\Middleware\EnsureModuleIsEnabled;
+use App\Shared\Geography\ListStateListDifferencesCommand;
 use App\Shared\Http\Middleware\AddSecurityHeaders;
 use App\Shared\Http\Middleware\ForceJsonResponse;
 use App\Shared\Idempotency\EnsureRequestIsIdempotent;
@@ -70,6 +71,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ReleaseExpiredReservationsCommand::class,
         PurgeExpiredRecordsCommand::class,
         RefreshExchangeRatesCommand::class,
+        ListStateListDifferencesCommand::class,
     ])
     ->withMiddleware(static function (Middleware $middleware): void {
         $middleware->prepend(ForceJsonResponse::class);

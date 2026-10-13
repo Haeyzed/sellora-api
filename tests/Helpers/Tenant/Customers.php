@@ -89,6 +89,39 @@ function emailedCustomerToken(CustomerEmailTokenPurpose $purpose, string $email)
     return is_string($query['token'] ?? null) ? $query['token'] : throw new LogicException('The emailed link has no token.');
 }
 
+/*
+|--------------------------------------------------------------------------
+| For CustomerAddressTest.php
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function lagosAddress(array $overrides = []): array
+{
+    return [...['recipient_name' => 'Ada Lovelace', 'line1' => '12 Admiralty Way', 'city' => 'Lekki', 'state' => 'LA', 'postal_code' => '106104', 'country' => 'NG'], ...$overrides];
+}
+
+/**
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function tokyoAddress(array $overrides = []): array
+{
+    return [...['recipient_name' => 'Ada Lovelace', 'line1' => '2-1-1 Nihonbashi', 'state' => '13', 'postal_code' => '103-0027', 'country' => 'JP'], ...$overrides];
+}
+
+/**
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function londonAddress(array $overrides = []): array
+{
+    return [...['recipient_name' => 'Ada Lovelace', 'line1' => '10 Downing Street', 'city' => 'London', 'postal_code' => 'sw1a 1aa', 'country' => 'gb'], ...$overrides];
+}
+
 /**
  * A customer of the first store, created directly.
  *

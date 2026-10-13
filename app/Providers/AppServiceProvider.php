@@ -29,6 +29,7 @@ use App\Shared\Auth\TwoFactor\TwoFactorChallenges;
 use App\Shared\Exceptions\ApiErrorResponseDocumentation;
 use App\Shared\Features\Contracts\FeatureSource;
 use App\Shared\Features\FeatureRegistry;
+use App\Shared\Geography\AddressFormats;
 use App\Shared\Http\PaginationDocumentation;
 use App\Shared\Idempotency\IdempotencyKeyRetention;
 use App\Shared\Money\ExchangeRates\ExchangeRateRetention;
@@ -164,6 +165,8 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(TwoFactorRequirement::class, StoreTwoFactorRequirement::class);
         // Per request or job, so a long-running worker never reuses one store's languages for the next.
         $this->app->scoped(StoreLocales::class);
+        // Per request or job: it remembers the formats it has read, and the states lists can be reseeded.
+        $this->app->scoped(AddressFormats::class);
     }
 
     /**

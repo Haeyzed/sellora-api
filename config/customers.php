@@ -16,6 +16,9 @@ declare(strict_types=1);
 
 return [
 
+    /* The most addresses one customer can save. */
+    'max_addresses' => (int) env('CUSTOMER_MAX_ADDRESSES', 20),
+
     /* Proves the customer receives mail at their account's email. Sent at sign-up and on request. */
     'email_verification' => [
         'url' => env('CUSTOMER_EMAIL_VERIFICATION_URL', 'https://{domain}/verify-email?token={token}'),

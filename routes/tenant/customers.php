@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Tenant\Customers\Http\Controllers\CustomerAccountController;
+use App\Tenant\Customers\Http\Controllers\CustomerAddressController;
 use App\Tenant\Customers\Http\Controllers\EmailChangeController;
 use App\Tenant\Customers\Http\Controllers\EmailVerificationController;
 use App\Tenant\Customers\Models\Customer;
@@ -19,6 +20,7 @@ Route::post('customer/auth/email-verifications', [EmailVerificationController::c
 
 Route::prefix('customer/account')->name('customer.account.')->middleware(['auth:'.Customer::GUARD, 'throttle:api'])->group(static function (): void {
     Route::patch('/', [CustomerAccountController::class, 'update'])->name('update');
+    Route::apiResource('addresses', CustomerAddressController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
 
     Route::middleware('throttle:account-emails')->group(static function (): void {
         Route::post('email-verifications', [EmailVerificationController::class, 'store'])->name('email-verifications.store');

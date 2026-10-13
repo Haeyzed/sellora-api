@@ -140,6 +140,8 @@ it('documents every customer endpoint', function (): void {
         '/customer/account/email-changes' => ['post'],
         '/customer/account/email-changes/confirmations' => ['post'],
         '/customer/auth/email-verifications' => ['post'],
+        '/customer/account/addresses' => ['get', 'post'],
+        '/customer/account/addresses/{address}' => ['get', 'put', 'delete'],
     ];
 
     foreach ($expected as $path => $methods) {
@@ -150,6 +152,10 @@ it('documents every customer endpoint', function (): void {
     expect(json_encode($store['paths']['/customer/auth/email-verifications']['post']['responses'][422]))->toContain('customer_email_link_invalid')
         ->and(json_encode($store['paths']['/customer/account/email-verifications']['post']['responses'][409]))->toContain('customer_email_already_verified')
         ->and(json_encode($store['paths']['/customer/account/email-changes']['post']['responses'][422]))->toContain('current_password_incorrect')
+        ->and(json_encode($store['paths']['/customer/account/addresses']['post']['responses'][422]))->toContain('customer_address_limit_reached')
+        ->and($store['paths']['/customer/account/addresses']['post']['requestBody']['content']['application/json']['schema']['$ref'])->toBe('#/components/schemas/CustomerAddressRequest')
+        ->and(array_keys($store['components']['schemas']['CustomerAddressRequest']['properties']))
+        ->toContain('recipient_name', 'line1', 'city', 'state', 'postal_code', 'country', 'phone', 'is_default_shipping', 'is_default_billing')
         ->and($store['paths']['/customer/auth/email-verifications']['post']['security'] ?? null)->toBe([]);
 });
 

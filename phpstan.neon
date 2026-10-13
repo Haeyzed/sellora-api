@@ -19,3 +19,7 @@ parameters:
         - integrations/*/tests/*
 
     tmpDir: storage/framework/cache/phpstan
+
+    # Corrected types for packages whose docblocks are wrong; each stub says what it corrects.
+    stubFiles:
+        - stubs/phpstan/commerceguys-addressing.stub
