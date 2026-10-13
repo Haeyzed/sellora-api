@@ -10,8 +10,10 @@
 # Third-party actions are pinned to a full commit hash, with the version in a
 # comment; Dependabot proposes updates (.github/dependabot.yml).
 #
-# No secrets: the test database accepts local connections without a password,
-# and the app key is generated for each run.
+# No secrets: the test database's password is made up for each run from the
+# run's ID (the database exists only for that run), and so is the app key.
+# The database checks passwords like a real server, so tests of a wrong
+# password mean what they say.
 
 name: CI
 
@@ -79,7 +81,7 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_DB: sellora_central_testing
-          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_PASSWORD: ci-run-${{ github.run_id }}-${{ github.run_attempt }}
         ports:
           - 5432:5432
         options: >-
@@ -122,6 +124,8 @@ jobs:
         run: composer install --no-interaction --no-progress --prefer-dist
 
       - name: Make a test .env
+        env:
+          TEST_DB_PASSWORD: ci-run-${{ github.run_id }}-${{ github.run_attempt }}
         # phpunit.xml sets the rest (testing databases, array cache and session, sync queue).
         # Keys are replaced in place: the first value of a key in .env wins, so appending would do nothing.
         run: |
@@ -130,11 +134,13 @@ jobs:
             -e 's/^DB_HOST=.*/DB_HOST=127.0.0.1/' \
             -e 's/^DB_PORT=.*/DB_PORT=5432/' \
             -e 's/^DB_USERNAME=.*/DB_USERNAME=postgres/' \
-            -e 's/^DB_PASSWORD=.*/DB_PASSWORD=/' \
+            -e "s/^DB_PASSWORD=.*/DB_PASSWORD=$TEST_DB_PASSWORD/" \
             .env
           php artisan key:generate --ansi
 
       - name: Check pg_trgm is available
+        env:
+          PGPASSWORD: ci-run-${{ github.run_id }}-${{ github.run_attempt }}
         run: psql -h 127.0.0.1 -U postgres -d sellora_central_testing -c "select name, default_version from pg_available_extensions where name = 'pg_trgm'" | grep pg_trgm
 
       - name: Pest
