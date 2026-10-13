@@ -163,10 +163,10 @@ it('reuses a test store\'s database for the next test store only once it is iden
         ->and(storeDatabaseContents($reused))->toBe(storeDatabaseContents($fresh));
 });
 
-it('never reuses a test store\'s database whose schema the test changed', function (): void {
+it('never reuses a test store\'s database whose schema the test changed', function (string $change): void {
     $changed = Tenant::factory()->create();
     StoreDatabaseTemplate::copyInto($changed);
-    $changed->run(static fn () => DB::statement('create index roles_by_guard on roles (guard_name)'));
+    $changed->run(static fn () => DB::unprepared($change));
     $changedDatabase = storeDatabaseIdentity($changed);
     deleteAllStores();
 
@@ -175,8 +175,17 @@ it('never reuses a test store\'s database whose schema the test changed', functi
 
     expect(storeDatabaseIdentity($next))->not->toBe($changedDatabase)
         ->and(DB::selectOne('select count(*) as found from pg_database where oid = ?', [$changedDatabase])->found)->toBe(0)
-        ->and($next->run(static fn (): array => DB::select("select 1 from pg_indexes where indexname = 'roles_by_guard'")))->toBe([]);
-});
+        ->and(storeDatabaseSnapshot($next))->toBe(storeDatabaseSnapshot(tap(Tenant::factory()->create(), static fn (Tenant $fresh) => StoreDatabaseTemplate::copyInto($fresh, mayReuse: false))));
+})->with([
+    'an index' => ['create index roles_by_guard on roles (guard_name)'],
+    'a column' => ['alter table roles add column note text'],
+    'a column default' => ["alter table roles alter column guard_name set default 'staff'"],
+    'a nullable column' => ['alter table roles alter column guard_name drop not null'],
+    'a constraint' => ['alter table roles add constraint roles_name_not_blank check (name <> \'\')'],
+    'a table without rows' => ['create table scratch (id int)'],
+    'a function' => ['create function scratch_answer() returns int language sql as $$ select 42 $$'],
+    'a trigger' => ['create function roles_touch() returns trigger language plpgsql as $$ begin return new; end $$; create trigger roles_touch before update on roles for each row execute function roles_touch()'],
+]);
 
 it('still reuses a test store\'s database when a stale connection to it was left open', function (): void {
     $used = Tenant::factory()->create();

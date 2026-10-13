@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\ParallelTesting;
 use Illuminate\Support\Str;
 use Tests\Support\ProcessDatabase;
+use Tests\Support\StoreDatabaseTemplate;
 use Tests\Support\TruncatesCentralDatabase;
 
 /**
@@ -59,6 +60,7 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
 
+        StoreDatabaseTemplate::useBasePrefix(config()->string('tenancy.database.prefix'));
         config(['tenancy.database.prefix' => config()->string('tenancy.database.prefix').(ParallelTesting::token() ?: '0').'_']);
 
         Http::preventStrayRequests();
