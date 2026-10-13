@@ -21,6 +21,11 @@ final class CustomerStoreTables implements ClassifiesStoreTables
         );
 
         $registry->table(
+            'marketing_consents',
+            include: ['id', 'public_id', 'customer_id', 'channel', 'contact', 'status', 'source', 'wording', 'locale', 'recorded_by_staff_id', 'created_at'],
+        );
+
+        $registry->table(
             'customer_notes',
             include: ['id', 'public_id', 'customer_id', 'author_staff_id', 'body', 'created_at'],
         );

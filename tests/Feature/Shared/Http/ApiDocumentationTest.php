@@ -47,7 +47,7 @@ const PAGE_NUMBER_LISTS = [
 ];
 
 const CURSOR_LISTS = [
-    'default' => ['/staff/catalog/products', '/catalog/products', '/staff/inventory/levels', '/staff/inventory/variants/{variant}/movements', '/staff/customers', '/staff/customers/{customer}/notes'],
+    'default' => ['/staff/catalog/products', '/catalog/products', '/staff/inventory/levels', '/staff/inventory/variants/{variant}/movements', '/staff/customers', '/staff/customers/{customer}/notes', '/staff/customers/{customer}/marketing-consents'],
     'platform' => ['/exchange-rates'],
 ];
 
@@ -150,6 +150,10 @@ it('documents every customer endpoint', function (): void {
         '/staff/customers/{customer}/addresses' => ['get'],
         '/staff/customers/{customer}/notes' => ['get', 'post'],
         '/staff/customers/{customer}/notes/{note}' => ['delete'],
+        '/customer/account/marketing-consents' => ['get'],
+        '/customer/account/marketing-consents/{channel}' => ['put'],
+        '/staff/customers/{customer}/marketing-consents' => ['get'],
+        '/staff/customers/{customer}/marketing-consents/withdrawals' => ['post'],
     ];
 
     foreach ($expected as $path => $methods) {
@@ -166,6 +170,8 @@ it('documents every customer endpoint', function (): void {
         ->toContain('recipient_name', 'line1', 'city', 'state', 'postal_code', 'country', 'phone', 'is_default_shipping', 'is_default_billing')
         ->and($store['paths']['/customer/auth/email-verifications']['post']['security'] ?? null)->toBe([])
         ->and(array_keys($store['paths']['/staff/customers']))->not->toContain('post')
+        ->and(json_encode($store['paths']['/customer/account/marketing-consents/{channel}']['put']['responses'][422]))->toContain('marketing_contact_missing')
+        ->and(array_keys($store['paths']['/staff/customers/{customer}/marketing-consents']))->toBe(['get'])
         ->and(collect($store['paths']['/staff/customers']['get']['parameters'])->pluck('name')->all())->toContain('search', 'is_active', 'email_verified', 'trashed', 'cursor')
         ->and($store['paths']['/staff/customers/{customer}']['patch']['description'])->toContain('Staff never change a customer\'s');
 });

@@ -8,23 +8,31 @@ use App\Tenant\Customers\Http\Controllers\CustomerAddressController;
 use App\Tenant\Customers\Http\Controllers\CustomerNoteController;
 use App\Tenant\Customers\Http\Controllers\EmailChangeController;
 use App\Tenant\Customers\Http\Controllers\EmailVerificationController;
+use App\Tenant\Customers\Http\Controllers\MarketingConsentController;
 use App\Tenant\Customers\Http\Controllers\StaffCustomerController;
+use App\Tenant\Customers\Http\Controllers\StaffMarketingConsentController;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Identity\Models\StaffMember;
+use App\Tenant\Settings\Http\Middleware\UseStoreLanguage;
 use Illuminate\Support\Facades\Route;
 
 /*
 | A customer's own account (Tenant\Customers), under /api/v1/customer.
+| Answers in the language the customer's device asks for, when the store
+| publishes in it, like the storefront catalog: messages, and the consent
+| text a customer agrees to.
 */
 
 // Opened from an emailed link, often on another device, so no sign-in.
 Route::post('customer/auth/email-verifications', [EmailVerificationController::class, 'verify'])
-    ->middleware('throttle:one-time-password')
+    ->middleware(['throttle:one-time-password', UseStoreLanguage::class])
     ->name('customer.auth.email-verifications.store');
 
-Route::prefix('customer/account')->name('customer.account.')->middleware(['auth:'.Customer::GUARD, 'throttle:api'])->group(static function (): void {
+Route::prefix('customer/account')->name('customer.account.')->middleware(['auth:'.Customer::GUARD, 'throttle:api', UseStoreLanguage::class])->group(static function (): void {
     Route::patch('/', [CustomerAccountController::class, 'update'])->name('update');
     Route::apiResource('addresses', CustomerAddressController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
+    Route::get('marketing-consents', [MarketingConsentController::class, 'index'])->name('marketing-consents.index');
+    Route::put('marketing-consents/{channel}', [MarketingConsentController::class, 'update'])->name('marketing-consents.update')->whereIn('channel', ['email', 'sms']);
 
     Route::middleware('throttle:account-emails')->group(static function (): void {
         Route::post('email-verifications', [EmailVerificationController::class, 'store'])->name('email-verifications.store');
@@ -55,4 +63,6 @@ Route::prefix('staff/customers')
         Route::get('{customer}/notes', [CustomerNoteController::class, 'index'])->name('notes.index')->withTrashed();
         Route::post('{customer}/notes', [CustomerNoteController::class, 'store'])->name('notes.store')->withTrashed();
         Route::delete('{customer}/notes/{note}', [CustomerNoteController::class, 'destroy'])->name('notes.destroy')->scopeBindings()->withTrashed();
+        Route::get('{customer}/marketing-consents', [StaffMarketingConsentController::class, 'index'])->name('marketing-consents.index')->withTrashed();
+        Route::post('{customer}/marketing-consents/withdrawals', [StaffMarketingConsentController::class, 'withdraw'])->name('marketing-consents.withdrawals.store')->withTrashed();
     });

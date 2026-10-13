@@ -20,6 +20,16 @@ return [
         'ignore' => 'If you didn\'t ask for this, you can ignore this email; nothing changes.',
     ],
 
+    /*
+     * The consent text shown to customers and guests. Its exact wording, in
+     * the language shown, is stored with each answer, so changing a text
+     * here never changes what someone agreed to.
+     */
+    'marketing_consent' => [
+        'email' => 'Send me news and offers from :store by email. I can unsubscribe at any time.',
+        'sms' => 'Send me news and offers from :store by text message. I can unsubscribe at any time.',
+    ],
+
     'email_changed' => [
         'subject' => 'Your account\'s email address was changed',
         'reason' => 'The email address of your account was changed, and every other device was signed out. Emails about your account now go to the new address.',
