@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 use App\Landlord\Identity\Models\PlatformAdmin;
 use App\Shared\Auth\AccessTokenIssuer;
+use Dedoc\Scramble\CacheableGenerator;
 use Dedoc\Scramble\Generator;
+use Dedoc\Scramble\GeneratorResult;
 use Dedoc\Scramble\Scramble;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 
@@ -17,13 +19,42 @@ uses(LazilyRefreshDatabase::class);
  */
 
 /**
+ * One API's documentation, generated once per test process: the routes and their docs never change during a run, and generating them is slow.
+ */
+function generatedApiDocumentation(string $api): GeneratorResult
+{
+    /** @var array<string, GeneratorResult> $generated */
+    static $generated = [];
+
+    return $generated[$api] ??= app(Generator::class)->generate(Scramble::getGeneratorConfig($api));
+}
+
+/**
+ * @return array<string, mixed>
+ */
+function documentedApi(string $api): array
+{
+    return generatedApiDocumentation($api)->spec();
+}
+
+/**
+ * Lets the docs routes serve the documentation generated for this process, through Scramble's own cache, so a test of who may see the docs doesn't generate them again.
+ */
+function serveGeneratedApiDocumentation(): void
+{
+    config(['scramble.cache.store' => 'array', 'scramble.cache.key' => 'api-documentation-test']);
+
+    foreach (['default', 'platform', 'registration'] as $api) {
+        CacheableGenerator::store(Scramble::getGeneratorConfig($api), generatedApiDocumentation($api));
+    }
+}
+
+/**
  * @return list<array<string, mixed>>
  */
 function documentedServers(string $api): array
 {
-    $document = app(Generator::class)(Scramble::getGeneratorConfig($api));
-
-    return $document['servers'];
+    return documentedApi($api)['servers'];
 }
 
 it('sends the central APIs to the central domain and the store API to a store subdomain the reader chooses', function (): void {
@@ -65,7 +96,7 @@ const CURSOR_LISTS = [
 
 it('documents every list as paged by page number or by cursor, never both and never neither', function (): void {
     foreach (['default', 'platform'] as $api) {
-        $document = app(Generator::class)(Scramble::getGeneratorConfig($api));
+        $document = documentedApi($api);
         $found = ['page' => [], 'cursor' => []];
 
         foreach ($document['paths'] as $path => $operations) {
@@ -103,8 +134,8 @@ it('documents every list as paged by page number or by cursor, never both and ne
  * the storefront's currency fallback spelled out and business errors listed.
  */
 it('documents every pricing, tax and exchange rate endpoint', function (): void {
-    $store = app(Generator::class)(Scramble::getGeneratorConfig('default'));
-    $platform = app(Generator::class)(Scramble::getGeneratorConfig('platform'));
+    $store = documentedApi('default');
+    $platform = documentedApi('platform');
 
     $expected = [
         '/staff/pricing/tax-classes' => ['get', 'post'],
@@ -150,6 +181,7 @@ const API_DOCS_PAGES = ['/docs/api', '/docs/api.json', '/docs/platform', '/docs/
 
 it('shows the API docs to anyone on a developer\'s machine', function (): void {
     app()->detectEnvironment(static fn (): string => 'local');
+    serveGeneratedApiDocumentation();
 
     foreach (API_DOCS_PAGES as $page) {
         $this->get(centralUrl($page))->assertOk();
@@ -158,6 +190,7 @@ it('shows the API docs to anyone on a developer\'s machine', function (): void {
 
 it('shows the API docs elsewhere only to a platform admin signed in with two-factor authentication', function (): void {
     app()->detectEnvironment(static fn (): string => 'production');
+    serveGeneratedApiDocumentation();
     $tokenOf = static fn (PlatformAdmin $admin): string => app(AccessTokenIssuer::class)->issue($admin, PlatformAdmin::GUARD, 'test')->plainTextToken;
 
     $withoutTwoFactor = PlatformAdmin::factory()->create();

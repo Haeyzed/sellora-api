@@ -26,6 +26,7 @@ use App\Tenant\Settings\Models\StoreSettings;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Testing\TestResponse;
 use Spatie\Activitylog\Models\Activity;
 use Tests\Support\TruncatesCentralDatabase;
@@ -173,6 +174,8 @@ it('closes its connection to the database server after creating or dropping a st
 });
 
 it('counts every wrong code, even though the request fails, and needs a new code after five', function (): void {
+    // About the code, not setting the store up (the first test does that for real): the store is only queued for setup.
+    Queue::fake([ProvisionStore::class]);
     $storeRegistrationId = signUpForStore()->json('data.id');
     $code = lastStoreRegistrationCode();
     $wrongCode = $code === '000000' ? '111111' : '000000';
@@ -188,11 +191,14 @@ it('counts every wrong code, even though the request fails, and needs a new code
     $this->postJson(centralUrl("/api/v1/store-registrations/{$storeRegistrationId}/codes"))->assertAccepted();
 
     confirmStoreSignUp($storeRegistrationId, $code)->assertUnprocessable();
-    confirmStoreSignUp($storeRegistrationId, lastStoreRegistrationCode())->assertAccepted()->assertJsonPath('data.status', 'active');
+    confirmStoreSignUp($storeRegistrationId, lastStoreRegistrationCode())->assertAccepted()->assertJsonPath('data.status', 'provisioning');
     confirmStoreSignUp($storeRegistrationId, lastStoreRegistrationCode())->assertUnprocessable()->assertJsonPath('code', 'store_registration_code_invalid');
+    Queue::assertPushed(ProvisionStore::class, 1);
 });
 
 it('refuses an expired code, sends at most one code a minute, and revives an expired sign-up with a new code', function (): void {
+    // About the code, not setting the store up (the first test does that for real): the store is only queued for setup.
+    Queue::fake([ProvisionStore::class]);
     $storeRegistrationId = signUpForStore()->json('data.id');
 
     $this->postJson(centralUrl("/api/v1/store-registrations/{$storeRegistrationId}/codes"))
@@ -204,7 +210,8 @@ it('refuses an expired code, sends at most one code a minute, and revives an exp
     $this->getJson(centralUrl("/api/v1/store-registrations/{$storeRegistrationId}"))->assertOk()->assertJsonPath('data.status', 'expired');
 
     $this->postJson(centralUrl("/api/v1/store-registrations/{$storeRegistrationId}/codes"))->assertAccepted()->assertJsonPath('data.status', 'awaiting_verification');
-    confirmStoreSignUp($storeRegistrationId, lastStoreRegistrationCode())->assertAccepted();
+    confirmStoreSignUp($storeRegistrationId, lastStoreRegistrationCode())->assertAccepted()->assertJsonPath('data.status', 'provisioning');
+    Queue::assertPushed(ProvisionStore::class, 1);
 });
 
 it('holds a subdomain for a sign-up in progress, and refuses taken, reserved and malformed subdomains', function (): void {
