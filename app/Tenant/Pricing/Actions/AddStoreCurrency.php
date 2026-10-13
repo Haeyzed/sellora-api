@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace App\Tenant\Pricing\Actions;
 
 use App\Shared\Features\Exceptions\UsageLimitReachedException;
-use App\Shared\Features\Features;
 use App\Shared\Money\Decimal;
 use App\Tenant\Pricing\Exceptions\CurrencyIsBaseException;
 use App\Tenant\Pricing\Exceptions\StoreCurrencyExistsException;
 use App\Tenant\Pricing\Models\StoreCurrency;
+use App\Tenant\Pricing\Services\StoreCurrencyLimit;
 use App\Tenant\Settings\Actions\FindStoreSettings;
 use Illuminate\Database\UniqueConstraintViolationException;
 
@@ -22,11 +22,9 @@ use Illuminate\Database\UniqueConstraintViolationException;
  */
 final readonly class AddStoreCurrency
 {
-    public const string LIMIT_KEY = 'presentment_currencies';
-
     public function __construct(
         private FindStoreSettings $findStoreSettings,
-        private Features $features,
+        private StoreCurrencyLimit $storeCurrencyLimit,
     ) {}
 
     /**
@@ -47,18 +45,19 @@ final readonly class AddStoreCurrency
             throw new StoreCurrencyExistsException;
         }
 
-        $this->features->ensureWithinLimit(self::LIMIT_KEY, StoreCurrency::query()->active()->count());
-
-        $currency = new StoreCurrency;
-        $currency->currency_code = $currencyCode;
-        $currency->margin_percent = $marginPercent;
-
         try {
-            $currency->save();
+            return StoreCurrency::query()->getConnection()->transaction(function () use ($currencyCode, $marginPercent): StoreCurrency {
+                $this->storeCurrencyLimit->ensureRoomForOneMore();
+
+                $currency = new StoreCurrency;
+                $currency->currency_code = $currencyCode;
+                $currency->margin_percent = $marginPercent;
+                $currency->save();
+
+                return $currency;
+            });
         } catch (UniqueConstraintViolationException $exception) {
             throw new StoreCurrencyExistsException(previous: $exception);
         }
-
-        return $currency;
     }
 }

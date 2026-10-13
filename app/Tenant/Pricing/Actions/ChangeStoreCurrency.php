@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Tenant\Pricing\Actions;
 
 use App\Shared\Features\Exceptions\UsageLimitReachedException;
-use App\Shared\Features\Features;
 use App\Shared\Money\Decimal;
 use App\Tenant\Pricing\Models\StoreCurrency;
+use App\Tenant\Pricing\Services\StoreCurrencyLimit;
 use Carbon\CarbonImmutable;
 
 /**
@@ -19,7 +19,7 @@ use Carbon\CarbonImmutable;
  */
 final readonly class ChangeStoreCurrency
 {
-    public function __construct(private Features $features) {}
+    public function __construct(private StoreCurrencyLimit $storeCurrencyLimit) {}
 
     /**
      * @param  Decimal|null  $marginPercent  From 0 to 25, already validated; null leaves it.
@@ -28,21 +28,23 @@ final readonly class ChangeStoreCurrency
      */
     public function handle(StoreCurrency $currency, ?bool $isActive, ?Decimal $marginPercent): StoreCurrency
     {
-        if ($isActive === true && ! $currency->is_active) {
-            $this->features->ensureWithinLimit(AddStoreCurrency::LIMIT_KEY, StoreCurrency::query()->active()->count());
-        }
+        return $currency->getConnection()->transaction(function () use ($currency, $isActive, $marginPercent): StoreCurrency {
+            if ($isActive === true && ! $currency->is_active) {
+                $this->storeCurrencyLimit->ensureRoomForOneMore();
+            }
 
-        if ($isActive !== null) {
-            $currency->is_active = $isActive;
-        }
+            if ($isActive !== null) {
+                $currency->is_active = $isActive;
+            }
 
-        if ($marginPercent !== null) {
-            $currency->margin_percent = $marginPercent;
-        }
+            if ($marginPercent !== null) {
+                $currency->margin_percent = $marginPercent;
+            }
 
-        $currency->save();
+            $currency->save();
 
-        return $currency;
+            return $currency;
+        });
     }
 
     /**

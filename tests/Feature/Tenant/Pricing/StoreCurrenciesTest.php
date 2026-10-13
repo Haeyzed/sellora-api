@@ -10,6 +10,8 @@ use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Pricing\Actions\FindExchangeRates;
 use App\Tenant\Pricing\Enums\ExchangeRateSource;
+use App\Tenant\Pricing\Models\StoreCurrency;
+use App\Tenant\Pricing\Services\StoreCurrencyLimit;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
@@ -175,6 +177,35 @@ it('counts only active currencies, never the base one, towards the plan\'s limit
     app(App\Shared\Features\Features::class)->forget((string) $this->store->getTenantKey());
     currencyRequest('PATCH', '/JPY', ['is_active' => false]);
     currencyRequest('PATCH', '/JPY', ['is_active' => true])->assertForbidden();
+});
+
+it('counts turning a currency back on as adding one, so a store over its limit after a downgrade can\'t', function (): void {
+    $this->featureSource->give((string) $this->store->getTenantKey(), FakeFeatureSource::snapshot(limits: ['presentment_currencies' => 3]));
+    app(App\Shared\Features\Features::class)->forget((string) $this->store->getTenantKey());
+
+    foreach (['USD', 'EUR', 'JPY'] as $currency) {
+        currencyRequest('POST', '', ['currency' => $currency])->assertCreated();
+    }
+
+    // The plan drops to one extra currency: nothing is turned off for the store.
+    $this->featureSource->give((string) $this->store->getTenantKey(), FakeFeatureSource::snapshot(limits: ['presentment_currencies' => 1]));
+    app(App\Shared\Features\Features::class)->forget((string) $this->store->getTenantKey());
+
+    currencyRequest('PATCH', '/JPY', ['is_active' => false])->assertOk();
+    currencyRequest('PATCH', '/JPY', ['is_active' => true])->assertForbidden()->assertJsonPath('code', 'usage_limit_reached');
+    currencyRequest('POST', '', ['currency' => 'BTN'])->assertForbidden()->assertJsonPath('code', 'usage_limit_reached');
+
+    // Changing what a store already sells in is not adding one.
+    currencyRequest('PATCH', '/USD', ['margin_percent' => '3', 'is_active' => true])->assertOk();
+
+    expect($this->store->run(static fn (): array => StoreCurrency::query()->orderBy('currency_code')->pluck('is_active', 'currency_code')->all()))
+        ->toBe(['EUR' => true, 'JPY' => false, 'USD' => true]);
+});
+
+it('checks the currency limit only inside a transaction, where its lock lasts until the change is saved', function (): void {
+    $this->store->run(static function (): void {
+        expect(fn () => app(StoreCurrencyLimit::class)->ensureRoomForOneMore())->toThrow(LogicException::class);
+    });
 });
 
 it('takes a margin from 0 to 25 percent as a string with up to 4 decimals', function (): void {
