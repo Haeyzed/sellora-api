@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests;
 
 use GuzzleHttp\Promise\PromiseInterface;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
@@ -13,6 +12,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\ParallelTesting;
 use Illuminate\Support\Str;
 use Tests\Support\ProcessDatabase;
+use Tests\Support\TruncatesCentralDatabase;
 
 /**
  * The common parent of every test that boots the application.
@@ -107,7 +107,7 @@ abstract class TestCase extends BaseTestCase
     }
 
     /**
-     * Tests with real store databases (DatabaseTruncation) also empty the central database when they finish.
+     * Tests with real store databases (TruncatesCentralDatabase) also empty the central database when they finish.
      *
      * Laravel truncates only before each such test, so without this their rows
      * (stores, platform admins, tokens) leak into the next transaction-based
@@ -115,7 +115,7 @@ abstract class TestCase extends BaseTestCase
      */
     protected function tearDown(): void
     {
-        if (in_array(DatabaseTruncation::class, class_uses_recursive(static::class), true) && method_exists($this, 'truncateTablesForAllConnections')) {
+        if (in_array(TruncatesCentralDatabase::class, class_uses_recursive(static::class), true) && method_exists($this, 'truncateTablesForAllConnections')) {
             $this->truncateTablesForAllConnections();
         }
 

@@ -13,11 +13,11 @@ use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Identity\Services\StaffRolePermissions;
 use App\Tenant\Identity\StaffPermissionCatalogue;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\Artisan;
 use Spatie\Permission\Exceptions\PermissionDoesNotExist;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Section 10: permissions are defined in code and synced into the central
@@ -25,7 +25,7 @@ use Spatie\Permission\PermissionRegistrar;
  * on every deploy. A permission no longer in code is removed only once no
  * role or person holds it.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 afterEach(function (): void {
     deleteAllStores();

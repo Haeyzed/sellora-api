@@ -9,11 +9,11 @@ use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Settings\Models\StoreSettings;
 use Illuminate\Database\QueryException;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 use OwenIt\Auditing\Models\Audit;
 use Spatie\Permission\Models\Permission;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Sections 3.3, 11 and 13: brands have names in the store's languages, a
@@ -21,7 +21,7 @@ use Spatie\Permission\Models\Permission;
  * brand keeps it; slugs are unique only outside the trash, and restoring
  * re-checks. catalog.view lets staff look, catalog.manage lets them change.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     seedWorld();

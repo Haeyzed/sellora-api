@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 use App\Landlord\Identity\Models\PlatformAdmin;
 use App\Tenant\Identity\Models\StaffMember;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Testing\TestResponse;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Section 10: two-factor authentication is optional for staff (a store
  * setting to require it comes with store settings). A challenge only ever
  * works in the store, and for the guard, that started it.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 const TWO_FACTOR_STAFF_PASSWORD = 'a-long-staff-password';
 

@@ -21,12 +21,12 @@ use App\Shared\Auth\AccessTokenIssuer;
 use App\Shared\Auth\Models\Role;
 use Database\Seeders\Landlord\PlatformPermissionSeeder;
 use Illuminate\Database\QueryException;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\TestResponse;
 use Spatie\Activitylog\Models\Activity;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Section 9.1: a closed store past its purge date is purged only while
@@ -36,7 +36,7 @@ use Spatie\Activitylog\Models\Activity;
  * data and marks the store Purged, keeping subscriptions and legal
  * acceptances. Once a purge has started, the store can't be restored.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     Storage::fake('store_exports');

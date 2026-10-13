@@ -20,11 +20,11 @@ use App\Tenant\Pricing\Enums\TaxLineKind;
 use App\Tenant\Pricing\Enums\TaxOutcome;
 use App\Tenant\Pricing\Models\TaxClass;
 use App\Tenant\Pricing\TaxCalculatorRegistry;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Tests\Fixtures\Features\FakeFeatureSource;
 use Tests\Fixtures\Pricing\ExemptLinesNamed;
 use Tests\Fixtures\Pricing\ForgetfulTaxPlugIn;
 use Tests\Fixtures\Pricing\RecordingTaxPlugIn;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Section 3.3: tax is calculated from the request alone, by a country
@@ -33,7 +33,7 @@ use Tests\Fixtures\Pricing\RecordingTaxPlugIn;
  * (marked so staff can see it), exempt lines are settled by core before any
  * calculator is asked.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     seedWorld();

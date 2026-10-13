@@ -9,11 +9,11 @@ use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Settings\Actions\FindStoreSettings;
 use Illuminate\Foundation\Auth\User;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Testing\TestResponse;
 use OwenIt\Auditing\Models\Audit;
 use Spatie\Activitylog\Models\Activity;
 use Spatie\Permission\Models\Permission;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Section 10: two-factor authentication is a store setting for staff. Only
@@ -22,7 +22,7 @@ use Spatie\Permission\Models\Permission;
  * their profile, set it up and sign out. Customers and drivers are never
  * affected.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 const TWO_FACTOR_OWNER_PASSWORD = 'a-long-two-factor-owner-password';
 

@@ -19,13 +19,13 @@ use App\Tenant\Pricing\Exceptions\CurrencyNotOfferedException;
 use App\Tenant\Pricing\Models\StoreCurrency;
 use App\Tenant\Pricing\VariantPricer;
 use Illuminate\Database\Events\QueryExecuted;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use OwenIt\Auditing\Models\Audit;
 use Spatie\Permission\Models\Permission;
 use Tests\Fixtures\Features\FakeFeatureSource;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Section 3.3: a price in another currency is the merchant's fixed price for
@@ -34,7 +34,7 @@ use Tests\Fixtures\Features\FakeFeatureSource;
  * compare-at price that is no longer higher is dropped. A whole list is
  * priced in a fixed number of queries.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     seedWorld();

@@ -12,12 +12,12 @@ use App\Tenant\Pricing\Actions\FindExchangeRates;
 use App\Tenant\Pricing\Enums\ExchangeRateSource;
 use App\Tenant\Pricing\Models\StoreCurrency;
 use App\Tenant\Pricing\Services\StoreCurrencyLimit;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 use OwenIt\Auditing\Models\Audit;
 use Spatie\Permission\Models\Permission;
 use Tests\Fixtures\Features\FakeFeatureSource;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Section 3.3: a store sells in its base currency and, within its plan's
@@ -26,7 +26,7 @@ use Tests\Fixtures\Features\FakeFeatureSource;
  * currency whose market rate is over 48 hours old, with no manual rate, isn't
  * offered. Everything is audited.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     seedWorld();

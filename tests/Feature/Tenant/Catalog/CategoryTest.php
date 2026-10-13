@@ -9,11 +9,11 @@ use App\Tenant\Catalog\Services\CategoryTree;
 use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
 use Illuminate\Database\QueryException;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 use OwenIt\Auditing\Models\Audit;
 use Spatie\Permission\Models\Permission;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Sections 3.3, 11 and 13: categories form a tree of limited depth, ordered
@@ -22,7 +22,7 @@ use Spatie\Permission\Models\Permission;
  * has no subcategories outside the trash. Slugs are unique outside the
  * trash; restoring re-checks the slug, the parent and the depth.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     seedWorld();

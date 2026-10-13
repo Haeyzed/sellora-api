@@ -15,12 +15,12 @@ use App\Tenant\Catalog\Models\ProductVariant;
 use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
 use Illuminate\Database\UniqueConstraintViolationException;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Testing\TestResponse;
 use OwenIt\Auditing\Models\Audit;
 use Spatie\Permission\Models\Permission;
 use Tests\Fixtures\Features\FakeFeatureSource;
 use Tests\Support\SecondConnection;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Section 13: variants differ by store-wide attributes (Size, Colour). A
@@ -30,7 +30,7 @@ use Tests\Support\SecondConnection;
  * product with one variant becomes a multi-variant one without losing that
  * variant. Attributes and values in use can't be deleted.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     seedWorld();

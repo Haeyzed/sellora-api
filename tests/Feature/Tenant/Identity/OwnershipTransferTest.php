@@ -19,13 +19,13 @@ use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Identity\OwnershipTransferOfferNotification;
 use App\Tenant\Identity\OwnershipTransferredNotification;
 use Illuminate\Database\QueryException;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Spatie\Activitylog\Models\Activity;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Section 10: ownership moves in two steps. The owner offers the store
@@ -34,7 +34,7 @@ use Spatie\Activitylog\Models\Activity;
  * service in force. Nothing changes before that, the owner can cancel, and a
  * store has one pending transfer at most.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 const OWNERSHIP_PASSWORD = 'a-long-owner-password';
 

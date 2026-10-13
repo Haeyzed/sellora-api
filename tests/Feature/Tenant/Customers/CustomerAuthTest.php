@@ -3,11 +3,11 @@
 declare(strict_types=1);
 
 use App\Tenant\Customers\Models\Customer;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
+use Tests\Support\TruncatesCentralDatabase;
 
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     $this->store = createStore('first-store');

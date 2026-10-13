@@ -17,7 +17,6 @@ use App\Tenant\Catalog\Models\Product;
 use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Settings\SettingsStoreFiles;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -27,6 +26,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\Permission\Models\Permission;
 use Tests\Fixtures\Features\FakeFeatureSource;
 use Tests\Support\SecondConnection;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Sections 8 and 14: storefront images (product gallery, variant image,
@@ -35,7 +35,7 @@ use Tests\Support\SecondConnection;
  * towards the plan's storage, are served on the store's own domain, and go
  * into the store export as uploaded.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     seedWorld();

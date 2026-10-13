@@ -17,13 +17,13 @@ use App\Tenant\Inventory\Models\StockMovement;
 use App\Tenant\Inventory\Services\StockLedger;
 use App\Tenant\Settings\Models\StoreSettings;
 use Illuminate\Database\QueryException;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 use OwenIt\Auditing\Models\Audit;
 use Spatie\Permission\Models\Permission;
 use Tests\Support\SecondConnection;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Section 13: stock is counted in whole units per variant per location,
@@ -32,7 +32,7 @@ use Tests\Support\SecondConnection;
  * and a scheduled reconciliation reports any level that doesn't match its
  * ledger. Inventory settings are audited; stock levels aren't (section 2.1).
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     $this->store = createStore('stock-store');

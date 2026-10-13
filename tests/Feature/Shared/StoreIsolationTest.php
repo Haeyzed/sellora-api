@@ -6,17 +6,17 @@ use App\Landlord\Tenancy\Models\Tenant;
 use App\Shared\Idempotency\IdempotencyKey;
 use App\Shared\Idempotency\IdempotencyStatus;
 use App\Shared\Retention\PurgeExpiredRecords;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Section 14: one store must never see or affect another store's data,
  * counters or background work. These tests use real store databases.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     $this->chargesCreated = 0;

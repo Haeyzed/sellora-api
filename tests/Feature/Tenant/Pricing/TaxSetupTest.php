@@ -11,12 +11,12 @@ use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Pricing\Models\TaxClass;
 use Illuminate\Database\QueryException;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use OwenIt\Auditing\Models\Audit;
 use Spatie\Permission\Models\Permission;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Section 3.3: merchants set up their own tax classes and rates; none are
@@ -24,7 +24,7 @@ use Spatie\Permission\Models\Permission;
  * shipping, and a class still in use can't be deleted. One rate per class
  * and region, where an empty state is one value. Everything is audited.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     seedWorld();

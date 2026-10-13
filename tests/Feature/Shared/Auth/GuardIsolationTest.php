@@ -7,7 +7,7 @@ use App\Shared\Auth\AccessTokenIssuer;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Delivery\Models\Driver;
 use App\Tenant\Identity\Models\StaffMember;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Section 10: one guard's token must never authorize another guard's routes,
@@ -15,7 +15,7 @@ use Illuminate\Foundation\Testing\DatabaseTruncation;
  * store tokens in each store's database, so the IDs of different guards'
  * tokens overlap; only the secret part and the owner type keep them apart.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 afterEach(function (): void {
     deleteAllStores();

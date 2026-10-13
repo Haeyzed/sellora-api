@@ -12,7 +12,6 @@ use App\Tenant\Identity\Models\StaffInvitation;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Identity\StaffInvitationNotification;
 use App\Tenant\Identity\StaffPermissionCatalogue;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Notification;
@@ -20,6 +19,7 @@ use Illuminate\Testing\TestResponse;
 use OwenIt\Auditing\Models\Audit;
 use Spatie\Activitylog\Models\Activity;
 use Tests\Fixtures\Features\FakeFeatureSource;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Section 10 and 14: staff join only by invitation and choose their own
@@ -28,7 +28,7 @@ use Tests\Fixtures\Features\FakeFeatureSource;
  * plan's staff limit counts active staff and pending invitations; and nothing
  * (links, role IDs) crosses from one store to another.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 const TEAM_PASSWORD = 'a-long-staff-password';
 

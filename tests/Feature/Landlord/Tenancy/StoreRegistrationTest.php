@@ -23,12 +23,12 @@ use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Settings\Enums\WeightUnit;
 use App\Tenant\Settings\Models\StoreSettings;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
 use Spatie\Activitylog\Models\Activity;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Section 9.1: a store is registered in two steps (sign-up, then the emailed
@@ -37,7 +37,7 @@ use Spatie\Activitylog\Models\Activity;
  * merchant's choice, never silently changed; the legal documents in force
  * must all be accepted; and each email may own a limited number of stores.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 const OWNER_PASSWORD = 'a-long-owner-password';
 

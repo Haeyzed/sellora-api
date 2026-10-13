@@ -16,11 +16,11 @@ use App\Tenant\Settings\Exceptions\MissingStoreSettingsException;
 use App\Tenant\Settings\Jobs\SyncStoreProfile;
 use App\Tenant\Settings\Models\StoreSettings;
 use Illuminate\Database\QueryException;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Testing\TestResponse;
 use OwenIt\Auditing\Models\Audit;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Sections 3.3, 9.1 and 10: a store's core settings live in one typed,
@@ -30,7 +30,7 @@ use OwenIt\Auditing\Models\Audit;
  * currency, timezone and language changes reach the platform through a
  * retried job, after the store has committed them.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 /**
  * Stands in for a domain that holds prices, such as Catalog once it exists.

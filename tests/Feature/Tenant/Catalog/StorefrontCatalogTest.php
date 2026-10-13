@@ -13,10 +13,10 @@ use App\Tenant\Catalog\Models\ProductVariant;
 use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Settings\Models\StoreSettings;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Testing\TestResponse;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Sections 3.3, 11 and 13: customers see only published products with at
@@ -26,7 +26,7 @@ use Illuminate\Testing\TestResponse;
  * barcodes and brand names, case-insensitively, and stays current when a
  * brand is renamed or a SKU or barcode changes. Nothing crosses stores.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     seedWorld();

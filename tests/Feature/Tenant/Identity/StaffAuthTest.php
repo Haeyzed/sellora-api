@@ -5,13 +5,13 @@ declare(strict_types=1);
 use App\Shared\Auth\PasswordResetLinkNotification;
 use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
 use Laravel\Sanctum\PersonalAccessToken;
+use Tests\Support\TruncatesCentralDatabase;
 
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 const STAFF_PASSWORD = 'a-long-staff-password';
 

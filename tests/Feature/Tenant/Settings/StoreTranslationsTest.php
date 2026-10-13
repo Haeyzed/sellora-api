@@ -5,9 +5,9 @@ declare(strict_types=1);
 use App\Landlord\Tenancy\Models\Tenant;
 use App\Tenant\Settings\Models\StoreSettings;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\Schema;
 use Tests\Fixtures\Translations\TranslatedSample;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Section 3.3: customer-facing text is stored per language and falls back to
@@ -15,7 +15,7 @@ use Tests\Fixtures\Translations\TranslatedSample;
  * default is its own, even when one process works in several stores.
  * Disabling a language never deletes its translations.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     seedWorld();

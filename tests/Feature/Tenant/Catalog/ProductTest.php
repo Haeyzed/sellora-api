@@ -19,13 +19,13 @@ use App\Tenant\Catalog\Services\ProductLimit;
 use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
 use Illuminate\Database\QueryException;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 use OwenIt\Auditing\Models\Audit;
 use Spatie\Permission\Models\Permission;
 use Tests\Fixtures\Features\FakeFeatureSource;
 use Tests\Support\SecondConnection;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Sections 3.3, 8, 11 and 13: a product starts as a draft with its first
@@ -35,7 +35,7 @@ use Tests\Support\SecondConnection;
  * and slugs are unique outside the trash. The primary category is always
  * one of the product's categories. The plan limits products.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     seedWorld();

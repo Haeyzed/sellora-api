@@ -20,11 +20,11 @@ use App\Shared\Features\FeatureRegistry;
 use App\Shared\Features\Features;
 use App\Shared\Features\FeatureState;
 use Database\Seeders\Landlord\PlatformPermissionSeeder;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Testing\TestResponse;
 use OwenIt\Auditing\Models\Audit;
 use Spatie\Activitylog\Models\Activity;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Section 8 and 10: Sellora's team sees every store, suspends and reactivates
@@ -32,7 +32,7 @@ use Spatie\Activitylog\Models\Activity;
  * features or limits outside its plan through Features, never by editing
  * plans. A grant that ends locks its feature like a downgrade.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     $this->seed(PlatformPermissionSeeder::class);

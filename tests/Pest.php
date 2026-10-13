@@ -32,7 +32,7 @@ pest()->extend(TestCase::class)->in('Feature', '../integrations/OpenExchangeRate
 |--------------------------------------------------------------------------
 |
 | Tests that create stores get real tenant databases, so they use
-| DatabaseTruncation (PostgreSQL can't create a database inside a
+| TruncatesCentralDatabase (PostgreSQL can't create a database inside a
 | transaction) and delete their stores afterwards, which drops the databases.
 | Each store database is a copy of one prepared per process, or a used copy
 | reset to be identical to it (StoreDatabaseTemplate), never migrated from

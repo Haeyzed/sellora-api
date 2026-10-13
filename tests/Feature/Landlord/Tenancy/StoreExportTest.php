@@ -24,7 +24,6 @@ use Carbon\CarbonImmutable;
 use Database\Seeders\Landlord\PlatformPermissionSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
@@ -33,6 +32,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Spatie\Activitylog\Models\Activity;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Section 9.1: a store export is a ZIP of JSON Lines files plus a manifest,
@@ -41,7 +41,7 @@ use Spatie\Activitylog\Models\Activity;
  * Contents are decided column by column and fail closed: secrets never leave
  * the store, not even inside audit and activity records.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 const EXPORT_OWNER_PASSWORD = 'a-long-export-owner-password';
 

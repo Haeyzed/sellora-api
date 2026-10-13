@@ -27,11 +27,11 @@ use App\Tenant\Pricing\Enums\TaxOutcome;
 use App\Tenant\Pricing\Models\StoreCurrency;
 use App\Tenant\Pricing\Models\TaxClass;
 use App\Tenant\Pricing\PriceCalculator;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 use Spatie\Permission\Models\Permission;
 use Tests\Fixtures\Features\FakeFeatureSource;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Section 3.3: Cart, Checkout and Orders price lines with one calculation:
@@ -41,7 +41,7 @@ use Tests\Fixtures\Features\FakeFeatureSource;
  * in the currency they ask for while the store offers it, and in the store's
  * own currency otherwise.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     seedWorld();

@@ -14,11 +14,11 @@ use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Inventory\Models\InventoryItem;
 use App\Tenant\Inventory\Models\StockMovement;
 use Illuminate\Database\QueryException;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 use OwenIt\Auditing\Models\Audit;
 use Spatie\Permission\Models\Permission;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Sections 3.3 and 13: a unit cost is an internal decimal with six decimal
@@ -26,7 +26,7 @@ use Spatie\Permission\Models\Permission;
  * staff with the inventory.costs permission see or change it; customers
  * never do. Costs lock the base currency and are audited.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     seedWorld();

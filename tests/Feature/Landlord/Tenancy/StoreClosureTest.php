@@ -14,13 +14,13 @@ use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
 use Database\Seeders\Landlord\PlatformPermissionSeeder;
 use Illuminate\Database\QueryException;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
 use Laravel\Sanctum\PersonalAccessToken;
 use Spatie\Activitylog\Models\Activity;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Section 9.1: a store is closed by a platform admin or by its owner
@@ -30,7 +30,7 @@ use Spatie\Activitylog\Models\Activity;
  * for platform admins, only from Closed, and returns the store to the status
  * it had, so closing and restoring can never lift a suspension.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 const CLOSING_OWNER_PASSWORD = 'a-long-closing-owner-password';
 

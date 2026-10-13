@@ -7,10 +7,10 @@ use App\Shared\Tenancy\TenantRoutes;
 use App\Shared\Translations\Rules\TranslatedText;
 use App\Tenant\Settings\Http\Middleware\UseStoreLanguage;
 use App\Tenant\Settings\Models\StoreSettings;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Validator;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Section 3.3: each store has a default language and may publish in more.
@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Validator;
  * languages is accepted only in the store's languages, and always keeps the
  * default language.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     seedWorld();

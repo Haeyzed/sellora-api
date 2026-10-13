@@ -6,7 +6,6 @@ use App\Landlord\Tenancy\Models\Tenant;
 use App\Landlord\Tenancy\Services\StoreDatabase;
 use App\Shared\Auth\Models\Role;
 use App\Tenant\Identity\Models\StaffMember;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\ParallelTesting;
@@ -14,13 +13,14 @@ use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\Support\StoreDatabaseTemplate;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * PostgreSQL cannot create a database inside a transaction, so these tests
  * truncate instead of wrapping each test in one. Deleting the tenants also
  * drops their databases.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 afterEach(function (): void {
     deleteAllStores();

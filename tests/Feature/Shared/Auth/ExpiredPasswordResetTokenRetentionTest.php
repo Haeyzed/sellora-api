@@ -3,15 +3,15 @@
 declare(strict_types=1);
 
 use App\Shared\Retention\PurgeExpiredRecords;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\DB;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Password reset requests hold an email address, so the daily purge deletes
  * them once their link has been expired for the whole retention period: the
  * platform's in the central database, staff and customers' in each store's.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     config([

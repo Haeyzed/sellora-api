@@ -23,11 +23,11 @@ use App\Tenant\Inventory\Models\StockReservation;
 use App\Tenant\Inventory\SettledReservationRetention;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Scheduling\Schedule;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Tests\Support\SecondConnection;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Section 13: stock is reserved for checkouts and orders, all lines or none,
@@ -37,7 +37,7 @@ use Tests\Support\SecondConnection;
  * Backorders are per variant: turning them off keeps existing backordered
  * reservations and refuses new ones. Untracked variants are always available.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     $this->store = createStore('reservation-store');

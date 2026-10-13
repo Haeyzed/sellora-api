@@ -20,9 +20,9 @@ use App\Tenant\Inventory\Events\VariantBackInStock;
 use App\Tenant\Inventory\Events\VariantSoldOut;
 use App\Tenant\Inventory\Models\StockItem;
 use App\Tenant\Inventory\Models\StockLocation;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Section 13: customers see whether a variant can be bought, never how many
@@ -30,7 +30,7 @@ use Illuminate\Support\Facades\Event;
  * changed, and whether a counted variant sold out, came back or is running
  * low; other domains react. Nothing crosses stores.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     seedWorld();

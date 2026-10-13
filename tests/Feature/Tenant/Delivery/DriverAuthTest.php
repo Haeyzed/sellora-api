@@ -3,10 +3,10 @@
 declare(strict_types=1);
 
 use App\Tenant\Delivery\Models\Driver;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Testing\TestResponse;
+use Tests\Support\TruncatesCentralDatabase;
 
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     config(['api.rate_limits.login' => 100]);

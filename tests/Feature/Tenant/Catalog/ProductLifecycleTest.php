@@ -14,11 +14,11 @@ use App\Tenant\Catalog\Models\Product;
 use App\Tenant\Catalog\Models\ProductVariant;
 use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Testing\TestResponse;
 use Tests\Fixtures\Features\FakeFeatureSource;
+use Tests\Support\TruncatesCentralDatabase;
 
 /*
  * Sections 3.3 and 13: a product is published only with a name in the
@@ -28,7 +28,7 @@ use Tests\Fixtures\Features\FakeFeatureSource;
  * announced only after the change is saved. Old orders always find a
  * variant, even in the trash.
  */
-uses(DatabaseTruncation::class);
+uses(TruncatesCentralDatabase::class);
 
 beforeEach(function (): void {
     seedWorld();
