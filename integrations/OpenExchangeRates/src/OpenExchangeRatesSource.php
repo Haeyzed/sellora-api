@@ -11,6 +11,7 @@ use App\Shared\Money\ExchangeRates\FetchedRates;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Factory as HttpFactory;
+use Integrations\OpenExchangeRates\Exceptions\UnsafeFloatPrecisionException;
 use InvalidArgumentException;
 use Throwable;
 
@@ -27,8 +28,17 @@ final readonly class OpenExchangeRatesSource implements ExchangeRateSource
 
     public function __construct(private HttpFactory $http) {}
 
+    /**
+     * @throws UnsafeFloatPrecisionException When PHP can't read the rates exactly; not caught as an outage, so it is reported.
+     */
     public function fetch(): FetchedRates
     {
+        $serializePrecision = (string) ini_get('serialize_precision');
+
+        if ($serializePrecision !== '-1') {
+            throw UnsafeFloatPrecisionException::for($serializePrecision);
+        }
+
         $appId = config('openexchangerates.app_id');
 
         if (! is_string($appId) || $appId === '') {
@@ -65,7 +75,7 @@ final readonly class OpenExchangeRatesSource implements ExchangeRateSource
     }
 
     /**
-     * The rates as exact decimals. JSON numbers arrive as floats; their shortest exact form ("1550.123456") is what the provider sent.
+     * The rates as exact decimals. JSON numbers arrive as floats; their shortest exact form ("1550.123456") is what the provider sent, which json_encode() gives only with serialize_precision = -1 (checked in fetch()).
      *
      * @param  array<mixed>  $rates
      * @return array<string, Decimal>
