@@ -133,5 +133,7 @@ return [
     'tax_class_in_use' => 'This tax class is still used: by a variant (perhaps one in the trash), by a tax rate, as the default class, or for shipping. Move those to another class first.',
     'tax_class_name_taken' => 'Another tax class already has this name.',
     'tax_rate_exists' => 'This tax class already has a rate for that region. Change that rate instead.',
+    'currency_is_base' => 'This is the store\'s own currency; prices are already in it.',
+    'store_currency_exists' => 'The store already has this currency. Change it instead.',
 
 ];

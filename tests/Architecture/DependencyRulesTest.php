@@ -100,6 +100,10 @@ arch('integrations use Geography, never the world reference data package')
     ->expect('Integrations')
     ->not->toUse('Nnjeim\World');
 
+arch('only the exchange rates reader touches the central market rates, which stores read by ISO code through it')
+    ->expect('App\Shared\Money\ExchangeRates\Models\ExchangeRate')
+    ->toOnlyBeUsedIn('App\Shared\Money\ExchangeRates');
+
 arch('landlord domains are final')
     ->expect('App\Landlord')
     ->classes()

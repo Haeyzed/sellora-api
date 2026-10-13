@@ -19,3 +19,4 @@ require __DIR__.'/landlord/tenants.php';
 require __DIR__.'/landlord/plans.php';
 require __DIR__.'/landlord/subscriptions.php';
 require __DIR__.'/landlord/legal.php';
+require __DIR__.'/landlord/exchange_rates.php';

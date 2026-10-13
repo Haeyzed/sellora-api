@@ -8,6 +8,14 @@ parameters:
         - app
         - bootstrap/app.php
         - database
+        - integrations
         - routes
+
+    # An integration's config file is merged by its service provider (and cached with config:cache), like a package's;
+    # it is data, not code, and reads the environment exactly as files in config/ do.
+    # Their tests are left out like tests/ is.
+    excludePaths:
+        - integrations/*/config/*
+        - integrations/*/tests/*
 
     tmpDir: storage/framework/cache/phpstan

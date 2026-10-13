@@ -22,6 +22,8 @@ return [
         'locations',
         'custom_domains',
         'storage_in_megabytes',
+        // Currencies a store sells in besides its base currency, which never counts.
+        'presentment_currencies',
     ],
 
     /*

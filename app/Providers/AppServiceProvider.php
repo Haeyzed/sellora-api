@@ -31,6 +31,7 @@ use App\Shared\Features\Contracts\FeatureSource;
 use App\Shared\Features\FeatureRegistry;
 use App\Shared\Http\PaginationDocumentation;
 use App\Shared\Idempotency\IdempotencyKeyRetention;
+use App\Shared\Money\ExchangeRates\ExchangeRateRetention;
 use App\Shared\Money\PricedRecordsRegistry;
 use App\Shared\Privacy\PersonalDataRegistry;
 use App\Shared\Privacy\SharedStoreTables;
@@ -90,9 +91,11 @@ use App\Tenant\Inventory\Models\StockReservation;
 use App\Tenant\Inventory\SettledReservationRetention;
 use App\Tenant\Inventory\StockLedgerReconciliation;
 use App\Tenant\Pricing\Enums\PricingPermission;
+use App\Tenant\Pricing\Models\StoreCurrency;
 use App\Tenant\Pricing\Models\TaxClass;
 use App\Tenant\Pricing\Models\TaxRate;
 use App\Tenant\Pricing\Models\VariantTaxClass;
+use App\Tenant\Pricing\PricingPricedRecords;
 use App\Tenant\Pricing\PricingStoreTables;
 use App\Tenant\Pricing\TaxCalculatorRegistry;
 use App\Tenant\Settings\Enums\SettingsPermission;
@@ -272,6 +275,7 @@ final class AppServiceProvider extends ServiceProvider
             $registry = new PricedRecordsRegistry($app);
             $registry->register(CatalogPricedRecords::class);
             $registry->register(InventoryPricedRecords::class);
+            $registry->register(PricingPricedRecords::class);
 
             return $registry;
         });
@@ -287,6 +291,7 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(SettledReservationRetention::class);
             $registry->register(StoreRegistrationRetention::class);
             $registry->register(StoreExportRetention::class);
+            $registry->register(ExchangeRateRetention::class);
 
             return $registry;
         });
@@ -345,6 +350,7 @@ final class AppServiceProvider extends ServiceProvider
             'tax_class' => TaxClass::class,
             'tax_rate' => TaxRate::class,
             'variant_tax_class' => VariantTaxClass::class,
+            'store_currency' => StoreCurrency::class,
         ]);
     }
 

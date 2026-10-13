@@ -49,13 +49,15 @@
             "App\\": "app/",
             "Modules\\": "modules/",
             "Integrations\\": "integrations/",
+            "Integrations\\OpenExchangeRates\\": "integrations/OpenExchangeRates/src/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Tests\\": "tests/"
+            "Tests\\": "tests/",
+            "Integrations\\OpenExchangeRates\\Tests\\": "integrations/OpenExchangeRates/tests/"
         }
     },
     "scripts": {

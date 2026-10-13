@@ -25,6 +25,8 @@ final class FreePlanSeeder extends Seeder
         // Beyond the owner, who never counts.
         'staff_accounts' => 2,
         'storage_in_megabytes' => 1024,
+        // Besides the base currency, which never counts.
+        'presentment_currencies' => 1,
     ];
 
     public function run(): void

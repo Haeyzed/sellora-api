@@ -14,6 +14,9 @@
         <testsuite name="Feature">
             <directory>tests/Feature</directory>
         </testsuite>
+        <testsuite name="Integrations">
+            <directory>integrations/OpenExchangeRates/tests</directory>
+        </testsuite>
     </testsuites>
     <source>
         <include>

@@ -27,6 +27,8 @@ return [
         'store_exports' => (int) env('RETENTION_STORE_EXPORTS_DAYS', 7),
         'activity_log' => (int) env('RETENTION_ACTIVITY_LOG_DAYS', 365),
         'audits' => (int) env('RETENTION_AUDITS_DAYS', 730),
+        // Central market rates; orders keep the rate they used, so only recent history is needed.
+        'exchange_rates' => (int) env('RETENTION_EXCHANGE_RATES_DAYS', 400),
     ],
 
     /*

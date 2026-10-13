@@ -16,6 +16,7 @@ use App\Shared\Features\Http\Middleware\EnsureModuleIsEnabled;
 use App\Shared\Http\Middleware\AddSecurityHeaders;
 use App\Shared\Http\Middleware\ForceJsonResponse;
 use App\Shared\Idempotency\EnsureRequestIsIdempotent;
+use App\Shared\Money\ExchangeRates\RefreshExchangeRatesCommand;
 use App\Shared\Retention\PurgeExpiredRecordsCommand;
 use App\Shared\Tenancy\Http\Middleware\EnsureCentralDomain;
 use App\Shared\Tenancy\Http\Middleware\IdentifyStoreUnlessCentral;
@@ -68,6 +69,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ReconcileStockLevelsCommand::class,
         ReleaseExpiredReservationsCommand::class,
         PurgeExpiredRecordsCommand::class,
+        RefreshExchangeRatesCommand::class,
     ])
     ->withMiddleware(static function (Middleware $middleware): void {
         $middleware->prepend(ForceJsonResponse::class);

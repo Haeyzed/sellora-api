@@ -49,7 +49,7 @@ const PAGE_NUMBER_LISTS = [
         '/staff/catalog/brands', '/staff/catalog/categories', '/staff/catalog/attributes',
         '/catalog/brands', '/catalog/categories',
         '/staff/inventory/locations',
-        '/staff/pricing/tax-classes', '/staff/pricing/tax-rates',
+        '/staff/pricing/tax-classes', '/staff/pricing/tax-rates', '/staff/pricing/currencies', '/catalog/currencies',
     ],
     'platform' => [
         '/team/admins', '/team/roles', '/team/invitations',
@@ -60,7 +60,7 @@ const PAGE_NUMBER_LISTS = [
 
 const CURSOR_LISTS = [
     'default' => ['/staff/catalog/products', '/catalog/products', '/staff/inventory/levels', '/staff/inventory/variants/{variant}/movements'],
-    'platform' => [],
+    'platform' => ['/exchange-rates'],
 ];
 
 it('documents every list as paged by page number or by cursor, never both and never neither', function (): void {
