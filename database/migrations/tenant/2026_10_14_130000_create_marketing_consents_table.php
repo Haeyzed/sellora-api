@@ -46,14 +46,14 @@ return new class extends Migration
                 add constraint marketing_consents_staff_source_check check (source <> 'staff' or recorded_by_staff_id is not null);
 
             -- Consent events are evidence, so they are never changed. Only erasure deletes them, and it says so first
-            -- with set_config('sellora.erasing_personal_data', 'on', true), which lasts until its transaction ends.
+            -- with set_config('app.erasing_personal_data', 'on', true), which lasts until its transaction ends.
             create function marketing_consents_are_append_only() returns trigger language plpgsql as $$
             begin
                 if tg_op = 'UPDATE' then
                     raise exception 'marketing consent events are never changed' using errcode = 'check_violation';
                 end if;
 
-                if coalesce(current_setting('sellora.erasing_personal_data', true), '') <> 'on' then
+                if coalesce(current_setting('app.erasing_personal_data', true), '') <> 'on' then
                     raise exception 'marketing consent events are deleted only by erasure' using errcode = 'check_violation';
                 end if;
 

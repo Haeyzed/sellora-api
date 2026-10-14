@@ -21,7 +21,8 @@ use Illuminate\Support\Facades\DB;
  */
 final readonly class MarketingConsentData implements PersonalDataHandler
 {
-    public const string ERASING_SETTING = 'sellora.erasing_personal_data';
+    /** Set only here; a test checks that no other code names it. */
+    private const string ERASING_SETTING = 'app.erasing_personal_data';
 
     /**
      * @return list<array<string, mixed>>

@@ -129,7 +129,7 @@ it('never lets an event be changed or deleted outside erasure', function (Closur
     'deleted' => [fn () => DB::table('marketing_consents')->delete(), 'deleted only by erasure'],
     'emptied' => [fn () => DB::statement('truncate marketing_consents'), 'deleted only by erasure'],
     'deleted after the flag was set and its transaction ended' => [function (): void {
-        DB::transaction(static fn () => DB::select("select set_config('sellora.erasing_personal_data', 'on', true)"));
+        DB::transaction(static fn () => DB::select("select set_config('app.erasing_personal_data', 'on', true)"));
         DB::table('marketing_consents')->delete();
     }, 'deleted only by erasure'],
 ]);
@@ -139,7 +139,7 @@ it('lets erasure delete events, inside the transaction that says so', function (
 
     $this->store->run(static function (): void {
         DB::transaction(static function (): void {
-            DB::select("select set_config('sellora.erasing_personal_data', 'on', true)");
+            DB::select("select set_config('app.erasing_personal_data', 'on', true)");
             DB::table('marketing_consents')->delete();
         });
     });
