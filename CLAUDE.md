@@ -1227,7 +1227,8 @@ If you notice a security problem anywhere, in the legacy project, in this reposi
 - **Verification copies (worktrees or clones) never touch the main checkout.** Scripts that check out other commits refuse to run in it, so uncommitted work there is never at risk.
 - A CI pipeline (GitHub Actions, `.github/workflows/ci.yml`) runs Pint, Larastan, Pest (including architecture and tenant-isolation tests) and `composer audit` on every push. Nothing is merged while CI fails.
 - **Custom database settings and other technical identifiers** follow the same no-brand rule as class and table names (section 1): `app.erasing_personal_data`, never a name containing "Sellora".
-- **Merging a reviewed branch:** fast-forward `main` to the branch's last commit (`git merge --ff-only`), so `main` gets the exact commit CI already passed.
+- **Merging a reviewed branch:** fast-forward `main` to the branch's last commit (`git merge --ff-only`), so `main` gets the exact commit CI already passed. `main` moves **only** by fast-forward: never with GitHub's merge button, and the `main` ruleset requires linear history so a merge commit can't reach it.
+- **A migration that has reached `main` is never edited.** Any database that already ran it (a teammate's, staging, production) would never see the change. Fix it with a new migration. Migrations that exist only on an unmerged branch may still be edited.
 - **Third-party GitHub Actions are pinned to a full commit hash** (with the version in a comment), and Dependabot proposes updates. A version tag can be moved to malicious code by whoever controls the action; a commit hash can't.
 - **Each build step is done on its own branch** (for example `step-10-customers`). Pushing the branch is always safe and runs CI. The branch is merged into `main` only after my review and a green CI run, and `main` is protected on GitHub so nothing reaches it any other way.
 
