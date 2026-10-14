@@ -134,7 +134,7 @@ it('signs a deactivated customer out everywhere, and lets them back in once reac
     customerRequest('GET', 'auth/me', as: $token)->assertUnauthorized();
     $this->postJson(storeUrl('first-store', '/api/v1/customer/auth/tokens'), ['email' => 'ada@example.com', 'password' => 'a-long-shopper-password'])->assertOk();
 
-    $audited = $this->store->run(fn () => Audit::query()->where('auditable_type', 'customer')->where('auditable_id', $this->customer->id)->get());
+    $audited = $this->store->run(fn () => Audit::query()->where('auditable_type', 'customer')->where('auditable_id', $this->customer->id)->orderBy('id')->get());
     expect($audited->pluck('new_values')->all())->toBe([['is_active' => false], ['is_active' => true]]);
 });
 
