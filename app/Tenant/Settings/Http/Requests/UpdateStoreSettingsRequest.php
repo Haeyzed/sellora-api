@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tenant\Settings\Http\Requests;
 
+use App\Shared\Geography\Geography;
 use App\Shared\Geography\Rules\ContentLocale;
 use App\Shared\Geography\Rules\CountryCode;
 use App\Shared\Geography\Rules\CurrencyCode;
@@ -73,8 +74,8 @@ final class UpdateStoreSettingsRequest extends FormRequest
             'address.line1' => ['nullable', 'string', 'max:200'],
             'address.line2' => ['nullable', 'string', 'max:200'],
             'address.city' => ['nullable', 'string', 'max:120'],
-            /** The state, province or region code within the address country, from that country's states list, such as "LA". */
-            'address.state' => ['nullable', 'string', new StateCode($this->addressCountry())],
+            /** The state, province or region code from the address country's states list (GET geography/countries/{country}/states), such as "LA", in any case; free text where the country has no list. */
+            'address.state' => ['nullable', 'string', StateCode::forAddress($this->addressCountry())],
             /** Free text: postcode formats differ by country. */
             'address.postal_code' => ['nullable', 'string', 'max:20'],
             /** ISO 3166-1 alpha-2. */
@@ -159,13 +160,10 @@ final class UpdateStoreSettingsRequest extends FormRequest
         $address = $this->input('address');
 
         if (is_array($address)) {
-            foreach (['state', 'country'] as $field) {
-                if (array_key_exists($field, $address)) {
-                    $address[$field] = $upper($address[$field]);
-                }
+            if (array_key_exists('country', $address)) {
+                $address['country'] = $upper($address['country']);
+                $merged['address'] = $address;
             }
-
-            $merged['address'] = $address;
         }
 
         $this->merge($merged);
@@ -177,14 +175,16 @@ final class UpdateStoreSettingsRequest extends FormRequest
     private function addressChanges(): array
     {
         $value = fn (string $key): ?string => $this->filled("address.{$key}") ? trim($this->string("address.{$key}")->value()) : null;
+        $country = $value('country');
+        $state = $value('state');
 
         return [
             'address_line1' => $value('line1'),
             'address_line2' => $value('line2'),
             'address_city' => $value('city'),
-            'address_state_code' => $value('state'),
+            'address_state_code' => $state !== null && $country !== null ? app(Geography::class)->stateCode($country, $state) : $state,
             'address_postal_code' => $value('postal_code'),
-            'address_country_code' => $value('country'),
+            'address_country_code' => $country,
         ];
     }
 

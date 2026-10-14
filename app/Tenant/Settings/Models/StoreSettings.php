@@ -39,7 +39,7 @@ use Spatie\MediaLibrary\HasMedia;
  * @property string|null $address_line1
  * @property string|null $address_line2
  * @property string|null $address_city
- * @property string|null $address_state_code The state's code within the address country, such as "LA".
+ * @property string|null $address_state_code The state's code from Geography's states list for the address country, such as "LA"; free text where the country has none.
  * @property string|null $address_postal_code Free text; formats differ by country.
  * @property string|null $address_country_code ISO 3166-1 alpha-2.
  * @property int $low_stock_threshold The stock level at or below which a variant counts as running low, unless the variant sets its own.

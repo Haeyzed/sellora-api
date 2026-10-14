@@ -19,7 +19,6 @@ uses(TruncatesCentralDatabase::class);
 beforeEach(function (): void {
     seedWorld();
     seedAddressFormatCountries();
-    seedStatesMatchingAddressData('JP');
     $this->store = createStore('first-store', ['country_code' => 'NG']);
     $this->customer = firstStoreCustomer();
 });
@@ -61,13 +60,19 @@ it('requires only the fields the address country uses', function (array $address
     'but no city' => [tokyoAddress(['city' => null]), null],
     'Nigeria needs a city' => [lagosAddress(['city' => null]), 'city'],
     'but no postcode' => [lagosAddress(['postal_code' => null]), null],
-    // The two sources disagree about Nigeria's states, so its state is optional.
     'nor a state' => [lagosAddress(['state' => null]), null],
     'a state Nigeria doesn\'t have' => [lagosAddress(['state' => 'CA']), 'state'],
     'a postcode not in Nigeria\'s format' => [lagosAddress(['postal_code' => 'SW1A 1AA']), 'postal_code'],
     'a UK postcode' => [londonAddress(), null],
     'not a UK postcode' => [londonAddress(['postal_code' => '106104']), 'postal_code'],
-    'a UK address with a state' => [londonAddress(['state' => 'LND']), 'state'],
+    'a UK county, in any case' => [londonAddress(['state' => 'lnd']), null],
+    'a county the UK doesn\'t have' => [londonAddress(['state' => 'ZZZ']), 'state'],
+    'the US needs a state' => [californiaAddress(['state' => null]), 'state'],
+    'a state the US doesn\'t have' => [californiaAddress(['state' => 'ZZ']), 'state'],
+    // Germany's states aren't in the address data: any short text, or none.
+    'a German state as free text' => [berlinAddress(['state' => 'Berlin']), null],
+    'no German state' => [berlinAddress(), null],
+    'a German state too long to be one' => [berlinAddress(['state' => str_repeat('x', 101)]), 'state'],
     'a country we don\'t support' => [lagosAddress(['country' => 'XX']), 'country'],
     'a phone that isn\'t one' => [lagosAddress(['phone' => '12345']), 'phone'],
     'no recipient' => [lagosAddress(['recipient_name' => '']), 'recipient_name'],

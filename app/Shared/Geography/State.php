@@ -11,8 +11,8 @@ final readonly class State
 {
     /**
      * @param  string  $countryCode  ISO 3166-1 alpha-2, such as "NG".
-     * @param  string  $code  The subdivision's code within its country, such as "LA" for Lagos (ISO 3166-2 "NG-LA").
-     * @param  string|null  $type  Such as "state", "province" or "capital territory".
+     * @param  string  $code  The address data's key for it within its country: usually the ISO 3166-2 subdivision part, such as "LA" for Lagos ("NG-LA").
+     * @param  string|null  $type  What the country calls them, such as "state", "province" or "prefecture".
      */
     public function __construct(
         public string $countryCode,

@@ -27,7 +27,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $line1
  * @property string|null $line2
  * @property string|null $city
- * @property string|null $state_code The state's code within the country, from the country's states list, such as "LA".
+ * @property string|null $state_code The state's code from Geography's states list for the country, such as "LA"; free text where the country has none.
  * @property string|null $postal_code
  * @property string $country_code ISO 3166-1 alpha-2.
  * @property string|null $phone In E.164 format.

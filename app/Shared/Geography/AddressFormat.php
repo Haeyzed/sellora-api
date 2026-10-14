@@ -7,10 +7,9 @@ namespace App\Shared\Geography;
 /**
  * What a country's postal addresses need (section 3.3): which fields are required, and what a postcode looks like.
  *
- * Built by AddressFormats from Google's address data (commerceguys/addressing).
- * A state is required only when that data requires one and the states it
- * knows match the states list (nnjeim/world); otherwise it is optional, never
- * required, because the states list couldn't identify every valid one.
+ * Built by AddressFormats from Google's address data (commerceguys/addressing),
+ * the same data Geography's states come from. Where the data requires a state
+ * but lists none for the country, the state is required free text.
  */
 final readonly class AddressFormat
 {

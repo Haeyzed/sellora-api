@@ -123,6 +123,26 @@ function londonAddress(array $overrides = []): array
     return [...['recipient_name' => 'Ada Lovelace', 'line1' => '10 Downing Street', 'city' => 'London', 'postal_code' => 'sw1a 1aa', 'country' => 'gb'], ...$overrides];
 }
 
+/**
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function californiaAddress(array $overrides = []): array
+{
+    return [...['recipient_name' => 'Ada Lovelace', 'line1' => '1600 Amphitheatre Parkway', 'city' => 'Mountain View', 'state' => 'CA', 'postal_code' => '94043', 'country' => 'US'], ...$overrides];
+}
+
+/**
+ * An address in a country whose states the address data doesn't list.
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function berlinAddress(array $overrides = []): array
+{
+    return [...['recipient_name' => 'Ada Lovelace', 'line1' => 'Unter den Linden 1', 'city' => 'Berlin', 'postal_code' => '10117', 'country' => 'DE'], ...$overrides];
+}
+
 /*
 |--------------------------------------------------------------------------
 | For StaffCustomerTest.php

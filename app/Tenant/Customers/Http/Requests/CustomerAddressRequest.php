@@ -6,6 +6,7 @@ namespace App\Tenant\Customers\Http\Requests;
 
 use App\Shared\Geography\AddressFormat;
 use App\Shared\Geography\AddressFormats;
+use App\Shared\Geography\Geography;
 use App\Shared\Geography\Rules\CountryCode;
 use App\Shared\Geography\Rules\PostalCode;
 use App\Shared\Geography\Rules\StateCode;
@@ -42,8 +43,8 @@ final class CustomerAddressRequest extends FormRequest
             'line2' => ['nullable', 'string', 'max:200'],
             /** Required in countries whose addresses need a city. */
             'city' => [$format?->requiresCity ? 'required' : 'nullable', 'string', 'max:120'],
-            /** The state, province or region code within the country, from that country's states list, such as "LA". Required in countries whose addresses need one. */
-            'state' => [$format?->requiresState ? 'required' : 'nullable', 'string', new StateCode($format?->countryCode)],
+            /** The state, province or region code from the country's states list (GET geography/countries/{country}/states), such as "LA", in any case; free text where the country has no list. Required in countries whose addresses need one. */
+            'state' => [$format?->requiresState ? 'required' : 'nullable', 'string', StateCode::forAddress($format?->countryCode)],
             /** In the country's postcode format. Required in countries whose addresses need one. */
             'postal_code' => [$format?->requiresPostalCode ? 'required' : 'nullable', 'string', new PostalCode($format?->countryCode)],
             /** ISO 3166-1 alpha-2, such as "NG". */
@@ -75,7 +76,7 @@ final class CustomerAddressRequest extends FormRequest
                 'line1' => trim($this->string('line1')->value()),
                 'line2' => $text('line2'),
                 'city' => $text('city'),
-                'state_code' => $text('state'),
+                'state_code' => $this->filled('state') ? app(Geography::class)->stateCode($country, $this->string('state')->value()) : null,
                 'postal_code' => $this->filled('postal_code') ? mb_strtoupper(trim($this->string('postal_code')->value())) : null,
                 'country_code' => $country,
                 'phone' => $this->filled('phone') ? (new PhoneNumber($this->string('phone')->value(), $country))->formatE164() : null,
@@ -87,15 +88,9 @@ final class CustomerAddressRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $merged = [];
-
-        foreach (['country', 'state'] as $field) {
-            if (is_string($this->input($field))) {
-                $merged[$field] = mb_strtoupper(trim($this->string($field)->value()));
-            }
+        if (is_string($this->input('country'))) {
+            $this->merge(['country' => mb_strtoupper(trim($this->string('country')->value()))]);
         }
-
-        $this->merge($merged);
     }
 
     /**

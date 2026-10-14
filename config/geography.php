@@ -58,4 +58,11 @@ return [
     /* Countries where a new store shows weights in pounds and sizes in inches; everywhere else uses kilograms and centimetres. */
     'imperial_countries' => ['LR', 'MM', 'US'],
 
+    /*
+     * The subdivision codes stores may have saved, by country, as recorded
+     * from commerceguys/addressing. A package update that changes them is
+     * caught by a test and listed by geography:subdivision-changes.
+     */
+    'subdivision_codes_path' => resource_path('geography/subdivision-codes.json'),
+
 ];

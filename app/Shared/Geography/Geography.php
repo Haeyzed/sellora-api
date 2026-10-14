@@ -7,26 +7,31 @@ namespace App\Shared\Geography;
 use App\Shared\Money\Currencies;
 use App\Shared\Money\TaxMode;
 use Closure;
+use CommerceGuys\Addressing\AddressFormat\AddressFormatRepository;
+use CommerceGuys\Addressing\Country\CountryRepository;
+use CommerceGuys\Addressing\Subdivision\SubdivisionRepository;
 use DateTimeZone;
 use Illuminate\Contracts\Cache\Factory as CacheFactory;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Nnjeim\World\Models\Country as WorldCountry;
 use Nnjeim\World\Models\Currency as WorldCurrency;
-use Nnjeim\World\Models\State as WorldState;
 use Nnjeim\World\Models\Timezone as WorldTimezone;
 
 /**
  * Read-only access to the world reference data: countries, their states, currencies, timezones and content languages, and a country's defaults for a new store.
  *
- * The only code that may use nnjeim/world (an architecture rule enforces
- * it). Everything is identified by ISO codes, never by the package's
- * database IDs, which change when the data is reseeded. The data lives in
- * the central database and is the same for every store, so it is cached in
- * the untagged central cache store, from the central or a store's context.
+ * With AddressFormats, the only code that may use nnjeim/world and
+ * commerceguys/addressing (architecture rules enforce it). Everything is
+ * identified by codes, never by nnjeim/world's database IDs, which change
+ * when the data is reseeded. That data lives in the central database and is
+ * the same for every store, so it is cached in the untagged central cache
+ * store, from the central or a store's context.
  *
- * Sources: countries, states and timezones come from nnjeim/world;
- * currencies from ISO 4217 (App\Shared\Money\Currencies); content languages
- * and the tax mode a country starts with from config/geography.php.
+ * Sources (section 3.3): countries and timezones come from nnjeim/world;
+ * states only from commerceguys/addressing, so store addresses, customer
+ * addresses and tax rates all use the same codes; currencies from ISO 4217
+ * (App\Shared\Money\Currencies); content languages and the tax mode a
+ * country starts with from config/geography.php.
  */
 final class Geography
 {
@@ -36,6 +41,15 @@ final class Geography
      * @var array<string, Country>|null
      */
     private ?array $countries = null;
+
+    /**
+     * @var array<string, list<State>>
+     */
+    private array $states = [];
+
+    private ?AddressFormatRepository $addressFormatRepository = null;
+
+    private ?SubdivisionRepository $subdivisionRepository = null;
 
     public function __construct(
         private readonly CacheFactory $cacheFactory,
@@ -61,7 +75,7 @@ final class Geography
     }
 
     /**
-     * The country's states, provinces or regions, by name. Empty for an unknown country or one without any.
+     * The country's states, provinces or regions, in the address data's order (by name; Japan's prefectures by number). Empty for an unknown country or one the address data lists none for.
      *
      * @return list<State>
      */
@@ -73,10 +87,15 @@ final class Geography
             return [];
         }
 
-        /** @var list<array{code: string, name: string, type: string|null}> $states */
-        $states = $this->remember("states:{$country->code}", static fn (): array => self::loadStates($country->code));
+        return $this->states[$country->code] ??= $this->loadStates($country->code);
+    }
 
-        return array_map(static fn (array $state): State => new State($country->code, $state['code'], $state['name'], $state['type']), $states);
+    /**
+     * Whether the address data lists the country's states. Where it doesn't, an address's state is free text and only country-wide tax rates apply.
+     */
+    public function listsStates(string $countryCode): bool
+    {
+        return $this->states($countryCode) !== [];
     }
 
     /**
@@ -84,15 +103,50 @@ final class Geography
      */
     public function state(string $countryCode, string $stateCode): ?State
     {
-        $stateCode = mb_strtoupper(trim($stateCode));
+        $stateCode = mb_strtolower(trim($stateCode));
 
         foreach ($this->states($countryCode) as $state) {
-            if ($state->code === $stateCode) {
+            if (mb_strtolower($state->code) === $stateCode) {
                 return $state;
             }
         }
 
         return null;
+    }
+
+    /**
+     * Every subdivision code the address data has, by country, for every country it knows (supported by stores or not), sorted.
+     *
+     * These are the codes stored on addresses and tax rates, so a package
+     * update that changes one needs a migration of the stored data; see
+     * ListSubdivisionChangesCommand.
+     *
+     * @return array<string, list<string>>
+     */
+    public function subdivisionCodes(): array
+    {
+        $codes = [];
+
+        foreach (array_keys((new CountryRepository)->getList()) as $countryCode) {
+            $countryCodes = array_map(strval(...), array_keys($this->subdivisionRepository()->getList([$countryCode])));
+
+            if ($countryCodes !== []) {
+                sort($countryCodes);
+                $codes[$countryCode] = $countryCodes;
+            }
+        }
+
+        ksort($codes);
+
+        return $codes;
+    }
+
+    /**
+     * The state as it is stored: the listed code when it is one of the country's states in any case, otherwise the text as given, trimmed (free text where the country lists none).
+     */
+    public function stateCode(string $countryCode, string $state): string
+    {
+        return $this->state($countryCode, $state)->code ?? trim($state);
     }
 
     /**
@@ -248,47 +302,37 @@ final class Geography
     }
 
     /**
-     * A country's states, one per code, by name: only those whose ISO 3166-2 code belongs to the country.
+     * A country's first-level subdivisions from the address data, identified by the data's own key for each.
      *
-     * States are matched to their country by the country's row, because the
-     * dataset's own country code is sometimes wrong (a Hong Kong district is
-     * labelled Cambodia). Some states carry another country's full ISO 3166-2
-     * code (Sevastopol is "UA-40" under Russia); ISO 3166 decides, so those
-     * are left out.
+     * The key is what the address data looks subdivisions up by, and it is
+     * the ISO 3166-2 code's subdivision part for nearly all of them ("LA" for
+     * Lagos, "CA" for California). Where the data has no ISO code it uses
+     * another stable key: a postal abbreviation (Telangana is "TS") or the
+     * name ("Boa Vista" in Cape Verde). The data's "code" field is not used:
+     * it is the label printed on envelopes, often the name.
      *
-     * @return list<array{code: string, name: string, type: string|null}>
+     * @return list<State>
      */
-    private static function loadStates(string $countryCode): array
+    private function loadStates(string $countryCode): array
     {
-        $countryIds = WorldCountry::query()->select('id')->where('iso2', $countryCode);
+        $type = $this->addressFormatRepository()->get($countryCode)->getAdministrativeAreaType();
         $states = [];
 
-        foreach (WorldState::query()->whereIn('country_id', $countryIds)->whereNotNull('state_code')->orderBy('name')->get() as $worldState) {
-            $code = self::subdivisionCode($countryCode, (string) $worldState->state_code);
-
-            if ($code !== null && ! isset($states[$code])) {
-                $states[$code] = ['code' => $code, 'name' => $worldState->name, 'type' => $worldState->type];
-            }
+        foreach ($this->subdivisionRepository()->getList([$countryCode]) as $code => $name) {
+            $states[] = new State($countryCode, (string) $code, $name, $type);
         }
 
-        return array_values($states);
+        return $states;
     }
 
-    /**
-     * The state's code within the country ("LA" for "NG-LA"), or null when the code is empty or its ISO 3166-2 code names another country.
-     */
-    private static function subdivisionCode(string $countryCode, string $stateCode): ?string
+    private function addressFormatRepository(): AddressFormatRepository
     {
-        $stateCode = mb_strtoupper(trim($stateCode));
-        $isoCode = str_contains($stateCode, '-') ? $stateCode : "{$countryCode}-{$stateCode}";
+        return $this->addressFormatRepository ??= new AddressFormatRepository;
+    }
 
-        if ($stateCode === '' || ! str_starts_with($isoCode, "{$countryCode}-")) {
-            return null;
-        }
-
-        $code = mb_substr($isoCode, mb_strlen($countryCode) + 1);
-
-        return $code === '' ? null : $code;
+    private function subdivisionRepository(): SubdivisionRepository
+    {
+        return $this->subdivisionRepository ??= new SubdivisionRepository($this->addressFormatRepository());
     }
 
     /**

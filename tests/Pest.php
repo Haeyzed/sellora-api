@@ -182,9 +182,10 @@ function deleteAllStores(): void
 |--------------------------------------------------------------------------
 |
 | A few countries instead of the full nnjeim/world seed, which takes minutes.
-| Nigeria and the United States have states; the United States has several
-| timezones and also lists a deprecated alias that must never be offered;
-| Bhutan uses two currencies; France is listed but switched off.
+| Their states come from commerceguys/addressing, not this data. The United
+| States has several timezones and also lists a deprecated alias that must
+| never be offered; Bhutan uses two currencies; France is listed but
+| switched off.
 |
 */
 
@@ -211,13 +212,6 @@ function seedWorld(): void
         ['country_id' => $japan, 'name' => 'Asia/Tokyo'],
         ['country_id' => $bhutan, 'name' => 'Asia/Thimphu'],
     ]);
-
-    DB::table('states')->insert([
-        worldState($nigeria, 'NG', 'LA', 'Lagos'),
-        worldState($nigeria, 'NG', 'FC', 'Abuja Federal Capital Territory'),
-        worldState($unitedStates, 'US', 'CA', 'California'),
-        worldState($unitedStates, 'US', 'NY', 'New York'),
-    ]);
 }
 
 /**
@@ -239,16 +233,5 @@ function worldCurrency(int $countryId, string $code): array
     return [
         'country_id' => $countryId, 'name' => $code, 'code' => $code, 'precision' => 2, 'symbol' => $code,
         'symbol_native' => $code, 'symbol_first' => 1, 'decimal_mark' => '.', 'thousands_separator' => ',',
-    ];
-}
-
-/**
- * @return array<string, string|int>
- */
-function worldState(int $countryId, string $countryCode, string $stateCode, string $name): array
-{
-    return [
-        'country_id' => $countryId, 'name' => $name, 'country_code' => $countryCode, 'state_code' => $stateCode,
-        'type' => 'state', 'latitude' => '0', 'longitude' => '0',
     ];
 }

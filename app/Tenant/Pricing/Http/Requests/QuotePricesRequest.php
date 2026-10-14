@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tenant\Pricing\Http\Requests;
 
+use App\Shared\Geography\Geography;
 use App\Shared\Geography\Rules\CountryCode;
 use App\Shared\Geography\Rules\StateCode;
 use App\Shared\Money\Money;
@@ -45,8 +46,8 @@ final class QuotePricesRequest extends FormRequest
             'currency' => ['sometimes', 'string', 'regex:/^[A-Z]{3}$/'],
             /** Where the order would go, ISO 3166-1 alpha-2; the store's own country when left out. */
             'country_code' => ['sometimes', 'string', new CountryCode],
-            /** The destination's state code within the country, such as "LA". */
-            'state_code' => ['sometimes', 'nullable', 'string', new StateCode(is_string($countryCode) ? $countryCode : null)],
+            /** The destination's state code from the country's states list, such as "LA", in any case; free text where the country has no list. Needs country_code. */
+            'state_code' => ['sometimes', 'nullable', 'string', StateCode::forAddress(is_string($countryCode) ? $countryCode : null)],
             'lines' => ['required', 'array', 'min:1', 'max:'.self::MAX_LINES],
             /** The variant's ID. */
             'lines.*.variant' => ['required', 'string', Rule::exists(ProductVariant::class, 'public_id')->whereNull('deleted_at')],
@@ -84,7 +85,7 @@ final class QuotePricesRequest extends FormRequest
         return new PricingRequest(
             $currency,
             $pricingLines,
-            $this->filled('country_code') ? new TaxAddress($this->string('country_code')->value(), $this->filled('state_code') ? $this->string('state_code')->value() : null) : null,
+            $this->filled('country_code') ? new TaxAddress($this->string('country_code')->value(), $this->filled('state_code') ? app(Geography::class)->stateCode($this->string('country_code')->value(), $this->string('state_code')->value()) : null) : null,
             $this->has('shipping') ? Money::ofMinor($this->integer('shipping'), $currency) : null,
         );
     }

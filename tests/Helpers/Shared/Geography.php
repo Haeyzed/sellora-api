@@ -20,37 +20,27 @@ function geographyCountry(string $code, array $countries): array
 
 /*
 |--------------------------------------------------------------------------
-| For AddressFormatsTest.php and CustomerAddressTest.php
+| For AddressFormatsTest.php, CustomerAddressTest.php and StateTaxRatesTest.php
 |--------------------------------------------------------------------------
 */
 
 /**
- * Gives a seeded country (seedWorld()) exactly the states the address data lists for it, so the two sources agree, as they do for Japan in the real data.
+ * Adds one country to the seeded world (seedWorld()), with its currency and one timezone.
  */
-function seedStatesMatchingAddressData(string $countryCode): void
+function seedWorldCountry(string $code, string $name, string $phoneCode, string $currency, string $timezone): void
 {
-    $countryId = (int) DB::table('countries')->where('iso2', $countryCode)->value('id');
-    $subdivisions = (new CommerceGuys\Addressing\Subdivision\SubdivisionRepository)->getList([$countryCode]);
+    $countryId = DB::table('countries')->insertGetId(worldCountry($code, $name, $phoneCode));
+    DB::table('currencies')->insert(worldCurrency($countryId, $currency));
+    DB::table('timezones')->insert(['country_id' => $countryId, 'name' => $timezone]);
 
-    DB::table('states')->where('country_code', $countryCode)->delete();
-    DB::table('states')->insert(array_map(
-        static fn (string $code, string $name): array => worldState($countryId, $countryCode, $code, $name),
-        array_map(strval(...), array_keys($subdivisions)),
-        array_values($subdivisions),
-    ));
     Illuminate\Support\Facades\Cache::flush();
 }
 
 /**
- * Adds two countries to the seeded world, both without states: the United Kingdom, with a strict postcode format, and the United Arab Emirates, with no postcodes.
+ * Adds two countries to the seeded world: the United Kingdom, with a strict postcode format, and the United Arab Emirates, with no postcodes.
  */
 function seedAddressFormatCountries(): void
 {
-    foreach (['GB' => ['United Kingdom', '44', 'GBP', 'Europe/London'], 'AE' => ['United Arab Emirates', '971', 'AED', 'Asia/Dubai']] as $code => [$name, $phoneCode, $currency, $timezone]) {
-        $countryId = DB::table('countries')->insertGetId(worldCountry($code, $name, $phoneCode));
-        DB::table('currencies')->insert(worldCurrency($countryId, $currency));
-        DB::table('timezones')->insert(['country_id' => $countryId, 'name' => $timezone]);
-    }
-
-    Illuminate\Support\Facades\Cache::flush();
+    seedWorldCountry('GB', 'United Kingdom', '44', 'GBP', 'Europe/London');
+    seedWorldCountry('AE', 'United Arab Emirates', '971', 'AED', 'Asia/Dubai');
 }

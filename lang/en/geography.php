@@ -10,6 +10,8 @@ return [
 
     'unknown_country' => 'The :attribute is not a country we support.',
     'unknown_state' => 'The :attribute is not a state, province or region of that country.',
+    'no_states' => 'That country has no states, provinces or regions to choose from; leave the :attribute out for a country-wide rate.',
+    'state_too_long' => 'The :attribute may not be longer than :max characters.',
     'invalid_postal_code' => 'The :attribute is not a postcode in that country\'s format.',
     'unknown_timezone' => 'The :attribute is not a known timezone.',
     'unknown_currency' => 'The :attribute is not a currency in use today.',

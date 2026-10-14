@@ -150,8 +150,9 @@ it('charges a tax-exempt customer no tax, on goods or shipping', function (): vo
 it('lets staff preview a quote, with lines that have no rate at the destination marked', function (): void {
     $shirt = $this->shirt->public_id;
 
-    quoteRequest(['currency' => 'USD', 'country_code' => 'US', 'state_code' => 'CA', 'lines' => [['variant' => $shirt, 'quantity' => 2, 'discount' => 76]], 'shipping' => 1000], as: $this->viewer)
+    quoteRequest(['currency' => 'USD', 'country_code' => 'US', 'state_code' => 'ca', 'lines' => [['variant' => $shirt, 'quantity' => 2, 'discount' => 76]], 'shipping' => 1000], as: $this->viewer)
         ->assertOk()
+        ->assertJsonPath('data.destination', ['country_code' => 'US', 'state_code' => 'CA'])
         ->assertJsonPath('data.currency', 'USD')
         ->assertJsonPath('data.exchange_rate.source', 'manual')
         ->assertJsonPath('data.lines.0.unit_price.amount', 538)

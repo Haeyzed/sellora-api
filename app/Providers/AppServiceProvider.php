@@ -179,7 +179,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(TwoFactorRequirement::class, StoreTwoFactorRequirement::class);
         // Per request or job, so a long-running worker never reuses one store's languages for the next.
         $this->app->scoped(StoreLocales::class);
-        // Per request or job: it remembers the formats it has read, and the states lists can be reseeded.
+        // Per request or job: it remembers the formats it has read.
         $this->app->scoped(AddressFormats::class);
     }
 

@@ -116,6 +116,8 @@ it('changes settings, stores the phone in E.164 and codes in upper case, and aud
     expect($audit->old_values)->toMatchArray(['name' => 'Ada Fabrics', 'weight_unit' => 'kg'])
         ->and($audit->new_values)->toMatchArray(['name' => 'Ada Fabrics & Co', 'contact_phone' => '+2348031234567']);
 
+    // Germany's states aren't in the address data, so its state is kept as written.
+    storeSettingsRequest('PATCH', ['address' => ['city' => 'Schwerin', 'state' => 'Mecklenburg-Vorpommern', 'country' => 'de']])->assertOk()->assertJsonPath('data.address.state', 'Mecklenburg-Vorpommern');
     storeSettingsRequest('PATCH', ['address' => null])->assertOk()->assertJsonPath('data.address', null);
 });
 

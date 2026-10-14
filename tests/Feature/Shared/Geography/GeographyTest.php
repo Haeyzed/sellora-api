@@ -65,40 +65,30 @@ it('shows one country by code in any case, and answers 404 for one it doesn\'t s
     $this->getJson(centralUrl('/api/v1/geography/countries/ZZ/states'))->assertNotFound()->assertJsonPath('code', 'country_not_found');
 });
 
-it('lists a country\'s states by name, identified by their codes', function (): void {
-    $this->getJson(centralUrl('/api/v1/geography/countries/NG/states'))->assertOk()->assertExactJson(['data' => [
-        ['code' => 'FC', 'name' => 'Abuja Federal Capital Territory', 'type' => 'state'],
-        ['code' => 'LA', 'name' => 'Lagos', 'type' => 'state'],
-    ]]);
+it('lists a country\'s states from the address data, identified by their codes, and none where it lists none', function (): void {
+    $states = collect($this->getJson(centralUrl('/api/v1/geography/countries/NG/states'))->assertOk()->assertJsonCount(37, 'data')->json('data'))->keyBy('code');
 
+    expect($states['LA'])->toBe(['code' => 'LA', 'name' => 'Lagos', 'type' => 'state'])
+        ->and($states['FC'])->toBe(['code' => 'FC', 'name' => 'Federal Capital Territory', 'type' => 'state']);
+
+    $this->getJson(centralUrl('/api/v1/geography/countries/JP/states'))->assertOk()->assertJsonPath('data.12', ['code' => '13', 'name' => 'Tokyo', 'type' => 'prefecture']);
     $this->getJson(centralUrl('/api/v1/geography/countries/DE/states'))->assertOk()->assertExactJson(['data' => []]);
 });
 
-it('follows ISO 3166 rather than the dataset: states belong to the country they are filed under, and another country\'s codes are left out', function (): void {
-    $hongKong = DB::table('countries')->insertGetId(worldCountry('HK', 'Hong Kong', '852'));
-    $cambodia = DB::table('countries')->insertGetId(worldCountry('KH', 'Cambodia', '855'));
-    $russia = DB::table('countries')->insertGetId(worldCountry('RU', 'Russia', '7'));
-    $unitedStates = DB::table('countries')->where('iso2', 'US')->value('id');
+it('uses the address data\'s own key for each state: the ISO 3166-2 part where it has one, otherwise a postal code or the name', function (): void {
+    seedWorldCountry('IN', 'India', '91', 'INR', 'Asia/Kolkata');
+    seedWorldCountry('CV', 'Cape Verde', '238', 'CVE', 'Atlantic/Cape_Verde');
+    $geography = app(Geography::class);
 
-    DB::table('states')->insert([
-        // The dataset labels this Hong Kong district with Cambodia's code.
-        worldState($hongKong, 'KH', 'NTP', 'Tai Po District'),
-        worldState($cambodia, 'KH', '12', 'Phnom Penh'),
-        // Sevastopol is filed under Russia with Ukraine's ISO 3166-2 code.
-        worldState($russia, 'RU', 'UA-40', 'Sevastopol'),
-        worldState($russia, 'RU', 'MOW', 'Moscow'),
-        worldState($russia, 'RU', 'RU-AD', 'Adygea'),
-        worldState($unitedStates, 'US', 'UM-81', 'Baker Island'),
-    ]);
-
-    $codes = fn (string $country): array => array_column($this->getJson(centralUrl("/api/v1/geography/countries/{$country}/states"))->assertOk()->json('data'), 'code');
-
-    expect($codes('HK'))->toBe(['NTP'])
-        ->and($codes('KH'))->toBe(['12'])
-        ->and($codes('RU'))->toBe(['AD', 'MOW'])
-        ->and($codes('US'))->toBe(['CA', 'NY'])
-        ->and(app(Geography::class)->state('RU', 'UA-40'))->toBeNull()
-        ->and(app(Geography::class)->state('RU', '40'))->toBeNull();
+    // ISO 3166-2 now has "IN-TG" for Telangana; the address data keeps "TS", and only that is offered.
+    expect($geography->state('IN', 'ts')?->code)->toBe('TS')
+        ->and($geography->state('IN', 'TG'))->toBeNull()
+        ->and($geography->state('CV', 'boa vista')?->code)->toBe('Boa Vista')
+        ->and($geography->stateCode('IN', ' ts '))->toBe('TS')
+        // Where the country lists no states, an address's state is kept as written.
+        ->and($geography->listsStates('DE'))->toBeFalse()
+        ->and($geography->stateCode('DE', ' Bayern '))->toBe('Bayern')
+        ->and($geography->states('ZZ'))->toBe([]);
 });
 
 it('lists ISO 4217 currencies in use with their decimal places, current timezones without deprecated aliases, and content languages', function (): void {
@@ -117,7 +107,7 @@ it('lists ISO 4217 currencies in use with their decimal places, current timezone
 it('serves the same data on every store\'s domain, but not for a store that doesn\'t serve requests or an unknown domain', function (): void {
     $store = createStore('geography-store');
 
-    $this->getJson(storeUrl('geography-store', '/api/v1/geography/countries/NG/states'))->assertOk()->assertJsonCount(2, 'data');
+    $this->getJson(storeUrl('geography-store', '/api/v1/geography/countries/NG/states'))->assertOk()->assertJsonCount(37, 'data');
     tenancy()->end();
 
     $store->update(['status' => TenantStatus::Closed, 'status_before_closing' => TenantStatus::Active, 'closed_at' => now(), 'purge_after' => now()->addDays(90)]);
@@ -145,9 +135,15 @@ it('validates country, state, timezone, currency and content language codes for 
     expect($passes('country', 'NG', new CountryCode))->toBeTrue()
         ->and($passes('country', 'ng', new CountryCode))->toBeFalse()
         ->and($passes('country', 'FR', new CountryCode))->toBeFalse()
-        ->and($passes('state', 'LA', new StateCode('NG')))->toBeTrue()
-        ->and($passes('state', 'CA', new StateCode('NG')))->toBeFalse()
-        ->and($passes('state', 'LA', new StateCode(null)))->toBeFalse()
+        ->and($passes('state', 'LA', StateCode::forAddress('NG')))->toBeTrue()
+        ->and($passes('state', 'la', StateCode::forAddress('NG')))->toBeTrue()
+        ->and($passes('state', 'CA', StateCode::forAddress('NG')))->toBeFalse()
+        ->and($passes('state', 'LA', StateCode::forAddress(null)))->toBeFalse()
+        // Free text for an address where the country lists no states, but never for a tax rate.
+        ->and($passes('state', 'Bayern', StateCode::forAddress('DE')))->toBeTrue()
+        ->and($passes('state', str_repeat('x', 101), StateCode::forAddress('DE')))->toBeFalse()
+        ->and($passes('state', 'Bayern', StateCode::forTaxRate('DE')))->toBeFalse()
+        ->and($passes('state', 'LA', StateCode::forTaxRate('NG')))->toBeTrue()
         ->and($passes('timezone', 'Africa/Lagos', new Timezone))->toBeTrue()
         ->and($passes('timezone', 'US/Eastern', new Timezone))->toBeFalse()
         ->and($passes('currency', 'JPY', new CurrencyCode))->toBeTrue()
