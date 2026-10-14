@@ -1126,6 +1126,11 @@ Names must say exactly what a thing is or does, so the code reads without explan
 - **Locks are tested under real contention**, not just by checking they're taken: a test holds the lock from a second database connection and proves the protected action waits or fails. This matters most for stock (Step 8), limits and anything involving money.
 - Stock changes are always recorded as stock movements, and concurrent updates (two customers buying the last item) are protected with row locks or atomic updates, so stock can never go negative by accident.
 - **The stock movement ledger is append-only**, enforced by a database trigger that refuses updates and deletes (only dropping or purging the whole store database removes it). A command recalculates every stock level from the ledger and reports any mismatch, run on a schedule per store.
+- **Promotions:**
+  - Usage limits are counted from the redemption ledger (reserved, committed, released), never from a separate counter that can drift.
+  - A row is locked only when a limit actually needs protecting: an unlimited promotion takes no lock, so a busy store-wide sale never makes every checkout queue behind one row. A per-customer limit locks per promotion and customer (for example an advisory lock), not the whole promotion.
+  - Gift cards are a payment method (Payments), never a discount: tax is due on the full price.
+  - Refunds give back what a line actually cost after its discounts and never re-run promotions. Returns (Step 18) must let staff lower a refund when a return breaks the condition a discount depended on (for example returning the paid items of a "buy 2, get 1 free" deal and keeping the free one).
 - **Stock is counted in whole units** in core. Stock is reserved at checkout, becomes the order's reservation when the order is placed, and leaves `on_hand` only at fulfilment. Unpaid orders don't hold stock forever: Orders releases their reservation when they expire.
 
 ### Scheduled and background work
