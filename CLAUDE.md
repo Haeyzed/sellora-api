@@ -287,7 +287,7 @@ This platform targets merchants and shoppers worldwide. **Never hard-code anythi
 
 **Addresses, phones and units**
 - Phone numbers are validated and formatted with `propaganistas/laravel-phone` (already installed; it includes libphonenumber), never a second phone library.
-- Address formats differ by country: states, postcodes and city rules are not universal. Validate per country, and never require fields a country doesn't use. Countries and states come from `nnjeim/world`; which fields a country requires and its postcode pattern come from `commerceguys/addressing`. Both are used only through `App\Shared\Geography`. Cities are free text.
+- Address formats differ by country: states, postcodes and city rules are not universal. Validate per country, and never require fields a country doesn't use. Countries, currencies, timezones and languages come from `nnjeim/world`. **States and other subdivisions come only from `commerceguys/addressing`**, together with which fields a country requires and its postcode pattern, because it is built for postal addresses. Store addresses, customer addresses and tax rates all use the same subdivision codes from this one source; two sources would let a tax rate saved under one code silently never match an address saved under another. Where it lists no subdivisions for a country, the state is optional free text and only country-wide tax rates apply there. Both packages are used only through `App\Shared\Geography`. Cities are free text.
 - **Addresses are copied onto orders, never linked**, so editing or deleting a saved address never changes a past order.
 - Phone numbers are stored in E.164 format (`+2348012345678`, `+14155550123`).
 - Store weights and dimensions in metric internally, and let each store choose display units.
@@ -1226,6 +1226,8 @@ If you notice a security problem anywhere, in the legacy project, in this reposi
 - **Test helper functions** are never declared in individual test files, because Pest loads every file into the same process and two files with the same helper name crash the whole run. Shared helpers live in `tests/Pest.php` or a helpers file it loads, with names that say exactly what they build.
 - **Verification copies (worktrees or clones) never touch the main checkout.** Scripts that check out other commits refuse to run in it, so uncommitted work there is never at risk.
 - A CI pipeline (GitHub Actions, `.github/workflows/ci.yml`) runs Pint, Larastan, Pest (including architecture and tenant-isolation tests) and `composer audit` on every push. Nothing is merged while CI fails.
+- **Custom database settings and other technical identifiers** follow the same no-brand rule as class and table names (section 1): `app.erasing_personal_data`, never a name containing "Sellora".
+- **Merging a reviewed branch:** fast-forward `main` to the branch's last commit (`git merge --ff-only`), so `main` gets the exact commit CI already passed.
 - **Third-party GitHub Actions are pinned to a full commit hash** (with the version in a comment), and Dependabot proposes updates. A version tag can be moved to malicious code by whoever controls the action; a commit hash can't.
 - **Each build step is done on its own branch** (for example `step-10-customers`). Pushing the branch is always safe and runs CI. The branch is merged into `main` only after my review and a green CI run, and `main` is protected on GitHub so nothing reaches it any other way.
 
