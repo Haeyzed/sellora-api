@@ -45,7 +45,7 @@ final readonly class RegisterCustomer
         }
 
         $customer->forceFill(['last_signed_in_at' => CarbonImmutable::now()])->save();
-        $this->customerEmailLinks->send($customer, CustomerEmailTokenPurpose::Verification, $customer->email);
+        $this->customerEmailLinks->send($customer, CustomerEmailTokenPurpose::Verification, $email);
 
         return $this->accessTokenIssuer->issue($customer, Customer::GUARD, $deviceName);
     }

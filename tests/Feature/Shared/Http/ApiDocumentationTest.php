@@ -135,7 +135,11 @@ it('documents every customer endpoint', function (): void {
     $store = documentedApi('default');
 
     $expected = [
-        '/customer/account' => ['patch'],
+        '/customer/account' => ['patch', 'delete'],
+        '/customer/account/data-exports' => ['get', 'post'],
+        '/customer/account/data-exports/{export}/download' => ['get'],
+        '/staff/customers/{customer}/personal-data' => ['get'],
+        '/staff/customers/{customer}/erasure' => ['post'],
         '/customer/account/email-verifications' => ['post'],
         '/customer/account/email-changes' => ['post'],
         '/customer/account/email-changes/confirmations' => ['post'],
@@ -175,6 +179,9 @@ it('documents every customer endpoint', function (): void {
         ->and(json_encode($store['paths']['/customer/account/marketing-consents/{channel}']['put']['responses'][422]))->toContain('marketing_contact_missing')
         ->and(array_keys($store['paths']['/staff/customers/{customer}/marketing-consents']))->toBe(['get'])
         ->and(json_encode($store['paths']['/staff/customers/{customer}/tax-exemption']['put']['responses'][422]))->toContain('customer_tax_id_missing')
+        ->and(json_encode($store['paths']['/customer/account/data-exports']['post']['responses'][403]))->toContain('customer_email_not_verified')
+        ->and(json_encode($store['paths']['/customer/account']['delete']['responses'][422]))->toContain('current_password_incorrect')
+        ->and(json_encode($store['paths']['/staff/customers/{customer}/erasure']['post']['responses'][422]))->toContain('current_password_incorrect')
         ->and(collect($store['paths']['/staff/customers']['get']['parameters'])->pluck('name')->all())->toContain('search', 'is_active', 'email_verified', 'trashed', 'cursor')
         ->and($store['paths']['/staff/customers/{customer}']['patch']['description'])->toContain('Staff never change a customer\'s');
 });

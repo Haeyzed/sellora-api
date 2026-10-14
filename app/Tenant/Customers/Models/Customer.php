@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace App\Tenant\Customers\Models;
 
 use App\Shared\Auth\PasswordResetLinkNotification;
-use App\Shared\Concerns\HasNormalisedEmail;
 use App\Shared\Concerns\HasPublicId;
 use App\Tenant\Pricing\Data\TaxCustomer;
 use Carbon\CarbonImmutable;
 use Database\Factories\Tenant\CustomerFactory;
 use Illuminate\Contracts\Translation\HasLocalePreference;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -31,8 +31,8 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  *
  * @property int $id
  * @property string $public_id
- * @property string $name
- * @property string $email
+ * @property string|null $name Null only once erased.
+ * @property string|null $email Null only once erased, which frees it for a new account.
  * @property string|null $phone In E.164 format, such as +2348012345678.
  * @property string|null $locale One of the store's content languages; emails to the customer use it.
  * @property CarbonImmutable|null $email_verified_at When the customer proved they receive mail at their current email.
@@ -41,7 +41,8 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property string|null $tax_id_country ISO 3166-1 alpha-2; set exactly when tax_id is (a database constraint).
  * @property int|null $default_shipping_address_id Always one of the customer's own addresses (a database constraint).
  * @property int|null $default_billing_address_id Always one of the customer's own addresses (a database constraint).
- * @property string $password
+ * @property string|null $password Null only once erased.
+ * @property CarbonImmutable|null $erased_at When the customer's personal data was erased; every personal field is then empty (a database constraint).
  * @property bool $is_active
  * @property CarbonImmutable|null $last_signed_in_at
  * @property CarbonImmutable|null $created_at
@@ -51,6 +52,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property-read Collection<int, CustomerEmailToken> $emailTokens
  * @property-read Collection<int, CustomerAddress> $addresses
  * @property-read Collection<int, CustomerNote> $notes
+ * @property-read Collection<int, CustomerDataExport> $dataExports
  */
 final class Customer extends User implements AuditableContract, HasApiTokensContract, HasLocalePreference
 {
@@ -62,7 +64,6 @@ final class Customer extends User implements AuditableContract, HasApiTokensCont
     /** @use HasFactory<CustomerFactory> */
     use HasFactory;
 
-    use HasNormalisedEmail;
     use HasPublicId;
     use Notifiable;
     use SoftDeletes;
@@ -98,13 +99,15 @@ final class Customer extends User implements AuditableContract, HasApiTokensCont
     protected $auditInclude = ['is_active', 'is_tax_exempt'];
 
     /**
-     * Emails a link into the storefront to choose a new password.
+     * Emails a link into the storefront to choose a new password. An erased customer has no email, so the broker never finds one.
      *
      * @param  string  $token
      */
     public function sendPasswordResetNotification($token): void
     {
-        $this->notify(PasswordResetLinkNotification::forBroker(self::PASSWORD_BROKER, $token, $this->email));
+        if ($this->email !== null) {
+            $this->notify(PasswordResetLinkNotification::forBroker(self::PASSWORD_BROKER, $token, $this->email));
+        }
     }
 
     /**
@@ -121,6 +124,19 @@ final class Customer extends User implements AuditableContract, HasApiTokensCont
     public function taxCustomer(): TaxCustomer
     {
         return new TaxCustomer($this->is_tax_exempt, $this->tax_id, $this->tax_id_country);
+    }
+
+    public function isErased(): bool
+    {
+        return $this->erased_at !== null;
+    }
+
+    /**
+     * @return HasMany<CustomerDataExport, $this>
+     */
+    public function dataExports(): HasMany
+    {
+        return $this->hasMany(CustomerDataExport::class);
     }
 
     public function hasVerifiedEmail(): bool
@@ -179,6 +195,18 @@ final class Customer extends User implements AuditableContract, HasApiTokensCont
         });
     }
 
+    /**
+     * Trimmed and lower-cased like every account's (HasNormalisedEmail), and null once the customer's personal data is erased.
+     *
+     * @return Attribute<string|null, string|null>
+     */
+    protected function email(): Attribute
+    {
+        return Attribute::make(
+            set: static fn (?string $email): ?string => $email === null ? null : mb_strtolower(trim($email)),
+        );
+    }
+
     protected static function newFactory(): CustomerFactory
     {
         return CustomerFactory::new();
@@ -194,6 +222,7 @@ final class Customer extends User implements AuditableContract, HasApiTokensCont
             'is_active' => 'boolean',
             'is_tax_exempt' => 'boolean',
             'email_verified_at' => 'immutable_datetime',
+            'erased_at' => 'immutable_datetime',
             'last_signed_in_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',

@@ -21,7 +21,9 @@ final class CustomerResource extends JsonResource
     }
 
     /**
-     * @return array{id: string, name: string, email: string, email_verified: bool, phone: string|null, locale: string|null, tax_id: string|null, tax_id_country: string|null, is_tax_exempt: bool}
+     * Never an erased account: erasure signs the customer out everywhere, and only staff still see the cleared row.
+     *
+     * @return array{id: string, name: string|null, email: string|null, email_verified: bool, phone: string|null, locale: string|null, tax_id: string|null, tax_id_country: string|null, is_tax_exempt: bool}
      */
     public function toArray(Request $request): array
     {

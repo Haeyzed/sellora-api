@@ -26,4 +26,9 @@ final class CustomerPolicy
     {
         return $actor->can(CustomerPermission::CustomersTaxExemption->value);
     }
+
+    public function handlePrivacyRequests(StaffMember $actor): bool
+    {
+        return $actor->can(CustomerPermission::CustomersPrivacy->value);
+    }
 }

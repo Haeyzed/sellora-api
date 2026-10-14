@@ -62,10 +62,18 @@ use App\Tenant\Catalog\Models\Brand;
 use App\Tenant\Catalog\Models\Category;
 use App\Tenant\Catalog\Models\Product;
 use App\Tenant\Catalog\Models\ProductVariant;
+use App\Tenant\Customers\CustomerDataExportRetention;
 use App\Tenant\Customers\CustomerEmailTokenRetention;
 use App\Tenant\Customers\CustomerStoreTables;
 use App\Tenant\Customers\Enums\CustomerPermission;
 use App\Tenant\Customers\Models\Customer;
+use App\Tenant\Customers\Privacy\CustomerAccountData;
+use App\Tenant\Customers\Privacy\CustomerAddressData;
+use App\Tenant\Customers\Privacy\CustomerDataExportData;
+use App\Tenant\Customers\Privacy\CustomerDataSubject;
+use App\Tenant\Customers\Privacy\CustomerNoteData;
+use App\Tenant\Customers\Privacy\MarketingConsentData;
+use App\Tenant\Customers\TrashedCustomerRetention;
 use App\Tenant\Delivery\DeliveryStoreTables;
 use App\Tenant\Delivery\Models\Driver;
 use App\Tenant\Identity\Enums\StaffPermission;
@@ -118,6 +126,7 @@ use Illuminate\Auth\Events\Authenticated;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Validation\UncompromisedVerifier;
+use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Client\Factory as HttpFactory;
@@ -279,7 +288,18 @@ final class AppServiceProvider extends ServiceProvider
      */
     private function registerSharedRegistries(): void
     {
-        $this->app->singleton(PersonalDataRegistry::class);
+        $this->app->singleton(PersonalDataRegistry::class, static function (Application $app): PersonalDataRegistry {
+            $registry = new PersonalDataRegistry($app, $app->make(DatabaseManager::class));
+
+            // The account last: the others still need the customer's email and phone to find what is theirs.
+            $registry->register(CustomerDataSubject::TYPE, 'addresses', CustomerAddressData::class);
+            $registry->register(CustomerDataSubject::TYPE, 'staff_notes', CustomerNoteData::class);
+            $registry->register(CustomerDataSubject::TYPE, 'marketing_consents', MarketingConsentData::class);
+            $registry->register(CustomerDataSubject::TYPE, 'data_exports', CustomerDataExportData::class);
+            $registry->register(CustomerDataSubject::TYPE, 'account', CustomerAccountData::class);
+
+            return $registry;
+        });
 
         // Domains register their priced records here as they start storing prices (Catalog, Pricing, Orders).
         $this->app->singleton(PricedRecordsRegistry::class, static function (Application $app): PricedRecordsRegistry {
@@ -300,6 +320,8 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(AuditRetention::class);
             $registry->register(StaffInvitationRetention::class);
             $registry->register(CustomerEmailTokenRetention::class);
+            $registry->register(TrashedCustomerRetention::class);
+            $registry->register(CustomerDataExportRetention::class);
             $registry->register(SettledReservationRetention::class);
             $registry->register(StoreRegistrationRetention::class);
             $registry->register(StoreExportRetention::class);

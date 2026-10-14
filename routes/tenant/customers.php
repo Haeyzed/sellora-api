@@ -6,11 +6,13 @@ use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
 use App\Tenant\Customers\Http\Controllers\CustomerAccountController;
 use App\Tenant\Customers\Http\Controllers\CustomerAddressController;
 use App\Tenant\Customers\Http\Controllers\CustomerNoteController;
+use App\Tenant\Customers\Http\Controllers\CustomerPrivacyController;
 use App\Tenant\Customers\Http\Controllers\CustomerTaxIdController;
 use App\Tenant\Customers\Http\Controllers\EmailChangeController;
 use App\Tenant\Customers\Http\Controllers\EmailVerificationController;
 use App\Tenant\Customers\Http\Controllers\MarketingConsentController;
 use App\Tenant\Customers\Http\Controllers\StaffCustomerController;
+use App\Tenant\Customers\Http\Controllers\StaffCustomerPrivacyController;
 use App\Tenant\Customers\Http\Controllers\StaffMarketingConsentController;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Identity\Models\StaffMember;
@@ -31,6 +33,10 @@ Route::post('customer/auth/email-verifications', [EmailVerificationController::c
 
 Route::prefix('customer/account')->name('customer.account.')->middleware(['auth:'.Customer::GUARD, 'throttle:api', UseStoreLanguage::class])->group(static function (): void {
     Route::patch('/', [CustomerAccountController::class, 'update'])->name('update');
+    Route::delete('/', [CustomerPrivacyController::class, 'destroy'])->name('destroy');
+    Route::get('data-exports', [CustomerPrivacyController::class, 'index'])->name('data-exports.index');
+    Route::post('data-exports', [CustomerPrivacyController::class, 'store'])->middleware('throttle:account-emails')->name('data-exports.store');
+    Route::get('data-exports/{export}/download', [CustomerPrivacyController::class, 'download'])->name('data-exports.download');
     Route::apiResource('addresses', CustomerAddressController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
     Route::put('tax-id', [CustomerTaxIdController::class, 'update'])->name('tax-id.update');
     Route::delete('tax-id', [CustomerTaxIdController::class, 'destroy'])->name('tax-id.destroy');
@@ -64,6 +70,8 @@ Route::prefix('staff/customers')
         Route::post('{customer}/reactivate', [StaffCustomerController::class, 'reactivate'])->name('reactivate')->withTrashed();
         Route::get('{customer}/addresses', [StaffCustomerController::class, 'addresses'])->name('addresses.index')->withTrashed();
         Route::put('{customer}/tax-exemption', [StaffCustomerController::class, 'taxExemption'])->name('tax-exemption.update')->withTrashed();
+        Route::get('{customer}/personal-data', [StaffCustomerPrivacyController::class, 'show'])->name('personal-data.show')->withTrashed();
+        Route::post('{customer}/erasure', [StaffCustomerPrivacyController::class, 'destroy'])->name('erasure.store')->withTrashed();
         Route::get('{customer}/notes', [CustomerNoteController::class, 'index'])->name('notes.index')->withTrashed();
         Route::post('{customer}/notes', [CustomerNoteController::class, 'store'])->name('notes.store')->withTrashed();
         Route::delete('{customer}/notes/{note}', [CustomerNoteController::class, 'destroy'])->name('notes.destroy')->scopeBindings()->withTrashed();

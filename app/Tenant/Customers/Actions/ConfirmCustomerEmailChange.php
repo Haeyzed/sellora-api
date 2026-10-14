@@ -41,7 +41,8 @@ final readonly class ConfirmCustomerEmailChange
             }
 
             $customer->newQuery()->lockForUpdate()->findOrFail($customer->id);
-            $oldEmail = $customer->email;
+            // An erased customer has no email, and no sign-in to confirm with.
+            $oldEmail = $customer->email ?? throw new InvalidCustomerEmailLinkException;
 
             try {
                 $customer->forceFill(['email' => $emailToken->email, 'email_verified_at' => CarbonImmutable::now()])->save();

@@ -153,6 +153,38 @@ function staffCustomerRequest(string $method, string $path, array $data = [], St
     return $response;
 }
 
+/*
+|--------------------------------------------------------------------------
+| For CustomerPrivacyTest.php
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Where an export's file is, on the first store's private disk.
+ */
+function exportFileOf(string $exportId): string
+{
+    $path = test()->store->run(static fn (): ?string => App\Tenant\Customers\Models\CustomerDataExport::query()->where('public_id', $exportId)->value('path'));
+
+    return is_string($path) ? $path : throw new LogicException('The export has no file.');
+}
+
+/**
+ * What is left in the first store that held the test customer's personal data, and the contacts of the consent events left.
+ *
+ * @return array{addresses: int, notes: int, exports: int, tokens: int, consents: list<string>}
+ */
+function remainingPersonalRecords(): array
+{
+    return test()->store->run(static fn (): array => [
+        'addresses' => App\Tenant\Customers\Models\CustomerAddress::query()->count(),
+        'notes' => App\Tenant\Customers\Models\CustomerNote::query()->count(),
+        'exports' => App\Tenant\Customers\Models\CustomerDataExport::query()->count(),
+        'tokens' => Illuminate\Support\Facades\DB::table('personal_access_tokens')->where('tokenable_type', 'customer')->count(),
+        'consents' => array_values(App\Tenant\Customers\Models\MarketingConsent::query()->orderBy('id')->pluck('contact')->all()),
+    ]);
+}
+
 /**
  * A customer of the first store, created directly.
  *

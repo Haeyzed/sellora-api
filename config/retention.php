@@ -23,6 +23,10 @@ return [
         'staff_invitations' => (int) env('RETENTION_STAFF_INVITATIONS_DAYS', 30),
         // Customers' verification and email-change links, after they expire.
         'customer_email_tokens' => (int) env('RETENTION_CUSTOMER_EMAIL_TOKENS_DAYS', 1),
+        // Customers left in the trash are erased for good after this; restoring them before then keeps them.
+        'trashed_customers' => (int) env('RETENTION_TRASHED_CUSTOMERS_DAYS', 90),
+        // Customers' own data exports, after their download link expires.
+        'customer_data_exports' => (int) env('RETENTION_CUSTOMER_DATA_EXPORTS_DAYS', 1),
         // Reservations that ended; the stock movements they caused are kept for good.
         'settled_stock_reservations' => (int) env('RETENTION_SETTLED_STOCK_RESERVATIONS_DAYS', 90),
         'store_registrations' => (int) env('RETENTION_STORE_REGISTRATIONS_DAYS', 7),

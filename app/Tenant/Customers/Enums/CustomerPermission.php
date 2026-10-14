@@ -17,4 +17,7 @@ enum CustomerPermission: string
 
     /** Make a customer tax-exempt, or end it, after checking their tax ID. */
     case CustomersTaxExemption = 'customers.tax_exemption';
+
+    /** Download all of a customer's personal data, or erase it, at the customer's request. */
+    case CustomersPrivacy = 'customers.privacy';
 }

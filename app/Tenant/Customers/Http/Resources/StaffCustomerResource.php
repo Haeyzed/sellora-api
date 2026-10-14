@@ -46,6 +46,8 @@ final class StaffCustomerResource extends JsonResource
             'created_at' => $customer->created_at?->toIso8601String(),
             /** When it was moved to the trash; null when it isn't there. */
             'deleted_at' => $customer->deleted_at?->toIso8601String(),
+            /** When the customer's personal data was erased; every personal field above is then null. */
+            'erased_at' => $customer->erased_at?->toIso8601String(),
         ];
     }
 }
