@@ -116,6 +116,7 @@ use App\Tenant\Pricing\TaxCalculatorRegistry;
 use App\Tenant\Pricing\TaxExemptCustomerRule;
 use App\Tenant\Promotions\Enums\PromotionPermission;
 use App\Tenant\Promotions\Models\Promotion;
+use App\Tenant\Promotions\Models\PromotionCode;
 use App\Tenant\Promotions\PromotionPricedRecords;
 use App\Tenant\Promotions\PromotionStoreTables;
 use App\Tenant\Settings\Enums\SettingsPermission;
@@ -397,6 +398,7 @@ final class AppServiceProvider extends ServiceProvider
             'store_currency' => StoreCurrency::class,
             'fixed_price' => FixedPrice::class,
             'promotion' => Promotion::class,
+            'promotion_code' => PromotionCode::class,
         ]);
     }
 

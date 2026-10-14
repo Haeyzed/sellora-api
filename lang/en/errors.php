@@ -143,6 +143,10 @@ return [
     'customer_email_not_verified' => 'Confirm your email address first: we sent you a link.',
     'customer_tax_id_missing' => 'The customer has no tax ID. They add it in their account before they can be made tax-exempt.',
     'marketing_contact_missing' => 'Add a phone number to your account first.',
+    'promotion_takes_no_codes' => 'This promotion applies automatically, so it has no codes. Create a code promotion for codes.',
+    'promotion_code_taken' => 'Another code in the store is the same, ignoring case.',
+    'code_not_valid' => 'This code can\'t be used.',
+    'too_many_code_attempts' => 'Too many codes tried. Wait a minute and try again.',
     'customer_group_name_taken' => 'Another customer group already has this name.',
     'customer_address_limit_reached' => 'You can save up to :limit addresses. Delete one to add another.',
 

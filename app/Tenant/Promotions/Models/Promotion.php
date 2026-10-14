@@ -70,6 +70,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property CarbonImmutable|null $updated_at
  * @property CarbonImmutable|null $deleted_at When it was archived.
  * @property-read Collection<int, PromotionCurrencyAmount> $currencyAmounts
+ * @property-read Collection<int, PromotionCode> $codes
  * @property-read Collection<int, Product> $products
  * @property-read Collection<int, ProductVariant> $variants
  * @property-read Collection<int, Category> $categories
@@ -194,6 +195,16 @@ final class Promotion extends Model implements AuditableContract
             PromotionStatus::Scheduled => $query->where('is_active', true)->where('starts_at', '>', $at)->where(static fn (Builder $ends) => $ends->whereNull('ends_at')->orWhere('ends_at', '>', $at)),
             PromotionStatus::Running => $query->where('is_active', true)->where('starts_at', '<=', $at)->where(static fn (Builder $ends) => $ends->whereNull('ends_at')->orWhere('ends_at', '>', $at)),
         };
+    }
+
+    /**
+     * The codes customers enter to get it; only a code promotion has any.
+     *
+     * @return HasMany<PromotionCode, $this>
+     */
+    public function codes(): HasMany
+    {
+        return $this->hasMany(PromotionCode::class);
     }
 
     /**

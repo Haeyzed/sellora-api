@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
 use App\Tenant\Identity\Models\StaffMember;
+use App\Tenant\Promotions\Http\Controllers\PromotionCodeController;
 use App\Tenant\Promotions\Http\Controllers\PromotionController;
 use Illuminate\Support\Facades\Route;
 
@@ -24,4 +25,9 @@ Route::prefix('staff/promotions')
         Route::delete('{promotion}', [PromotionController::class, 'destroy'])->name('destroy');
         Route::post('{promotion}/activate', [PromotionController::class, 'activate'])->name('activate');
         Route::post('{promotion}/deactivate', [PromotionController::class, 'deactivate'])->name('deactivate');
+        Route::get('{promotion}/codes', [PromotionCodeController::class, 'index'])->name('codes.index')->withTrashed();
+        Route::post('{promotion}/codes', [PromotionCodeController::class, 'store'])->name('codes.store');
+        Route::post('{promotion}/codes/generate', [PromotionCodeController::class, 'generate'])->middleware('idempotent')->name('codes.generate');
+        Route::patch('{promotion}/codes/{code}', [PromotionCodeController::class, 'update'])->name('codes.update')->scopeBindings();
+        Route::delete('{promotion}/codes/{code}', [PromotionCodeController::class, 'destroy'])->name('codes.destroy')->scopeBindings();
     });

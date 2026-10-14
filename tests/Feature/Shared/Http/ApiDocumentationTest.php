@@ -47,7 +47,7 @@ const PAGE_NUMBER_LISTS = [
 ];
 
 const CURSOR_LISTS = [
-    'default' => ['/staff/catalog/products', '/catalog/products', '/staff/inventory/levels', '/staff/inventory/variants/{variant}/movements', '/staff/customers', '/staff/customers/{customer}/notes', '/staff/customers/{customer}/marketing-consents', '/staff/customer-groups/{customerGroup}/members'],
+    'default' => ['/staff/catalog/products', '/catalog/products', '/staff/inventory/levels', '/staff/inventory/variants/{variant}/movements', '/staff/customers', '/staff/customers/{customer}/notes', '/staff/customers/{customer}/marketing-consents', '/staff/customer-groups/{customerGroup}/members', '/staff/promotions/{promotion}/codes'],
     'platform' => ['/exchange-rates'],
 ];
 
@@ -202,6 +202,9 @@ it('documents every promotion endpoint', function (): void {
         '/staff/promotions/{promotion}' => ['get', 'patch', 'delete'],
         '/staff/promotions/{promotion}/activate' => ['post'],
         '/staff/promotions/{promotion}/deactivate' => ['post'],
+        '/staff/promotions/{promotion}/codes' => ['get', 'post'],
+        '/staff/promotions/{promotion}/codes/generate' => ['post'],
+        '/staff/promotions/{promotion}/codes/{code}' => ['patch', 'delete'],
     ];
 
     foreach ($expected as $path => $methods) {
@@ -210,7 +213,9 @@ it('documents every promotion endpoint', function (): void {
     }
 
     expect(collect($store['paths']['/staff/promotions']['get']['parameters'])->pluck('name')->all())->toContain('status', 'method', 'type', 'search', 'page')
-        ->and(array_keys($store['components']['schemas']['SavePromotionRequest']['properties']))->toContain('type', 'percent', 'discount', 'currency_amounts', 'combines_with', 'products', 'customer_groups');
+        ->and(array_keys($store['components']['schemas']['SavePromotionRequest']['properties']))->toContain('type', 'percent', 'discount', 'currency_amounts', 'combines_with', 'products', 'customer_groups')
+        ->and(json_encode($store['paths']['/staff/promotions/{promotion}/codes']['post']['responses'][422]))->toContain('promotion_code_taken')->toContain('promotion_takes_no_codes')
+        ->and(array_keys($store['paths']['/staff/promotions/{promotion}/codes/generate']['post']['responses']))->toContain(200, 202);
 });
 
 /*
