@@ -214,3 +214,27 @@ function firstStoreCustomer(array $attributes = []): Customer
 {
     return test()->store->run(static fn (): Customer => Customer::factory()->create(['email' => 'ada@example.com', 'password' => 'a-long-shopper-password', ...$attributes]));
 }
+
+/*
+|--------------------------------------------------------------------------
+| For CustomerGroupsTest.php
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Sends a request to a store's customer groups API, under /api/v1/staff/customer-groups, as a staff member or with a token.
+ *
+ * @param  array<string, mixed>  $data
+ */
+function customerGroupRequest(string $method, string $path, array $data = [], StaffMember|string|null $as = null, string $subdomain = 'first-store'): TestResponse
+{
+    forgetSignIns();
+    $token = $as instanceof StaffMember ? staffTokenFor($as, $subdomain) : $as;
+    $request = $token === null ? test() : test()->withToken($token);
+
+    $response = $request->json($method, storeUrl($subdomain, '/api/v1/staff/customer-groups'.$path), $data);
+    tenancy()->end();
+    forgetSignIns();
+
+    return $response;
+}

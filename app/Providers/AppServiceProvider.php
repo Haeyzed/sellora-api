@@ -67,10 +67,12 @@ use App\Tenant\Customers\CustomerEmailTokenRetention;
 use App\Tenant\Customers\CustomerStoreTables;
 use App\Tenant\Customers\Enums\CustomerPermission;
 use App\Tenant\Customers\Models\Customer;
+use App\Tenant\Customers\Models\CustomerGroup;
 use App\Tenant\Customers\Privacy\CustomerAccountData;
 use App\Tenant\Customers\Privacy\CustomerAddressData;
 use App\Tenant\Customers\Privacy\CustomerDataExportData;
 use App\Tenant\Customers\Privacy\CustomerDataSubject;
+use App\Tenant\Customers\Privacy\CustomerGroupData;
 use App\Tenant\Customers\Privacy\CustomerNoteData;
 use App\Tenant\Customers\Privacy\MarketingConsentData;
 use App\Tenant\Customers\TrashedCustomerRetention;
@@ -294,6 +296,7 @@ final class AppServiceProvider extends ServiceProvider
             // The account last: the others still need the customer's email and phone to find what is theirs.
             $registry->register(CustomerDataSubject::TYPE, 'addresses', CustomerAddressData::class);
             $registry->register(CustomerDataSubject::TYPE, 'staff_notes', CustomerNoteData::class);
+            $registry->register(CustomerDataSubject::TYPE, 'customer_groups', CustomerGroupData::class);
             $registry->register(CustomerDataSubject::TYPE, 'marketing_consents', MarketingConsentData::class);
             $registry->register(CustomerDataSubject::TYPE, 'data_exports', CustomerDataExportData::class);
             $registry->register(CustomerDataSubject::TYPE, 'account', CustomerAccountData::class);
@@ -356,6 +359,7 @@ final class AppServiceProvider extends ServiceProvider
             'platform_admin' => PlatformAdmin::class,
             'staff_member' => StaffMember::class,
             'customer' => Customer::class,
+            'customer_group' => CustomerGroup::class,
             'driver' => Driver::class,
             'staff_invitation' => StaffInvitation::class,
             'role' => Role::class,

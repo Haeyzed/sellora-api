@@ -34,7 +34,7 @@ it('sends the central APIs to the central domain and the store API to a store su
 const PAGE_NUMBER_LISTS = [
     'default' => [
         '/staff/team/members', '/staff/team/roles', '/staff/team/invitations',
-        '/staff/catalog/brands', '/staff/catalog/categories', '/staff/catalog/attributes',
+        '/staff/catalog/brands', '/staff/catalog/categories', '/staff/catalog/attributes', '/staff/customer-groups',
         '/catalog/brands', '/catalog/categories',
         '/staff/inventory/locations',
         '/staff/pricing/tax-classes', '/staff/pricing/tax-rates', '/staff/pricing/currencies', '/catalog/currencies',
@@ -47,7 +47,7 @@ const PAGE_NUMBER_LISTS = [
 ];
 
 const CURSOR_LISTS = [
-    'default' => ['/staff/catalog/products', '/catalog/products', '/staff/inventory/levels', '/staff/inventory/variants/{variant}/movements', '/staff/customers', '/staff/customers/{customer}/notes', '/staff/customers/{customer}/marketing-consents'],
+    'default' => ['/staff/catalog/products', '/catalog/products', '/staff/inventory/levels', '/staff/inventory/variants/{variant}/movements', '/staff/customers', '/staff/customers/{customer}/notes', '/staff/customers/{customer}/marketing-consents', '/staff/customer-groups/{customerGroup}/members'],
     'platform' => ['/exchange-rates'],
 ];
 
@@ -160,6 +160,10 @@ it('documents every customer endpoint', function (): void {
         '/customer/account/marketing-consents/{channel}' => ['put'],
         '/staff/customers/{customer}/marketing-consents' => ['get'],
         '/staff/customers/{customer}/marketing-consents/withdrawals' => ['post'],
+        '/staff/customer-groups' => ['get', 'post'],
+        '/staff/customer-groups/{customerGroup}' => ['get', 'patch', 'delete'],
+        '/staff/customer-groups/{customerGroup}/members' => ['get', 'post'],
+        '/staff/customer-groups/{customerGroup}/members/{customer}' => ['delete'],
     ];
 
     foreach ($expected as $path => $methods) {
@@ -182,7 +186,8 @@ it('documents every customer endpoint', function (): void {
         ->and(json_encode($store['paths']['/customer/account/data-exports']['post']['responses'][403]))->toContain('customer_email_not_verified')
         ->and(json_encode($store['paths']['/customer/account']['delete']['responses'][422]))->toContain('current_password_incorrect')
         ->and(json_encode($store['paths']['/staff/customers/{customer}/erasure']['post']['responses'][422]))->toContain('current_password_incorrect')
-        ->and(collect($store['paths']['/staff/customers']['get']['parameters'])->pluck('name')->all())->toContain('search', 'is_active', 'email_verified', 'trashed', 'cursor')
+        ->and(collect($store['paths']['/staff/customers']['get']['parameters'])->pluck('name')->all())->toContain('search', 'is_active', 'email_verified', 'trashed', 'group', 'cursor')
+        ->and(json_encode($store['paths']['/staff/customer-groups']['post']['responses'][422]))->toContain('customer_group_name_taken')
         ->and($store['paths']['/staff/customers/{customer}']['patch']['description'])->toContain('Staff never change a customer\'s');
 });
 

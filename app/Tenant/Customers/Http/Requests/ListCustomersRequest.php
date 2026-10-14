@@ -36,6 +36,8 @@ final class ListCustomersRequest extends CursorListRequest
             'email_verified' => ['sometimes', 'boolean'],
             /** True for the customers in the trash instead of the others. */
             'trashed' => ['sometimes', 'boolean'],
+            /** A customer group's ID: only the customers in it. */
+            'group' => ['sometimes', 'string', 'max:26'],
         ];
     }
 
@@ -56,6 +58,12 @@ final class ListCustomersRequest extends CursorListRequest
 
         if ($this->has('is_active')) {
             $query->where('is_active', $this->boolean('is_active'));
+        }
+
+        $group = $this->validated('group');
+
+        if (is_string($group)) {
+            $query->whereHas('groups', static fn (Builder $groups) => $groups->where('customer_groups.public_id', $group));
         }
 
         if ($this->has('email_verified')) {

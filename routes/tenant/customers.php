@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
 use App\Tenant\Customers\Http\Controllers\CustomerAccountController;
 use App\Tenant\Customers\Http\Controllers\CustomerAddressController;
+use App\Tenant\Customers\Http\Controllers\CustomerGroupController;
 use App\Tenant\Customers\Http\Controllers\CustomerNoteController;
 use App\Tenant\Customers\Http\Controllers\CustomerPrivacyController;
 use App\Tenant\Customers\Http\Controllers\CustomerTaxIdController;
@@ -77,4 +78,23 @@ Route::prefix('staff/customers')
         Route::delete('{customer}/notes/{note}', [CustomerNoteController::class, 'destroy'])->name('notes.destroy')->scopeBindings()->withTrashed();
         Route::get('{customer}/marketing-consents', [StaffMarketingConsentController::class, 'index'])->name('marketing-consents.index')->withTrashed();
         Route::post('{customer}/marketing-consents/withdrawals', [StaffMarketingConsentController::class, 'withdraw'])->name('marketing-consents.withdrawals.store')->withTrashed();
+    });
+
+/*
+| Customer groups, under /api/v1/staff/customer-groups, with the same
+| customers.view and customers.manage permissions.
+*/
+
+Route::prefix('staff/customer-groups')
+    ->name('staff.customer-groups.')
+    ->middleware(['auth:'.StaffMember::GUARD, EnsureTwoFactorWhenRequired::class, 'throttle:api'])
+    ->group(static function (): void {
+        Route::get('/', [CustomerGroupController::class, 'index'])->name('index');
+        Route::post('/', [CustomerGroupController::class, 'store'])->name('store');
+        Route::get('{customerGroup}', [CustomerGroupController::class, 'show'])->name('show');
+        Route::patch('{customerGroup}', [CustomerGroupController::class, 'update'])->name('update');
+        Route::delete('{customerGroup}', [CustomerGroupController::class, 'destroy'])->name('destroy');
+        Route::get('{customerGroup}/members', [CustomerGroupController::class, 'members'])->name('members.index');
+        Route::post('{customerGroup}/members', [CustomerGroupController::class, 'addMembers'])->name('members.store');
+        Route::delete('{customerGroup}/members/{customer}', [CustomerGroupController::class, 'removeMember'])->name('members.destroy')->withTrashed();
     });

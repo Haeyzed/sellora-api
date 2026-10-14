@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User;
@@ -53,6 +54,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property-read Collection<int, CustomerAddress> $addresses
  * @property-read Collection<int, CustomerNote> $notes
  * @property-read Collection<int, CustomerDataExport> $dataExports
+ * @property-read Collection<int, CustomerGroup> $groups
  */
 final class Customer extends User implements AuditableContract, HasApiTokensContract, HasLocalePreference
 {
@@ -174,6 +176,16 @@ final class Customer extends User implements AuditableContract, HasApiTokensCont
     public function notes(): HasMany
     {
         return $this->hasMany(CustomerNote::class);
+    }
+
+    /**
+     * The groups staff put the customer in.
+     *
+     * @return BelongsToMany<CustomerGroup, $this>
+     */
+    public function groups(): BelongsToMany
+    {
+        return $this->belongsToMany(CustomerGroup::class, 'customer_group_members');
     }
 
     /**

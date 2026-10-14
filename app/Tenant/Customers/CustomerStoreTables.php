@@ -35,6 +35,16 @@ final class CustomerStoreTables implements ClassifiesStoreTables
             include: ['id', 'public_id', 'customer_id', 'label', 'recipient_name', 'company', 'line1', 'line2', 'city', 'state_code', 'postal_code', 'country_code', 'phone', 'created_at', 'updated_at'],
         );
 
+        $registry->table(
+            'customer_groups',
+            include: ['id', 'public_id', 'name', 'description', 'created_at', 'updated_at'],
+        );
+
+        $registry->table(
+            'customer_group_members',
+            include: ['customer_group_id', 'customer_id', 'created_at'],
+        );
+
         $registry->excludeTable('customer_password_reset_tokens', 'Password reset tokens are secrets.');
         $registry->table(
             'customer_data_exports',
