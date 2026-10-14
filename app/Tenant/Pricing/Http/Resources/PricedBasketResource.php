@@ -38,8 +38,6 @@ final class PricedBasketResource extends JsonResource
             'tax_mode' => $basket->taxMode->value,
             /**
              * The rate base prices were converted at, with the market rate and margin it came from.
-             *
-             * @var array{rate: string, source: string, market_rate: string|null, margin_percent: string, as_of: string|null}
              */
             'exchange_rate' => [
                 'rate' => $rate->rate->toString(),
@@ -50,8 +48,6 @@ final class PricedBasketResource extends JsonResource
             ],
             /**
              * Where tax was worked out to.
-             *
-             * @var array{country_code: string, state_code: string|null}
              */
             'destination' => ['country_code' => $basket->destination->countryCode, 'state_code' => $basket->destination->stateCode],
             /** "rate_table", or the key of the country plug-in that worked out the tax. */

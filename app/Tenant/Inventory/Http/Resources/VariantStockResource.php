@@ -39,8 +39,6 @@ final class VariantStockResource extends JsonResource
             'low_stock_threshold' => $stock->ownLowStockThreshold,
             /**
              * What one unit costs the store, such as {"amount": "4.250000", "currency": "NGN"}; null when not set. Only for staff who may see costs.
-             *
-             * @var array{amount: string, currency: string}|null
              */
             'unit_cost' => $this->when(
                 self::maySeeCosts($request),

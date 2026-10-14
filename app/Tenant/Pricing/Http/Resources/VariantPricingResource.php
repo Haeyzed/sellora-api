@@ -34,8 +34,6 @@ final class VariantPricingResource extends JsonResource
             'variant_id' => $pricing->variantId,
             /**
              * The tax class it is taxed at.
-             *
-             * @var array{id: string, name: string, is_exempt: bool}
              */
             'tax_class' => ['id' => $pricing->taxClass->id, 'name' => $pricing->taxClass->name, 'is_exempt' => $pricing->taxClass->isExempt],
             /** True when it has no class of its own and follows the store's default. */

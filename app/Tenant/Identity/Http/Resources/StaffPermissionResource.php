@@ -4,19 +4,20 @@ declare(strict_types=1);
 
 namespace App\Tenant\Identity\Http\Resources;
 
+use App\Tenant\Identity\Data\StaffPermission;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * A permission roles can grant, with a description in the request's language.
  *
- * @property string $resource
+ * @property StaffPermission $resource
  */
 final class StaffPermissionResource extends JsonResource
 {
     public function __construct(string $permissionName)
     {
-        parent::__construct($permissionName);
+        parent::__construct(new StaffPermission($permissionName));
     }
 
     /**
@@ -24,11 +25,12 @@ final class StaffPermissionResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $description = __('permissions.'.$this->resource);
+        $name = $this->resource->name;
+        $description = __('permissions.'.$name);
 
         return [
-            'name' => $this->resource,
-            'description' => is_string($description) ? $description : $this->resource,
+            'name' => $name,
+            'description' => is_string($description) ? $description : $name,
         ];
     }
 }

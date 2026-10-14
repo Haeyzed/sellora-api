@@ -39,14 +39,10 @@ final class StoreCurrencyResource extends JsonResource
             'manual_rate_set_at' => $currency->manual_rate_set_at?->toIso8601String(),
             /**
              * The latest market rate from the base currency, always shown beside the rate in use; null when the platform has none.
-             *
-             * @var array{rate: string, as_of: string}|null
              */
             'market_rate' => $status->marketRate === null ? null : ['rate' => $status->marketRate->rate->toString(), 'as_of' => $status->marketRate->asOf->toIso8601String()],
             /**
              * The rate prices are converted at: one unit of the base currency × rate = the amount in this currency. Null when it can't be offered.
-             *
-             * @var array{rate: string, source: string, as_of: string|null}|null
              */
             'applied_rate' => $status->appliedRate === null ? null : [
                 'rate' => $status->appliedRate->rate->toString(),

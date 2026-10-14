@@ -9,7 +9,6 @@ use App\Tenant\Customers\Models\Customer;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\NotIn;
 use Illuminate\Validation\Rules\Unique;
 
 /**
@@ -20,13 +19,13 @@ final class StartCustomerEmailChangeRequest extends FormRequest
     use ActsAsCustomer;
 
     /**
-     * @return array<string, list<string|ValidationRule|NotIn|Unique>>
+     * @return array<string, list<string|ValidationRule|Unique>>
      */
     public function rules(): array
     {
         return [
-            /** The new address. A link is sent there; nothing changes until it is used. */
-            'email' => ['required', 'string', 'email:rfc', 'max:254', Rule::notIn([$this->customer()->email]), Rule::unique(Customer::class, 'email')],
+            /** The new address, which no account may have yet, this one included. A link is sent there; nothing changes until it is used. */
+            'email' => ['required', 'string', 'email:rfc', 'max:254', Rule::unique(Customer::class, 'email')],
             'current_password' => ['required', 'string'],
         ];
     }
