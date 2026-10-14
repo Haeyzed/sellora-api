@@ -9,10 +9,10 @@ namespace App\Tenant\Customers\Enums;
  */
 enum CustomerPermission: string
 {
-    /** See customers, their profiles, addresses and staff notes, including deactivated and trashed accounts. */
+    /** See customers, their profiles, addresses, staff notes and groups, including deactivated and trashed accounts. */
     case CustomersView = 'customers.view';
 
-    /** Change customers' profiles, deactivate, reactivate, trash and restore accounts, and add or delete notes. */
+    /** Change customers' profiles, deactivate, reactivate, trash and restore accounts, add or delete notes, and manage customer groups. */
     case CustomersManage = 'customers.manage';
 
     /** Make a customer tax-exempt, or end it, after checking their tax ID. */

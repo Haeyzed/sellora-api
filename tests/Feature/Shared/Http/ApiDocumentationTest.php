@@ -34,7 +34,7 @@ it('sends the central APIs to the central domain and the store API to a store su
 const PAGE_NUMBER_LISTS = [
     'default' => [
         '/staff/team/members', '/staff/team/roles', '/staff/team/invitations',
-        '/staff/catalog/brands', '/staff/catalog/categories', '/staff/catalog/attributes', '/staff/customer-groups',
+        '/staff/catalog/brands', '/staff/catalog/categories', '/staff/catalog/attributes', '/staff/customer-groups', '/staff/promotions',
         '/catalog/brands', '/catalog/categories',
         '/staff/inventory/locations',
         '/staff/pricing/tax-classes', '/staff/pricing/tax-rates', '/staff/pricing/currencies', '/catalog/currencies',
@@ -189,6 +189,28 @@ it('documents every customer endpoint', function (): void {
         ->and(collect($store['paths']['/staff/customers']['get']['parameters'])->pluck('name')->all())->toContain('search', 'is_active', 'email_verified', 'trashed', 'group', 'cursor')
         ->and(json_encode($store['paths']['/staff/customer-groups']['post']['responses'][422]))->toContain('customer_group_name_taken')
         ->and($store['paths']['/staff/customers/{customer}']['patch']['description'])->toContain('Staff never change a customer\'s');
+});
+
+/*
+ * Step 11: every promotion endpoint is documented, with its business errors.
+ */
+it('documents every promotion endpoint', function (): void {
+    $store = documentedApi('default');
+
+    $expected = [
+        '/staff/promotions' => ['get', 'post'],
+        '/staff/promotions/{promotion}' => ['get', 'patch', 'delete'],
+        '/staff/promotions/{promotion}/activate' => ['post'],
+        '/staff/promotions/{promotion}/deactivate' => ['post'],
+    ];
+
+    foreach ($expected as $path => $methods) {
+        expect($store['paths'])->toHaveKey($path)
+            ->and(array_keys($store['paths'][$path]))->toContain(...$methods);
+    }
+
+    expect(collect($store['paths']['/staff/promotions']['get']['parameters'])->pluck('name')->all())->toContain('status', 'method', 'type', 'search', 'page')
+        ->and(array_keys($store['components']['schemas']['SavePromotionRequest']['properties']))->toContain('type', 'percent', 'discount', 'currency_amounts', 'combines_with', 'products', 'customer_groups');
 });
 
 /*

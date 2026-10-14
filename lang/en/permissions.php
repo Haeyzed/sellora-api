@@ -37,10 +37,15 @@ return [
     ],
 
     'customers' => [
-        'view' => 'See customers, their profiles, addresses and staff notes, including deactivated and trashed accounts.',
-        'manage' => 'Change customers\' profiles, deactivate, reactivate, trash and restore accounts, and add or delete notes.',
+        'view' => 'See customers, their profiles, addresses, staff notes and groups, including deactivated and trashed accounts.',
+        'manage' => 'Change customers\' profiles, deactivate, reactivate, trash and restore accounts, add or delete notes, and manage customer groups.',
         'tax_exemption' => 'Make a customer tax-exempt, or end it, after checking their tax ID.',
         'privacy' => 'Download all of a customer\'s personal data, or erase it for good, at the customer\'s request.',
+    ],
+
+    'promotions' => [
+        'view' => 'See promotions, their codes and how often they were used, and preview what a basket would get.',
+        'manage' => 'Create, change, activate, deactivate and archive promotions, and add, generate or change their codes.',
     ],
 
     'pricing' => [

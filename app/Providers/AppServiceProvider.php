@@ -114,6 +114,10 @@ use App\Tenant\Pricing\PricingPricedRecords;
 use App\Tenant\Pricing\PricingStoreTables;
 use App\Tenant\Pricing\TaxCalculatorRegistry;
 use App\Tenant\Pricing\TaxExemptCustomerRule;
+use App\Tenant\Promotions\Enums\PromotionPermission;
+use App\Tenant\Promotions\Models\Promotion;
+use App\Tenant\Promotions\PromotionPricedRecords;
+use App\Tenant\Promotions\PromotionStoreTables;
 use App\Tenant\Settings\Enums\SettingsPermission;
 use App\Tenant\Settings\Models\StoreSettings;
 use App\Tenant\Settings\Policies\StoreLifecyclePolicy;
@@ -198,6 +202,7 @@ final class AppServiceProvider extends ServiceProvider
             $catalogue->register(InventoryPermission::class);
             $catalogue->register(PricingPermission::class);
             $catalogue->register(CustomerPermission::class);
+            $catalogue->register(PromotionPermission::class);
 
             return $catalogue;
         });
@@ -310,6 +315,7 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(CatalogPricedRecords::class);
             $registry->register(InventoryPricedRecords::class);
             $registry->register(PricingPricedRecords::class);
+            $registry->register(PromotionPricedRecords::class);
 
             return $registry;
         });
@@ -336,7 +342,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->singleton(StoreExportRegistry::class, static function (Application $app): StoreExportRegistry {
             $registry = new StoreExportRegistry;
 
-            foreach ([SharedStoreTables::class, IdentityStoreTables::class, SettingsStoreTables::class, CustomerStoreTables::class, DeliveryStoreTables::class, CatalogStoreTables::class, InventoryStoreTables::class, PricingStoreTables::class] as $storeTables) {
+            foreach ([SharedStoreTables::class, IdentityStoreTables::class, SettingsStoreTables::class, CustomerStoreTables::class, DeliveryStoreTables::class, CatalogStoreTables::class, InventoryStoreTables::class, PricingStoreTables::class, PromotionStoreTables::class] as $storeTables) {
                 $app->make($storeTables)->classify($registry);
             }
 
@@ -390,6 +396,7 @@ final class AppServiceProvider extends ServiceProvider
             'variant_tax_class' => VariantTaxClass::class,
             'store_currency' => StoreCurrency::class,
             'fixed_price' => FixedPrice::class,
+            'promotion' => Promotion::class,
         ]);
     }
 
