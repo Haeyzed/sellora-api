@@ -9,6 +9,7 @@ use App\Tenant\Cart\Exceptions\VariantOutOfStockException;
 use App\Tenant\Catalog\Enums\ProductStatus;
 use App\Tenant\Catalog\Models\ProductVariant;
 use App\Tenant\Inventory\Actions\FindVariantStockStatus;
+use App\Tenant\Inventory\Enums\StockStatus;
 
 /**
  * Whether variants can go in a cart: for sale (published, priced, outside the trash) and not out of stock, unless they take backorders.
@@ -28,6 +29,18 @@ final readonly class CartVariants
             && $variant->price !== null
             && ! $variant->product->trashed()
             && $variant->product->status === ProductStatus::Active;
+    }
+
+    /**
+     * Why the variant can't go in a cart (variant_not_available or variant_out_of_stock), or null when it can.
+     */
+    public static function whyNotAddable(ProductVariant $variant, StockStatus $stockStatus): ?string
+    {
+        return match (true) {
+            ! self::isForSale($variant) => (new VariantNotAvailableException)->errorCode(),
+            ! $stockStatus->canBeBought() => (new VariantOutOfStockException)->errorCode(),
+            default => null,
+        };
     }
 
     /**

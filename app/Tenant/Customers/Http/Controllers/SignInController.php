@@ -23,6 +23,8 @@ final class SignInController extends Controller
      * Returns a bearer token valid for 24 hours, usable only on this store.
      * Wrong details give the same error whether or not the email has an account;
      * after 5 wrong attempts for an email, its sign-in pauses for 15 minutes.
+     * A shopper who had a cart as a guest keeps it: right after signing in,
+     * call POST /cart/merges with this token and the guest's X-Cart-Token.
      *
      * @unauthenticated
      *

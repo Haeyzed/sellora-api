@@ -20,6 +20,8 @@ final class RegistrationController extends Controller
      *
      * Creates the account at this store only and signs the shopper in, returning
      * a bearer token valid for 24 hours.
+     * A shopper who had a cart as a guest keeps it: right after creating the
+     * account, call POST /cart/merges with this token and the guest's X-Cart-Token.
      *
      * @unauthenticated
      */

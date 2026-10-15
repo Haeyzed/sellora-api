@@ -8,6 +8,7 @@ use App\Shared\Money\Money;
 use App\Shared\Money\MoneyResource;
 use App\Tenant\Cart\Data\PricedCart;
 use App\Tenant\Cart\Data\PricedCartLine;
+use App\Tenant\Cart\Data\SkippedLine;
 use App\Tenant\Promotions\Data\DiscountProposal;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -22,8 +23,9 @@ final class CartResource extends JsonResource
 {
     /**
      * @param  string|null  $token  A new guest cart's token: in this response only, never again.
+     * @param  list<SkippedLine>|null  $skipped  After a merge, the guest's lines that didn't come across.
      */
-    public function __construct(PricedCart $cart, private readonly ?string $token = null)
+    public function __construct(PricedCart $cart, private readonly ?string $token = null, private readonly ?array $skipped = null)
     {
         parent::__construct($cart);
     }
@@ -47,6 +49,17 @@ final class CartResource extends JsonResource
              * A new guest cart's token. Shown only in the response that created the cart: keep it, and send it in the X-Cart-Token header.
              */
             'token' => $this->when($this->token !== null, $this->token),
+            /**
+             * After merging a guest cart: the guest's lines that didn't come across, and why (variant_not_available, variant_out_of_stock or cart_full).
+             * Lines for a variant already in the cart keep the larger quantity. Only in the merge's response.
+             *
+             * @var list<array{variant: array{id: string, sku: string|null}, quantity: int, reason: string}>
+             */
+            'skipped_lines' => $this->when($this->skipped !== null, fn (): array => array_map(static fn (SkippedLine $line): array => [
+                'variant' => ['id' => $line->variant->public_id, 'sku' => $line->variant->sku],
+                'quantity' => $line->quantity,
+                'reason' => $line->reason,
+            ], $this->skipped ?? [])),
             /** The currency every amount is in. */
             'currency' => $currency,
             /**

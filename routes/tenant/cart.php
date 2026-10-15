@@ -5,7 +5,9 @@ declare(strict_types=1);
 use App\Tenant\Cart\Http\Controllers\CartCodeController;
 use App\Tenant\Cart\Http\Controllers\CartController;
 use App\Tenant\Cart\Http\Controllers\CartLineController;
+use App\Tenant\Cart\Http\Controllers\CartMergeController;
 use App\Tenant\Cart\Http\Middleware\AuthenticateCustomerIfSignedIn;
+use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Settings\Http\Middleware\UseStoreLanguage;
 use Illuminate\Support\Facades\Route;
 
@@ -28,6 +30,7 @@ Route::prefix('cart')
             Route::post('price-change-acknowledgements', [CartController::class, 'acknowledgePriceChanges'])->name('price-change-acknowledgements.store');
             Route::put('code', [CartCodeController::class, 'update'])->middleware('throttle:coupon-redemption')->name('code.update');
             Route::delete('code', [CartCodeController::class, 'destroy'])->name('code.destroy');
+            Route::post('merges', [CartMergeController::class, 'store'])->middleware('auth:'.Customer::GUARD)->name('merges.store');
             Route::post('lines', [CartLineController::class, 'store'])->name('lines.store');
             Route::delete('lines', [CartLineController::class, 'destroyAll'])->name('lines.destroy-all');
             Route::patch('lines/{line}', [CartLineController::class, 'update'])->name('lines.update');

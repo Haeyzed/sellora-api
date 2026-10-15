@@ -25,9 +25,17 @@ final class CartHttp
             return Shopper::customer($customer);
         }
 
+        return Shopper::guest(self::guestToken($request));
+    }
+
+    /**
+     * The guest cart token sent, signed in or not.
+     */
+    public static function guestToken(Request $request): ?string
+    {
         $token = $request->headers->get(CartToken::HEADER);
 
-        return Shopper::guest(is_string($token) && $token !== '' ? $token : null);
+        return is_string($token) && $token !== '' ? $token : null;
     }
 
     /**

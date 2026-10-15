@@ -233,6 +233,7 @@ it('documents every cart endpoint', function (): void {
         '/cart' => ['get', 'post', 'patch'],
         '/cart/price-change-acknowledgements' => ['post'],
         '/cart/code' => ['put', 'delete'],
+        '/cart/merges' => ['post'],
         '/cart/lines' => ['post', 'delete'],
         '/cart/lines/{line}' => ['patch', 'delete'],
     ];
@@ -256,6 +257,11 @@ it('documents every cart endpoint', function (): void {
         ->and(json_encode($store['paths']['/cart/code']['put']['responses'][422]))->toContain('code_not_valid')
         ->and(json_encode($store['paths']['/cart/code']['put']['responses'][429]))->toContain('too_many_code_attempts')
         ->and(array_keys($store['components']['schemas']['CartResource']['properties']))->toContain('code')
+        // Storefront apps are told to merge a guest's cart right after sign-in.
+        ->and($store['paths']['/cart/merges']['post']['description'])->toContain('right after a shopper signs in')
+        ->and($store['paths']['/customer/auth/tokens']['post']['description'])->toContain('/cart/merges')
+        ->and($store['paths']['/customer/auth/accounts']['post']['description'])->toContain('/cart/merges')
+        ->and(array_keys($store['components']['schemas']['CartResource']['properties']))->toContain('skipped_lines')
         ->and(json_encode($store['paths']['/cart']['get']['responses'][404]))->toContain('cart_not_found')
         ->and(json_encode($store['paths']['/cart/lines']['post']['responses'][422]))->toContain('variant_not_available')->toContain('variant_out_of_stock')->toContain('cart_full')->toContain('cart_line_quantity_too_high')
         ->and(collect($store['paths']['/cart/lines/{line}']['patch']['parameters'])->pluck('name')->all())->toContain('If-Match')
