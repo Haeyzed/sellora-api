@@ -193,6 +193,9 @@ return [
         'currency_amounts' => [
             'not_offered' => 'Exact amounts can only be set for the store\'s other currencies, not its base currency.',
         ],
+        'rates' => [
+            'flat' => 'A flat price has one bracket, from 0 with no end.',
+        ],
         'default_locale' => [
             'not_enabled' => 'The default language must be one of the store\'s enabled languages.',
         ],

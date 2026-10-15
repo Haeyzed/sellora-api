@@ -144,7 +144,9 @@ use App\Tenant\Settings\StoreLocales;
 use App\Tenant\Settings\StoreSettingsDefaults;
 use App\Tenant\Settings\StoreTwoFactorRequirement;
 use App\Tenant\Shipping\Enums\ShippingPermission;
+use App\Tenant\Shipping\Models\ShippingMethod;
 use App\Tenant\Shipping\Models\ShippingZone;
+use App\Tenant\Shipping\ShippingPricedRecords;
 use App\Tenant\Shipping\ShippingStoreTables;
 use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\Components;
@@ -365,6 +367,7 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(InventoryPricedRecords::class);
             $registry->register(PricingPricedRecords::class);
             $registry->register(PromotionPricedRecords::class);
+            $registry->register(ShippingPricedRecords::class);
 
             return $registry;
         });
@@ -452,6 +455,7 @@ final class AppServiceProvider extends ServiceProvider
             'promotion_code' => PromotionCode::class,
             'promotion_redemption' => PromotionRedemption::class,
             'shipping_zone' => ShippingZone::class,
+            'shipping_method' => ShippingMethod::class,
         ]);
     }
 

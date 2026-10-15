@@ -34,7 +34,7 @@ it('sends the central APIs to the central domain and the store API to a store su
 const PAGE_NUMBER_LISTS = [
     'default' => [
         '/staff/team/members', '/staff/team/roles', '/staff/team/invitations',
-        '/staff/catalog/brands', '/staff/catalog/categories', '/staff/catalog/attributes', '/staff/customer-groups', '/staff/promotions', '/staff/shipping/zones',
+        '/staff/catalog/brands', '/staff/catalog/categories', '/staff/catalog/attributes', '/staff/customer-groups', '/staff/promotions', '/staff/shipping/zones', '/staff/shipping/methods',
         '/catalog/brands', '/catalog/categories',
         '/staff/inventory/locations',
         '/staff/pricing/tax-classes', '/staff/pricing/tax-rates', '/staff/pricing/currencies', '/catalog/currencies',
@@ -233,6 +233,9 @@ it('documents every shipping endpoint', function (): void {
         '/staff/shipping/zones' => ['get', 'post'],
         '/staff/shipping/zones/{zone}' => ['get', 'put', 'delete'],
         '/staff/shipping/zones/{zone}/regions' => ['put'],
+        '/staff/shipping/methods' => ['get', 'post'],
+        '/staff/shipping/methods/{method}' => ['get', 'put'],
+        '/staff/shipping/methods/{method}/archive' => ['post'],
     ];
 
     foreach ($expected as $path => $methods) {
@@ -245,7 +248,14 @@ it('documents every shipping endpoint', function (): void {
         ->and(array_keys($store['components']['schemas']['ShippingZoneResource']['properties']['regions']['items']['properties']))->toBe(['country_code', 'state_code'])
         ->and(json_encode($store['paths']['/staff/shipping/zones/{zone}/regions']['put']['responses'][409]))->toContain('shipping_region_taken')
         ->and(json_encode($store['paths']['/staff/shipping/zones']['post']['responses'][409]))->toContain('rest_of_world_zone_exists')
-        ->and(json_encode($store['paths']['/staff/shipping/zones/{zone}']['put']['responses'][422]))->toContain('rest_of_world_zone_has_regions')->toContain('shipping_zone_name_taken');
+        ->and(json_encode($store['paths']['/staff/shipping/zones/{zone}']['put']['responses'][422]))->toContain('rest_of_world_zone_has_regions')->toContain('shipping_zone_name_taken')
+        ->and(json_encode($store['paths']['/staff/shipping/zones/{zone}']['delete']['responses'][409]))->toContain('shipping_zone_has_methods')
+        ->and($store['paths']['/staff/shipping/methods']['get']['description'])->toContain('Paged by page number')
+        ->and(array_keys($store['components']['schemas']['ShippingMethodResource']['properties']))->toContain('zone', 'name', 'fulfilment', 'pricing', 'free_over', 'currency_amounts', 'rates', 'warnings', 'pickup', 'archived_at')
+        ->and(array_keys($store['components']['schemas']['ShippingMethodResource']['properties']['warnings']['items']['properties']))->toBe(['code', 'from', 'to'])
+        ->and(array_keys($store['components']['schemas']['ShippingMethodResource']['properties']['rates']['items']['properties']))->toBe(['from', 'to', 'amount', 'currency_amounts'])
+        ->and(json_encode($store['paths']['/staff/shipping/methods/{method}']['put']['responses'][409]))->toContain('shipping_method_archived')
+        ->and(json_encode($store['paths']['/staff/shipping/methods']['post']['responses'][422]))->toContain('shipping_rates_overlap');
 });
 
 it('documents every cart endpoint', function (): void {

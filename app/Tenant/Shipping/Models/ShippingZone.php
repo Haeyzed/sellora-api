@@ -59,6 +59,14 @@ final class ShippingZone extends Model implements AuditableContract
     }
 
     /**
+     * @return HasMany<ShippingMethod, $this>
+     */
+    public function methods(): HasMany
+    {
+        return $this->hasMany(ShippingMethod::class);
+    }
+
+    /**
      * Its regions as data, in a stable order.
      *
      * @return list<ShippingRegion>

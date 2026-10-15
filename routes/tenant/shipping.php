@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
 use App\Tenant\Identity\Models\StaffMember;
+use App\Tenant\Shipping\Http\Controllers\ShippingMethodController;
 use App\Tenant\Shipping\Http\Controllers\ShippingZoneController;
 use Illuminate\Support\Facades\Route;
 
@@ -19,4 +20,6 @@ Route::prefix('staff/shipping')
     ->group(static function (): void {
         Route::apiResource('zones', ShippingZoneController::class);
         Route::put('zones/{zone}/regions', [ShippingZoneController::class, 'replaceRegions'])->name('zones.regions.update');
+        Route::apiResource('methods', ShippingMethodController::class)->except('destroy');
+        Route::post('methods/{method}/archive', [ShippingMethodController::class, 'archive'])->name('methods.archive');
     });

@@ -12,6 +12,7 @@ use App\Tenant\Shipping\Actions\UpdateShippingZone;
 use App\Tenant\Shipping\Exceptions\RestOfWorldZoneExistsException;
 use App\Tenant\Shipping\Exceptions\RestOfWorldZoneHasRegionsException;
 use App\Tenant\Shipping\Exceptions\ShippingRegionTakenException;
+use App\Tenant\Shipping\Exceptions\ShippingZoneHasMethodsException;
 use App\Tenant\Shipping\Exceptions\ShippingZoneNameTakenException;
 use App\Tenant\Shipping\Http\Requests\ListShippingZonesRequest;
 use App\Tenant\Shipping\Http\Requests\ManageShippingRequest;
@@ -105,8 +106,11 @@ final class ShippingZoneController extends Controller
     /**
      * Delete a shipping zone.
      *
-     * Needs the shipping.manage permission. Its regions get no shipping until
-     * another zone takes them. Audited.
+     * Needs the shipping.manage permission. Only once every method in it is
+     * archived (409 shipping_zone_has_methods otherwise). Its regions get no
+     * shipping until another zone takes them. Audited.
+     *
+     * @throws ShippingZoneHasMethodsException
      */
     public function destroy(ManageShippingRequest $request, ShippingZone $zone, DeleteShippingZone $deleteShippingZone): Response
     {

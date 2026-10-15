@@ -165,6 +165,9 @@ return [
     'shipping_region_taken' => ':region is already in the zone ":zone". A region can be in only one zone: take it out of that zone first.',
     'shipping_region_taken_meanwhile' => 'Another zone took one of these regions just now. Look at your zones again.',
     'rest_of_world_zone_exists' => 'Another zone already covers the rest of the world. Only one can.',
+    'shipping_zone_has_methods' => 'This zone still has shipping methods. Archive them, or move them to another zone, first.',
+    'shipping_method_archived' => 'This shipping method is archived and can\'t change. Add a new method instead.',
+    'shipping_rates_overlap' => 'Two of these brackets cover the same weight or order value. Brackets can leave gaps, but never overlap.',
     'rest_of_world_zone_has_regions' => 'A zone covering the rest of the world lists no regions of its own. Remove its regions first.',
 
 ];
