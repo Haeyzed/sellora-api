@@ -10,6 +10,7 @@ use App\Shared\Geography\Rules\StateCode;
 use App\Tenant\Catalog\Models\ProductVariant;
 use App\Tenant\Identity\Concerns\ActsAsStaffMember;
 use App\Tenant\Settings\Actions\FindStoreSettings;
+use App\Tenant\Shipping\Data\CarrierAddress;
 use App\Tenant\Shipping\Data\ShippingRegion;
 use App\Tenant\Shipping\Models\ShippingZone;
 use Illuminate\Foundation\Http\FormRequest;
@@ -45,6 +46,11 @@ final class QuoteShippingRequest extends FormRequest
             'country_code' => ['required', 'string', new CountryCode],
             /** The state's code from the country's states list, such as "LA", in any case; free text where the country has none. */
             'state_code' => ['sometimes', 'nullable', 'string', StateCode::forAddress(is_string($countryCode) ? $countryCode : null)],
+            /** The rest of a full address, to quote carrier methods live with their carriers; left out, they show as calculated at checkout. */
+            'address' => ['sometimes', 'array'],
+            'address.line1' => ['required_with:address', 'string', 'max:255'],
+            'address.city' => ['required_with:address', 'string', 'max:100'],
+            'address.postal_code' => ['sometimes', 'nullable', 'string', 'max:20'],
             'lines' => ['required', 'array', 'min:1', 'max:'.self::MAX_LINES],
             /** The variant's ID. */
             'lines.*.variant' => ['required', 'string', Rule::exists(ProductVariant::class, 'public_id')->whereNull('deleted_at')],
@@ -62,6 +68,20 @@ final class QuoteShippingRequest extends FormRequest
         $countryCode = $this->string('country_code')->value();
 
         return new ShippingRegion($countryCode, $this->filled('state_code') ? app(Geography::class)->stateCode($countryCode, $this->string('state_code')->value()) : null);
+    }
+
+    /**
+     * The full address sent, for carriers; null when only a country and state were.
+     */
+    public function address(): ?CarrierAddress
+    {
+        if (! $this->has('address')) {
+            return null;
+        }
+
+        $destination = $this->destination();
+
+        return new CarrierAddress($destination->countryCode, $destination->stateCode, $this->filled('address.postal_code') ? $this->string('address.postal_code')->value() : null, $this->string('address.city')->value(), $this->string('address.line1')->value());
     }
 
     /**

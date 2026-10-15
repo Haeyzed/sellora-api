@@ -196,6 +196,10 @@ return [
         'rates' => [
             'flat' => 'A flat price has one bracket, from 0 with no end.',
         ],
+        'carrier' => [
+            'not_usable' => 'This carrier isn\'t available to the store. Enable its integration first.',
+            'unknown_service' => 'This carrier has no such service.',
+        ],
         'default_locale' => [
             'not_enabled' => 'The default language must be one of the store\'s enabled languages.',
         ],

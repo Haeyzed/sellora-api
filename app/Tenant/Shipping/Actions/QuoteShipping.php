@@ -6,6 +6,7 @@ namespace App\Tenant\Shipping\Actions;
 
 use App\Shared\Money\Money;
 use App\Tenant\Pricing\Data\AppliedExchangeRate;
+use App\Tenant\Shipping\Data\Parcel;
 use App\Tenant\Shipping\Data\ShippableLine;
 use App\Tenant\Shipping\Data\ShippingOption;
 use App\Tenant\Shipping\Data\ShippingQuote;
@@ -28,13 +29,16 @@ use Illuminate\Database\Eloquent\Builder;
  * amount set for the currency, or the base amount converted at the basket's
  * rate, rounded half-up to the currency's decimals. Value brackets and
  * "free over" thresholds are compared in the basket's currency, converted
- * the same way unless an exact threshold is set. A basket with nothing that
- * ships needs no shipping at all. Nothing is saved.
+ * the same way unless an exact threshold is set. A carrier method is quoted
+ * live by its carrier once the full address is known, and is otherwise
+ * offered as "calculated at checkout". A basket with nothing that ships needs
+ * no shipping at all. Nothing is saved.
  */
 final readonly class QuoteShipping
 {
     public function __construct(
         private ShippingZones $zones,
+        private QuoteCarrierRates $quoteCarrierRates,
     ) {}
 
     public function handle(ShippingQuoteRequest $request): ShippingQuote
@@ -64,16 +68,31 @@ final readonly class QuoteShipping
             ->get();
 
         $options = [];
+        $live = [];
 
         foreach ($methods as $method) {
-            $option = self::optionFor($method, $weight, $value, $request->exchangeRate);
-
-            if ($option !== null) {
-                $options[] = $option;
+            if ($method->pricing !== ShippingPricing::Carrier) {
+                $options[$method->id] = self::optionFor($method, $weight, $value, $request->exchangeRate);
+            } elseif (self::reachesFreeOver($method, $value, $request->exchangeRate)) {
+                $options[$method->id] = new ShippingOption($method, Money::zero($currency), false, true);
+            } elseif ($request->address === null) {
+                // A live rate needs the full address: calculated at checkout.
+                $options[$method->id] = new ShippingOption($method, null, false);
+            } else {
+                $options[$method->id] = null;
+                $live[] = $method;
             }
         }
 
-        return new ShippingQuote(true, $options, $zone === null ? ShippingQuote::NO_ZONE : null, $weight, $value);
+        if ($live !== [] && $request->address !== null) {
+            $quoted = $this->quoteCarrierRates->handle($live, new Parcel($weight), $request->address, $request->exchangeRate);
+
+            foreach ($live as $method) {
+                $options[$method->id] = $quoted[$method->id] ?? null;
+            }
+        }
+
+        return new ShippingQuote(true, array_values(array_filter($options)), $zone === null ? ShippingQuote::NO_ZONE : null, $weight, $value);
     }
 
     /**
@@ -85,6 +104,7 @@ final readonly class QuoteShipping
             ShippingPricing::Flat => true,
             ShippingPricing::Weight => $rate->covers($weight),
             ShippingPricing::OrderValue => self::valueIn($rate, $method, $value, $exchangeRate),
+            ShippingPricing::Carrier => false,
         });
 
         if ($rate === null) {

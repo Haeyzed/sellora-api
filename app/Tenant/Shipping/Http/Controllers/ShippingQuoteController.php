@@ -27,7 +27,10 @@ final class ShippingQuoteController extends Controller
      * these lines would be offered to the destination, and what each costs,
      * exactly as a cart will: by the weight and value of the lines that ship,
      * in a currency the store offers (its own when left out). Lines are
-     * valued at their prices, before any discount. Nothing is saved.
+     * valued at their prices, before any discount. With a full address,
+     * carrier methods are quoted live by their carriers (a failure or a slow
+     * answer uses the method's backup price, or leaves it out); without one,
+     * they show as calculated at checkout. Nothing is saved.
      *
      * @throws CurrencyNotOfferedException
      * @throws VariantNotPricedException
@@ -45,6 +48,6 @@ final class ShippingQuoteController extends Controller
             return new ShippableLine($line['variant'], $line['quantity'], $price->unitPrice->multiplyBy($line['quantity']));
         }, $lines);
 
-        return new ShippingQuoteResource($quoteShipping->handle(new ShippingQuoteRequest($exchangeRate, $shippable, $request->destination())));
+        return new ShippingQuoteResource($quoteShipping->handle(new ShippingQuoteRequest($exchangeRate, $shippable, $request->destination(), $request->address())));
     }
 }

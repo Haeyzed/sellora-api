@@ -68,7 +68,7 @@ it('adds a flat method, priced in the base currency with exact amounts in others
         'name' => ['en' => 'Standard delivery'],
         'fulfilment' => 'ship',
         'pricing' => 'flat',
-        'currency_amounts' => [['currency' => 'USD', 'free_over' => ['amount' => 5000, 'currency' => 'USD', 'formatted' => '$50.00']]],
+        'currency_amounts' => [['currency' => 'USD', 'free_over' => ['amount' => 5000, 'currency' => 'USD', 'formatted' => '$50.00'], 'backup' => null]],
         'warnings' => [],
         'pickup' => null,
         'is_active' => true,
@@ -222,10 +222,10 @@ it('audits methods, and each change to their rates as one change with them befor
     $audits = $this->store->run(static fn (): array => Audit::query()->where('auditable_type', 'shipping_method')->orderBy('id')->get(['event', 'old_values', 'new_values'])->toArray());
 
     expect(array_column($audits, 'event'))->toBe(['created', 'rates_replaced', 'rates_replaced', 'updated'])
-        ->and($audits[1]['new_values'])->toBe(['rates' => [['from' => 0, 'to' => 1000, 'amount' => 100, 'currency_amounts' => []]], 'free_over_amounts' => []])
+        ->and($audits[1]['new_values'])->toBe(['rates' => [['from' => 0, 'to' => 1000, 'amount' => 100, 'currency_amounts' => []]], 'free_over_amounts' => [], 'backup_amounts' => []])
         ->and($audits[2])->toMatchArray([
-            'old_values' => ['rates' => [['from' => 0, 'to' => 1000, 'amount' => 100, 'currency_amounts' => []]], 'free_over_amounts' => []],
-            'new_values' => ['rates' => [['from' => 0, 'to' => null, 'amount' => 150, 'currency_amounts' => ['USD' => 2]]], 'free_over_amounts' => ['USD' => 90]],
+            'old_values' => ['rates' => [['from' => 0, 'to' => 1000, 'amount' => 100, 'currency_amounts' => []]], 'free_over_amounts' => [], 'backup_amounts' => []],
+            'new_values' => ['rates' => [['from' => 0, 'to' => null, 'amount' => 150, 'currency_amounts' => ['USD' => 2]]], 'free_over_amounts' => ['USD' => 90], 'backup_amounts' => ['USD' => null]],
         ])
         ->and(array_keys($audits[3]['new_values']))->toBe(['archived_at']);
 });

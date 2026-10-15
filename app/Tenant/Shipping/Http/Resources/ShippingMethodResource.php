@@ -43,14 +43,24 @@ final class ShippingMethodResource extends JsonResource
             'description' => $method->getTranslations('description'),
             'fulfilment' => $method->fulfilment->value,
             'pricing' => $method->pricing->value,
+            /** A carrier-priced method's carrier, by its key; null otherwise. */
+            'carrier' => $method->carrier,
+            /** The carrier's service code; null otherwise. */
+            'carrier_service' => $method->carrier_service,
+            /** A carrier-priced method's price when the carrier can't quote; null for not offered then. */
+            'backup' => $method->backup === null ? null : new MoneyResource($method->backup),
             /** Null for never. */
             'free_over' => $method->free_over === null ? null : new MoneyResource($method->free_over),
             /**
-             * Exact "free over" thresholds in other currencies.
+             * Exact "free over" thresholds and backup prices in other currencies.
              *
-             * @var list<array{currency: string, free_over: MoneyResource}>
+             * @var list<array{currency: string, free_over: MoneyResource|null, backup: MoneyResource|null}>
              */
-            'currency_amounts' => array_values($method->currencyAmounts->map(static fn (ShippingMethodAmount $amount): array => ['currency' => $amount->currency_code, 'free_over' => new MoneyResource($amount->free_over)])->all()),
+            'currency_amounts' => array_values($method->currencyAmounts->map(static fn (ShippingMethodAmount $amount): array => [
+                'currency' => $amount->currency_code,
+                'free_over' => $amount->free_over === null ? null : new MoneyResource($amount->free_over),
+                'backup' => $amount->backup === null ? null : new MoneyResource($amount->backup),
+            ])->all()),
             /**
              * Its brackets, by where they start: [from, to) in grams or the base currency's smallest unit; a null "to" means and up.
              *

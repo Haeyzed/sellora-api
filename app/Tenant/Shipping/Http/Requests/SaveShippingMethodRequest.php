@@ -18,6 +18,7 @@ use App\Tenant\Shipping\Enums\ShippingFulfilment;
 use App\Tenant\Shipping\Enums\ShippingPricing;
 use App\Tenant\Shipping\Models\ShippingMethod;
 use App\Tenant\Shipping\Models\ShippingZone;
+use App\Tenant\Shipping\ShippingCarrierRegistry;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -51,13 +52,20 @@ final class SaveShippingMethodRequest extends FormRequest
     {
         $creating = $this->shippingMethod() === null;
         $pickup = $this->fulfilment() === ShippingFulfilment::Pickup;
+        $carrier = $this->pricing() === ShippingPricing::Carrier;
         $amount = ['integer:strict', 'min:0'];
 
         return [
             /** "ship" (a carrier the merchant books), "own_delivery" (the store's own drivers) or "pickup" (collected at one of the store's locations). Set once. */
             'fulfilment' => $creating ? ['required', Rule::enum(ShippingFulfilment::class)] : ['missing'],
-            /** "flat" (one price), "weight" (brackets of the total weight in grams of the lines that ship) or "order_value" (brackets of their value after discounts, as displayed, in the base currency's smallest unit). A pickup is flat. Set once. */
-            'pricing' => $creating ? ['required', Rule::enum(ShippingPricing::class), ...($pickup ? [Rule::in([ShippingPricing::Flat->value])] : [])] : ['missing'],
+            /** "flat" (one price), "weight" (brackets of the total weight in grams of the lines that ship), "order_value" (brackets of their value after discounts, as displayed, in the base currency's smallest unit) or "carrier" (a carrier's live rate, for "ship" only, quoted once the full address is known). A pickup is flat. Set once. */
+            'pricing' => $creating ? ['required', Rule::enum(ShippingPricing::class), ...($pickup ? [Rule::in([ShippingPricing::Flat->value])] : []), ...($this->fulfilment() === ShippingFulfilment::OwnDelivery ? [Rule::notIn([ShippingPricing::Carrier->value])] : [])] : ['missing'],
+            /** A carrier-priced method's carrier, by its key; one whose integration is enabled for the store. Set once. */
+            'carrier' => [...($creating && $carrier ? ['required'] : ['missing']), 'string', $this->usableCarrier(...)],
+            /** One of the carrier's service codes. */
+            'carrier_service' => [...($carrier ? [$creating ? 'required' : 'sometimes'] : ['missing']), 'string', $this->serviceOfCarrier(...)],
+            /** A carrier-priced method's price when the carrier can't quote (it is down or too slow), in the base currency's smallest unit; null to stop offering it then. */
+            'backup' => [...($carrier ? ['sometimes'] : ['missing']), 'nullable', 'integer:strict', 'min:0'],
             /** The zone it ships within, by ID. Not for a pickup, which is offered to shoppers in its location's country. */
             'zone' => $pickup ? ['missing'] : [$creating ? 'required' : 'sometimes', 'string', Rule::exists(ShippingZone::class, 'public_id')],
             /** What shoppers see, in the store's languages, such as {"en": "Standard delivery"}. */
@@ -66,13 +74,14 @@ final class SaveShippingMethodRequest extends FormRequest
             'description' => ['sometimes', 'nullable', 'array', $this->storeTranslatedText(500)],
             /** Free once the lines that ship are worth this much, after discounts, as displayed, in the base currency's smallest unit; null for never. Not for a pickup. */
             'free_over' => $pickup ? ['missing'] : ['sometimes', 'nullable', 'integer:strict', 'min:1'],
-            /** Exact "free over" thresholds in other currencies the store offers, used instead of converting. Replaces every one set before. Not for a pickup. */
+            /** Exact "free over" thresholds (and, for a carrier, backup prices) in other currencies the store offers, used instead of converting. Replaces every one set before. Not for a pickup. */
             'currency_amounts' => $pickup ? ['missing'] : ['sometimes', 'array', 'max:'.self::MAX_CURRENCY_AMOUNTS],
             /** ISO 4217: one of the store's other currencies. */
             'currency_amounts.*.currency' => ['required', 'string', 'regex:/^[A-Z]{3}$/', 'distinct', $this->offeredCurrency(...)],
-            'currency_amounts.*.free_over' => ['required', 'integer:strict', 'min:1'],
+            'currency_amounts.*.free_over' => ['sometimes', 'nullable', 'integer:strict', 'min:1'],
+            'currency_amounts.*.backup' => [...($carrier ? ['sometimes'] : ['missing']), 'nullable', 'integer:strict', 'min:0'],
             /** Its price brackets, replacing every one set before. Flat: one bracket from 0 with no end. Weight and order value: brackets that never overlap; a gap means it isn't offered there (the response warns about gaps). */
-            'rates' => [$creating ? 'required' : 'sometimes', 'array', 'min:1', 'max:'.self::MAX_RATES],
+            'rates' => $carrier ? ['missing'] : [$creating ? 'required' : 'sometimes', 'array', 'min:1', 'max:'.self::MAX_RATES],
             /** Where the bracket starts, included: grams, or the base currency's smallest unit. */
             'rates.*.from' => ['required', ...$amount],
             /** Where it ends, not included; null for "and up". */
@@ -111,6 +120,13 @@ final class SaveShippingMethodRequest extends FormRequest
     public function after(): array
     {
         return [
+            function (Validator $validator): void {
+                foreach ((array) $this->input('currency_amounts', []) as $index => $amounts) {
+                    if (is_array($amounts) && ($amounts['free_over'] ?? null) === null && ($amounts['backup'] ?? null) === null) {
+                        $validator->errors()->add("currency_amounts.{$index}", __('validation.required', ['attribute' => 'an amount']));
+                    }
+                }
+            },
             function (Validator $validator): void {
                 if (! $this->has('rates') || $validator->errors()->hasAny(['rates', 'rates.*'])) {
                     return;
@@ -167,6 +183,18 @@ final class SaveShippingMethodRequest extends FormRequest
             $fields['shipping_zone_id'] = (int) ShippingZone::query()->where('public_id', $this->string('zone')->value())->value('id');
         }
 
+        if ($this->shippingMethod() === null && $this->filled('carrier')) {
+            $fields['carrier'] = $this->string('carrier')->value();
+        }
+
+        if ($this->has('carrier_service')) {
+            $fields['carrier_service'] = $this->string('carrier_service')->value();
+        }
+
+        if ($this->has('backup')) {
+            $fields['backup'] = $this->filled('backup') ? Money::ofMinor($this->integer('backup'), $this->shippingMethod()->currency ?? $baseCurrency) : null;
+        }
+
         if ($this->has('free_over')) {
             $fields['free_over'] = $this->filled('free_over') ? Money::ofMinor($this->integer('free_over'), $this->shippingMethod()->currency ?? $baseCurrency) : null;
         }
@@ -198,17 +226,17 @@ final class SaveShippingMethodRequest extends FormRequest
             $fields['pickup_postal_code'] = $this->filled('pickup.postal_code') ? trim($this->string('pickup.postal_code')->value()) : null;
         }
 
-        $freeOverAmounts = null;
+        $currencyAmounts = null;
 
         if ($this->has('currency_amounts')) {
-            $freeOverAmounts = [];
+            $currencyAmounts = [];
 
             foreach ($this->array('currency_amounts') as $row) {
-                $freeOverAmounts[(string) $row['currency']] = (int) $row['free_over'];
+                $currencyAmounts[(string) $row['currency']] = ['free_over' => isset($row['free_over']) ? (int) $row['free_over'] : null, 'backup' => isset($row['backup']) ? (int) $row['backup'] : null];
             }
         }
 
-        return new ShippingMethodDetails($fields, $translations, $this->has('rates') ? $this->rates() : null, $freeOverAmounts);
+        return new ShippingMethodDetails($fields, $translations, $this->has('rates') ? $this->rates() : null, $currencyAmounts);
     }
 
     /**
@@ -229,6 +257,29 @@ final class SaveShippingMethodRequest extends FormRequest
 
             return ['from' => (int) $rate['from'], 'to' => isset($rate['to']) ? (int) $rate['to'] : null, 'amount' => (int) $rate['amount'], 'currency_amounts' => $currencyAmounts];
         }, $this->array('rates')));
+    }
+
+    /**
+     * A carrier an integration offers, usable in the store now.
+     */
+    private function usableCarrier(string $attribute, mixed $value, Closure $fail): void
+    {
+        if (! is_string($value) || app(ShippingCarrierRegistry::class)->enabled($value) === null) {
+            $fail(__('validation.custom.carrier.not_usable'));
+        }
+    }
+
+    /**
+     * One of the method's carrier's services (the one sent, or the method's own).
+     */
+    private function serviceOfCarrier(string $attribute, mixed $value, Closure $fail): void
+    {
+        $carrierKey = $this->shippingMethod()->carrier ?? $this->input('carrier');
+        $carrier = is_string($carrierKey) ? app(ShippingCarrierRegistry::class)->enabled($carrierKey) : null;
+
+        if ($carrier !== null && (! is_string($value) || ! array_key_exists($value, $carrier->services()))) {
+            $fail(__('validation.custom.carrier.unknown_service'));
+        }
     }
 
     private function fulfilment(): ?ShippingFulfilment

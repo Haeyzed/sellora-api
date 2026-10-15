@@ -146,6 +146,7 @@ use App\Tenant\Settings\StoreTwoFactorRequirement;
 use App\Tenant\Shipping\Enums\ShippingPermission;
 use App\Tenant\Shipping\Models\ShippingMethod;
 use App\Tenant\Shipping\Models\ShippingZone;
+use App\Tenant\Shipping\ShippingCarrierRegistry;
 use App\Tenant\Shipping\ShippingPricedRecords;
 use App\Tenant\Shipping\ShippingStoreTables;
 use Dedoc\Scramble\Scramble;
@@ -205,6 +206,8 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(StockLocationSelector::class, DefaultStockLocationSelector::class);
         // One list of country tax plug-ins, filled in by modules' and integrations' service providers.
         $this->app->singleton(TaxCalculatorRegistry::class);
+        // One list of shipping carriers, filled in by integrations' service providers.
+        $this->app->singleton(ShippingCarrierRegistry::class);
         // Lines a tax-exempt customer buys are never taxed; modules may tag rules of their own.
         $this->app->tag([TaxExemptCustomerRule::class], CalculateTax::EXEMPTION_RULES_TAG);
         $this->app->bind(TwoFactorRequirement::class, StoreTwoFactorRequirement::class);

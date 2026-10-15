@@ -38,8 +38,11 @@ use OwenIt\Auditing\Events\AuditCustom;
  * @property array<string, string>|null $description By language.
  * @property ShippingFulfilment $fulfilment
  * @property ShippingPricing $pricing
+ * @property string|null $carrier A carrier-priced method's carrier, by its key (ShippingCarrierRegistry).
+ * @property string|null $carrier_service The carrier's service code.
  * @property string $currency The base currency its amounts are in.
  * @property Money|null $free_over Free once the lines that ship are worth this much, after discounts, as displayed.
+ * @property Money|null $backup A carrier-priced method's price when the carrier can't quote; null for not offered then.
  * @property int|null $stock_location_id A pickup's location.
  * @property string|null $pickup_country_code A pickup's address: offered to shoppers in this country.
  * @property string|null $pickup_state_code
@@ -82,8 +85,11 @@ final class ShippingMethod extends Model implements AuditableContract
     protected $fillable = [
         'fulfilment',
         'pricing',
+        'carrier',
+        'carrier_service',
         'currency',
         'free_over',
+        'backup',
         'pickup_country_code',
         'pickup_state_code',
         'pickup_address_line1',
@@ -142,6 +148,11 @@ final class ShippingMethod extends Model implements AuditableContract
      */
     public function uncoveredRanges(): array
     {
+        // A carrier prices it, not brackets.
+        if ($this->pricing === ShippingPricing::Carrier) {
+            return [];
+        }
+
         $gaps = [];
         $covered = 0;
 
@@ -163,7 +174,7 @@ final class ShippingMethod extends Model implements AuditableContract
     /**
      * Its rates and exact amounts as plain values, for audits.
      *
-     * @return array{rates: list<array{from: int, to: int|null, amount: int, currency_amounts: array<string, int>}>, free_over_amounts: array<string, int>}
+     * @return array{rates: list<array{from: int, to: int|null, amount: int, currency_amounts: array<string, int>}>, free_over_amounts: array<string, int|null>, backup_amounts: array<string, int|null>}
      */
     public function ratesSnapshot(): array
     {
@@ -174,7 +185,8 @@ final class ShippingMethod extends Model implements AuditableContract
                 'amount' => $rate->amount,
                 'currency_amounts' => $rate->currencyAmounts->mapWithKeys(static fn (ShippingRateAmount $amount): array => [$amount->currency_code => $amount->price->minorAmount()])->all(),
             ])->all()),
-            'free_over_amounts' => $this->currencyAmounts->mapWithKeys(static fn (ShippingMethodAmount $amount): array => [$amount->currency_code => $amount->free_over->minorAmount()])->all(),
+            'free_over_amounts' => $this->currencyAmounts->mapWithKeys(static fn (ShippingMethodAmount $amount): array => [$amount->currency_code => $amount->free_over?->minorAmount()])->all(),
+            'backup_amounts' => $this->currencyAmounts->mapWithKeys(static fn (ShippingMethodAmount $amount): array => [$amount->currency_code => $amount->backup?->minorAmount()])->all(),
         ];
     }
 
@@ -210,6 +222,7 @@ final class ShippingMethod extends Model implements AuditableContract
             'fulfilment' => ShippingFulfilment::class,
             'pricing' => ShippingPricing::class,
             'free_over' => MoneyCast::class.':currency',
+            'backup' => MoneyCast::class.':currency',
             'position' => 'integer',
             'is_active' => 'boolean',
             'archived_at' => 'immutable_datetime',

@@ -9,12 +9,13 @@ use App\Shared\Money\MoneyCast;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * A method's exact "free over" threshold in one offered currency, used as it is instead of converting the base threshold.
+ * A method's exact "free over" threshold, or backup price, in one offered currency, used as it is instead of converting the base amount.
  *
  * @property int $id
  * @property int $shipping_method_id
  * @property string $currency_code ISO 4217; never the base currency.
- * @property Money $free_over
+ * @property Money|null $free_over
+ * @property Money|null $backup A carrier-priced method's backup price.
  */
 final class ShippingMethodAmount extends Model
 {
@@ -23,6 +24,7 @@ final class ShippingMethodAmount extends Model
     protected $fillable = [
         'currency_code',
         'free_over',
+        'backup',
     ];
 
     /**
@@ -33,6 +35,7 @@ final class ShippingMethodAmount extends Model
         return [
             'shipping_method_id' => 'integer',
             'free_over' => MoneyCast::class.':currency_code',
+            'backup' => MoneyCast::class.':currency_code',
         ];
     }
 }

@@ -79,3 +79,39 @@ function shippingQuoteFor(array $lines, string $country = 'NG', ?string $state =
 
     return (array) shippingRequest('POST', '/quotes', $data)->assertOk()->json('data');
 }
+
+/*
+|--------------------------------------------------------------------------
+| For ShippingCarriersTest.php
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * A carrier method's ID, made through the API.
+ *
+ * @param  array<string, mixed>  $fields
+ */
+function carrierMethod(array $fields = []): string
+{
+    $id = shippingRequest('POST', '/methods', ['zone' => test()->zone, 'name' => ['en' => 'Fake Carrier Standard'], 'fulfilment' => 'ship', 'pricing' => 'carrier', 'carrier' => 'fake_carrier', 'carrier_service' => 'standard', ...$fields])->assertCreated()->json('data.id');
+
+    return is_string($id) ? $id : throw new LogicException('No method came back.');
+}
+
+/**
+ * The preview's options for two lamps, to a full Lagos address unless told otherwise.
+ *
+ * @return list<array<string, mixed>>
+ */
+function carrierOptions(?string $currency = null, bool $withAddress = true, string $street = '5 Allen Avenue', int $lamps = 2): array
+{
+    $data = array_filter([
+        'country_code' => 'NG',
+        'state_code' => 'LA',
+        'currency' => $currency,
+        'address' => $withAddress ? ['line1' => $street, 'city' => 'Ikeja', 'postal_code' => '100271'] : null,
+        'lines' => [['variant' => test()->parcel, 'quantity' => $lamps]],
+    ], static fn (mixed $value): bool => $value !== null);
+
+    return (array) shippingRequest('POST', '/quotes', $data)->assertOk()->json('data.options');
+}

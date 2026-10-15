@@ -87,7 +87,7 @@ final readonly class SaveShippingMethod
 
         $method->save();
 
-        if ($details->rates === null && $details->freeOverAmounts === null) {
+        if ($details->rates === null && $details->currencyAmounts === null) {
             return;
         }
 
@@ -106,11 +106,15 @@ final readonly class SaveShippingMethod
             }
         }
 
-        if ($details->freeOverAmounts !== null) {
+        if ($details->currencyAmounts !== null) {
             $method->currencyAmounts()->delete();
 
-            foreach ($details->freeOverAmounts as $currency => $amount) {
-                $method->currencyAmounts()->create(['currency_code' => $currency, 'free_over' => Money::ofMinor($amount, $currency)]);
+            foreach ($details->currencyAmounts as $currency => $amounts) {
+                $method->currencyAmounts()->create([
+                    'currency_code' => $currency,
+                    'free_over' => $amounts['free_over'] === null ? null : Money::ofMinor($amounts['free_over'], $currency),
+                    'backup' => $amounts['backup'] === null ? null : Money::ofMinor($amounts['backup'], $currency),
+                ]);
             }
         }
 

@@ -17,4 +17,7 @@ enum ShippingPricing: string
 
     /** Brackets of the value of the lines that ship, after discounts, as displayed, in the base currency's minor units. */
     case OrderValue = 'order_value';
+
+    /** A carrier's live rate for one of its services, through an integration; quoted only once the full address is known. */
+    case Carrier = 'carrier';
 }
