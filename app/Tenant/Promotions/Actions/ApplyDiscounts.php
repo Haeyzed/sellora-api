@@ -16,13 +16,14 @@ use App\Tenant\Promotions\PromotionDiscountSource;
 /**
  * Decides which discounts a basket gets, from every usable discount source, and what each line and the delivery get off (Step 11).
  *
- * Product discounts come first, then the order discount on what the lines
- * still cost, then shipping. At most one product discount applies per line,
- * one order discount and one shipping discount per order, and two discounts
- * apply together only when each combines with the other's class. Within each
- * class the discount worth most to the buyer is taken first (ties: the older);
- * a product discount whose lines another took is worked out again on the lines
- * still free. Nothing ever takes a line below zero.
+ * At most one product discount applies per line, one order discount and one
+ * shipping discount per order, and two discounts apply together only when
+ * each combines with the other's class. Of the combinations allowed, the one
+ * that saves the buyer the most in all wins; a tie goes to the one with the
+ * oldest promotion. Within a combination product discounts come first (the
+ * one worth most first; one whose lines another took is worked out again on
+ * the lines still free), then the order discount on what the lines still
+ * cost, then shipping. Nothing ever takes a line below zero.
  */
 final readonly class ApplyDiscounts
 {
@@ -39,10 +40,52 @@ final readonly class ApplyDiscounts
             array_push($proposals, ...$source->propose($basket));
         }
 
+        $productProposals = $this->bestFirst($proposals, DiscountClass::Product, $basket->currency);
+        $productSets = [];
+        $applied = [];
+        $saved = -1;
+
+        // Every choice of order and shipping discount (or none), each with the product discounts that combine with it.
+        foreach ([null, ...$this->bestFirst($proposals, DiscountClass::Order, $basket->currency)] as $order) {
+            foreach ([null, ...$this->bestFirst($proposals, DiscountClass::Shipping, $basket->currency)] as $shipping) {
+                $leads = array_values(array_filter([$order, $shipping]));
+
+                if ($order !== null && $shipping !== null && ! $order->combinesWith($shipping)) {
+                    continue;
+                }
+
+                $key = implode(',', array_map(static fn (DiscountProposal $lead): string => $lead->class->value.':'.(int) in_array(DiscountClass::Product, $lead->combinesWith, true), $leads));
+                $productSets[$key] ??= self::productDiscounts($basket, array_values(array_filter($productProposals, static fn (DiscountProposal $proposal): bool => self::combinesWithAll($proposal, $leads))));
+                $candidate = self::withLeads($basket, $productSets[$key], $order, $shipping);
+
+                if ($candidate === null) {
+                    continue;
+                }
+
+                $candidateSaved = self::saved($basket, $candidate)->minorAmount();
+
+                if ($candidateSaved > $saved || ($candidateSaved === $saved && self::olderThan($candidate, $applied))) {
+                    $applied = $candidate;
+                    $saved = $candidateSaved;
+                }
+            }
+        }
+
+        return new DiscountOutcome($basket->currency, $applied, self::lineDiscounts($applied, $basket), self::shippingDiscount($applied, $basket), $basket->code, $this->codeReason($basket, $proposals, $applied));
+    }
+
+    /**
+     * Product discounts, worth most first, one per line: one whose lines another took is worked out again on the lines still free.
+     *
+     * @param  list<DiscountProposal>  $productProposals  Worth most first.
+     * @return list<DiscountProposal>
+     */
+    private static function productDiscounts(DiscountBasket $basket, array $productProposals): array
+    {
         $applied = [];
         $claimed = [];
 
-        foreach ($this->bestFirst($proposals, DiscountClass::Product, $basket->currency) as $proposal) {
+        foreach ($productProposals as $proposal) {
             if (array_intersect(array_keys($proposal->lineDiscounts), $claimed) !== []) {
                 $freeKeys = array_values(array_diff(array_map(static fn (DiscountLine $line): string => $line->key, $basket->lines), $claimed));
                 $proposal = ($proposal->recalculate)($basket->onlyLines($freeKeys));
@@ -54,25 +97,86 @@ final readonly class ApplyDiscounts
             }
         }
 
-        foreach ([DiscountClass::Order, DiscountClass::Shipping] as $class) {
-            // Worked out again on what the lines still cost after the discounts already applied.
-            $after = $basket->withDiscountedLines(self::lineDiscounts($applied, $basket));
-            $candidates = array_values(array_filter(array_map(
-                static fn (DiscountProposal $proposal): ?DiscountProposal => ($proposal->recalculate)($after),
-                $this->bestFirst($proposals, $class, $basket->currency),
-            )));
+        return $applied;
+    }
 
-            foreach ($this->bestFirst($candidates, $class, $basket->currency) as $proposal) {
-                $counts = $class === DiscountClass::Shipping || $proposal->total($basket->currency)->isPositive();
+    /**
+     * The product discounts with the order and shipping discount chosen, each worked out again on what the lines still cost
+     * after the discounts before it; null when one of them no longer applies, as another choice covers that.
+     *
+     * @param  list<DiscountProposal>  $products
+     * @return list<DiscountProposal>|null
+     */
+    private static function withLeads(DiscountBasket $basket, array $products, ?DiscountProposal $order, ?DiscountProposal $shipping): ?array
+    {
+        $applied = $products;
 
-                if ($counts && self::combinesWithAll($proposal, $applied)) {
-                    $applied[] = $proposal;
+        foreach ([$order, $shipping] as $lead) {
+            if ($lead === null) {
+                continue;
+            }
 
-                    break;
-                }
+            $lead = ($lead->recalculate)($basket->withDiscountedLines(self::lineDiscounts($applied, $basket)));
+
+            // Free shipping counts before the delivery charge is known, at nothing yet.
+            if ($lead === null || ($lead->class !== DiscountClass::Shipping && ! $lead->total($basket->currency)->isPositive())) {
+                return null;
+            }
+
+            $applied[] = $lead;
+        }
+
+        return $applied;
+    }
+
+    /**
+     * What the discounts save the buyer in all, as they will be taken off.
+     *
+     * @param  list<DiscountProposal>  $applied
+     */
+    private static function saved(DiscountBasket $basket, array $applied): Money
+    {
+        return Money::sum($basket->currency, [...array_values(self::lineDiscounts($applied, $basket)), self::shippingDiscount($applied, $basket)]);
+    }
+
+    /**
+     * Between two choices that save the same: the one whose oldest discounts are older wins, then the one with more.
+     *
+     * @param  list<DiscountProposal>  $candidate
+     * @param  list<DiscountProposal>  $current
+     */
+    private static function olderThan(array $candidate, array $current): bool
+    {
+        $ranks = static function (array $applied): array {
+            $ranks = array_map(static fn (DiscountProposal $proposal): int => $proposal->rank, $applied);
+            sort($ranks);
+
+            return $ranks;
+        };
+
+        $a = $ranks($candidate);
+        $b = $ranks($current);
+
+        foreach ($a as $index => $rank) {
+            if (! isset($b[$index])) {
+                return true;
+            }
+
+            if ($rank !== $b[$index]) {
+                return $rank < $b[$index];
             }
         }
 
+        return false;
+    }
+
+    /**
+     * The total off the delivery, never more than the delivery charge.
+     *
+     * @param  list<DiscountProposal>  $applied
+     */
+    private static function shippingDiscount(array $applied, DiscountBasket $basket): Money
+    {
         $shipping = Money::zero($basket->currency);
 
         foreach ($applied as $proposal) {
@@ -81,11 +185,7 @@ final readonly class ApplyDiscounts
             }
         }
 
-        if ($basket->shipping !== null && $shipping->isGreaterThan($basket->shipping)) {
-            $shipping = $basket->shipping;
-        }
-
-        return new DiscountOutcome($basket->currency, $applied, self::lineDiscounts($applied, $basket), $shipping, $basket->code, $this->codeReason($basket, $proposals, $applied));
+        return $basket->shipping !== null && $shipping->isGreaterThan($basket->shipping) ? $basket->shipping : $shipping;
     }
 
     /**
@@ -154,9 +254,9 @@ final readonly class ApplyDiscounts
         }
 
         if (array_any($proposals, static fn (DiscountProposal $proposal): bool => $proposal->isCode)) {
-            return 'not_combinable';
+            return 'better_discount_applied';
         }
 
-        return $this->promotionDiscountSource->codeReason($basket) ?? 'not_combinable';
+        return $this->promotionDiscountSource->codeReason($basket) ?? 'better_discount_applied';
     }
 }

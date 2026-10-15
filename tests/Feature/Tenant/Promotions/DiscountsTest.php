@@ -30,7 +30,8 @@ use Tests\Support\TruncatesCentralDatabase;
  * lines it covers, in the basket's currency at the checkout's rate, spread
  * across lines by largest remainder and taken off before tax. Product
  * discounts first (one per line), then the order discount on what remains,
- * then shipping; two apply together only when both say so. Codes that don't
+ * then shipping; two apply together only when both say so, and when they
+ * don't all combine the set that saves the customer most wins. Codes that don't
  * apply say why. Modules add discount sources that are used only while they
  * are enabled. 0- and 3-decimal currencies round to their own units.
  */
@@ -229,24 +230,110 @@ it('works out the order discount on what the lines cost after product discounts,
 })->with([
     // 10% of 500 + 1000 = 150, spread 50 and 100.
     'combined' => [true, true, ['line-1' => 550, 'line-2' => 100]],
-    // Product discounts come first; the order discount doesn't combine, so it isn't applied.
+    // They don't combine, and the product discount (500) saves more than the order discount (200).
     'not combined' => [false, false, ['line-1' => 500, 'line-2' => 0]],
     'only the product discount allows it' => [true, false, ['line-1' => 500, 'line-2' => 0]],
     'only the order discount allows it' => [false, true, ['line-1' => 500, 'line-2' => 0]],
 ]);
 
-it('tells a code\'s user when its discount doesn\'t combine with one already applied', function (): void {
-    $this->store->run(static function (): void {
-        runningPromotion(['applies_to' => PromotionAppliesTo::Products, 'percent' => App\Shared\Money\Decimal::of(30)]);
-        $code = runningPromotion(['method' => App\Tenant\Promotions\Enums\PromotionMethod::Code, 'percent' => App\Shared\Money\Decimal::of(50)]);
-        $code->codes()->create(['code' => 'HALF']);
+it('gives the discounts that save the customer most when they don\'t all combine, and tells a code that loses why', function (int $codePercent, array $expected, ?string $reason): void {
+    $this->store->run(static function () use ($codePercent, $expected, $reason): void {
+        runningPromotion(['applies_to' => PromotionAppliesTo::Products, 'percent' => App\Shared\Money\Decimal::of(5)]);
+        $code = runningPromotion(['method' => App\Tenant\Promotions\Enums\PromotionMethod::Code, 'percent' => App\Shared\Money\Decimal::of($codePercent)]);
+        $code->codes()->create(['code' => 'ORDER']);
 
-        $basket = discountedBasket([[promotedVariant(1000), 1]], code: 'HALF');
+        $basket = discountedBasket([[promotedVariant(1000), 1]], code: 'ORDER');
 
-        expect($basket->discounts->codeReason)->toBe('not_combinable')
-            ->and(lineDiscountsOf($basket))->toBe(['line-1' => 300]);
+        expect(lineDiscountsOf($basket))->toBe($expected)
+            ->and($basket->discounts->applied)->toHaveCount(1)
+            ->and($basket->discounts->codeReason)->toBe($reason);
     });
-});
+})->with([
+    // The 5% product discount came first under the old rule, though the order code saves more.
+    'a larger order code wins' => [10, ['line-1' => 100], null],
+    'a smaller one loses' => [3, ['line-1' => 50], 'better_discount_applied'],
+]);
+
+it('gives a tie between discounts that don\'t combine to the oldest promotion', function (bool $productIsOlder, string $class): void {
+    $this->store->run(static function () use ($productIsOlder, $class): void {
+        $product = static fn () => runningPromotion(['applies_to' => PromotionAppliesTo::Products, 'percent' => App\Shared\Money\Decimal::of(10)]);
+        $order = static fn () => runningPromotion(['percent' => App\Shared\Money\Decimal::of(10)]);
+        foreach ($productIsOlder ? [$product, $order] : [$order, $product] as $create) {
+            $create();
+        }
+
+        $basket = discountedBasket([[promotedVariant(1000), 1]]);
+
+        expect(array_map(static fn (DiscountProposal $discount): string => $discount->class->value, $basket->discounts->applied))->toBe([$class])
+            ->and(lineDiscountsOf($basket))->toBe(['line-1' => 100]);
+    });
+})->with([
+    'the product discount is older' => [true, 'product'],
+    'the order discount is older' => [false, 'order'],
+]);
+
+it('never saves the customer less than taking product discounts first did', function (array $promotions, int $earlierClassWins, int $expected): void {
+    $this->store->run(static function () use ($promotions, $earlierClassWins, $expected): void {
+        $a = promotedVariant(1000);
+        $b = promotedVariant(1000);
+
+        foreach ($promotions as $attributes) {
+            $only = $attributes['only_a'] ?? false;
+            unset($attributes['only_a']);
+            $promotion = runningPromotion([...$attributes, 'percent' => $attributes['percent'] === null ? null : App\Shared\Money\Decimal::of($attributes['percent'])]);
+
+            if ($only) {
+                $promotion->variants()->attach($a->id, ['list' => 'include']);
+            }
+        }
+
+        $saved = discountedBasket([[$a, 1], [$b, 1]], shipping: 1000)->discounts->total()->minorAmount();
+
+        expect($saved)->toBe($expected)->toBeGreaterThanOrEqual($earlierClassWins);
+    });
+})->with([
+    // 50% off a, combining with orders, then 10% of what remains (150); a 20% order discount alone is only 400.
+    'the old choice was already best' => [[
+        ['applies_to' => PromotionAppliesTo::Products, 'percent' => 50, 'only_a' => true, 'combines_with_order_discounts' => true],
+        ['percent' => 10, 'combines_with_product_discounts' => true],
+        ['percent' => 20],
+    ], 650, 650],
+    // 5% of each line (100) blocked every order discount; 30% off the order alone saves 600.
+    'an order discount alone saves more' => [[
+        ['applies_to' => PromotionAppliesTo::Products, 'percent' => 5],
+        ['percent' => 30],
+    ], 100, 600],
+    // 5% off a blocked shipping; free delivery (1000) combines with the 10% order discount (200).
+    'a larger set without the product discount' => [[
+        ['applies_to' => PromotionAppliesTo::Products, 'percent' => 5, 'only_a' => true],
+        ['percent' => 10, 'combines_with_shipping_discounts' => true],
+        ['type' => PromotionType::FreeShipping, 'applies_to' => null, 'percent' => null, 'combines_with_order_discounts' => true],
+    ], 50, 1200],
+    // 30% off the order (600) blocked free delivery (1000); they don't combine, so only one applies.
+    'free delivery alone saves more' => [[
+        ['percent' => 30],
+        ['type' => PromotionType::FreeShipping, 'applies_to' => null, 'percent' => null],
+    ], 600, 1000],
+]);
+
+it('still adds the winning discount up exactly in currencies with no decimals and with three', function (string $country, string $currency): void {
+    if ($country === 'KW') {
+        seedWorldCountry('KW', 'Kuwait', '965', 'KWD', 'Asia/Kuwait');
+    }
+
+    createStore('rounding-store', ['country_code' => $country, 'currency_code' => $currency])->run(static function (): void {
+        runningPromotion(['applies_to' => PromotionAppliesTo::Products, 'percent' => App\Shared\Money\Decimal::of(5)]);
+        $code = runningPromotion(['method' => App\Tenant\Promotions\Enums\PromotionMethod::Code, 'percent' => App\Shared\Money\Decimal::of('12.5')]);
+        $code->codes()->create(['code' => 'EIGHTH']);
+
+        $basket = discountedBasket([[promotedVariant(1999), 1], [promotedVariant(3001), 2]], code: 'EIGHTH');
+
+        // 12.5% of 8001 is 1000.125, so 1000; 249.875 and 750.25 by largest remainder. The product discount would be 400.
+        expect(lineDiscountsOf($basket))->toBe(['line-1' => 250, 'line-2' => 750])
+            ->and($basket->discounts->applied[0]->total($basket->discounts->currency)->minorAmount())->toBe(1000)
+            ->and($basket->discounts->codeApplies())->toBeTrue();
+    });
+})->with(['yen, no decimals' => ['JP', 'JPY'], 'dinar, three decimals' => ['KW', 'KWD']]);
 
 it('gives a code that can\'t be used now the same answer as one that doesn\'t exist', function (): void {
     $this->store->run(static function (): void {

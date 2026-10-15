@@ -51,7 +51,7 @@ final class DiscountedBasketResource extends JsonResource
             'shipping_discount' => new MoneyResource($outcome->shippingDiscount),
             /**
              * The code tried, and why it doesn't apply: code_not_valid (for any code that can't be used now), first_order_only,
-             * customer_group, sale_items_excluded, no_eligible_items, minimum_not_met or not_combinable. Null when no code was tried.
+             * customer_group, sale_items_excluded, no_eligible_items, minimum_not_met or better_discount_applied (a combination saving more doesn't include it). Null when no code was tried.
              *
              * @var array{code: string, applied: bool, reason: string|null}|null
              */
