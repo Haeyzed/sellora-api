@@ -236,6 +236,7 @@ it('documents every shipping endpoint', function (): void {
         '/staff/shipping/methods' => ['get', 'post'],
         '/staff/shipping/methods/{method}' => ['get', 'put'],
         '/staff/shipping/methods/{method}/archive' => ['post'],
+        '/staff/shipping/quotes' => ['post'],
     ];
 
     foreach ($expected as $path => $methods) {
@@ -255,7 +256,10 @@ it('documents every shipping endpoint', function (): void {
         ->and(array_keys($store['components']['schemas']['ShippingMethodResource']['properties']['warnings']['items']['properties']))->toBe(['code', 'from', 'to'])
         ->and(array_keys($store['components']['schemas']['ShippingMethodResource']['properties']['rates']['items']['properties']))->toBe(['from', 'to', 'amount', 'currency_amounts'])
         ->and(json_encode($store['paths']['/staff/shipping/methods/{method}']['put']['responses'][409]))->toContain('shipping_method_archived')
-        ->and(json_encode($store['paths']['/staff/shipping/methods']['post']['responses'][422]))->toContain('shipping_rates_overlap');
+        ->and(json_encode($store['paths']['/staff/shipping/methods']['post']['responses'][422]))->toContain('shipping_rates_overlap')
+        ->and(json_encode($store['paths']['/staff/shipping/quotes']['post']['responses'][422]))->toContain('currency_not_offered')
+        ->and(array_keys($store['components']['schemas']['ShippingQuoteResource']['properties']))->toBe(['required', 'reason', 'weight_grams', 'value', 'options'])
+        ->and(array_keys($store['components']['schemas']['ShippingOptionResource']['properties']))->toContain('id', 'name', 'fulfilment', 'amount', 'calculated_at_checkout', 'is_free', 'pickup');
 });
 
 it('documents every cart endpoint', function (): void {

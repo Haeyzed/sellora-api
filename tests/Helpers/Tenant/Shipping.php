@@ -47,3 +47,34 @@ function shippingZone(string $name, array $regions = [], bool $restOfWorld = fal
 
     return is_string($id) ? $id : throw new LogicException('No zone came back.');
 }
+
+/*
+|--------------------------------------------------------------------------
+| For ShippingQuotesTest.php
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * A method's ID, made through the API.
+ *
+ * @param  array<string, mixed>  $fields
+ */
+function quotedMethod(array $fields): string
+{
+    $id = shippingRequest('POST', '/methods', ['fulfilment' => 'ship', 'pricing' => 'flat', 'name' => ['en' => 'Method'], ...$fields])->assertCreated()->json('data.id');
+
+    return is_string($id) ? $id : throw new LogicException('No method came back.');
+}
+
+/**
+ * The preview of shipping for lines of [variant ID, quantity].
+ *
+ * @param  list<array{string, int}>  $lines
+ * @return array<string, mixed>
+ */
+function shippingQuoteFor(array $lines, string $country = 'NG', ?string $state = null, ?string $currency = null): array
+{
+    $data = array_filter(['country_code' => $country, 'state_code' => $state, 'currency' => $currency, 'lines' => array_map(static fn (array $line): array => ['variant' => $line[0], 'quantity' => $line[1]], $lines)], static fn (mixed $value): bool => $value !== null);
+
+    return (array) shippingRequest('POST', '/quotes', $data)->assertOk()->json('data');
+}
