@@ -1190,6 +1190,9 @@ This platform handles many businesses' money, customers and personal data. **Sec
 - Rate-limit login, registration, password reset, OTP, checkout, coupon redemption and all public endpoints.
 - **Every rate-limit key includes the store** (for tenant routes), so an attacker in one store can never lock out users of another store. Emails and phone numbers in rate-limit keys are hashed.
 - Login and password-reset responses never reveal whether an email exists.
+- **Shoppers never see exact stock quantities**, in any response or error (only available, backorder or out of stock), so competitors can't read a store's stock levels.
+- **Shared IP addresses:** in many markets lots of shoppers share one IP address (mobile carriers put whole cities behind a few addresses). Limits for shopper actions are never IP-only: combine a per-cart or per-account key with a much higher per-IP ceiling, so one abuser can't lock out everyone on the same network.
+- **Bearer secrets we issue** (guest cart tokens, invitation and verification links, export downloads) are stored only as hashes and shown once.
 - Validate uploads strictly: allowed MIME types, file size limits, maximum image dimensions (against decompression bombs), no executable files, and no SVG uploads unless sanitised. Store uploads privately, with access through signed URLs where appropriate. **Only images meant for the storefront** (product, variant, category, brand, store logo) go on a public disk; everything else (proof of delivery, documents, exports) stays private. Until a CDN or S3 disk is configured, storefront images are served on the store's own domain through the tenancy package's asset route; production serves them from S3 behind a CDN so image traffic never boots the application.
 
 **Secrets and sensitive data**
