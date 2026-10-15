@@ -29,6 +29,7 @@ return [
         'customer_data_exports' => (int) env('RETENTION_CUSTOMER_DATA_EXPORTS_DAYS', 1),
         // Reservations that ended; the stock movements they caused are kept for good.
         'settled_stock_reservations' => (int) env('RETENTION_SETTLED_STOCK_RESERVATIONS_DAYS', 90),
+        'released_promotion_uses' => (int) env('RETENTION_RELEASED_PROMOTION_USES_DAYS', 90),
         'store_registrations' => (int) env('RETENTION_STORE_REGISTRATIONS_DAYS', 7),
         'store_exports' => (int) env('RETENTION_STORE_EXPORTS_DAYS', 7),
         'activity_log' => (int) env('RETENTION_ACTIVITY_LOG_DAYS', 365),

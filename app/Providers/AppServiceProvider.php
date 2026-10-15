@@ -123,9 +123,11 @@ use App\Tenant\Promotions\Models\Promotion;
 use App\Tenant\Promotions\Models\PromotionCode;
 use App\Tenant\Promotions\Models\PromotionRedemption;
 use App\Tenant\Promotions\NoOrderHistory;
+use App\Tenant\Promotions\Privacy\PromotionUseData;
 use App\Tenant\Promotions\PromotionDiscountSource;
 use App\Tenant\Promotions\PromotionPricedRecords;
 use App\Tenant\Promotions\PromotionStoreTables;
+use App\Tenant\Promotions\ReleasedPromotionUseRetention;
 use App\Tenant\Settings\Enums\SettingsPermission;
 use App\Tenant\Settings\Models\StoreSettings;
 use App\Tenant\Settings\Policies\StoreLifecyclePolicy;
@@ -331,6 +333,7 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(CustomerDataSubject::TYPE, 'customer_groups', CustomerGroupData::class);
             $registry->register(CustomerDataSubject::TYPE, 'marketing_consents', MarketingConsentData::class);
             $registry->register(CustomerDataSubject::TYPE, 'data_exports', CustomerDataExportData::class);
+            $registry->register(CustomerDataSubject::TYPE, 'promotion_uses', PromotionUseData::class);
             $registry->register(CustomerDataSubject::TYPE, 'account', CustomerAccountData::class);
 
             return $registry;
@@ -359,6 +362,7 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(TrashedCustomerRetention::class);
             $registry->register(CustomerDataExportRetention::class);
             $registry->register(SettledReservationRetention::class);
+            $registry->register(ReleasedPromotionUseRetention::class);
             $registry->register(StoreRegistrationRetention::class);
             $registry->register(StoreExportRetention::class);
             $registry->register(ExchangeRateRetention::class);
