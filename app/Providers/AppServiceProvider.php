@@ -53,6 +53,7 @@ use App\Shared\Tenancy\Contracts\StoreSessions;
 use App\Shared\Tenancy\Contracts\StoreSettingsSetup;
 use App\Shared\Tenancy\Contracts\StoreStockLedger;
 use App\Shared\Tenancy\Contracts\StoreStockReservations;
+use App\Tenant\Cart\CartStoreTables;
 use App\Tenant\Catalog\CatalogPricedRecords;
 use App\Tenant\Catalog\CatalogStoreFiles;
 use App\Tenant\Catalog\CatalogStoreTables;
@@ -373,7 +374,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->singleton(StoreExportRegistry::class, static function (Application $app): StoreExportRegistry {
             $registry = new StoreExportRegistry;
 
-            foreach ([SharedStoreTables::class, IdentityStoreTables::class, SettingsStoreTables::class, CustomerStoreTables::class, DeliveryStoreTables::class, CatalogStoreTables::class, InventoryStoreTables::class, PricingStoreTables::class, PromotionStoreTables::class] as $storeTables) {
+            foreach ([SharedStoreTables::class, IdentityStoreTables::class, SettingsStoreTables::class, CustomerStoreTables::class, DeliveryStoreTables::class, CatalogStoreTables::class, InventoryStoreTables::class, PricingStoreTables::class, PromotionStoreTables::class, CartStoreTables::class] as $storeTables) {
                 $app->make($storeTables)->classify($registry);
             }
 

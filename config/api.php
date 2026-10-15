@@ -55,6 +55,11 @@ return [
         'registration' => (int) env('RATE_LIMIT_REGISTRATION', 3),
         'checkout' => (int) env('RATE_LIMIT_CHECKOUT', 10),
         'coupon_redemption' => (int) env('RATE_LIMIT_COUPON_REDEMPTION', 10),
+        // Shoppers' carts: per cart (or per signed-in customer), under a much higher ceiling per IP address,
+        // because many shoppers can share one address (section 14).
+        'cart' => (int) env('RATE_LIMIT_CART', 60),
+        'cart_ip_ceiling' => (int) env('RATE_LIMIT_CART_IP_CEILING', 600),
+        'cart_creation_ip_ceiling' => (int) env('RATE_LIMIT_CART_CREATION_IP_CEILING', 100),
         'tenant_webhooks' => (int) env('RATE_LIMIT_TENANT_WEBHOOKS', 300),
         'tenant_bulk_jobs' => (int) env('RATE_LIMIT_TENANT_BULK_JOBS', 60),
     ],

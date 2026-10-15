@@ -151,5 +151,12 @@ return [
     'too_many_code_attempts' => 'Too many codes tried. Wait a minute and try again.',
     'customer_group_name_taken' => 'Another customer group already has this name.',
     'customer_address_limit_reached' => 'You can save up to :limit addresses. Delete one to add another.',
+    'cart_not_found' => 'There is no cart here. Create one first.',
+    'variant_not_available' => 'This item isn\'t for sale right now.',
+    'variant_out_of_stock' => 'This item is out of stock.',
+    'cart_full' => 'A cart can hold up to :limit different items. Remove one to add another.',
+    'cart_line_quantity_too_high' => 'You can have up to :limit of one item in your cart.',
+    'cart_changed' => 'Your cart changed somewhere else, for example in another tab. Look at it again, then make your change.',
+    'cart_version_required' => 'Send the cart\'s version (its ETag) in an If-Match header.',
 
 ];

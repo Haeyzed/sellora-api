@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Shared\Tenancy\TenantScopedKey;
+use App\Tenant\Cart\CartToken;
+use App\Tenant\Customers\Models\Customer;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -39,6 +41,38 @@ final class RateLimitServiceProvider extends ServiceProvider
         RateLimiter::for('coupon-redemption', fn (Request $request): Limit => $this->perMinute('coupon_redemption')->by($this->requesterKey('coupon-redemption', $request)));
         // Emails a signed-in account asks to be sent (verification and email-change links), so a token can't be used to flood a mailbox.
         RateLimiter::for('account-emails', fn (Request $request): Limit => $this->perMinute('account_emails')->by($this->requesterKey('account-emails', $request)));
+        $this->defineShopperLimits();
+    }
+
+    /**
+     * Shoppers' carts are limited per cart (or per signed-in customer) under a much higher ceiling per IP address, never per IP address alone:
+     * many shoppers can share one address, and one of them must not lock out the rest (section 14).
+     *
+     * A new guest cart has nothing to be told apart by yet but its address, so making carts has only the ceiling.
+     */
+    private function defineShopperLimits(): void
+    {
+        RateLimiter::for('cart', fn (Request $request): array => [
+            $this->perMinute('cart')->by($this->shopperKey('cart', $request)),
+            $this->perMinute('cart_ip_ceiling')->by($this->ipKey('cart-ip-ceiling', $request)),
+        ]);
+        RateLimiter::for('cart-creation', fn (Request $request): Limit => $this->perMinute('cart_creation_ip_ceiling')->by($this->ipKey('cart-creation', $request)));
+    }
+
+    /**
+     * The signed-in customer, or else the guest's cart by its token (hashed: it is a secret), or else the IP address.
+     */
+    private function shopperKey(string $limitName, Request $request): string
+    {
+        $customerId = $request->bearerToken() === null ? null : Auth::guard(Customer::GUARD)->id();
+
+        if ($customerId !== null) {
+            return TenantScopedKey::make($limitName, Customer::GUARD, (string) $customerId);
+        }
+
+        $token = (string) $request->headers->get(CartToken::HEADER, '');
+
+        return $token === '' ? $this->ipKey($limitName, $request) : TenantScopedKey::forIdentifier($limitName, $token);
     }
 
     /**

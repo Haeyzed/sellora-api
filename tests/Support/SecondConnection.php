@@ -93,19 +93,30 @@ final class SecondConnection
      */
     public function blocks(Closure $work, int $timeoutMilliseconds = 500): bool
     {
+        return $this->blockedStatement($work, $timeoutMilliseconds) !== null;
+    }
+
+    /**
+     * The statement of work on the main connection that had to wait for a lock this connection holds, or null when nothing waited.
+     *
+     * Shows where the wait happens, such as the work's own row lock rather
+     * than a later write that would wait anyway.
+     */
+    public function blockedStatement(Closure $work, int $timeoutMilliseconds = 500): ?string
+    {
         $main = DB::connection($this->mainConnectionName);
         $main->statement("set lock_timeout = '{$timeoutMilliseconds}ms'");
 
         try {
             $work();
 
-            return false;
+            return null;
         } catch (QueryException $exception) {
             if ($exception->getCode() !== self::LOCK_NOT_AVAILABLE) {
                 throw $exception;
             }
 
-            return true;
+            return $exception->getSql();
         } finally {
             $main->statement('reset lock_timeout');
         }

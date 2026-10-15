@@ -222,6 +222,39 @@ it('documents every promotion endpoint', function (): void {
 });
 
 /*
+ * Step 12: every cart endpoint is documented, with the guest's cart token,
+ * the version a change is made from, and the business errors.
+ */
+it('documents every cart endpoint', function (): void {
+    $store = documentedApi('default');
+
+    $expected = [
+        '/cart' => ['get', 'post'],
+        '/cart/lines' => ['post', 'delete'],
+        '/cart/lines/{line}' => ['patch', 'delete'],
+    ];
+
+    foreach ($expected as $path => $methods) {
+        expect($store['paths'])->toHaveKey($path)
+            ->and(array_keys($store['paths'][$path]))->toContain(...$methods);
+
+        foreach ($methods as $method) {
+            if ($path !== '/cart' || $method !== 'post') {
+                expect(collect($store['paths'][$path][$method]['parameters'])->where('in', 'header')->pluck('name')->all())->toContain('X-Cart-Token');
+            }
+        }
+    }
+
+    expect(array_keys($store['paths']['/cart']['post']['responses']))->toContain(200, 201)
+        ->and(array_keys($store['components']['schemas']['CartResource']['properties']))->toContain('id', 'version', 'token', 'lines')
+        ->and(json_encode($store['paths']['/cart']['get']['responses'][404]))->toContain('cart_not_found')
+        ->and(json_encode($store['paths']['/cart/lines']['post']['responses'][422]))->toContain('variant_not_available')->toContain('variant_out_of_stock')->toContain('cart_full')->toContain('cart_line_quantity_too_high')
+        ->and(collect($store['paths']['/cart/lines/{line}']['patch']['parameters'])->pluck('name')->all())->toContain('If-Match')
+        ->and(json_encode($store['paths']['/cart/lines/{line}']['patch']['responses'][412]))->toContain('cart_changed')
+        ->and(json_encode($store['paths']['/cart/lines/{line}']['delete']['responses'][428]))->toContain('cart_version_required');
+});
+
+/*
  * Section 11: the docs are for development. Outside a developer's machine
  * they are shown only to platform admins signed in with two-factor
  * authentication, through their bearer token.
