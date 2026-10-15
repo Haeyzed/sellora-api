@@ -8,6 +8,7 @@ use App\Shared\Http\Controller;
 use App\Tenant\Cart\Actions\AddCartLine;
 use App\Tenant\Cart\Actions\ChangeCartLineQuantity;
 use App\Tenant\Cart\Actions\EmptyCart;
+use App\Tenant\Cart\Actions\PriceCart;
 use App\Tenant\Cart\Actions\RemoveCartLine;
 use App\Tenant\Cart\CartToken;
 use App\Tenant\Cart\Exceptions\CartChangedException;
@@ -34,6 +35,10 @@ use Illuminate\Http\Request;
  */
 final class CartLineController extends Controller
 {
+    public function __construct(
+        private readonly PriceCart $priceCart,
+    ) {}
+
     /**
      * Add to my cart.
      *
@@ -53,7 +58,7 @@ final class CartLineController extends Controller
     {
         $cart = $addCartLine->handle(CartHttp::shopper($request), $request->variant(), $request->quantity());
 
-        return new CartResource($cart->load(CartResource::relations()));
+        return new CartResource($this->priceCart->handle($cart));
     }
 
     /**
@@ -69,7 +74,7 @@ final class CartLineController extends Controller
     {
         $cart = $changeCartLineQuantity->handle(CartHttp::shopper($request), $line, $request->quantity(), CartHttp::expectedVersion($request));
 
-        return new CartResource($cart->load(CartResource::relations()));
+        return new CartResource($this->priceCart->handle($cart));
     }
 
     /**
@@ -85,7 +90,7 @@ final class CartLineController extends Controller
     {
         $cart = $removeCartLine->handle(CartHttp::shopper($request), $line, CartHttp::expectedVersion($request));
 
-        return new CartResource($cart->load(CartResource::relations()));
+        return new CartResource($this->priceCart->handle($cart));
     }
 
     /**
@@ -103,6 +108,6 @@ final class CartLineController extends Controller
     {
         $cart = $emptyCart->handle(CartHttp::shopper($request), CartHttp::expectedVersion($request));
 
-        return new CartResource($cart->load(CartResource::relations()));
+        return new CartResource($this->priceCart->handle($cart));
     }
 }

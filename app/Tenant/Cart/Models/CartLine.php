@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Tenant\Cart\Models;
 
 use App\Shared\Concerns\HasPublicId;
+use App\Shared\Money\Money;
+use App\Shared\Money\MoneyCast;
+use App\Tenant\Cart\Enums\SeenPriceSource;
 use App\Tenant\Catalog\Models\ProductVariant;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
@@ -21,6 +24,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $cart_id
  * @property int $product_variant_id
  * @property int $quantity At least 1, at most the cart's per-line limit.
+ * @property Money $seen_price The unit price the shopper last saw: a fixed price in its currency, otherwise the base price in the base currency.
+ * @property SeenPriceSource $seen_price_source
  * @property CarbonImmutable|null $created_at When it was added.
  * @property CarbonImmutable|null $updated_at
  * @property-read Cart $cart
@@ -36,6 +41,8 @@ final class CartLine extends Model
     protected $fillable = [
         'product_variant_id',
         'quantity',
+        'seen_price',
+        'seen_price_source',
     ];
 
     /**
@@ -63,6 +70,8 @@ final class CartLine extends Model
     {
         return [
             'quantity' => 'integer',
+            'seen_price' => MoneyCast::class,
+            'seen_price_source' => SeenPriceSource::class,
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];

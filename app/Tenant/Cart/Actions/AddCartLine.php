@@ -12,6 +12,7 @@ use App\Tenant\Cart\Exceptions\VariantNotAvailableException;
 use App\Tenant\Cart\Exceptions\VariantOutOfStockException;
 use App\Tenant\Cart\Models\Cart;
 use App\Tenant\Cart\Services\CartChanges;
+use App\Tenant\Cart\Services\CartPrices;
 use App\Tenant\Cart\Services\CartVariants;
 use App\Tenant\Catalog\Models\ProductVariant;
 
@@ -29,6 +30,7 @@ final readonly class AddCartLine
         private FindCart $findCart,
         private CartVariants $cartVariants,
         private CartChanges $cartChanges,
+        private CartPrices $cartPrices,
     ) {}
 
     /**
@@ -42,8 +44,9 @@ final readonly class AddCartLine
     {
         $cart = $this->findCart->handle($shopper);
         $this->cartVariants->ensureCanBeAdded($variant);
+        $price = $this->cartPrices->unitPriceOf($cart, $variant) ?? throw new VariantNotAvailableException;
 
-        return $this->cartChanges->apply($cart, null, false, static function (Cart $cart) use ($variant, $quantity): void {
+        return $this->cartChanges->apply($cart, null, false, static function (Cart $cart) use ($variant, $quantity, $price): void {
             $line = $cart->lines()->where('product_variant_id', $variant->id)->first();
 
             if ($line === null) {
@@ -52,6 +55,8 @@ final readonly class AddCartLine
             }
 
             $line->quantity = self::withinLineLimit($line->quantity + $quantity);
+            // Adding is looking at the line again: its price is as the shopper sees it now.
+            CartPrices::remember($line, $variant, $price);
             $line->save();
         });
     }

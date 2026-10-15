@@ -24,6 +24,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $public_id
  * @property int|null $customer_id
  * @property string|null $token_hash SHA-256 of a guest's token, in hex.
+ * @property string|null $currency The currency the shopper chose; null for the store's own.
+ * @property string|null $destination_country_code Where the shopper said they are, for the tax estimate; null for the store's own country.
  * @property int $version
  * @property CarbonImmutable $last_activity_at When the shopper last changed it.
  * @property CarbonImmutable|null $created_at
@@ -46,6 +48,8 @@ final class Cart extends Model
     protected $fillable = [
         'customer_id',
         'token_hash',
+        'currency',
+        'destination_country_code',
         'last_activity_at',
     ];
 

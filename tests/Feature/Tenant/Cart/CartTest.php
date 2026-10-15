@@ -201,7 +201,7 @@ it('never lets two adds at once take a cart past its limit', function (): void {
         // The other tab holds the cart and has added its line, but not yet committed.
         $other = SecondConnection::open()->holdRowLock($cart, 'for no key update');
         $other->run(static fn ($connection) => $connection->table('cart_lines')->insert([
-            'public_id' => strtolower((string) Str::ulid()), 'cart_id' => $cart->id, 'product_variant_id' => $theirs->id, 'quantity' => 1, 'created_at' => now(), 'updated_at' => now(),
+            'public_id' => strtolower((string) Str::ulid()), 'cart_id' => $cart->id, 'product_variant_id' => $theirs->id, 'quantity' => 1, 'seen_price_amount' => 1000, 'seen_price_currency' => 'NGN', 'seen_price_source' => 'converted', 'created_at' => now(), 'updated_at' => now(),
         ]));
 
         $add = static fn () => app(App\Tenant\Cart\Actions\AddCartLine::class)->handle(App\Tenant\Cart\Data\Shopper::guest($token), $mine, 1);
@@ -213,20 +213,20 @@ it('never lets two adds at once take a cart past its limit', function (): void {
     });
 });
 
-it('refuses carts the database must never hold, with nulls in place', function (array $cart, ?int $quantity): void {
-    $this->store->run(static function () use ($cart, $quantity): void {
+it('refuses carts the database must never hold, with nulls in place', function (array $cart, ?array $line): void {
+    $this->store->run(static function () use ($cart, $line): void {
         $customer = Customer::factory()->create();
         $row = ['public_id' => strtolower((string) Str::ulid()), 'last_activity_at' => now(), 'created_at' => now(), 'updated_at' => now()];
         $values = array_map(static fn (mixed $value): mixed => $value === 'customer' ? $customer->id : $value, $cart);
 
-        if ($quantity === null) {
+        if ($line === null) {
             expect(static fn () => DB::table('carts')->insert([...$row, ...$values]))->toThrow(Illuminate\Database\QueryException::class);
 
             return;
         }
 
         $cartId = DB::table('carts')->insertGetId([...$row, ...$values]);
-        expect(static fn () => DB::table('cart_lines')->insert(['public_id' => strtolower((string) Str::ulid()), 'cart_id' => $cartId, 'product_variant_id' => cartVariant()->id, 'quantity' => $quantity]))
+        expect(static fn () => DB::table('cart_lines')->insert(['public_id' => strtolower((string) Str::ulid()), 'cart_id' => $cartId, 'product_variant_id' => cartVariant()->id, 'quantity' => 1, 'seen_price_amount' => 1000, 'seen_price_currency' => 'NGN', 'seen_price_source' => 'converted', ...$line]))
             ->toThrow(Illuminate\Database\QueryException::class);
     });
 })->with([
@@ -234,7 +234,12 @@ it('refuses carts the database must never hold, with nulls in place', function (
     'both a customer and a token' => [['customer_id' => 'customer', 'token_hash' => str_repeat('a', 64)], null],
     'a token that isn\'t a hash' => [['customer_id' => null, 'token_hash' => str_repeat('A', 64)], null],
     'version 0' => [['customer_id' => 'customer', 'token_hash' => null, 'version' => 0], null],
-    'a line of nothing' => [['customer_id' => 'customer', 'token_hash' => null], 0],
+    'a currency in lower case' => [['customer_id' => 'customer', 'token_hash' => null, 'currency' => 'usd'], null],
+    'a country in lower case' => [['customer_id' => 'customer', 'token_hash' => null, 'destination_country_code' => 'de'], null],
+    'a line of nothing' => [['customer_id' => 'customer', 'token_hash' => null], ['quantity' => 0]],
+    'a seen price below nothing' => [['customer_id' => 'customer', 'token_hash' => null], ['seen_price_amount' => -1]],
+    'a seen price in no currency' => [['customer_id' => 'customer', 'token_hash' => null], ['seen_price_currency' => 'ngn']],
+    'a seen price from nowhere' => [['customer_id' => 'customer', 'token_hash' => null], ['seen_price_source' => 'guessed']],
 ]);
 
 it('limits each cart on its own, so shoppers sharing an address don\'t hold each other up', function (): void {

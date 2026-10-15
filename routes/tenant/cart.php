@@ -23,6 +23,8 @@ Route::prefix('cart')
 
         Route::middleware('throttle:cart')->group(static function (): void {
             Route::get('/', [CartController::class, 'show'])->name('show');
+            Route::patch('/', [CartController::class, 'update'])->name('update');
+            Route::post('price-change-acknowledgements', [CartController::class, 'acknowledgePriceChanges'])->name('price-change-acknowledgements.store');
             Route::post('lines', [CartLineController::class, 'store'])->name('lines.store');
             Route::delete('lines', [CartLineController::class, 'destroyAll'])->name('lines.destroy-all');
             Route::patch('lines/{line}', [CartLineController::class, 'update'])->name('lines.update');

@@ -5,24 +5,37 @@ declare(strict_types=1);
 namespace App\Tenant\Cart\Http\Controllers;
 
 use App\Shared\Http\Controller;
+use App\Tenant\Cart\Actions\AcknowledgePriceChanges;
+use App\Tenant\Cart\Actions\ChangeCartSettings;
 use App\Tenant\Cart\Actions\CreateCart;
 use App\Tenant\Cart\Actions\FindCart;
+use App\Tenant\Cart\Actions\PriceCart;
 use App\Tenant\Cart\CartToken;
+use App\Tenant\Cart\Exceptions\CartChangedException;
 use App\Tenant\Cart\Exceptions\CartNotFoundException;
+use App\Tenant\Cart\Exceptions\CartVersionRequiredException;
 use App\Tenant\Cart\Http\CartHttp;
+use App\Tenant\Cart\Http\Requests\ChangeCartSettingsRequest;
 use App\Tenant\Cart\Http\Resources\CartResource;
+use App\Tenant\Pricing\Exceptions\CurrencyNotOfferedException;
 use Dedoc\Scramble\Attributes\HeaderParameter;
-use Dedoc\Scramble\Attributes\Response;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * The shopper's cart, for storefront apps: a signed-in customer's (with their bearer token) or a guest's (with the X-Cart-Token header).
  *
- * Every response carries the cart's version as its ETag; changes that
- * replace or remove something send it back in If-Match.
+ * Every answer is the whole cart priced as it stands now, with its version
+ * as the ETag; changes that replace something send it back in If-Match.
+ * Tax in a cart is an estimate until checkout has the delivery address.
  */
 final class CartController extends Controller
 {
+    public function __construct(
+        private readonly PriceCart $priceCart,
+    ) {}
+
     /**
      * Create a cart.
      *
@@ -33,18 +46,23 @@ final class CartController extends Controller
      * IP address, with a high ceiling, because a guest has nothing else to be
      * told apart by yet.
      */
-    #[Response(201, "A guest's new cart with its token, or a signed-in customer's cart made now.", type: 'array{data: CartResource}')]
-    public function store(Request $request, CreateCart $createCart): CartResource
+    public function store(Request $request, CreateCart $createCart): JsonResponse|CartResource
     {
         $new = $createCart->handle(CartHttp::shopper($request));
+        $resource = new CartResource($this->priceCart->handle($new->cart), $new->token);
 
-        return new CartResource($new->cart->load(CartResource::relations()), $new->token);
+        if ($new->created) {
+            return $resource->response()->setStatusCode(Response::HTTP_CREATED);
+        }
+
+        return $resource;
     }
 
     /**
      * Get my cart.
      *
-     * A guest without a cart, or with a token that finds none, gets 404
+     * Priced now, in the currency chosen while the store offers it. A guest
+     * without a cart, or with a token that finds none, gets 404
      * cart_not_found: create one first.
      *
      * @throws CartNotFoundException
@@ -52,6 +70,47 @@ final class CartController extends Controller
     #[HeaderParameter(CartToken::HEADER, "A guest's cart token, from the response that created the cart. Ignored when signed in.", type: 'string')]
     public function show(Request $request, FindCart $findCart): CartResource
     {
-        return new CartResource($findCart->handle(CartHttp::shopper($request))->load(CartResource::relations()));
+        return new CartResource($this->priceCart->handle($findCart->handle(CartHttp::shopper($request))));
+    }
+
+    /**
+     * Change my cart's currency or tax country.
+     *
+     * The currency must be one the store offers now (null for the store's
+     * own). The country is only for the tax estimate, until checkout has the
+     * delivery address (null for the store's own country).
+     *
+     * @throws CartNotFoundException
+     * @throws CartVersionRequiredException
+     * @throws CartChangedException
+     * @throws CurrencyNotOfferedException
+     */
+    #[HeaderParameter(CartToken::HEADER, "A guest's cart token, from the response that created the cart. Ignored when signed in.", type: 'string')]
+    #[HeaderParameter('If-Match', 'The cart version (ETag) this change was made from.', type: 'string', example: '"7"')]
+    public function update(ChangeCartSettingsRequest $request, ChangeCartSettings $changeCartSettings): CartResource
+    {
+        $cart = $changeCartSettings->handle(CartHttp::shopper($request), $request->settings(), CartHttp::expectedVersion($request));
+
+        return new CartResource($this->priceCart->handle($cart));
+    }
+
+    /**
+     * Acknowledge price changes.
+     *
+     * Records that the shopper has seen the prices as they are, so the
+     * changes flagged on lines (price_changed) stop being flagged. A price
+     * that moves later is flagged again.
+     *
+     * @throws CartNotFoundException
+     * @throws CartVersionRequiredException
+     * @throws CartChangedException
+     */
+    #[HeaderParameter(CartToken::HEADER, "A guest's cart token, from the response that created the cart. Ignored when signed in.", type: 'string')]
+    #[HeaderParameter('If-Match', 'The cart version (ETag) the shopper saw the prices in.', type: 'string', example: '"7"')]
+    public function acknowledgePriceChanges(Request $request, AcknowledgePriceChanges $acknowledgePriceChanges): CartResource
+    {
+        $cart = $acknowledgePriceChanges->handle(CartHttp::shopper($request), CartHttp::expectedVersion($request));
+
+        return new CartResource($this->priceCart->handle($cart));
     }
 }

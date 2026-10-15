@@ -223,13 +223,15 @@ it('documents every promotion endpoint', function (): void {
 
 /*
  * Step 12: every cart endpoint is documented, with the guest's cart token,
- * the version a change is made from, and the business errors.
+ * the version a change is made from, each line's status and price change,
+ * the tax estimate, and the business errors.
  */
 it('documents every cart endpoint', function (): void {
     $store = documentedApi('default');
 
     $expected = [
-        '/cart' => ['get', 'post'],
+        '/cart' => ['get', 'post', 'patch'],
+        '/cart/price-change-acknowledgements' => ['post'],
         '/cart/lines' => ['post', 'delete'],
         '/cart/lines/{line}' => ['patch', 'delete'],
     ];
@@ -246,7 +248,10 @@ it('documents every cart endpoint', function (): void {
     }
 
     expect(array_keys($store['paths']['/cart']['post']['responses']))->toContain(200, 201)
-        ->and(array_keys($store['components']['schemas']['CartResource']['properties']))->toContain('id', 'version', 'token', 'lines')
+        ->and(array_keys($store['components']['schemas']['CartResource']['properties']))->toContain('id', 'version', 'token', 'currency', 'chosen_currency_unavailable', 'can_check_out', 'lines', 'discounts', 'totals', 'tax')
+        ->and(array_keys($store['components']['schemas']['CartResource']['properties']['lines']['items']['properties']))->toContain('status', 'backorder', 'unit_price', 'total', 'price_changed')
+        ->and(array_keys($store['components']['schemas']['CartResource']['properties']['tax']['properties']))->toContain('is_estimate', 'country_code')
+        ->and(json_encode($store['paths']['/cart']['patch']['responses'][422]))->toContain('currency_not_offered')
         ->and(json_encode($store['paths']['/cart']['get']['responses'][404]))->toContain('cart_not_found')
         ->and(json_encode($store['paths']['/cart/lines']['post']['responses'][422]))->toContain('variant_not_available')->toContain('variant_out_of_stock')->toContain('cart_full')->toContain('cart_line_quantity_too_high')
         ->and(collect($store['paths']['/cart/lines/{line}']['patch']['parameters'])->pluck('name')->all())->toContain('If-Match')
