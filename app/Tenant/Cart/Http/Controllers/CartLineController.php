@@ -10,7 +10,6 @@ use App\Tenant\Cart\Actions\ChangeCartLineQuantity;
 use App\Tenant\Cart\Actions\EmptyCart;
 use App\Tenant\Cart\Actions\PriceCart;
 use App\Tenant\Cart\Actions\RemoveCartLine;
-use App\Tenant\Cart\CartToken;
 use App\Tenant\Cart\Exceptions\CartChangedException;
 use App\Tenant\Cart\Exceptions\CartFullException;
 use App\Tenant\Cart\Exceptions\CartLineQuantityTooHighException;
@@ -53,7 +52,6 @@ final class CartLineController extends Controller
      * @throws CartFullException
      * @throws CartLineQuantityTooHighException
      */
-    #[HeaderParameter(CartToken::HEADER, "A guest's cart token, from the response that created the cart. Ignored when signed in.", type: 'string')]
     public function store(AddCartLineRequest $request, AddCartLine $addCartLine): CartResource
     {
         $cart = $addCartLine->handle(CartHttp::shopper($request), $request->variant(), $request->quantity());
@@ -74,7 +72,6 @@ final class CartLineController extends Controller
      * @throws VariantNotAvailableException
      * @throws VariantOutOfStockException
      */
-    #[HeaderParameter(CartToken::HEADER, "A guest's cart token, from the response that created the cart. Ignored when signed in.", type: 'string')]
     #[HeaderParameter('If-Match', 'The cart version (ETag) this change was made from.', type: 'string', example: '"7"')]
     public function update(ChangeCartLineRequest $request, ChangeCartLineQuantity $changeCartLineQuantity, string $line): CartResource
     {
@@ -90,7 +87,6 @@ final class CartLineController extends Controller
      * @throws CartVersionRequiredException
      * @throws CartChangedException
      */
-    #[HeaderParameter(CartToken::HEADER, "A guest's cart token, from the response that created the cart. Ignored when signed in.", type: 'string')]
     #[HeaderParameter('If-Match', 'The cart version (ETag) this change was made from.', type: 'string', example: '"7"')]
     public function destroy(Request $request, RemoveCartLine $removeCartLine, string $line): CartResource
     {
@@ -108,7 +104,6 @@ final class CartLineController extends Controller
      * @throws CartVersionRequiredException
      * @throws CartChangedException
      */
-    #[HeaderParameter(CartToken::HEADER, "A guest's cart token, from the response that created the cart. Ignored when signed in.", type: 'string')]
     #[HeaderParameter('If-Match', 'The cart version (ETag) this change was made from.', type: 'string', example: '"7"')]
     public function destroyAll(Request $request, EmptyCart $emptyCart): CartResource
     {

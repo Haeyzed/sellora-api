@@ -56,6 +56,7 @@ use App\Shared\Tenancy\Contracts\StoreStockReservations;
 use App\Tenant\Cart\CartStoreTables;
 use App\Tenant\Cart\CustomerCartRetention;
 use App\Tenant\Cart\GuestCartRetention;
+use App\Tenant\Cart\Http\CartTokenDocumentation;
 use App\Tenant\Cart\Privacy\CustomerCartData;
 use App\Tenant\Catalog\CatalogPricedRecords;
 use App\Tenant\Catalog\CatalogStoreFiles;
@@ -141,6 +142,8 @@ use App\Tenant\Settings\StoreLocales;
 use App\Tenant\Settings\StoreSettingsDefaults;
 use App\Tenant\Settings\StoreTwoFactorRequirement;
 use Dedoc\Scramble\Scramble;
+use Dedoc\Scramble\Support\Generator\Components;
+use Dedoc\Scramble\Support\Generator\OpenApi;
 use Dedoc\Scramble\Support\Generator\ServerVariable;
 use Illuminate\Auth\Events\Authenticated;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -313,7 +316,10 @@ final class AppServiceProvider extends ServiceProvider
         // Last: registering an API copies the store API's settings, and this filter is the store API's alone.
         $storeApi = Scramble::configure()
             ->useConfig([...config()->array('scramble'), 'servers' => ['Store' => $scheme.'://{store}.'.config()->string('platform.domain').'/api/v1']])
-            ->withServerVariables(['store' => ServerVariable::make('your-store', description: "The store's subdomain, such as \"ada-fabrics\" for ada-fabrics.".config()->string('platform.domain').'.')]);
+            ->withServerVariables(['store' => ServerVariable::make('your-store', description: "The store's subdomain, such as \"ada-fabrics\" for ada-fabrics.".config()->string('platform.domain').'.')])
+            // Guests reach their cart with its token, not a sign-in.
+            ->withDocumentTransformers(static fn (OpenApi $openApi): Components => $openApi->components->addSecurityScheme(CartTokenDocumentation::SCHEME, CartTokenDocumentation::scheme()))
+            ->withOperationTransformers(CartTokenDocumentation::class);
         $storeApi->routes(static fn (Route $route): bool => $storeApi->apiPath()->matches($route->uri)
             && ! str_starts_with((string) $route->getName(), 'registration.'));
     }

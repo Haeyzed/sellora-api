@@ -7,12 +7,10 @@ namespace App\Tenant\Cart\Http\Controllers;
 use App\Shared\Http\Controller;
 use App\Tenant\Cart\Actions\MergeGuestCart;
 use App\Tenant\Cart\Actions\PriceCart;
-use App\Tenant\Cart\CartToken;
 use App\Tenant\Cart\Exceptions\CartNotFoundException;
 use App\Tenant\Cart\Http\CartHttp;
 use App\Tenant\Cart\Http\Resources\CartResource;
 use App\Tenant\Customers\Models\Customer;
-use Dedoc\Scramble\Attributes\HeaderParameter;
 use Illuminate\Http\Request;
 use LogicException;
 
@@ -37,7 +35,6 @@ final class CartMergeController extends Controller
      *
      * @throws CartNotFoundException
      */
-    #[HeaderParameter(CartToken::HEADER, "The guest cart's token, from the response that created it.", required: true, type: 'string')]
     public function store(Request $request, MergeGuestCart $mergeGuestCart, PriceCart $priceCart): CartResource
     {
         $customer = $request->user();

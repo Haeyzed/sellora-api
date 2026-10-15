@@ -8,7 +8,6 @@ use App\Shared\Http\Controller;
 use App\Tenant\Cart\Actions\EnterPromotionCode;
 use App\Tenant\Cart\Actions\PriceCart;
 use App\Tenant\Cart\Actions\RemovePromotionCode;
-use App\Tenant\Cart\CartToken;
 use App\Tenant\Cart\Exceptions\CartChangedException;
 use App\Tenant\Cart\Exceptions\CartNotFoundException;
 use App\Tenant\Cart\Exceptions\CartVersionRequiredException;
@@ -45,7 +44,6 @@ final class CartCodeController extends Controller
      * @throws CodeNotValidException
      * @throws TooManyCodeAttemptsException
      */
-    #[HeaderParameter(CartToken::HEADER, "A guest's cart token, from the response that created the cart. Ignored when signed in.", type: 'string')]
     #[HeaderParameter('If-Match', 'The cart version (ETag) this change was made from.', type: 'string', example: '"7"')]
     public function update(EnterPromotionCodeRequest $request, EnterPromotionCode $enterPromotionCode): CartResource
     {
@@ -61,7 +59,6 @@ final class CartCodeController extends Controller
      * @throws CartVersionRequiredException
      * @throws CartChangedException
      */
-    #[HeaderParameter(CartToken::HEADER, "A guest's cart token, from the response that created the cart. Ignored when signed in.", type: 'string')]
     #[HeaderParameter('If-Match', 'The cart version (ETag) this change was made from.', type: 'string', example: '"7"')]
     public function destroy(Request $request, RemovePromotionCode $removePromotionCode): CartResource
     {

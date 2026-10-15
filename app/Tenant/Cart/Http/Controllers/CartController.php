@@ -10,7 +10,6 @@ use App\Tenant\Cart\Actions\ChangeCartSettings;
 use App\Tenant\Cart\Actions\CreateCart;
 use App\Tenant\Cart\Actions\FindCart;
 use App\Tenant\Cart\Actions\PriceCart;
-use App\Tenant\Cart\CartToken;
 use App\Tenant\Cart\Exceptions\CartChangedException;
 use App\Tenant\Cart\Exceptions\CartNotFoundException;
 use App\Tenant\Cart\Exceptions\CartVersionRequiredException;
@@ -67,7 +66,6 @@ final class CartController extends Controller
      *
      * @throws CartNotFoundException
      */
-    #[HeaderParameter(CartToken::HEADER, "A guest's cart token, from the response that created the cart. Ignored when signed in.", type: 'string')]
     public function show(Request $request, FindCart $findCart): CartResource
     {
         return new CartResource($this->priceCart->handle($findCart->handle(CartHttp::shopper($request))));
@@ -85,7 +83,6 @@ final class CartController extends Controller
      * @throws CartChangedException
      * @throws CurrencyNotOfferedException
      */
-    #[HeaderParameter(CartToken::HEADER, "A guest's cart token, from the response that created the cart. Ignored when signed in.", type: 'string')]
     #[HeaderParameter('If-Match', 'The cart version (ETag) this change was made from.', type: 'string', example: '"7"')]
     public function update(ChangeCartSettingsRequest $request, ChangeCartSettings $changeCartSettings): CartResource
     {
@@ -105,7 +102,6 @@ final class CartController extends Controller
      * @throws CartVersionRequiredException
      * @throws CartChangedException
      */
-    #[HeaderParameter(CartToken::HEADER, "A guest's cart token, from the response that created the cart. Ignored when signed in.", type: 'string')]
     #[HeaderParameter('If-Match', 'The cart version (ETag) the shopper saw the prices in.', type: 'string', example: '"7"')]
     public function acknowledgePriceChanges(Request $request, AcknowledgePriceChanges $acknowledgePriceChanges): CartResource
     {

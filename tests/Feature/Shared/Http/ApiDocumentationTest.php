@@ -238,18 +238,30 @@ it('documents every cart endpoint', function (): void {
         '/cart/lines/{line}' => ['patch', 'delete'],
     ];
 
+    // A guest's cart token is its own security scheme, an API key in a header.
+    expect($store['components']['securitySchemes']['cartToken'])->toMatchArray(['type' => 'apiKey', 'in' => 'header', 'name' => 'X-Cart-Token'])
+        ->and($store['components']['securitySchemes']['http'])->toMatchArray(['type' => 'http', 'scheme' => 'bearer']);
+
     foreach ($expected as $path => $methods) {
         expect($store['paths'])->toHaveKey($path)
             ->and(array_keys($store['paths'][$path]))->toContain(...$methods);
 
         foreach ($methods as $method) {
-            if ($path !== '/cart' || $method !== 'post') {
-                expect(collect($store['paths'][$path][$method]['parameters'])->where('in', 'header')->pluck('name')->all())->toContain('X-Cart-Token');
-            }
+            // Each takes a customer's sign-in or a cart token; a new cart, a sign-in or nothing; a merge, both.
+            $security = match ("{$method} {$path}") {
+                'post /cart' => [['http' => []], new stdClass],
+                'post /cart/merges' => [['http' => [], 'cartToken' => []]],
+                default => [['http' => []], ['cartToken' => []]],
+            };
+
+            expect($store['paths'][$path][$method]['security'])->toEqual($security)
+                ->and(collect($store['paths'][$path][$method]['parameters'] ?? [])->pluck('name')->all())->not->toContain('X-Cart-Token');
         }
     }
 
-    expect(array_keys($store['paths']['/cart']['post']['responses']))->toContain(200, 201)
+    expect($store['paths']['/staff/customers/{customer}/cart']['get'])->not->toHaveKey('security')
+        ->and($store['security'])->toEqual([['http' => []]])
+        ->and(array_keys($store['paths']['/cart']['post']['responses']))->toContain(200, 201)
         ->and(array_keys($store['components']['schemas']['CartResource']['properties']))->toContain('id', 'version', 'token', 'currency', 'chosen_currency_unavailable', 'can_check_out', 'lines', 'discounts', 'totals', 'tax')
         ->and(array_keys($store['components']['schemas']['CartResource']['properties']['lines']['items']['properties']))->toContain('status', 'backorder', 'unit_price', 'total', 'price_changed')
         ->and(array_keys($store['components']['schemas']['CartResource']['properties']['tax']['properties']))->toContain('is_estimate', 'country_code')
