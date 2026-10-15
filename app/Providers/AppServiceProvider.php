@@ -31,6 +31,7 @@ use App\Shared\Features\Contracts\FeatureSource;
 use App\Shared\Features\FeatureRegistry;
 use App\Shared\Geography\AddressFormats;
 use App\Shared\Http\PaginationDocumentation;
+use App\Shared\Idempotency\GuestRequester;
 use App\Shared\Idempotency\IdempotencyKeyRetention;
 use App\Shared\Money\ExchangeRates\ExchangeRateRetention;
 use App\Shared\Money\PricedRecordsRegistry;
@@ -56,6 +57,7 @@ use App\Shared\Tenancy\Contracts\StoreStockReservations;
 use App\Tenant\Cart\CartStoreTables;
 use App\Tenant\Cart\CustomerCartRetention;
 use App\Tenant\Cart\GuestCartRetention;
+use App\Tenant\Cart\Http\CartGuestRequester;
 use App\Tenant\Cart\Http\CartTokenDocumentation;
 use App\Tenant\Cart\Privacy\CustomerCartData;
 use App\Tenant\Catalog\CatalogPricedRecords;
@@ -223,6 +225,8 @@ final class AppServiceProvider extends ServiceProvider
             return $registry;
         });
         $this->app->bind(OrderHistory::class, NoOrderHistory::class);
+        // A guest's Idempotency-Keys are theirs by their cart token.
+        $this->app->bind(GuestRequester::class, CartGuestRequester::class);
     }
 
     /**

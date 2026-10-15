@@ -6,6 +6,7 @@ namespace App\Shared\Idempotency;
 
 use App\Shared\Idempotency\Exceptions\IdempotencyKeyMissingException;
 use App\Shared\Idempotency\Exceptions\IdempotencyKeyReusedException;
+use App\Shared\Idempotency\Exceptions\IdempotencyRequesterUnknownException;
 use App\Shared\Idempotency\Exceptions\IdempotentRequestInProgressException;
 use Closure;
 use Illuminate\Http\Request;
@@ -20,13 +21,19 @@ use Symfony\Component\HttpFoundation\Response;
  * response back (marked with "Idempotent-Replayed: true"). A retry while the
  * original is still running gets 409. Reusing a key for a different request
  * gets 422. Server errors free the key, so the client can retry. Keys are
- * per user, per endpoint and per store (each store has its own table).
+ * per requester (the guard and account, or the guest's cart), per endpoint
+ * and per store (each store has its own table): the same key from someone
+ * else never replays another person's response (section 11).
  *
  * Use as route middleware `idempotent`, after the route's auth middleware.
  */
-final class EnsureRequestIsIdempotent
+final readonly class EnsureRequestIsIdempotent
 {
     private const string KEY_FORMAT = '/^[A-Za-z0-9_\-]{8,128}$/';
+
+    public function __construct(
+        private GuestRequester $guestRequester,
+    ) {}
 
     /**
      * Processes the request once per Idempotency-Key, or replays the stored answer.
@@ -34,6 +41,7 @@ final class EnsureRequestIsIdempotent
      * @param  Closure(Request): Response  $next
      *
      * @throws IdempotencyKeyMissingException When the header is missing or malformed.
+     * @throws IdempotencyRequesterUnknownException When nobody known sent it: no sign-in and no guest cart.
      * @throws IdempotencyKeyReusedException When the key was used for a different request.
      * @throws IdempotentRequestInProgressException When the original request is still running.
      */
@@ -161,17 +169,19 @@ final class EnsureRequestIsIdempotent
     }
 
     /**
-     * Who sent the request: a signed-in user of a specific guard, or an anonymous visitor by IP address.
+     * Who sent the request: a signed-in account of a specific guard, or a guest by what identifies them (their cart). Never an IP address, which many people share.
+     *
+     * @throws IdempotencyRequesterUnknownException When the request is from nobody known.
      */
     private function requesterScope(Request $request): string
     {
         $userId = Auth::id();
 
-        if ($userId === null) {
-            return 'ip:'.hash('sha256', (string) $request->ip());
+        if ($userId !== null) {
+            return Auth::getDefaultDriver().':'.$userId;
         }
 
-        return Auth::getDefaultDriver().':'.$userId;
+        return $this->guestRequester->scopeOf($request) ?? throw new IdempotencyRequesterUnknownException;
     }
 
     private function routeIdentifier(Request $request): string

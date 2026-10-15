@@ -100,13 +100,37 @@ it('frees the key after a server error so the client can retry', function (): vo
     chargeWithKey('order-key-0006')->assertOk()->assertExactJson(['charge' => 1]);
 });
 
-it('keeps keys from different requesters apart', function (): void {
-    chargeWithKey('order-key-0007', ip: '203.0.113.10')->assertExactJson(['charge' => 1]);
+it('keeps one requester\'s key from replaying to anyone else: other accounts, other guards, guests, or guests behind the same address', function (): void {
+    $requesters = [
+        'customer 1' => ['as' => ['customer', 1], 'guest' => null],
+        'customer 2' => ['as' => ['customer', 2], 'guest' => null],
+        'staff member 1' => ['as' => ['staff', 1], 'guest' => null],
+        'customer 1 with a guest cart' => ['as' => ['customer', 1], 'guest' => 'guest-a'],
+        'guest a' => ['as' => null, 'guest' => 'guest-a'],
+        'guest b' => ['as' => null, 'guest' => 'guest-b'],
+    ];
 
-    chargeWithKey('order-key-0007', ip: '198.51.100.20')
-        ->assertExactJson(['charge' => 2])
-        ->assertHeaderMissing('Idempotent-Replayed');
+    foreach (['customer 1', 'customer 2', 'staff member 1', 'guest a', 'guest b'] as $charge => $who) {
+        chargeWithKey('order-key-0007', ...$requesters[$who])->assertExactJson(['charge' => $charge + 1])->assertHeaderMissing('Idempotent-Replayed');
+    }
+
+    // Each gets their own answer back on retry; a signed-in customer is the customer, whatever cart token comes along.
+    foreach (['customer 1' => 1, 'customer 2' => 2, 'staff member 1' => 3, 'customer 1 with a guest cart' => 1, 'guest a' => 4, 'guest b' => 5] as $who => $charge) {
+        chargeWithKey('order-key-0007', ...$requesters[$who])->assertExactJson(['charge' => $charge])->assertHeader('Idempotent-Replayed', 'true');
+    }
+
+    expect($this->chargesCreated)->toBe(5)
+        ->and(IdempotencyKey::query()->orderBy('id')->pluck('scope')->all())->toBe(['customer:1', 'customer:2', 'staff:1', 'cart:'.hash('sha256', str_pad('guest-a', 43, 'x')), 'cart:'.hash('sha256', str_pad('guest-b', 43, 'x'))]);
 });
+
+it('refuses a key from nobody known, rather than sharing it with everyone at the same address', function (?string $token): void {
+    $this->withHeader('Idempotency-Key', 'order-key-0009')->withHeader('X-Cart-Token', (string) $token)->postJson('/api/v1/sample-charges', ['amount' => 1000])
+        ->assertUnauthorized()
+        ->assertJsonPath('code', 'idempotency_requester_unknown');
+
+    expect($this->chargesCreated)->toBe(0)
+        ->and(IdempotencyKey::query()->count())->toBe(0);
+})->with(['no cart token' => [null], 'a malformed cart token' => ['not-a-token']]);
 
 it('stores the replayable response encrypted', function (): void {
     chargeWithKey('order-key-0008');
