@@ -268,6 +268,7 @@ it('documents every cart endpoint', function (): void {
     $expected = [
         '/cart' => ['get', 'post', 'patch'],
         '/cart/price-change-acknowledgements' => ['post'],
+        '/cart/shipping-options' => ['get'],
         '/cart/code' => ['put', 'delete'],
         '/cart/merges' => ['post'],
         '/cart/lines' => ['post', 'delete'],
@@ -301,7 +302,10 @@ it('documents every cart endpoint', function (): void {
         ->and(array_keys($store['components']['schemas']['CartResource']['properties']))->toContain('id', 'version', 'token', 'currency', 'chosen_currency_unavailable', 'can_check_out', 'lines', 'discounts', 'totals', 'tax')
         ->and(array_keys($store['components']['schemas']['CartResource']['properties']['lines']['items']['properties']))->toContain('status', 'backorder', 'unit_price', 'total', 'price_changed')
         ->and(array_keys($store['components']['schemas']['CartResource']['properties']['tax']['properties']))->toContain('is_estimate', 'country_code')
-        ->and(json_encode($store['paths']['/cart']['patch']['responses'][422]))->toContain('currency_not_offered')
+        ->and(json_encode($store['paths']['/cart']['patch']['responses'][422]))->toContain('currency_not_offered')->toContain('state_not_in_country')->toContain('shipping_method_not_offered')
+        ->and(array_keys($store['components']['schemas']['CartResource']['properties']['shipping']['properties']))->toContain('required', 'is_estimate', 'method', 'chosen_method_unavailable', 'calculated_at_checkout', 'amount', 'discount')
+        ->and(array_keys($store['components']['schemas']['CartResource']['properties']['totals']['properties']))->toContain('shipping')
+        ->and($store['paths']['/cart/shipping-options']['get']['responses'][200]['content']['application/json']['schema']['properties']['data']['$ref'] ?? '')->toEndWith('ShippingQuoteResource')
         ->and(json_encode($store['paths']['/cart/code']['put']['responses'][422]))->toContain('code_not_valid')
         ->and(json_encode($store['paths']['/cart/code']['put']['responses'][429]))->toContain('too_many_code_attempts')
         ->and(array_keys($store['components']['schemas']['CartResource']['properties']))->toContain('code')

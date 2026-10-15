@@ -6,6 +6,7 @@ namespace App\Tenant\Cart\Models;
 
 use App\Shared\Concerns\HasPublicId;
 use App\Tenant\Customers\Models\Customer;
+use App\Tenant\Shipping\Models\ShippingMethod;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -25,7 +26,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int|null $customer_id
  * @property string|null $token_hash SHA-256 of a guest's token, in hex.
  * @property string|null $currency The currency the shopper chose; null for the store's own.
- * @property string|null $destination_country_code Where the shopper said they are, for the tax estimate; null for the store's own country.
+ * @property string|null $destination_country_code Where the shopper said they are, for the tax and shipping estimate; null for the store's own country.
+ * @property string|null $destination_state_code Their state in that country (Geography's code), for a finer estimate; null for none.
+ * @property int|null $shipping_method_id The shipping method the shopper chose; null before they choose.
  * @property string|null $promotion_code The one code entered, as the store spells it.
  * @property int $version
  * @property CarbonImmutable $last_activity_at When the shopper last changed it.
@@ -33,6 +36,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property CarbonImmutable|null $updated_at
  * @property-read Customer|null $customer
  * @property-read Collection<int, CartLine> $lines
+ * @property-read ShippingMethod|null $shippingMethod
  */
 final class Cart extends Model
 {
@@ -51,6 +55,7 @@ final class Cart extends Model
         'token_hash',
         'currency',
         'destination_country_code',
+        'destination_state_code',
         'promotion_code',
         'last_activity_at',
     ];
@@ -61,6 +66,16 @@ final class Cart extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class)->withTrashed();
+    }
+
+    /**
+     * The shipping method the shopper chose, even once archived (the cart then says it is no longer offered).
+     *
+     * @return BelongsTo<ShippingMethod, $this>
+     */
+    public function shippingMethod(): BelongsTo
+    {
+        return $this->belongsTo(ShippingMethod::class);
     }
 
     /**
@@ -80,6 +95,7 @@ final class Cart extends Model
     {
         return [
             'version' => 'integer',
+            'shipping_method_id' => 'integer',
             'last_activity_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',

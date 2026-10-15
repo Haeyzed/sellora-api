@@ -24,6 +24,7 @@ function shippingRequest(string $method, string $path, array $data = [], ?StaffM
     $token = $store->run(static fn (): string => app(AccessTokenIssuer::class)->issue($as ?? test()->owner, StaffMember::GUARD, 'test')->plainTextToken);
 
     $response = test()->withToken($token)->json($method, storeUrl($subdomain, '/api/v1/staff/shipping'.$path), $data);
+    test()->flushHeaders();
     tenancy()->end();
     forgetSignIns();
 
@@ -35,7 +36,7 @@ function shippingRequest(string $method, string $path, array $data = [], ?StaffM
  *
  * @param  list<string>  $regions
  */
-function shippingZone(string $name, array $regions = [], bool $restOfWorld = false): string
+function shippingZone(string $name, array $regions = [], bool $restOfWorld = false, string $subdomain = 'shipping-store'): string
 {
     $payload = ['name' => $name, 'covers_rest_of_world' => $restOfWorld, 'regions' => array_map(static function (string $region): array {
         [$country, $state] = [...explode('-', $region, 2), null];
@@ -43,7 +44,7 @@ function shippingZone(string $name, array $regions = [], bool $restOfWorld = fal
         return ['country_code' => $country, 'state_code' => $state];
     }, $regions)];
 
-    $id = shippingRequest('POST', '/zones', $payload)->assertCreated()->json('data.id');
+    $id = shippingRequest('POST', '/zones', $payload, subdomain: $subdomain)->assertCreated()->json('data.id');
 
     return is_string($id) ? $id : throw new LogicException('No zone came back.');
 }

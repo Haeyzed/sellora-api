@@ -74,3 +74,48 @@ function cartVariant(int $price = 1000, ?int $stock = null, bool $backorder = fa
 
     return $variant;
 }
+
+/*
+|--------------------------------------------------------------------------
+| For CartShippingTest.php
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * A shipping method's ID, made through the staff API.
+ *
+ * @param  array<string, mixed>  $fields
+ */
+function cartShippingMethod(array $fields): string
+{
+    $id = shippingRequest('POST', '/methods', ['fulfilment' => 'ship', 'pricing' => 'flat', ...$fields], subdomain: 'cart-store')->assertCreated()->json('data.id');
+
+    return is_string($id) ? $id : throw new LogicException('No method came back.');
+}
+
+/**
+ * A guest cart holding the lines given, as [price, quantity, ships], and its token.
+ *
+ * @param  list<array{int, int, bool}>  $lines
+ */
+function shippingCart(array $lines): string
+{
+    $token = newGuestCart();
+    $variants = test()->store->run(static fn (): array => array_map(static function (array $line): string {
+        $variant = cartVariant(price: $line[0]);
+        $variant->forceFill(['requires_shipping' => $line[2], 'weight_grams' => $line[2] ? 500 : null])->save();
+
+        return $variant->public_id;
+    }, $lines));
+
+    foreach ($variants as $index => $variant) {
+        cartRequest('POST', '/lines', ['variant' => $variant, 'quantity' => $lines[$index][1]], token: $token)->assertOk();
+    }
+
+    return $token;
+}
+
+function cartVersion(string $token): string
+{
+    return '"'.cartRequest('GET', token: $token)->json('data.version').'"';
+}

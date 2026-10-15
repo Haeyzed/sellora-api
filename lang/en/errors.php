@@ -160,6 +160,9 @@ return [
     'cart_changed' => 'Your cart changed somewhere else, for example in another tab. Look at it again, then make your change.',
     'cart_version_required' => 'Send the cart\'s version (its ETag) in an If-Match header.',
 
+    'state_not_in_country' => 'This isn\'t one of the states of your cart\'s country.',
+    'shipping_method_not_offered' => 'This shipping method isn\'t offered for your cart. Choose one of the shipping options.',
+
     // Shipping
     'shipping_zone_name_taken' => 'Another shipping zone already has this name.',
     'shipping_region_taken' => ':region is already in the zone ":zone". A region can be in only one zone: take it out of that zone first.',

@@ -30,6 +30,7 @@ Route::prefix('cart')
         Route::middleware('throttle:cart')->group(static function (): void {
             Route::get('/', [CartController::class, 'show'])->name('show');
             Route::patch('/', [CartController::class, 'update'])->name('update');
+            Route::get('shipping-options', [CartController::class, 'shippingOptions'])->name('shipping-options.index');
             Route::post('price-change-acknowledgements', [CartController::class, 'acknowledgePriceChanges'])->name('price-change-acknowledgements.store');
             Route::put('code', [CartCodeController::class, 'update'])->middleware('throttle:coupon-redemption')->name('code.update');
             Route::delete('code', [CartCodeController::class, 'destroy'])->name('code.destroy');

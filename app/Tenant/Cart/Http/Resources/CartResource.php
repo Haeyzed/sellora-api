@@ -67,7 +67,7 @@ final class CartResource extends JsonResource
              * the cart is in the store's own currency meanwhile, and goes back to it once it is offered again. Null otherwise.
              */
             'chosen_currency_unavailable' => $priced->currency->unavailable,
-            /** True when checkout can start: there is something in the cart, and every line can be bought. */
+            /** True when checkout can start: there is something in the cart, every line can be bought, and shipping is settled (nothing ships, or an offered method is chosen). */
             'can_check_out' => $priced->canCheckOut(),
             /**
              * Its lines, oldest first. Status is "available"; "unavailable" when it is no longer for sale; "out_of_stock" when none is left and it
@@ -107,7 +107,7 @@ final class CartResource extends JsonResource
              */
             'discounts' => $priced->basket === null ? [] : array_map(static fn (DiscountProposal $discount): array => [
                 'label' => $discount->label,
-                /** "product" or "order". */
+                /** "product", "order" or "shipping". */
                 'class' => $discount->class->value,
                 'from_code' => $discount->isCode,
                 'amount' => new MoneyResource($discount->total($currency)),
@@ -121,18 +121,20 @@ final class CartResource extends JsonResource
              */
             'code' => self::code($priced),
             /**
-             * What the lines that can be bought come to. Delivery is added at checkout.
+             * What the lines that can be bought come to, with the chosen shipping (after free-shipping promotions, with its tax) when it has a price.
              *
-             * @var array{subtotal: MoneyResource, discount: MoneyResource, tax: MoneyResource, total: MoneyResource}
+             * @var array{subtotal: MoneyResource, discount: MoneyResource, shipping: MoneyResource, tax: MoneyResource, total: MoneyResource}
              */
             'totals' => [
                 'subtotal' => new MoneyResource($totals?->subtotal() ?? Money::zero($currency)),
                 'discount' => new MoneyResource($totals?->discount() ?? Money::zero($currency)),
+                /** Shipping as charged, tax included where prices include it, after free-shipping promotions. */
+                'shipping' => new MoneyResource($totals?->shipping->gross ?? Money::zero($currency)),
                 'tax' => new MoneyResource($totals?->tax() ?? Money::zero($currency)),
                 'total' => new MoneyResource($totals?->total() ?? Money::zero($currency)),
             ],
             /**
-             * Tax is an estimate until checkout has the delivery address: worked out to the country the shopper gave, or the store's own.
+             * Tax is an estimate until checkout has the delivery address: worked out to a chosen pickup's address, the place the shopper gave, or the store's own country.
              */
             'tax' => [
                 'is_estimate' => true,
@@ -142,7 +144,45 @@ final class CartResource extends JsonResource
                 'country_code' => $priced->taxDestination?->countryCode,
                 /** The country the shopper gave; null for the store's own. */
                 'chosen_country_code' => $cart->destination_country_code,
+                /** The state the shopper gave; null for none. */
+                'chosen_state_code' => $cart->destination_state_code,
             ],
+            /**
+             * Shipping, an estimate until checkout has the full address: quoted to the country (and state) the shopper gave, or the store's own.
+             * GET /cart/shipping-options lists what the cart is offered; choose one with PATCH /cart (shipping_method).
+             *
+             * @var array{required: bool, is_estimate: bool, country_code: string, state_code: string|null, reason: string|null, method: array{id: string, name: string, fulfilment: string}|null, chosen_method_unavailable: bool, calculated_at_checkout: bool, amount: MoneyResource|null, discount: MoneyResource|null}
+             */
+            'shipping' => self::shipping($priced, $locale),
+        ];
+    }
+
+    /**
+     * @return array{required: bool, is_estimate: bool, country_code: string, state_code: string|null, reason: string|null, method: array{id: string, name: string, fulfilment: string}|null, chosen_method_unavailable: bool, calculated_at_checkout: bool, amount: MoneyResource|null, discount: MoneyResource|null}
+     */
+    private static function shipping(PricedCart $priced, string $locale): array
+    {
+        $shipping = $priced->shipping;
+        $chosen = $shipping->chosen;
+
+        return [
+            /** False when nothing in the cart ships: no method or address is needed. */
+            'required' => $shipping->quote->required,
+            'is_estimate' => true,
+            'country_code' => $shipping->destination->countryCode,
+            'state_code' => $shipping->destination->stateCode,
+            /** "no_zone" when the store doesn't ship there (a pickup may still be offered); null otherwise. */
+            'reason' => $shipping->quote->required ? $shipping->quote->reason : null,
+            /** The method the shopper chose; null before they choose. */
+            'method' => $chosen === null ? null : ['id' => $chosen->public_id, 'name' => $chosen->getTranslation('name', $locale), 'fulfilment' => $chosen->fulfilment->value],
+            /** True when the chosen method isn't offered any more (where the shopper is, for what is in the cart, or at all): choose another to check out. */
+            'chosen_method_unavailable' => $shipping->chosenUnavailable(),
+            /** True for a live carrier rate, priced at checkout once the full address is known. */
+            'calculated_at_checkout' => $shipping->option?->isCalculatedAtCheckout() ?? false,
+            /** The chosen method's price before free-shipping promotions; null when none is chosen, it isn't offered, or it is calculated at checkout. */
+            'amount' => $shipping->option?->amount === null ? null : new MoneyResource($shipping->option->amount),
+            /** What free-shipping promotions take off it; null when nothing is charged for shipping. */
+            'discount' => $shipping->discount === null ? null : new MoneyResource($shipping->discount),
         ];
     }
 

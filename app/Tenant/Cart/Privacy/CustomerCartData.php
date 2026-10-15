@@ -19,12 +19,12 @@ use App\Tenant\Customers\Privacy\CustomerDataSubject;
 final readonly class CustomerCartData implements PersonalDataHandler
 {
     /**
-     * @return array{currency: string|null, tax_country_code: string|null, promotion_code: string|null, last_changed_at: string, lines: list<array{product: string, sku: string|null, quantity: int, added_at: string}>}|array{}
+     * @return array{currency: string|null, tax_country_code: string|null, state_code: string|null, shipping_method: string|null, promotion_code: string|null, last_changed_at: string, lines: list<array{product: string, sku: string|null, quantity: int, added_at: string}>}|array{}
      */
     public function export(DataSubject $subject): array
     {
         $customer = CustomerDataSubject::customer($subject);
-        $cart = $customer === null ? null : Cart::query()->where('customer_id', $customer->id)->with('lines.variant.product')->first();
+        $cart = $customer === null ? null : Cart::query()->where('customer_id', $customer->id)->with(['lines.variant.product', 'shippingMethod'])->first();
 
         if ($cart === null) {
             return [];
@@ -33,6 +33,8 @@ final readonly class CustomerCartData implements PersonalDataHandler
         return [
             'currency' => $cart->currency,
             'tax_country_code' => $cart->destination_country_code,
+            'state_code' => $cart->destination_state_code,
+            'shipping_method' => $cart->shippingMethod?->getTranslation('name', app()->getLocale()),
             'promotion_code' => $cart->promotion_code,
             'last_changed_at' => $cart->last_activity_at->toIso8601String(),
             'lines' => array_values($cart->lines->map(static fn (CartLine $line): array => [

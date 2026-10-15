@@ -45,10 +45,12 @@ it('prices the cart with its promotions, and marks tax as an estimate', function
 
     // 10% of 8001 is 800, spread 200 and 600; the store's prices include tax, and it has no rates.
     expect($cart->json('data.lines.*.discount.amount'))->toBe([200, 600])
-        ->and($cart->json('data.totals.*.amount'))->toBe([8001, 800, 0, 7201])
+        ->and($cart->json('data.totals.*.amount'))->toBe([8001, 800, 0, 0, 7201])
         ->and($cart->json('data.discounts.0.class'))->toBe('order')
         ->and($cart->json('data.tax'))->toMatchArray(['is_estimate' => true, 'mode' => 'inclusive', 'country_code' => 'NG', 'chosen_country_code' => null])
-        ->and($cart->json('data.can_check_out'))->toBeTrue();
+        // These lines ship, and the store ships nowhere yet: checkout waits for a shipping method.
+        ->and($cart->json('data.can_check_out'))->toBeFalse()
+        ->and($cart->json('data.shipping'))->toMatchArray(['required' => true, 'reason' => 'no_zone', 'method' => null, 'amount' => null]);
 });
 
 it('keeps lines that can no longer be bought, marked and outside the totals, and says what is on backorder', function (): void {
@@ -60,6 +62,11 @@ it('keeps lines that can no longer be bought, marked and outside the totals, and
     }
 
     $this->store->run(static function () use ($variants): void {
+        // Nothing here ships, so only the lines decide whether checkout can start.
+        foreach ($variants as $variant) {
+            $variant->forceFill(['requires_shipping' => false, 'weight_grams' => null])->save();
+        }
+
         $variants[0]->product->forceFill(['status' => ProductStatus::Draft])->save();
         $variants[1]->forceFill(['price' => null, 'compare_at_price' => null, 'currency' => null])->save();
         $variants[2]->delete();
@@ -74,6 +81,7 @@ it('keeps lines that can no longer be bought, marked and outside the totals, and
         ->and($cart->json('data.lines.*.unit_price.amount'))->toBe([null, null, null, null, 5000])
         ->and($cart->json('data.totals.total.amount'))->toBe(5000)
         ->and($cart->json('data.can_check_out'))->toBeFalse()
+        ->and($cart->json('data.shipping.required'))->toBeFalse()
         ->and($cart->getContent())->not->toContain('on_hand')->not->toContain('"available_quantity"');
 });
 
@@ -175,12 +183,12 @@ it('estimates tax to the country the shopper gave, or the store\'s own', functio
         return cartVariant(10000)->public_id;
     });
     cartRequest('POST', '/lines', ['variant' => $variant], token: $token, subdomain: 'us-store')->assertOk()
-        ->assertJsonPath('data.tax', ['is_estimate' => true, 'mode' => 'exclusive', 'country_code' => 'US', 'chosen_country_code' => null])
+        ->assertJsonPath('data.tax', ['is_estimate' => true, 'mode' => 'exclusive', 'country_code' => 'US', 'chosen_country_code' => null, 'chosen_state_code' => null])
         ->assertJsonPath('data.totals.tax.amount', 500);
 
     cartRequest('PATCH', '', ['country_code' => 'de'], token: $token, ifMatch: '"2"', subdomain: 'us-store')->assertUnprocessable()->assertJsonValidationErrors('country_code');
     cartRequest('PATCH', '', ['country_code' => 'DE'], token: $token, ifMatch: '"2"', subdomain: 'us-store')->assertOk()
-        ->assertJsonPath('data.tax', ['is_estimate' => true, 'mode' => 'exclusive', 'country_code' => 'DE', 'chosen_country_code' => 'DE'])
+        ->assertJsonPath('data.tax', ['is_estimate' => true, 'mode' => 'exclusive', 'country_code' => 'DE', 'chosen_country_code' => 'DE', 'chosen_state_code' => null])
         ->assertJsonPath('data.totals.tax.amount', 1900)
         ->assertJsonPath('data.totals.total.amount', 11900);
 });

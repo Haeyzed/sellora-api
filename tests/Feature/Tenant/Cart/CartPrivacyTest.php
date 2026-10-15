@@ -80,9 +80,10 @@ it('exports a customer\'s cart with their data, and deletes it when they are era
     newGuestCart();
 
     $this->store->run(function (): void {
+        Cart::query()->where('customer_id', $this->ada->id)->update(['destination_state_code' => 'LA']);
         $export = app(PersonalDataRegistry::class)->export(CustomerDataSubject::of($this->ada))['cart'];
 
-        expect($export)->toMatchArray(['currency' => null, 'tax_country_code' => null, 'promotion_code' => null])
+        expect($export)->toMatchArray(['currency' => null, 'tax_country_code' => null, 'state_code' => 'LA', 'shipping_method' => null, 'promotion_code' => null])
             ->and($export['lines'])->toHaveCount(1)
             ->and($export['lines'][0])->toMatchArray(['product' => 'Linen shirt', 'quantity' => 3])
             ->and(app(PersonalDataRegistry::class)->export(CustomerDataSubject::of(Customer::factory()->create()))['cart'])->toBe([]);
