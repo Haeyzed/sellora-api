@@ -64,9 +64,15 @@ final class CartLineController extends Controller
     /**
      * Change a line's quantity.
      *
+     * Asking for more is checked like an add: the variant must still be for
+     * sale and not out of stock. Asking for fewer always works, even on a
+     * line that can't be bought any more.
+     *
      * @throws CartNotFoundException
      * @throws CartVersionRequiredException
      * @throws CartChangedException
+     * @throws VariantNotAvailableException
+     * @throws VariantOutOfStockException
      */
     #[HeaderParameter(CartToken::HEADER, "A guest's cart token, from the response that created the cart. Ignored when signed in.", type: 'string')]
     #[HeaderParameter('If-Match', 'The cart version (ETag) this change was made from.', type: 'string', example: '"7"')]

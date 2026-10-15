@@ -7,6 +7,7 @@ use App\Tenant\Cart\CartToken;
 use App\Tenant\Cart\Models\Cart;
 use App\Tenant\Cart\Models\CartLine;
 use App\Tenant\Catalog\Enums\ProductStatus;
+use App\Tenant\Catalog\Models\ProductVariant;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Identity\Models\StaffMember;
 use Illuminate\Support\Facades\DB;
@@ -178,6 +179,43 @@ it('changes and removes lines only from the cart version the shopper was looking
     expect($this->store->run(static fn (): array => [Cart::query()->count(), CartLine::query()->count()]))->toBe([1, 0])
         ->and($second)->toBeString();
 });
+
+it('checks asking for more of a line like an add, but always lets the shopper ask for fewer or remove it', function (string $kind, ?string $error): void {
+    $token = newGuestCart();
+    $variant = $this->store->run(static fn (): ProductVariant => cartVariant());
+    $line = cartRequest('POST', '/lines', ['variant' => $variant->public_id, 'quantity' => 3], token: $token)->assertOk()->json('data.lines.0.id');
+
+    // Sold out or on backorder: its stock starts being counted, with none in.
+    $this->store->run(static fn (): mixed => match ($kind) {
+        'a draft' => $variant->product->forceFill(['status' => ProductStatus::Draft])->save(),
+        'unpriced' => $variant->forceFill(['price' => null, 'compare_at_price' => null, 'currency' => null])->save(),
+        'in the trash' => $variant->delete(),
+        'sold out', 'on backorder' => app(App\Tenant\Inventory\Actions\ChangeInventorySettings::class)->handle($variant, new App\Tenant\Inventory\Data\InventorySettingsData(tracksStock: true, allowsBackorder: $kind === 'on backorder')),
+        default => null,
+    });
+
+    $more = cartRequest('PATCH', "/lines/{$line}", ['quantity' => 4], token: $token, ifMatch: '"2"');
+
+    if ($error === null) {
+        $more->assertOk()->assertJsonPath('data.lines.0.quantity', 4);
+
+        return;
+    }
+
+    $more->assertUnprocessable()->assertJsonPath('code', $error);
+    expect($this->store->run(static fn (): array => [Cart::query()->sole()->version, CartLine::query()->sole()->quantity]))->toBe([2, 3]);
+
+    cartRequest('PATCH', "/lines/{$line}", ['quantity' => 3], token: $token, ifMatch: '"2"')->assertOk()->assertJsonPath('data.lines.0.quantity', 3);
+    cartRequest('PATCH', "/lines/{$line}", ['quantity' => 1], token: $token, ifMatch: '"3"')->assertOk()->assertJsonPath('data.lines.0.quantity', 1)->assertJsonPath('data.can_check_out', false);
+    cartRequest('DELETE', "/lines/{$line}", token: $token, ifMatch: '"4"')->assertOk()->assertJsonCount(0, 'data.lines');
+})->with([
+    'still for sale' => ['still for sale', null],
+    'on backorder' => ['on backorder', null],
+    'sold out' => ['sold out', 'variant_out_of_stock'],
+    'a draft' => ['a draft', 'variant_not_available'],
+    'unpriced' => ['unpriced', 'variant_not_available'],
+    'in the trash' => ['in the trash', 'variant_not_available'],
+]);
 
 it('finds only lines of the shopper\'s own cart', function (): void {
     $mine = newGuestCart();
