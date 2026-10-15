@@ -48,6 +48,7 @@ use App\Shared\Tenancy\Contracts\StoreOwnerAccounts;
 use App\Shared\Tenancy\Contracts\StoreOwnerContact;
 use App\Shared\Tenancy\Contracts\StorePermissions;
 use App\Shared\Tenancy\Contracts\StoreProfile;
+use App\Shared\Tenancy\Contracts\StorePromotionHolds;
 use App\Shared\Tenancy\Contracts\StoreSessions;
 use App\Shared\Tenancy\Contracts\StoreSettingsSetup;
 use App\Shared\Tenancy\Contracts\StoreStockLedger;
@@ -117,8 +118,10 @@ use App\Tenant\Pricing\TaxExemptCustomerRule;
 use App\Tenant\Promotions\Contracts\OrderHistory;
 use App\Tenant\Promotions\DiscountSourceRegistry;
 use App\Tenant\Promotions\Enums\PromotionPermission;
+use App\Tenant\Promotions\ExpiredPromotionUseSweep;
 use App\Tenant\Promotions\Models\Promotion;
 use App\Tenant\Promotions\Models\PromotionCode;
+use App\Tenant\Promotions\Models\PromotionRedemption;
 use App\Tenant\Promotions\NoOrderHistory;
 use App\Tenant\Promotions\PromotionDiscountSource;
 use App\Tenant\Promotions\PromotionPricedRecords;
@@ -182,6 +185,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(StorePermissions::class, StaffPermissionSync::class);
         $this->app->bind(StoreStockLedger::class, StockLedgerReconciliation::class);
         $this->app->bind(StoreStockReservations::class, ExpiredReservationSweep::class);
+        $this->app->bind(StorePromotionHolds::class, ExpiredPromotionUseSweep::class);
         $this->app->bind(StockLocationSelector::class, DefaultStockLocationSelector::class);
         // One list of country tax plug-ins, filled in by modules' and integrations' service providers.
         $this->app->singleton(TaxCalculatorRegistry::class);
@@ -421,6 +425,7 @@ final class AppServiceProvider extends ServiceProvider
             'fixed_price' => FixedPrice::class,
             'promotion' => Promotion::class,
             'promotion_code' => PromotionCode::class,
+            'promotion_redemption' => PromotionRedemption::class,
         ]);
     }
 

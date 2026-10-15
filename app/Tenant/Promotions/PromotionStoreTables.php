@@ -8,7 +8,7 @@ use App\Shared\Privacy\Contracts\ClassifiesStoreTables;
 use App\Shared\Privacy\StoreExportRegistry;
 
 /**
- * How promotions appear in a store export: all of their setup. It holds no personal data and no secrets.
+ * How promotions appear in a store export: all of their setup, and the ledger of their uses, which names customers (their own data, in their own store's export). No secrets.
  */
 final class PromotionStoreTables implements ClassifiesStoreTables
 {
@@ -25,6 +25,10 @@ final class PromotionStoreTables implements ClassifiesStoreTables
         $registry->table('promotion_variants', include: ['promotion_id', 'product_variant_id', 'list']);
         $registry->table('promotion_categories', include: ['promotion_id', 'category_id', 'list']);
         $registry->table('promotion_customer_groups', include: ['promotion_id', 'customer_group_id']);
+        $registry->table('promotion_redemptions', include: [
+            'id', 'public_id', 'promotion_id', 'promotion_code_id', 'holder_type', 'holder_id', 'customer_id', 'email', 'status', 'currency',
+            'discount_amount', 'expires_at', 'settled_at', 'created_at', 'updated_at',
+        ]);
         $registry->table('promotion_codes', include: ['id', 'public_id', 'promotion_id', 'code', 'usage_limit', 'is_active', 'created_at', 'updated_at']);
     }
 }

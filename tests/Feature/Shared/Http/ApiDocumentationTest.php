@@ -217,6 +217,7 @@ it('documents every promotion endpoint', function (): void {
         ->and(array_keys($store['components']['schemas']['SavePromotionRequest']['properties']))->toContain('type', 'percent', 'discount', 'currency_amounts', 'combines_with', 'products', 'customer_groups')
         ->and(json_encode($store['paths']['/staff/promotions/{promotion}/codes']['post']['responses'][422]))->toContain('promotion_code_taken')->toContain('promotion_takes_no_codes')
         ->and(array_keys($store['paths']['/staff/promotions/{promotion}/codes/generate']['post']['responses']))->toContain(200, 202)
+        ->and(json_encode($store['paths']['/staff/promotions/{promotion}/codes/{code}']['delete']['responses'][409]))->toContain('promotion_code_in_use')
         ->and(array_keys($store['components']['schemas']['DiscountedBasketResource']['properties']))->toBe(['basket', 'discounts', 'shipping_discount', 'code']);
 });
 

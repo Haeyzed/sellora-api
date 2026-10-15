@@ -21,6 +21,7 @@ final readonly class DiscountBasket
      * @param  Money|null  $shipping  The delivery charge before discounts; null before it is known.
      * @param  string|null  $code  The code the buyer entered, already accepted (FindPromotionCode); null for none.
      * @param  array<string, Money>  $discountedLines  Discounts already taken off each line, by key: order and shipping discounts are worked out after product ones.
+     * @param  RedemptionHolder|null  $holder  The checkout pricing it, whose own reserved uses don't count against it; null for a cart or preview.
      */
     public function __construct(
         public string $currency,
@@ -31,6 +32,7 @@ final readonly class DiscountBasket
         public ?string $code,
         public CarbonImmutable $at,
         public array $discountedLines = [],
+        public ?RedemptionHolder $holder = null,
     ) {}
 
     /**
@@ -48,7 +50,7 @@ final readonly class DiscountBasket
      */
     public function onlyLines(array $keys): self
     {
-        return new self($this->currency, $this->exchangeRate, array_values(array_filter($this->lines, static fn (DiscountLine $line): bool => in_array($line->key, $keys, true))), $this->shipping, $this->buyer, $this->code, $this->at, $this->discountedLines);
+        return new self($this->currency, $this->exchangeRate, array_values(array_filter($this->lines, static fn (DiscountLine $line): bool => in_array($line->key, $keys, true))), $this->shipping, $this->buyer, $this->code, $this->at, $this->discountedLines, $this->holder);
     }
 
     /**
@@ -58,6 +60,6 @@ final readonly class DiscountBasket
      */
     public function withDiscountedLines(array $discountedLines): self
     {
-        return new self($this->currency, $this->exchangeRate, $this->lines, $this->shipping, $this->buyer, $this->code, $this->at, $discountedLines);
+        return new self($this->currency, $this->exchangeRate, $this->lines, $this->shipping, $this->buyer, $this->code, $this->at, $discountedLines, $this->holder);
     }
 }

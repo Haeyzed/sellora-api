@@ -8,6 +8,7 @@ use App\Shared\Money\Money;
 use App\Shared\Money\MoneyResource;
 use App\Tenant\Promotions\Enums\DiscountClass;
 use App\Tenant\Promotions\Enums\PromotionTargetList;
+use App\Tenant\Promotions\Enums\RedemptionStatus;
 use App\Tenant\Promotions\Models\Promotion;
 use App\Tenant\Promotions\Models\PromotionCurrencyAmount;
 use Carbon\CarbonImmutable;
@@ -72,6 +73,10 @@ final class PromotionResource extends JsonResource
             'combines_with' => array_map(static fn (DiscountClass $class): string => $class->value, $promotion->combinableClasses()),
             'usage_limit' => $promotion->usage_limit,
             'usage_limit_per_customer' => $promotion->usage_limit_per_customer,
+            /** How many paid orders used it. */
+            'times_used' => $promotion->redemptions()->where('status', RedemptionStatus::Committed->value)->count(),
+            /** How many open checkouts hold a use of it now. With times_used, what counts against its limits. */
+            'times_reserved' => $promotion->redemptions()->counting()->where('status', RedemptionStatus::Reserved->value)->count(),
             'starts_at' => $this->local($promotion->starts_at),
             'ends_at' => $this->local($promotion->ends_at),
             'is_active' => $promotion->is_active,

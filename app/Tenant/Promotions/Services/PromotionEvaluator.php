@@ -26,12 +26,17 @@ use App\Tenant\Promotions\Models\PromotionCurrencyAmount;
  * across them by largest remainder, weighted by what each still costs, so the
  * parts add up exactly; buy X get Y discounts the cheapest qualifying units.
  *
- * Reasons: first_order_only, customer_group, sale_items_excluded (only items
- * on sale would qualify), no_eligible_items, minimum_not_met.
+ * Reasons: usage_limit_reached, email_needed (a guest must give an email for a
+ * limit per customer), customer_limit_reached, first_order_only,
+ * customer_group, sale_items_excluded (only items on sale would qualify),
+ * no_eligible_items, minimum_not_met.
  */
 final readonly class PromotionEvaluator
 {
-    public function __construct(private OrderHistory $orderHistory) {}
+    public function __construct(
+        private OrderHistory $orderHistory,
+        private PromotionUsage $promotionUsage,
+    ) {}
 
     /**
      * @param  Promotion  $promotion  With its targets, groups and currency amounts loaded.
@@ -108,6 +113,19 @@ final readonly class PromotionEvaluator
     private function buyerReason(Promotion $promotion, DiscountBasket $basket): ?string
     {
         $buyer = $basket->buyer;
+
+        // Advisory: ReservePromotionUses checks the limits again, under lock, at checkout.
+        if ($this->promotionUsage->isUsedUp($promotion, except: $basket->holder, at: $basket->at)) {
+            return 'usage_limit_reached';
+        }
+
+        if ($promotion->usage_limit_per_customer !== null && $buyer->customer === null && $buyer->email === null) {
+            return 'email_needed';
+        }
+
+        if ($this->promotionUsage->hasBuyerUsedUp($promotion, $buyer, $basket->holder, $basket->at)) {
+            return 'customer_limit_reached';
+        }
 
         if ($promotion->first_order_only && (($buyer->customer === null && $buyer->email === null) || $this->orderHistory->hasOrdered($buyer->customer, $buyer->email))) {
             return 'first_order_only';

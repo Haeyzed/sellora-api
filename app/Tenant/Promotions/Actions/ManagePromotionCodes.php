@@ -6,11 +6,13 @@ namespace App\Tenant\Promotions\Actions;
 
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Promotions\Enums\PromotionMethod;
+use App\Tenant\Promotions\Exceptions\PromotionCodeInUseException;
 use App\Tenant\Promotions\Exceptions\PromotionCodeTakenException;
 use App\Tenant\Promotions\Exceptions\PromotionTakesNoCodesException;
 use App\Tenant\Promotions\Jobs\GeneratePromotionCodes;
 use App\Tenant\Promotions\Models\Promotion;
 use App\Tenant\Promotions\Models\PromotionCode;
+use App\Tenant\Promotions\Models\PromotionRedemption;
 use App\Tenant\Promotions\Services\PromotionActivity;
 use App\Tenant\Promotions\Services\PromotionCodeGenerator;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -96,8 +98,15 @@ final readonly class ManagePromotionCodes
         return $code;
     }
 
+    /**
+     * @throws PromotionCodeInUseException When a checkout or order used it: switch it off instead.
+     */
     public function delete(PromotionCode $code): void
     {
+        if (PromotionRedemption::query()->where('promotion_code_id', $code->id)->exists()) {
+            throw new PromotionCodeInUseException;
+        }
+
         $code->delete();
     }
 

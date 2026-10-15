@@ -6,6 +6,7 @@ namespace App\Tenant\Promotions\Http\Controllers;
 
 use App\Shared\Http\Controller;
 use App\Tenant\Promotions\Actions\ManagePromotionCodes;
+use App\Tenant\Promotions\Exceptions\PromotionCodeInUseException;
 use App\Tenant\Promotions\Exceptions\PromotionCodeTakenException;
 use App\Tenant\Promotions\Exceptions\PromotionTakesNoCodesException;
 use App\Tenant\Promotions\Http\Requests\AddPromotionCodeRequest;
@@ -89,7 +90,10 @@ final class PromotionCodeController extends Controller
     /**
      * Delete a code.
      *
-     * Needs the promotions.manage permission. Audited.
+     * Needs the promotions.manage permission. Only a code nobody used;
+     * switch a used one off instead. Audited.
+     *
+     * @throws PromotionCodeInUseException
      */
     public function destroy(ManagePromotionRequest $request, Promotion $promotion, PromotionCode $code, ManagePromotionCodes $managePromotionCodes): Response
     {

@@ -145,6 +145,8 @@ return [
     'marketing_contact_missing' => 'Add a phone number to your account first.',
     'promotion_takes_no_codes' => 'This promotion applies automatically, so it has no codes. Create a code promotion for codes.',
     'promotion_code_taken' => 'Another code in the store is the same, ignoring case.',
+    'promotion_unavailable' => 'A discount on this basket can no longer be used. Check the basket again.',
+    'promotion_code_in_use' => 'This code has been used, so it can\'t be deleted. Switch it off instead.',
     'code_not_valid' => 'This code can\'t be used.',
     'too_many_code_attempts' => 'Too many codes tried. Wait a minute and try again.',
     'customer_group_name_taken' => 'Another customer group already has this name.',

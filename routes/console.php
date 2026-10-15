@@ -32,7 +32,7 @@ Schedule::command(ReconcileStockLevelsCommand::class)
     ->onOneServer()
     ->withoutOverlapping();
 
-// Gives back checkout holds that ran out (section 13); reserving also does it for the variants it touches.
+// Gives back checkout holds that ran out, stock and promotion uses (section 13); reserving also does it for the variants or promotion it touches.
 Schedule::command(ReleaseExpiredReservationsCommand::class)
     ->everyFiveMinutes()
     ->onOneServer()

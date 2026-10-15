@@ -64,11 +64,11 @@ final class SecondConnection
     }
 
     /**
-     * Locks a model's row for update, as a request changing it would.
+     * Locks a model's row, for update unless another row lock mode is given (such as "for no key update"), as a request changing it would.
      */
-    public function holdRowLock(Model $model): self
+    public function holdRowLock(Model $model, string $mode = 'for update'): self
     {
-        $this->connection->table($model->getTable())->where($model->getKeyName(), $model->getKey())->lockForUpdate()->first();
+        $this->connection->table($model->getTable())->where($model->getKeyName(), $model->getKey())->lock($mode)->first();
 
         return $this;
     }

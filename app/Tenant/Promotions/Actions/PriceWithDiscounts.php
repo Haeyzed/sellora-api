@@ -18,6 +18,7 @@ use App\Tenant\Promotions\Data\DiscountBasket;
 use App\Tenant\Promotions\Data\DiscountBuyer;
 use App\Tenant\Promotions\Data\DiscountedBasket;
 use App\Tenant\Promotions\Data\DiscountLine;
+use App\Tenant\Promotions\Data\RedemptionHolder;
 use Carbon\CarbonImmutable;
 
 /**
@@ -41,11 +42,12 @@ final readonly class PriceWithDiscounts
      * @param  list<array{key: string, variant: ProductVariant, quantity: int}>  $lines
      * @param  Money|null  $shipping  The delivery charge before discounts.
      * @param  string|null  $code  A code already accepted (FindPromotionCode); null for none.
+     * @param  RedemptionHolder|null  $holder  The checkout pricing it, whose own reserved uses don't count against it.
      *
      * @throws CurrencyNotOfferedException When the store doesn't offer the currency now.
      * @throws VariantNotPricedException When a line's variant has no price.
      */
-    public function handle(string $currency, array $lines, ?TaxAddress $destination, ?Money $shipping, DiscountBuyer $buyer, ?string $code = null, ?CarbonImmutable $at = null): DiscountedBasket
+    public function handle(string $currency, array $lines, ?TaxAddress $destination, ?Money $shipping, DiscountBuyer $buyer, ?string $code = null, ?CarbonImmutable $at = null, ?RedemptionHolder $holder = null): DiscountedBasket
     {
         $rate = $this->findExchangeRates->handle([$currency])[$currency] ?? throw new CurrencyNotOfferedException($currency);
         $prices = $this->variantPricer->priceAt(array_map(static fn (array $line): ProductVariant => $line['variant'], $lines), $rate);
@@ -56,7 +58,7 @@ final readonly class PriceWithDiscounts
             $discountLines[] = new DiscountLine($line['key'], $line['variant'], $line['quantity'], $price->unitPrice, $price->compareAtPrice !== null);
         }
 
-        $outcome = $this->applyDiscounts->handle(new DiscountBasket($currency, $rate, $discountLines, $shipping, $buyer, $code, $at ?? CarbonImmutable::now()));
+        $outcome = $this->applyDiscounts->handle(new DiscountBasket($currency, $rate, $discountLines, $shipping, $buyer, $code, $at ?? CarbonImmutable::now(), holder: $holder));
 
         $priced = $this->priceCalculator->quote(new PricingRequest(
             $currency,

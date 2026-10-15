@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Tenant\Promotions\Actions;
 
 use App\Shared\Tenancy\TenantScopedKey;
+use App\Tenant\Promotions\Data\RedemptionHolder;
 use App\Tenant\Promotions\Enums\PromotionMethod;
 use App\Tenant\Promotions\Enums\PromotionStatus;
 use App\Tenant\Promotions\Exceptions\CodeNotValidException;
 use App\Tenant\Promotions\Exceptions\TooManyCodeAttemptsException;
 use App\Tenant\Promotions\Models\PromotionCode;
+use App\Tenant\Promotions\Services\PromotionUsage;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Cache\Factory as CacheFactory;
 use Illuminate\Support\Facades\Log;
@@ -18,7 +20,7 @@ use Illuminate\Support\Facades\RateLimiter;
 /**
  * Finds the code a shopper entered, for Cart and Checkout (section 6): matched ignoring case, and usable now.
  *
- * Every code that can't be used now gets the same answer, code_not_valid,
+ * Every code that can't be used now (used up included) gets the same answer, code_not_valid,
  * whatever the reason, so trying codes reveals nothing about which exist.
  * Each shopper (account, cart or IP address) may enter codes only so often
  * (the coupon_redemption limit, per minute). Codes that weren't valid are
@@ -29,17 +31,21 @@ final readonly class FindPromotionCode
 {
     private const string FAILURES_KEY = 'promotion-code-failures';
 
-    public function __construct(private CacheFactory $cacheFactory) {}
+    public function __construct(
+        private CacheFactory $cacheFactory,
+        private PromotionUsage $promotionUsage,
+    ) {}
 
     /**
      * A code a shopper entered.
      *
+     * @param  RedemptionHolder|null  $holder  The checkout entering it, whose own reserved use doesn't count against the code.
      * @param  string  $requesterKey  Who is entering it: the signed-in customer, the guest's cart, or the IP address.
      *
      * @throws TooManyCodeAttemptsException When the shopper has entered codes too often this minute.
      * @throws CodeNotValidException When the code can't be used now, for any reason.
      */
-    public function forShopper(string $code, string $requesterKey, ?CarbonImmutable $at = null): PromotionCode
+    public function forShopper(string $code, string $requesterKey, ?CarbonImmutable $at = null, ?RedemptionHolder $holder = null): PromotionCode
     {
         // Hashed: the requester may be an IP address, which never goes into the cache as it is.
         $limiterKey = TenantScopedKey::forIdentifier('coupon-redemption', $requesterKey);
@@ -51,7 +57,7 @@ final readonly class FindPromotionCode
         RateLimiter::hit($limiterKey);
 
         try {
-            return $this->find($code, $at);
+            return $this->find($code, $at, $holder);
         } catch (CodeNotValidException $exception) {
             $this->countFailure();
 
@@ -64,7 +70,7 @@ final readonly class FindPromotionCode
      *
      * @throws CodeNotValidException When the code can't be used now, for any reason.
      */
-    public function find(string $code, ?CarbonImmutable $at = null): PromotionCode
+    public function find(string $code, ?CarbonImmutable $at = null, ?RedemptionHolder $holder = null): PromotionCode
     {
         $code = trim($code);
 
@@ -74,7 +80,8 @@ final readonly class FindPromotionCode
 
         $found = PromotionCode::query()->with('promotion')->whereRaw('upper(code) = ?', [mb_strtoupper($code)])->first();
 
-        if ($found === null || ! $found->is_active || $found->promotion->method !== PromotionMethod::Code || $found->promotion->status($at) !== PromotionStatus::Running) {
+        if ($found === null || ! $found->is_active || $found->promotion->method !== PromotionMethod::Code || $found->promotion->status($at) !== PromotionStatus::Running
+            || $this->promotionUsage->isUsedUp($found->promotion, $found, $holder, $at)) {
             throw new CodeNotValidException;
         }
 

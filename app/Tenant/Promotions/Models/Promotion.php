@@ -71,6 +71,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property CarbonImmutable|null $deleted_at When it was archived.
  * @property-read Collection<int, PromotionCurrencyAmount> $currencyAmounts
  * @property-read Collection<int, PromotionCode> $codes
+ * @property-read Collection<int, PromotionRedemption> $redemptions
  * @property-read Collection<int, Product> $products
  * @property-read Collection<int, ProductVariant> $variants
  * @property-read Collection<int, Category> $categories
@@ -210,6 +211,16 @@ final class Promotion extends Model implements AuditableContract
     public function codes(): HasMany
     {
         return $this->hasMany(PromotionCode::class);
+    }
+
+    /**
+     * Its uses by checkouts and orders: the ledger its limits are counted from.
+     *
+     * @return HasMany<PromotionRedemption, $this>
+     */
+    public function redemptions(): HasMany
+    {
+        return $this->hasMany(PromotionRedemption::class);
     }
 
     /**

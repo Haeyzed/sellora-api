@@ -76,7 +76,7 @@ final readonly class PromotionDiscountSource implements DiscountSource
         }
 
         try {
-            return $this->findPromotionCode->find($basket->code, $basket->at)->promotion->load(self::RELATIONS);
+            return $this->findPromotionCode->find($basket->code, $basket->at, $basket->holder)->promotion->load(self::RELATIONS);
         } catch (CodeNotValidException) {
             return null;
         }

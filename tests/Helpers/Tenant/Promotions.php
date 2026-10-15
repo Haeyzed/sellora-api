@@ -9,12 +9,16 @@ use App\Tenant\Catalog\Models\ProductVariant;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Pricing\Data\TaxAddress;
 use App\Tenant\Promotions\Actions\PriceWithDiscounts;
+use App\Tenant\Promotions\Actions\ReservePromotionUses;
 use App\Tenant\Promotions\Data\DiscountBuyer;
 use App\Tenant\Promotions\Data\DiscountedBasket;
+use App\Tenant\Promotions\Data\RedemptionHolder;
 use App\Tenant\Promotions\Models\Promotion;
+use App\Tenant\Promotions\Models\PromotionRedemption;
 use App\Tenant\Settings\Actions\FindStoreSettings;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 
 /*
@@ -108,7 +112,7 @@ function runningPromotion(array $attributes = []): Promotion
  *
  * @param  list<array{0: ProductVariant, 1: int}>  $lines  Each variant and how many.
  */
-function discountedBasket(array $lines, ?string $code = null, ?DiscountBuyer $buyer = null, ?int $shipping = null, ?string $currency = null, ?CarbonImmutable $at = null, ?TaxAddress $destination = null): DiscountedBasket
+function discountedBasket(array $lines, ?string $code = null, ?DiscountBuyer $buyer = null, ?int $shipping = null, ?string $currency = null, ?CarbonImmutable $at = null, ?TaxAddress $destination = null, ?string $checkout = null): DiscountedBasket
 {
     $currency ??= app(FindStoreSettings::class)->handle()->currency_code;
     $pricingLines = [];
@@ -117,7 +121,7 @@ function discountedBasket(array $lines, ?string $code = null, ?DiscountBuyer $bu
         $pricingLines[] = ['key' => 'line-'.($position + 1), 'variant' => $variant, 'quantity' => $quantity];
     }
 
-    return app(PriceWithDiscounts::class)->handle($currency, $pricingLines, $destination, $shipping === null ? null : Money::ofMinor($shipping, $currency), $buyer ?? DiscountBuyer::guest(null), $code, $at);
+    return app(PriceWithDiscounts::class)->handle($currency, $pricingLines, $destination, $shipping === null ? null : Money::ofMinor($shipping, $currency), $buyer ?? DiscountBuyer::guest(null), $code, $at, $checkout === null ? null : new RedemptionHolder('checkout', $checkout));
 }
 
 /**
@@ -128,4 +132,33 @@ function discountedBasket(array $lines, ?string $code = null, ?DiscountBuyer $bu
 function lineDiscountsOf(DiscountedBasket $basket): array
 {
     return array_map(static fn (Money $amount): int => $amount->minorAmount(), $basket->discounts->lineDiscounts);
+}
+
+/*
+|--------------------------------------------------------------------------
+| For PromotionUsesTest.php
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Reserves the uses of the promotions a basket got, for a checkout, with a 15-minute hold.
+ *
+ * @return list<PromotionRedemption>
+ */
+function reservePromotionUses(string $checkout, DiscountedBasket $basket, ?DiscountBuyer $buyer = null): array
+{
+    return app(ReservePromotionUses::class)->handle(new RedemptionHolder('checkout', $checkout), $basket->discounts, $buyer ?? DiscountBuyer::guest('shopper@example.com'), CarbonImmutable::now()->addMinutes(15));
+}
+
+/**
+ * The ledger row another checkout writes when it reserves a use of the promotion.
+ *
+ * @return array<string, mixed>
+ */
+function otherCheckoutUse(Promotion $promotion): array
+{
+    return [
+        'public_id' => Str::lower((string) Str::ulid()), 'promotion_id' => $promotion->id, 'holder_type' => 'checkout', 'holder_id' => 'other-checkout',
+        'status' => 'reserved', 'currency' => 'NGN', 'discount_amount' => 100, 'expires_at' => now()->addMinutes(15), 'created_at' => now(), 'updated_at' => now(),
+    ];
 }
