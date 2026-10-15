@@ -34,7 +34,7 @@ it('sends the central APIs to the central domain and the store API to a store su
 const PAGE_NUMBER_LISTS = [
     'default' => [
         '/staff/team/members', '/staff/team/roles', '/staff/team/invitations',
-        '/staff/catalog/brands', '/staff/catalog/categories', '/staff/catalog/attributes', '/staff/customer-groups', '/staff/promotions',
+        '/staff/catalog/brands', '/staff/catalog/categories', '/staff/catalog/attributes', '/staff/customer-groups', '/staff/promotions', '/staff/shipping/zones',
         '/catalog/brands', '/catalog/categories',
         '/staff/inventory/locations',
         '/staff/pricing/tax-classes', '/staff/pricing/tax-rates', '/staff/pricing/currencies', '/catalog/currencies',
@@ -226,6 +226,28 @@ it('documents every promotion endpoint', function (): void {
  * the version a change is made from, each line's status and price change,
  * the tax estimate, and the business errors.
  */
+it('documents every shipping endpoint', function (): void {
+    $store = documentedApi('default');
+
+    $expected = [
+        '/staff/shipping/zones' => ['get', 'post'],
+        '/staff/shipping/zones/{zone}' => ['get', 'put', 'delete'],
+        '/staff/shipping/zones/{zone}/regions' => ['put'],
+    ];
+
+    foreach ($expected as $path => $methods) {
+        expect($store['paths'])->toHaveKey($path)
+            ->and(array_keys($store['paths'][$path]))->toContain(...$methods);
+    }
+
+    expect($store['paths']['/staff/shipping/zones']['get']['description'])->toContain('Paged by page number')
+        ->and(array_keys($store['components']['schemas']['ShippingZoneResource']['properties']))->toContain('id', 'name', 'is_active', 'covers_rest_of_world', 'regions')
+        ->and(array_keys($store['components']['schemas']['ShippingZoneResource']['properties']['regions']['items']['properties']))->toBe(['country_code', 'state_code'])
+        ->and(json_encode($store['paths']['/staff/shipping/zones/{zone}/regions']['put']['responses'][409]))->toContain('shipping_region_taken')
+        ->and(json_encode($store['paths']['/staff/shipping/zones']['post']['responses'][409]))->toContain('rest_of_world_zone_exists')
+        ->and(json_encode($store['paths']['/staff/shipping/zones/{zone}']['put']['responses'][422]))->toContain('rest_of_world_zone_has_regions')->toContain('shipping_zone_name_taken');
+});
+
 it('documents every cart endpoint', function (): void {
     $store = documentedApi('default');
 

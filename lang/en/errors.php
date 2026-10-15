@@ -160,4 +160,11 @@ return [
     'cart_changed' => 'Your cart changed somewhere else, for example in another tab. Look at it again, then make your change.',
     'cart_version_required' => 'Send the cart\'s version (its ETag) in an If-Match header.',
 
+    // Shipping
+    'shipping_zone_name_taken' => 'Another shipping zone already has this name.',
+    'shipping_region_taken' => ':region is already in the zone ":zone". A region can be in only one zone: take it out of that zone first.',
+    'shipping_region_taken_meanwhile' => 'Another zone took one of these regions just now. Look at your zones again.',
+    'rest_of_world_zone_exists' => 'Another zone already covers the rest of the world. Only one can.',
+    'rest_of_world_zone_has_regions' => 'A zone covering the rest of the world lists no regions of its own. Remove its regions first.',
+
 ];

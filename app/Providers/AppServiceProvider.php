@@ -143,6 +143,9 @@ use App\Tenant\Settings\SettingsStoreTables;
 use App\Tenant\Settings\StoreLocales;
 use App\Tenant\Settings\StoreSettingsDefaults;
 use App\Tenant\Settings\StoreTwoFactorRequirement;
+use App\Tenant\Shipping\Enums\ShippingPermission;
+use App\Tenant\Shipping\Models\ShippingZone;
+use App\Tenant\Shipping\ShippingStoreTables;
 use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\Components;
 use Dedoc\Scramble\Support\Generator\OpenApi;
@@ -243,6 +246,7 @@ final class AppServiceProvider extends ServiceProvider
             $catalogue->register(PricingPermission::class);
             $catalogue->register(CustomerPermission::class);
             $catalogue->register(PromotionPermission::class);
+            $catalogue->register(ShippingPermission::class);
 
             return $catalogue;
         });
@@ -390,7 +394,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->singleton(StoreExportRegistry::class, static function (Application $app): StoreExportRegistry {
             $registry = new StoreExportRegistry;
 
-            foreach ([SharedStoreTables::class, IdentityStoreTables::class, SettingsStoreTables::class, CustomerStoreTables::class, DeliveryStoreTables::class, CatalogStoreTables::class, InventoryStoreTables::class, PricingStoreTables::class, PromotionStoreTables::class, CartStoreTables::class] as $storeTables) {
+            foreach ([SharedStoreTables::class, IdentityStoreTables::class, SettingsStoreTables::class, CustomerStoreTables::class, DeliveryStoreTables::class, CatalogStoreTables::class, InventoryStoreTables::class, PricingStoreTables::class, PromotionStoreTables::class, CartStoreTables::class, ShippingStoreTables::class] as $storeTables) {
                 $app->make($storeTables)->classify($registry);
             }
 
@@ -447,6 +451,7 @@ final class AppServiceProvider extends ServiceProvider
             'promotion' => Promotion::class,
             'promotion_code' => PromotionCode::class,
             'promotion_redemption' => PromotionRedemption::class,
+            'shipping_zone' => ShippingZone::class,
         ]);
     }
 

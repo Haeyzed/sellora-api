@@ -48,6 +48,11 @@ return [
         'manage' => 'Create, change, activate, deactivate and archive promotions, and add, generate or change their codes.',
     ],
 
+    'shipping' => [
+        'view' => 'See shipping zones, methods and their rates, and preview what a basket would pay for shipping.',
+        'manage' => 'Create, change and delete shipping zones, and create, change and archive shipping methods and their rates.',
+    ],
+
     'pricing' => [
         'view' => 'See tax classes, tax rates, which class each variant is in, and the store\'s currencies and exchange rates.',
         'manage' => 'Change tax classes, tax rates, variants\' tax classes, the store\'s currencies, exchange rates and fixed prices.',
