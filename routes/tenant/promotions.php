@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
 use App\Tenant\Identity\Models\StaffMember;
+use App\Tenant\Promotions\Http\Controllers\DiscountPreviewController;
 use App\Tenant\Promotions\Http\Controllers\PromotionCodeController;
 use App\Tenant\Promotions\Http\Controllers\PromotionController;
 use Illuminate\Support\Facades\Route;
@@ -20,6 +21,7 @@ Route::prefix('staff/promotions')
     ->group(static function (): void {
         Route::get('/', [PromotionController::class, 'index'])->name('index');
         Route::post('/', [PromotionController::class, 'store'])->name('store');
+        Route::post('preview', DiscountPreviewController::class)->name('preview');
         Route::get('{promotion}', [PromotionController::class, 'show'])->name('show')->withTrashed();
         Route::patch('{promotion}', [PromotionController::class, 'update'])->name('update');
         Route::delete('{promotion}', [PromotionController::class, 'destroy'])->name('destroy');

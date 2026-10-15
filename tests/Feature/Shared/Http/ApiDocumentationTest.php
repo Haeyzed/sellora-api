@@ -205,6 +205,7 @@ it('documents every promotion endpoint', function (): void {
         '/staff/promotions/{promotion}/codes' => ['get', 'post'],
         '/staff/promotions/{promotion}/codes/generate' => ['post'],
         '/staff/promotions/{promotion}/codes/{code}' => ['patch', 'delete'],
+        '/staff/promotions/preview' => ['post'],
     ];
 
     foreach ($expected as $path => $methods) {
@@ -215,7 +216,8 @@ it('documents every promotion endpoint', function (): void {
     expect(collect($store['paths']['/staff/promotions']['get']['parameters'])->pluck('name')->all())->toContain('status', 'method', 'type', 'search', 'page')
         ->and(array_keys($store['components']['schemas']['SavePromotionRequest']['properties']))->toContain('type', 'percent', 'discount', 'currency_amounts', 'combines_with', 'products', 'customer_groups')
         ->and(json_encode($store['paths']['/staff/promotions/{promotion}/codes']['post']['responses'][422]))->toContain('promotion_code_taken')->toContain('promotion_takes_no_codes')
-        ->and(array_keys($store['paths']['/staff/promotions/{promotion}/codes/generate']['post']['responses']))->toContain(200, 202);
+        ->and(array_keys($store['paths']['/staff/promotions/{promotion}/codes/generate']['post']['responses']))->toContain(200, 202)
+        ->and(array_keys($store['components']['schemas']['DiscountedBasketResource']['properties']))->toBe(['basket', 'discounts', 'shipping_discount', 'code']);
 });
 
 /*

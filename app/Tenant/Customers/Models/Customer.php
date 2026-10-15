@@ -83,6 +83,15 @@ final class Customer extends User implements AuditableContract, HasApiTokensCont
         'is_active',
     ];
 
+    /**
+     * As the table's defaults, so a customer just created answers the same as one read back.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'is_tax_exempt' => false,
+    ];
+
     protected $hidden = [
         'password',
         'search_text',

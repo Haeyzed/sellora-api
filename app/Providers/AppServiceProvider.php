@@ -114,9 +114,13 @@ use App\Tenant\Pricing\PricingPricedRecords;
 use App\Tenant\Pricing\PricingStoreTables;
 use App\Tenant\Pricing\TaxCalculatorRegistry;
 use App\Tenant\Pricing\TaxExemptCustomerRule;
+use App\Tenant\Promotions\Contracts\OrderHistory;
+use App\Tenant\Promotions\DiscountSourceRegistry;
 use App\Tenant\Promotions\Enums\PromotionPermission;
 use App\Tenant\Promotions\Models\Promotion;
 use App\Tenant\Promotions\Models\PromotionCode;
+use App\Tenant\Promotions\NoOrderHistory;
+use App\Tenant\Promotions\PromotionDiscountSource;
 use App\Tenant\Promotions\PromotionPricedRecords;
 use App\Tenant\Promotions\PromotionStoreTables;
 use App\Tenant\Settings\Enums\SettingsPermission;
@@ -188,6 +192,24 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->scoped(StoreLocales::class);
         // Per request or job: it remembers the formats it has read.
         $this->app->scoped(AddressFormats::class);
+        $this->registerDiscountSources();
+    }
+
+    /**
+     * Where discounts come from: the store's promotions, and any module that registers a source (loyalty points and the like) from its own service provider, used only while it is enabled.
+     *
+     * First-order promotions ask Orders for the buyer's history; until Orders
+     * exists (Step 14), everyone counts as having ordered, so they fail closed.
+     */
+    private function registerDiscountSources(): void
+    {
+        $this->app->singleton(DiscountSourceRegistry::class, static function (Application $app): DiscountSourceRegistry {
+            $registry = new DiscountSourceRegistry($app);
+            $registry->register(PromotionDiscountSource::class);
+
+            return $registry;
+        });
+        $this->app->bind(OrderHistory::class, NoOrderHistory::class);
     }
 
     /**

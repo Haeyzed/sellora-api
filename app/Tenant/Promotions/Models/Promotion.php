@@ -92,6 +92,11 @@ final class Promotion extends Model implements AuditableContract
      */
     public array $translatable = ['title'];
 
+    /**
+     * Dates keep their offset when saved, so a start set in the store's timezone is stored as the right moment.
+     */
+    protected $dateFormat = 'Y-m-d H:i:sP';
+
     protected $fillable = [
         'name',
         'method',
