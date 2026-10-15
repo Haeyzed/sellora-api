@@ -115,3 +115,49 @@ function carrierOptions(?string $currency = null, bool $withAddress = true, stri
 
     return (array) shippingRequest('POST', '/quotes', $data)->assertOk()->json('data.options');
 }
+
+/*
+|--------------------------------------------------------------------------
+| For DeliveryEstimatesTest.php
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * A flat method taking the business days given.
+ */
+function methodTaking(?int $min, ?int $max, string $name = 'Standard'): string
+{
+    $id = shippingRequest('POST', '/methods', ['zone' => test()->zone, 'name' => ['en' => $name], 'fulfilment' => 'ship', 'pricing' => 'flat', 'rates' => [['from' => 0, 'to' => null, 'amount' => 1000]], 'min_days' => $min, 'max_days' => $max])->assertCreated()->json('data.id');
+
+    return is_string($id) ? $id : throw new LogicException('No method came back.');
+}
+
+/**
+ * The estimates of the methods offered for a lamp to Nigeria now, by method name.
+ *
+ * @return array<string, array<string, mixed>|null>
+ */
+function estimatesNow(): array
+{
+    $options = (array) shippingRequest('POST', '/quotes', ['country_code' => 'NG', 'lines' => [['variant' => test()->parcel, 'quantity' => 1]]])->assertOk()->json('data.options');
+
+    return array_column($options, 'estimate', 'name');
+}
+
+/**
+ * Sets the days the store works, through the settings API, as the test's owner.
+ *
+ * @param  list<mixed>  $days
+ */
+function changeWorkingDays(array $days, string $subdomain = 'shipping-store'): TestResponse
+{
+    forgetSignIns();
+    $token = test()->store->run(static fn (): string => app(AccessTokenIssuer::class)->issue(test()->owner, StaffMember::GUARD, 'test')->plainTextToken);
+
+    $response = test()->withToken($token)->patchJson(storeUrl($subdomain, '/api/v1/staff/store/settings'), ['working_days' => $days]);
+    test()->flushHeaders();
+    tenancy()->end();
+    forgetSignIns();
+
+    return $response;
+}

@@ -61,6 +61,9 @@ final class UpdateStoreSettingsRequest extends FormRequest
             'dimension_unit' => ['sometimes', Rule::enum(DimensionUnit::class)],
             /** The stock level at or below which a variant counts as running low, unless the variant sets its own. */
             'low_stock_threshold' => ['sometimes', 'integer:strict', 'min:0', 'max:1000000'],
+            /** The days the store works, by ISO number (1 Monday to 7 Sunday), such as [1, 2, 3, 4, 5]; delivery estimates count only these. */
+            'working_days' => ['sometimes', 'array', 'min:1', 'max:7'],
+            'working_days.*' => ['required', 'integer:strict', 'distinct', 'between:1,7'],
             /** Shown to customers. */
             'contact_email' => ['sometimes', 'nullable', 'string', 'email:rfc', 'max:254'],
             /** In international format (+234…), or national format for the store's country. Stored and returned in E.164. */
@@ -123,6 +126,12 @@ final class UpdateStoreSettingsRequest extends FormRequest
             if ($this->has($field)) {
                 $changes[$column] = is_string($this->input($field)) ? trim($this->string($field)->value()) : $this->input($field);
             }
+        }
+
+        if ($this->has('working_days')) {
+            $days = array_map(intval(...), $this->array('working_days'));
+            sort($days);
+            $changes['working_days'] = $days;
         }
 
         if ($this->has('enabled_locales')) {

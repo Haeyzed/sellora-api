@@ -260,7 +260,10 @@ it('documents every shipping endpoint', function (): void {
         ->and(json_encode($store['paths']['/staff/shipping/methods']['post']['responses'][422]))->toContain('shipping_rates_overlap')
         ->and(json_encode($store['paths']['/staff/shipping/quotes']['post']['responses'][422]))->toContain('currency_not_offered')
         ->and(array_keys($store['components']['schemas']['ShippingQuoteResource']['properties']))->toBe(['required', 'reason', 'weight_grams', 'value', 'options'])
-        ->and(array_keys($store['components']['schemas']['ShippingOptionResource']['properties']))->toContain('id', 'name', 'fulfilment', 'amount', 'calculated_at_checkout', 'is_free', 'pickup');
+        ->and(array_keys($store['components']['schemas']['ShippingOptionResource']['properties']))->toContain('id', 'name', 'fulfilment', 'amount', 'calculated_at_checkout', 'is_free', 'pickup', 'estimate')
+        ->and(array_keys($store['components']['schemas']['ShippingOptionResource']['properties']['estimate']['properties'] ?? $store['components']['schemas']['ShippingOptionResource']['properties']['estimate']['anyOf'][0]['properties'] ?? []))->toBe(['min_days', 'max_days', 'earliest', 'latest'])
+        ->and(array_keys($store['components']['schemas']['ShippingMethodResource']['properties']))->toContain('min_days', 'max_days')
+        ->and(array_keys($store['components']['schemas']['StoreSettingsResource']['properties']))->toContain('working_days');
 });
 
 it('documents every cart endpoint', function (): void {

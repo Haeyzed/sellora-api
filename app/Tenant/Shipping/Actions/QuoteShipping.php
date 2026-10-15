@@ -17,6 +17,7 @@ use App\Tenant\Shipping\Models\ShippingMethod;
 use App\Tenant\Shipping\Models\ShippingMethodAmount;
 use App\Tenant\Shipping\Models\ShippingRate;
 use App\Tenant\Shipping\Models\ShippingRateAmount;
+use App\Tenant\Shipping\Services\DeliveryEstimates;
 use App\Tenant\Shipping\Services\ShippingZones;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -39,6 +40,7 @@ final readonly class QuoteShipping
     public function __construct(
         private ShippingZones $zones,
         private QuoteCarrierRates $quoteCarrierRates,
+        private DeliveryEstimates $deliveryEstimates,
     ) {}
 
     public function handle(ShippingQuoteRequest $request): ShippingQuote
@@ -92,7 +94,10 @@ final readonly class QuoteShipping
             }
         }
 
-        return new ShippingQuote(true, array_values(array_filter($options)), $zone === null ? ShippingQuote::NO_ZONE : null, $weight, $value);
+        $estimates = $this->deliveryEstimates;
+        $offered = array_map(static fn (ShippingOption $option): ShippingOption => $option->withEstimate($estimates->for($option->method)), array_values(array_filter($options)));
+
+        return new ShippingQuote(true, $offered, $zone === null ? ShippingQuote::NO_ZONE : null, $weight, $value);
     }
 
     /**

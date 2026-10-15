@@ -51,6 +51,8 @@ final class StoreSettingsResource extends JsonResource
             'dimension_unit' => $settings->dimension_unit,
             /** The stock level at or below which a variant counts as running low, unless the variant sets its own. */
             'low_stock_threshold' => $settings->low_stock_threshold,
+            /** The days the store works, by ISO number (1 Monday to 7 Sunday): delivery estimates count only these. */
+            'working_days' => $settings->working_days,
             'contact_email' => $settings->contact_email,
             /** E.164, such as "+2348012345678". */
             'contact_phone' => $settings->contact_phone,

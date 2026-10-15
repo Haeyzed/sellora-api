@@ -70,7 +70,7 @@ it('starts a store with what it was registered with and its country\'s tax mode 
     $response->assertExactJson(['data' => [
         'name' => 'Ada Fabrics', 'logo' => null, 'country' => 'NG', 'currency' => 'NGN', 'timezone' => 'Africa/Lagos',
         'default_locale' => 'en', 'enabled_locales' => ['en'], 'tax_mode' => 'inclusive', 'pricing_locked' => false, 'require_staff_two_factor' => false,
-        'weight_unit' => 'kg', 'dimension_unit' => 'cm', 'low_stock_threshold' => 5, 'contact_email' => null, 'contact_phone' => null, 'address' => null,
+        'weight_unit' => 'kg', 'dimension_unit' => 'cm', 'low_stock_threshold' => 5, 'working_days' => [1, 2, 3, 4, 5], 'contact_email' => null, 'contact_phone' => null, 'address' => null,
         'updated_at' => $updatedAt,
     ]]);
 });

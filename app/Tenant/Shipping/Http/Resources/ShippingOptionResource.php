@@ -43,6 +43,13 @@ final class ShippingOptionResource extends JsonResource
             'calculated_at_checkout' => $option->isCalculatedAtCheckout(),
             /** True when the basket reached the method's "free over" threshold. */
             'is_free' => $option->isFree,
+            /** When it would arrive (or be ready to collect): the store's working days from today, as dates in the store's timezone; null when the method gives no estimate. */
+            'estimate' => $option->estimate === null ? null : [
+                'min_days' => $option->estimate->minDays,
+                'max_days' => $option->estimate->maxDays,
+                'earliest' => $option->estimate->earliest->toDateString(),
+                'latest' => $option->estimate->latest->toDateString(),
+            ],
             /** Only for a pickup: where it is collected. */
             'pickup' => $method->pickup_country_code === null ? null : [
                 'address_line1' => $method->pickup_address_line1,

@@ -151,14 +151,14 @@ final class CartResource extends JsonResource
              * Shipping, an estimate until checkout has the full address: quoted to the country (and state) the shopper gave, or the store's own.
              * GET /cart/shipping-options lists what the cart is offered; choose one with PATCH /cart (shipping_method).
              *
-             * @var array{required: bool, is_estimate: bool, country_code: string, state_code: string|null, reason: string|null, method: array{id: string, name: string, fulfilment: string}|null, chosen_method_unavailable: bool, calculated_at_checkout: bool, amount: MoneyResource|null, discount: MoneyResource|null}
+             * @var array{required: bool, is_estimate: bool, country_code: string, state_code: string|null, reason: string|null, method: array{id: string, name: string, fulfilment: string}|null, chosen_method_unavailable: bool, calculated_at_checkout: bool, amount: MoneyResource|null, discount: MoneyResource|null, estimate: array{min_days: int, max_days: int, earliest: string, latest: string}|null}
              */
             'shipping' => self::shipping($priced, $locale),
         ];
     }
 
     /**
-     * @return array{required: bool, is_estimate: bool, country_code: string, state_code: string|null, reason: string|null, method: array{id: string, name: string, fulfilment: string}|null, chosen_method_unavailable: bool, calculated_at_checkout: bool, amount: MoneyResource|null, discount: MoneyResource|null}
+     * @return array{required: bool, is_estimate: bool, country_code: string, state_code: string|null, reason: string|null, method: array{id: string, name: string, fulfilment: string}|null, chosen_method_unavailable: bool, calculated_at_checkout: bool, amount: MoneyResource|null, discount: MoneyResource|null, estimate: array{min_days: int, max_days: int, earliest: string, latest: string}|null}
      */
     private static function shipping(PricedCart $priced, string $locale): array
     {
@@ -183,6 +183,13 @@ final class CartResource extends JsonResource
             'amount' => $shipping->option?->amount === null ? null : new MoneyResource($shipping->option->amount),
             /** What free-shipping promotions take off it; null when nothing is charged for shipping. */
             'discount' => $shipping->discount === null ? null : new MoneyResource($shipping->discount),
+            /** When the chosen method would arrive, in the store's working days from today, as dates in its timezone; null when it gives no estimate. */
+            'estimate' => $shipping->option?->estimate === null ? null : [
+                'min_days' => $shipping->option->estimate->minDays,
+                'max_days' => $shipping->option->estimate->maxDays,
+                'earliest' => $shipping->option->estimate->earliest->toDateString(),
+                'latest' => $shipping->option->estimate->latest->toDateString(),
+            ],
         ];
     }
 

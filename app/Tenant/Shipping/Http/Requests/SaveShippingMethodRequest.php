@@ -105,6 +105,10 @@ final class SaveShippingMethodRequest extends FormRequest
             'pickup.postal_code' => ['sometimes', 'nullable', 'string', 'max:20'],
             /** For shoppers, such as {"en": "Open 9 to 5, Monday to Friday"}. */
             'pickup.instructions' => ['sometimes', 'nullable', 'array', $this->storeTranslatedText(500)],
+            /** The fewest business days it takes (to arrive, or to be ready to collect), counted on the store's working days; null, with max_days, for no estimate. Sent together with max_days. */
+            'min_days' => ['nullable', 'integer:strict', 'min:0', 'max:365', 'required_with:max_days'],
+            /** The most business days it takes; at least min_days. */
+            'max_days' => ['nullable', 'integer:strict', 'max:365', 'required_with:min_days', 'gte:min_days'],
             /** Lower first, among the methods offered together. */
             'position' => ['sometimes', 'integer:strict', 'min:0', 'max:10000'],
             /** Whether shoppers are offered it. Active when left out. */
@@ -199,7 +203,7 @@ final class SaveShippingMethodRequest extends FormRequest
             $fields['free_over'] = $this->filled('free_over') ? Money::ofMinor($this->integer('free_over'), $this->shippingMethod()->currency ?? $baseCurrency) : null;
         }
 
-        foreach (['position', 'is_active'] as $key) {
+        foreach (['min_days', 'max_days', 'position', 'is_active'] as $key) {
             if ($this->has($key)) {
                 $fields[$key] = $this->input($key);
             }

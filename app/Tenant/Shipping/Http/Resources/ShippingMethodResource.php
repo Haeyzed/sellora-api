@@ -89,6 +89,9 @@ final class ShippingMethodResource extends JsonResource
                 /** By language. */
                 'instructions' => $method->getTranslations('pickup_instructions'),
             ],
+            /** The fewest and most business days it takes; null for no estimate. */
+            'min_days' => $method->min_days,
+            'max_days' => $method->max_days,
             'position' => $method->position,
             'is_active' => $method->is_active,
             /** When it was archived; it is then never offered and can't change. */

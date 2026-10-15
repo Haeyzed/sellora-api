@@ -50,6 +50,8 @@ use OwenIt\Auditing\Events\AuditCustom;
  * @property string|null $pickup_city
  * @property string|null $pickup_postal_code
  * @property array<string, string>|null $pickup_instructions By language, such as opening hours.
+ * @property int|null $min_days The fewest business days it takes; null with max_days for no estimate.
+ * @property int|null $max_days The most business days it takes.
  * @property int $position Lower first, among the methods offered together.
  * @property bool $is_active
  * @property CarbonImmutable|null $archived_at
@@ -95,6 +97,8 @@ final class ShippingMethod extends Model implements AuditableContract
         'pickup_address_line1',
         'pickup_city',
         'pickup_postal_code',
+        'min_days',
+        'max_days',
         'position',
         'is_active',
     ];
@@ -223,6 +227,8 @@ final class ShippingMethod extends Model implements AuditableContract
             'pricing' => ShippingPricing::class,
             'free_over' => MoneyCast::class.':currency',
             'backup' => MoneyCast::class.':currency',
+            'min_days' => 'integer',
+            'max_days' => 'integer',
             'position' => 'integer',
             'is_active' => 'boolean',
             'archived_at' => 'immutable_datetime',
