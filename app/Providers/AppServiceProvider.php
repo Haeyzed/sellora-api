@@ -54,6 +54,9 @@ use App\Shared\Tenancy\Contracts\StoreSettingsSetup;
 use App\Shared\Tenancy\Contracts\StoreStockLedger;
 use App\Shared\Tenancy\Contracts\StoreStockReservations;
 use App\Tenant\Cart\CartStoreTables;
+use App\Tenant\Cart\CustomerCartRetention;
+use App\Tenant\Cart\GuestCartRetention;
+use App\Tenant\Cart\Privacy\CustomerCartData;
 use App\Tenant\Catalog\CatalogPricedRecords;
 use App\Tenant\Catalog\CatalogStoreFiles;
 use App\Tenant\Catalog\CatalogStoreTables;
@@ -335,6 +338,7 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(CustomerDataSubject::TYPE, 'marketing_consents', MarketingConsentData::class);
             $registry->register(CustomerDataSubject::TYPE, 'data_exports', CustomerDataExportData::class);
             $registry->register(CustomerDataSubject::TYPE, 'promotion_uses', PromotionUseData::class);
+            $registry->register(CustomerDataSubject::TYPE, 'cart', CustomerCartData::class);
             $registry->register(CustomerDataSubject::TYPE, 'account', CustomerAccountData::class);
 
             return $registry;
@@ -364,6 +368,8 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(CustomerDataExportRetention::class);
             $registry->register(SettledReservationRetention::class);
             $registry->register(ReleasedPromotionUseRetention::class);
+            $registry->register(GuestCartRetention::class);
+            $registry->register(CustomerCartRetention::class);
             $registry->register(StoreRegistrationRetention::class);
             $registry->register(StoreExportRetention::class);
             $registry->register(ExchangeRateRetention::class);

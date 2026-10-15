@@ -262,6 +262,10 @@ it('documents every cart endpoint', function (): void {
         ->and($store['paths']['/customer/auth/tokens']['post']['description'])->toContain('/cart/merges')
         ->and($store['paths']['/customer/auth/accounts']['post']['description'])->toContain('/cart/merges')
         ->and(array_keys($store['components']['schemas']['CartResource']['properties']))->toContain('skipped_lines')
+        // Staff see a customer's cart, read only.
+        ->and(array_keys($store['paths']['/staff/customers/{customer}/cart']))->toBe(['get'])
+        ->and(json_encode($store['paths']['/staff/customers/{customer}/cart']['get']['responses'][404]))->toContain('cart_not_found')
+        ->and(array_keys($store['paths']['/staff/customers/{customer}/cart']['get']['responses']))->toContain(403)
         ->and(json_encode($store['paths']['/cart']['get']['responses'][404]))->toContain('cart_not_found')
         ->and(json_encode($store['paths']['/cart/lines']['post']['responses'][422]))->toContain('variant_not_available')->toContain('variant_out_of_stock')->toContain('cart_full')->toContain('cart_line_quantity_too_high')
         ->and(collect($store['paths']['/cart/lines/{line}']['patch']['parameters'])->pluck('name')->all())->toContain('If-Match')

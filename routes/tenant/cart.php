@@ -2,12 +2,15 @@
 
 declare(strict_types=1);
 
+use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
 use App\Tenant\Cart\Http\Controllers\CartCodeController;
 use App\Tenant\Cart\Http\Controllers\CartController;
 use App\Tenant\Cart\Http\Controllers\CartLineController;
 use App\Tenant\Cart\Http\Controllers\CartMergeController;
+use App\Tenant\Cart\Http\Controllers\StaffCustomerCartController;
 use App\Tenant\Cart\Http\Middleware\AuthenticateCustomerIfSignedIn;
 use App\Tenant\Customers\Models\Customer;
+use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Settings\Http\Middleware\UseStoreLanguage;
 use Illuminate\Support\Facades\Route;
 
@@ -37,3 +40,13 @@ Route::prefix('cart')
             Route::delete('lines/{line}', [CartLineController::class, 'destroy'])->name('lines.destroy');
         });
     });
+
+/*
+| A customer's cart as staff see it, read only, under
+| /api/v1/staff/customers/{customer}/cart, with customers.view.
+*/
+
+Route::get('staff/customers/{customer}/cart', [StaffCustomerCartController::class, 'show'])
+    ->middleware(['auth:'.StaffMember::GUARD, EnsureTwoFactorWhenRequired::class, 'throttle:api', UseStoreLanguage::class])
+    ->withTrashed()
+    ->name('staff.customers.cart.show');

@@ -133,8 +133,6 @@ final class CartResource extends JsonResource
             ],
             /**
              * Tax is an estimate until checkout has the delivery address: worked out to the country the shopper gave, or the store's own.
-             *
-             * @var array{is_estimate: bool, mode: string|null, country_code: string|null, chosen_country_code: string|null}
              */
             'tax' => [
                 'is_estimate' => true,

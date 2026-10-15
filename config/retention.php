@@ -30,6 +30,9 @@ return [
         // Reservations that ended; the stock movements they caused are kept for good.
         'settled_stock_reservations' => (int) env('RETENTION_SETTLED_STOCK_RESERVATIONS_DAYS', 90),
         'released_promotion_uses' => (int) env('RETENTION_RELEASED_PROMOTION_USES_DAYS', 90),
+        // Carts nobody has changed for this long; there are no abandoned-cart emails until Messaging (Step 20).
+        'guest_carts' => (int) env('RETENTION_GUEST_CARTS_DAYS', 30),
+        'customer_carts' => (int) env('RETENTION_CUSTOMER_CARTS_DAYS', 180),
         'store_registrations' => (int) env('RETENTION_STORE_REGISTRATIONS_DAYS', 7),
         'store_exports' => (int) env('RETENTION_STORE_EXPORTS_DAYS', 7),
         'activity_log' => (int) env('RETENTION_ACTIVITY_LOG_DAYS', 365),
