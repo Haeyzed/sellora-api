@@ -123,6 +123,37 @@ it('lets the shopper choose only an offered method, which then joins the totals,
     cartRequest('PATCH', '', ['country_code' => null, 'shipping_method' => null], token: $token, ifMatch: cartVersion($token))->assertOk()->assertJsonPath('data.shipping.method', null);
 });
 
+it('says why checkout waits on shipping: a method to choose, or nothing offered there', function (): void {
+    expect(cartRequest('GET', token: newGuestCart())->json('data.checkout_blockers'))->toBe(['cart_empty']);
+
+    $token = shippingCart([[600000, 1, true]]);
+    $digital = shippingCart([[5000, 1, false]]);
+
+    // Methods are offered and none is chosen.
+    expect(cartRequest('GET', token: $token)->json('data'))->toMatchArray(['can_check_out' => false, 'checkout_blockers' => ['shipping_method_required']]);
+    cartRequest('PATCH', '', ['shipping_method' => $this->standard], token: $token, ifMatch: cartVersion($token))->assertOk()->assertJsonPath('data.checkout_blockers', [])->assertJsonPath('data.can_check_out', true);
+
+    // Nothing is offered where the shopper now is: choosing again won't help.
+    $moved = cartRequest('PATCH', '', ['country_code' => 'US'], token: $token, ifMatch: cartVersion($token))->assertOk();
+    expect($moved->json('data'))->toMatchArray(['can_check_out' => false, 'checkout_blockers' => ['shipping_not_available']])
+        ->and($moved->json('data.shipping.chosen_method_unavailable'))->toBeTrue();
+
+    // Back where the choice is offered, but in Lagos, where it isn't: another must be chosen.
+    cartRequest('PATCH', '', ['country_code' => 'NG', 'state_code' => 'LA'], token: $token, ifMatch: cartVersion($token))->assertOk()->assertJsonPath('data.checkout_blockers', ['shipping_method_required']);
+    cartRequest('PATCH', '', ['state_code' => null], token: $token, ifMatch: cartVersion($token))->assertOk()->assertJsonPath('data.checkout_blockers', []);
+
+    // A store with no zones at all offers nothing; what doesn't ship still checks out.
+    foreach ([$this->standard, $this->sameDay] as $method) {
+        shippingRequest('POST', "/methods/{$method}/archive", subdomain: 'cart-store')->assertOk();
+    }
+    foreach ([$this->nigeria, $this->lagos] as $zone) {
+        shippingRequest('DELETE', "/zones/{$zone}", subdomain: 'cart-store')->assertNoContent();
+    }
+
+    expect(cartRequest('GET', token: $token)->json('data.checkout_blockers'))->toBe(['shipping_not_available'])
+        ->and(cartRequest('GET', token: $digital)->json('data'))->toMatchArray(['can_check_out' => true, 'checkout_blockers' => []]);
+});
+
 it('stops offering a method once it is switched off or archived, and says so on carts that chose it', function (): void {
     $token = shippingCart([[600000, 1, true]]);
     cartRequest('PATCH', '', ['shipping_method' => $this->standard], token: $token, ifMatch: cartVersion($token))->assertOk();

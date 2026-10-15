@@ -50,6 +50,7 @@ it('prices the cart with its promotions, and marks tax as an estimate', function
         ->and($cart->json('data.tax'))->toMatchArray(['is_estimate' => true, 'mode' => 'inclusive', 'country_code' => 'NG', 'chosen_country_code' => null])
         // These lines ship, and the store ships nowhere yet: checkout waits for a shipping method.
         ->and($cart->json('data.can_check_out'))->toBeFalse()
+        ->and($cart->json('data.checkout_blockers'))->toBe(['shipping_not_available'])
         ->and($cart->json('data.shipping'))->toMatchArray(['required' => true, 'reason' => 'no_zone', 'method' => null, 'amount' => null]);
 });
 
@@ -81,6 +82,7 @@ it('keeps lines that can no longer be bought, marked and outside the totals, and
         ->and($cart->json('data.lines.*.unit_price.amount'))->toBe([null, null, null, null, 5000])
         ->and($cart->json('data.totals.total.amount'))->toBe(5000)
         ->and($cart->json('data.can_check_out'))->toBeFalse()
+        ->and($cart->json('data.checkout_blockers'))->toBe(['lines_unavailable'])
         ->and($cart->json('data.shipping.required'))->toBeFalse()
         ->and($cart->getContent())->not->toContain('on_hand')->not->toContain('"available_quantity"');
 });

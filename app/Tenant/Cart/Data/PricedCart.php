@@ -28,13 +28,43 @@ final readonly class PricedCart
         public CartShipping $shipping,
     ) {}
 
+    /** Nothing is in the cart. */
+    public const string CART_EMPTY = 'cart_empty';
+
+    /** A line can't be bought (unavailable or out of stock): remove it. */
+    public const string LINES_UNAVAILABLE = 'lines_unavailable';
+
     /**
      * Whether checkout can start: there is something in it, every line can be bought, and shipping is settled (nothing ships, or an offered method is chosen).
      */
     public function canCheckOut(): bool
     {
-        return $this->lines !== []
-            && array_all($this->lines, static fn (PricedCartLine $line): bool => $line->status === CartLineStatus::Available)
-            && $this->shipping->isReady();
+        return $this->checkoutBlockers() === [];
+    }
+
+    /**
+     * Why checkout can't start yet, in the order the shopper should fix them: cart_empty, lines_unavailable, then shipping_method_required or shipping_not_available. Empty when it can.
+     *
+     * @return list<string>
+     */
+    public function checkoutBlockers(): array
+    {
+        if ($this->lines === []) {
+            return [self::CART_EMPTY];
+        }
+
+        $blockers = [];
+
+        if (! array_all($this->lines, static fn (PricedCartLine $line): bool => $line->status === CartLineStatus::Available)) {
+            $blockers[] = self::LINES_UNAVAILABLE;
+        }
+
+        $shipping = $this->shipping->blocker();
+
+        if ($shipping !== null) {
+            $blockers[] = $shipping;
+        }
+
+        return $blockers;
     }
 }

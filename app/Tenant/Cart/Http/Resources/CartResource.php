@@ -70,6 +70,14 @@ final class CartResource extends JsonResource
             /** True when checkout can start: there is something in the cart, every line can be bought, and shipping is settled (nothing ships, or an offered method is chosen). */
             'can_check_out' => $priced->canCheckOut(),
             /**
+             * Why checkout can't start yet; empty when it can. cart_empty; lines_unavailable (remove the lines that can't be bought);
+             * shipping_method_required (methods are offered: choose one, or another when the chosen one isn't offered any more);
+             * shipping_not_available (nothing is offered where the shopper is for what the cart holds).
+             *
+             * @var list<string>
+             */
+            'checkout_blockers' => $priced->checkoutBlockers(),
+            /**
              * Its lines, oldest first. Status is "available"; "unavailable" when it is no longer for sale; "out_of_stock" when none is left and it
              * takes no backorders. Lines that can't be bought have no prices and are left out of the totals. Backorder is true when it can be
              * bought but none is in stock: it is sent when it arrives. Prices include tax in a tax-inclusive store; total is after the line's

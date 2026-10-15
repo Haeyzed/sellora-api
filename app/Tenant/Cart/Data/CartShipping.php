@@ -15,6 +15,12 @@ use App\Tenant\Shipping\Models\ShippingMethod;
  */
 final readonly class CartShipping
 {
+    /** Methods are offered, but none (still offered) is chosen. */
+    public const string METHOD_REQUIRED = 'shipping_method_required';
+
+    /** Nothing is offered for this destination and these lines, including in a store with no zones yet. */
+    public const string NOT_AVAILABLE = 'shipping_not_available';
+
     /**
      * @param  ShippingRegion  $destination  The country (and state) it was quoted to: the shopper's, or the store's own.
      * @param  ShippingMethod|null  $chosen  The method the shopper chose, offered or not.
@@ -38,10 +44,14 @@ final readonly class CartShipping
     }
 
     /**
-     * Whether shipping is settled enough for checkout: nothing ships, or an offered method is chosen.
+     * Why shipping stops checkout: METHOD_REQUIRED or NOT_AVAILABLE; null when it is settled (nothing ships, or an offered method is chosen).
      */
-    public function isReady(): bool
+    public function blocker(): ?string
     {
-        return ! $this->quote->required || $this->option !== null;
+        if (! $this->quote->required || $this->option !== null) {
+            return null;
+        }
+
+        return $this->quote->options === [] ? self::NOT_AVAILABLE : self::METHOD_REQUIRED;
     }
 }
