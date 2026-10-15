@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 use App\Tenant\Inventory\Actions\AdjustStock;
 use App\Tenant\Inventory\Actions\ChangeInventorySettings;
+use App\Tenant\Inventory\Actions\FindVariantAvailability;
+use App\Tenant\Inventory\Actions\FindVariantStockStatus;
 use App\Tenant\Inventory\Actions\ReceiveStock;
 use App\Tenant\Inventory\Actions\ReserveStock;
 use App\Tenant\Inventory\Data\InventorySettingsData;
 use App\Tenant\Inventory\Data\StockHolder;
 use App\Tenant\Inventory\Data\StockLine;
 use App\Tenant\Inventory\Enums\AdjustmentReason;
+use App\Tenant\Inventory\Enums\StockStatus;
 use App\Tenant\Inventory\Events\StockLevelChanged;
 use App\Tenant\Inventory\Events\StockRunningLow;
 use App\Tenant\Inventory\Events\VariantBackInStock;
@@ -57,6 +60,29 @@ it('tells customers whether each variant can be bought, never how many are left'
 
     $this->getJson(storeUrl('signal-store', '/api/v1/catalog/products'))->assertOk()->assertJsonPath('data.0.variants.0.available_for_sale', true);
     tenancy()->end();
+});
+
+it('says whether each variant is in stock, on backorder or out of stock, for Cart and Checkout', function (): void {
+    $this->store->run(static function (): void {
+        $variants = variantsForSale(['IN', 'OUT', 'MADE', 'LATER', 'LATER-IN', 'HELD', 'CLOSED']);
+        $location = StockLocation::query()->sole();
+        $closed = StockLocation::query()->create(['name' => 'Closed']);
+        app(ReceiveStock::class)->handle($variants['IN'], $location, 3);
+        app(ChangeInventorySettings::class)->handle($variants['MADE'], new InventorySettingsData(tracksStock: false));
+        app(ChangeInventorySettings::class)->handle($variants['LATER'], new InventorySettingsData(allowsBackorder: true));
+        app(ChangeInventorySettings::class)->handle($variants['LATER-IN'], new InventorySettingsData(allowsBackorder: true));
+        app(ReceiveStock::class)->handle($variants['LATER-IN'], $location, 1);
+        app(ReceiveStock::class)->handle($variants['HELD'], $location, 1);
+        app(ReserveStock::class)->handle(new StockHolder('checkout', 'someone'), [new StockLine($variants['HELD'], 1)]);
+        app(ReceiveStock::class)->handle($variants['CLOSED'], $closed, 5);
+        $closed->forceFill(['is_active' => false])->save();
+
+        $statuses = app(FindVariantStockStatus::class)->handle(array_values(array_map(static fn ($variant): int => $variant->id, $variants)));
+
+        expect(array_combine(array_keys($variants), array_map(static fn (StockStatus $status): string => $status->value, array_values($statuses))))->toBe([
+            'IN' => 'in_stock', 'OUT' => 'out_of_stock', 'MADE' => 'in_stock', 'LATER' => 'backorder', 'LATER-IN' => 'in_stock', 'HELD' => 'out_of_stock', 'CLOSED' => 'out_of_stock',
+        ])->and(app(FindVariantAvailability::class)->handle([$variants['LATER']->id, $variants['OUT']->id]))->toBe([$variants['LATER']->id => true, $variants['OUT']->id => false]);
+    });
 });
 
 it('announces when a counted variant sells out, comes back and runs low', function (): void {
