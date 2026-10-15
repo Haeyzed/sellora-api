@@ -232,6 +232,7 @@ it('documents every cart endpoint', function (): void {
     $expected = [
         '/cart' => ['get', 'post', 'patch'],
         '/cart/price-change-acknowledgements' => ['post'],
+        '/cart/code' => ['put', 'delete'],
         '/cart/lines' => ['post', 'delete'],
         '/cart/lines/{line}' => ['patch', 'delete'],
     ];
@@ -252,6 +253,9 @@ it('documents every cart endpoint', function (): void {
         ->and(array_keys($store['components']['schemas']['CartResource']['properties']['lines']['items']['properties']))->toContain('status', 'backorder', 'unit_price', 'total', 'price_changed')
         ->and(array_keys($store['components']['schemas']['CartResource']['properties']['tax']['properties']))->toContain('is_estimate', 'country_code')
         ->and(json_encode($store['paths']['/cart']['patch']['responses'][422]))->toContain('currency_not_offered')
+        ->and(json_encode($store['paths']['/cart/code']['put']['responses'][422]))->toContain('code_not_valid')
+        ->and(json_encode($store['paths']['/cart/code']['put']['responses'][429]))->toContain('too_many_code_attempts')
+        ->and(array_keys($store['components']['schemas']['CartResource']['properties']))->toContain('code')
         ->and(json_encode($store['paths']['/cart']['get']['responses'][404]))->toContain('cart_not_found')
         ->and(json_encode($store['paths']['/cart/lines']['post']['responses'][422]))->toContain('variant_not_available')->toContain('variant_out_of_stock')->toContain('cart_full')->toContain('cart_line_quantity_too_high')
         ->and(collect($store['paths']['/cart/lines/{line}']['patch']['parameters'])->pluck('name')->all())->toContain('If-Match')

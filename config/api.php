@@ -54,7 +54,9 @@ return [
         'account_emails' => (int) env('RATE_LIMIT_ACCOUNT_EMAILS', 3),
         'registration' => (int) env('RATE_LIMIT_REGISTRATION', 3),
         'checkout' => (int) env('RATE_LIMIT_CHECKOUT', 10),
+        // Codes entered per cart (or per signed-in customer), under a much higher ceiling per IP address.
         'coupon_redemption' => (int) env('RATE_LIMIT_COUPON_REDEMPTION', 10),
+        'coupon_redemption_ip_ceiling' => (int) env('RATE_LIMIT_COUPON_REDEMPTION_IP_CEILING', 100),
         // Shoppers' carts: per cart (or per signed-in customer), under a much higher ceiling per IP address,
         // because many shoppers can share one address (section 14).
         'cart' => (int) env('RATE_LIMIT_CART', 60),

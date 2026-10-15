@@ -38,7 +38,6 @@ final class RateLimitServiceProvider extends ServiceProvider
         RateLimiter::for('public', fn (Request $request): Limit => $this->perMinute('public')->by($this->ipKey('public', $request)));
         RateLimiter::for('registration', fn (Request $request): Limit => $this->perMinute('registration')->by($this->ipKey('registration', $request)));
         RateLimiter::for('checkout', fn (Request $request): Limit => $this->perMinute('checkout')->by($this->requesterKey('checkout', $request)));
-        RateLimiter::for('coupon-redemption', fn (Request $request): Limit => $this->perMinute('coupon_redemption')->by($this->requesterKey('coupon-redemption', $request)));
         // Emails a signed-in account asks to be sent (verification and email-change links), so a token can't be used to flood a mailbox.
         RateLimiter::for('account-emails', fn (Request $request): Limit => $this->perMinute('account_emails')->by($this->requesterKey('account-emails', $request)));
         $this->defineShopperLimits();
@@ -57,6 +56,8 @@ final class RateLimitServiceProvider extends ServiceProvider
             $this->perMinute('cart_ip_ceiling')->by($this->ipKey('cart-ip-ceiling', $request)),
         ]);
         RateLimiter::for('cart-creation', fn (Request $request): Limit => $this->perMinute('cart_creation_ip_ceiling')->by($this->ipKey('cart-creation', $request)));
+        // The ceiling for promotion codes entered from one address; each cart or customer's own limit is counted where the code is checked (FindPromotionCode).
+        RateLimiter::for('coupon-redemption', fn (Request $request): Limit => $this->perMinute('coupon_redemption_ip_ceiling')->by($this->ipKey('coupon-redemption-ip-ceiling', $request)));
     }
 
     /**

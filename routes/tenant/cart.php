@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Tenant\Cart\Http\Controllers\CartCodeController;
 use App\Tenant\Cart\Http\Controllers\CartController;
 use App\Tenant\Cart\Http\Controllers\CartLineController;
 use App\Tenant\Cart\Http\Middleware\AuthenticateCustomerIfSignedIn;
@@ -25,6 +26,8 @@ Route::prefix('cart')
             Route::get('/', [CartController::class, 'show'])->name('show');
             Route::patch('/', [CartController::class, 'update'])->name('update');
             Route::post('price-change-acknowledgements', [CartController::class, 'acknowledgePriceChanges'])->name('price-change-acknowledgements.store');
+            Route::put('code', [CartCodeController::class, 'update'])->middleware('throttle:coupon-redemption')->name('code.update');
+            Route::delete('code', [CartCodeController::class, 'destroy'])->name('code.destroy');
             Route::post('lines', [CartLineController::class, 'store'])->name('lines.store');
             Route::delete('lines', [CartLineController::class, 'destroyAll'])->name('lines.destroy-all');
             Route::patch('lines/{line}', [CartLineController::class, 'update'])->name('lines.update');

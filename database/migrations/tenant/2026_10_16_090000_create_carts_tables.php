@@ -31,6 +31,8 @@ return new class extends Migration
             $table->char('currency', 3)->nullable();
             // Where the shopper said they are, for the tax estimate; null for the store's own country.
             $table->char('destination_country_code', 2)->nullable();
+            // The one promotion code entered, as the store spells it; kept while it doesn't apply yet, with the reason shown.
+            $table->string('promotion_code', 32)->nullable();
             $table->unsignedInteger('version')->default(1);
             $table->timestampTz('last_activity_at');
             $table->timestampsTz();

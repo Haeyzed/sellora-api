@@ -24,7 +24,7 @@ use App\Tenant\Promotions\Data\DiscountedBasket;
  * Lines that can't be bought (no longer for sale, or out of stock without
  * backorders) stay in the cart, marked, and are left out of the totals. The
  * rest are priced through PriceWithDiscounts, the same calculation checkout
- * charges, in the cart's currency or the store's own while that isn't
+ * charges (automatic promotions and the cart's code), in the cart's currency or the store's own while that isn't
  * offered. Tax is an estimate, to the country the shopper gave or the
  * store's own, until checkout has an address. Reading changes nothing,
  * however many lines there are, in a fixed number of queries.
@@ -49,6 +49,7 @@ final readonly class PriceCart
             self::destinationOf($cart),
             null,
             $cart->customer === null ? DiscountBuyer::guest(null) : DiscountBuyer::customer($cart->customer),
+            $cart->promotion_code,
         );
 
         return new PricedCart(

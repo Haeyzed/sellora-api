@@ -100,6 +100,14 @@ final class CartResource extends JsonResource
                 'amount' => new MoneyResource($discount->total($currency)),
             ], $priced->basket->discounts->applied),
             /**
+             * The promotion code on the cart, and why it doesn't apply: code_not_valid (it can't be used any more), first_order_only, customer_group,
+             * sale_items_excluded, no_eligible_items, minimum_not_met, customer_limit_reached, email_needed (a guest gives one at checkout),
+             * usage_limit_reached or better_discount_applied. Null when there is no code.
+             *
+             * @var array{code: string, applied: bool, reason: string|null}|null
+             */
+            'code' => self::code($priced),
+            /**
              * What the lines that can be bought come to. Delivery is added at checkout.
              *
              * @var array{subtotal: MoneyResource, discount: MoneyResource, tax: MoneyResource, total: MoneyResource}
@@ -125,6 +133,25 @@ final class CartResource extends JsonResource
                 'chosen_country_code' => $cart->destination_country_code,
             ],
         ];
+    }
+
+    /**
+     * @return array{code: string, applied: bool, reason: string|null}|null
+     */
+    private static function code(PricedCart $priced): ?array
+    {
+        $code = $priced->cart->promotion_code;
+
+        if ($code === null) {
+            return null;
+        }
+
+        $outcome = $priced->basket?->discounts;
+
+        // With nothing that can be bought, there is nothing for it to apply to.
+        return $outcome === null
+            ? ['code' => $code, 'applied' => false, 'reason' => 'no_eligible_items']
+            : ['code' => $code, 'applied' => $outcome->codeApplies(), 'reason' => $outcome->codeReason];
     }
 
     /**
