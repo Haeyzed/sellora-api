@@ -112,6 +112,10 @@ use App\Tenant\Inventory\Models\StockMovement;
 use App\Tenant\Inventory\Models\StockReservation;
 use App\Tenant\Inventory\SettledReservationRetention;
 use App\Tenant\Inventory\StockLedgerReconciliation;
+use App\Tenant\Orders\Enums\OrderPermission;
+use App\Tenant\Orders\Models\Order;
+use App\Tenant\Orders\OrderPricedRecords;
+use App\Tenant\Orders\OrderStoreTables;
 use App\Tenant\Pricing\Actions\CalculateTax;
 use App\Tenant\Pricing\Enums\PricingPermission;
 use App\Tenant\Pricing\Models\FixedPrice;
@@ -252,6 +256,7 @@ final class AppServiceProvider extends ServiceProvider
             $catalogue->register(CustomerPermission::class);
             $catalogue->register(PromotionPermission::class);
             $catalogue->register(ShippingPermission::class);
+            $catalogue->register(OrderPermission::class);
 
             return $catalogue;
         });
@@ -371,6 +376,7 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(PricingPricedRecords::class);
             $registry->register(PromotionPricedRecords::class);
             $registry->register(ShippingPricedRecords::class);
+            $registry->register(OrderPricedRecords::class);
 
             return $registry;
         });
@@ -400,7 +406,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->singleton(StoreExportRegistry::class, static function (Application $app): StoreExportRegistry {
             $registry = new StoreExportRegistry;
 
-            foreach ([SharedStoreTables::class, IdentityStoreTables::class, SettingsStoreTables::class, CustomerStoreTables::class, DeliveryStoreTables::class, CatalogStoreTables::class, InventoryStoreTables::class, PricingStoreTables::class, PromotionStoreTables::class, CartStoreTables::class, ShippingStoreTables::class] as $storeTables) {
+            foreach ([SharedStoreTables::class, IdentityStoreTables::class, SettingsStoreTables::class, CustomerStoreTables::class, DeliveryStoreTables::class, CatalogStoreTables::class, InventoryStoreTables::class, PricingStoreTables::class, PromotionStoreTables::class, CartStoreTables::class, ShippingStoreTables::class, OrderStoreTables::class] as $storeTables) {
                 $app->make($storeTables)->classify($registry);
             }
 
@@ -459,6 +465,7 @@ final class AppServiceProvider extends ServiceProvider
             'promotion_redemption' => PromotionRedemption::class,
             'shipping_zone' => ShippingZone::class,
             'shipping_method' => ShippingMethod::class,
+            'order' => Order::class,
         ]);
     }
 

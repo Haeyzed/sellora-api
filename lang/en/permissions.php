@@ -53,6 +53,12 @@ return [
         'manage' => 'Create, change and delete shipping zones, and create, change and archive shipping methods and their rates.',
     ],
 
+    'orders' => [
+        'view' => 'See orders, their lines, payments, history and shipments.',
+        'manage' => 'Cancel orders, add notes and tags, and correct buyers\' contact details and shipping addresses.',
+        'fulfil' => 'Create shipments, add tracking, and mark what has left, is ready for pickup or has arrived.',
+    ],
+
     'pricing' => [
         'view' => 'See tax classes, tax rates, which class each variant is in, and the store\'s currencies and exchange rates.',
         'manage' => 'Change tax classes, tax rates, variants\' tax classes, the store\'s currencies, exchange rates and fixed prices.',
