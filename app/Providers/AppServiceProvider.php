@@ -116,6 +116,7 @@ use App\Tenant\Orders\Enums\OrderPermission;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Orders\OrderPricedRecords;
 use App\Tenant\Orders\OrderStoreTables;
+use App\Tenant\Orders\Services\PlacedOrderHistory;
 use App\Tenant\Pricing\Actions\CalculateTax;
 use App\Tenant\Pricing\Enums\PricingPermission;
 use App\Tenant\Pricing\Models\FixedPrice;
@@ -134,7 +135,6 @@ use App\Tenant\Promotions\ExpiredPromotionUseSweep;
 use App\Tenant\Promotions\Models\Promotion;
 use App\Tenant\Promotions\Models\PromotionCode;
 use App\Tenant\Promotions\Models\PromotionRedemption;
-use App\Tenant\Promotions\NoOrderHistory;
 use App\Tenant\Promotions\Privacy\PromotionUseData;
 use App\Tenant\Promotions\PromotionDiscountSource;
 use App\Tenant\Promotions\PromotionPricedRecords;
@@ -225,8 +225,8 @@ final class AppServiceProvider extends ServiceProvider
     /**
      * Where discounts come from: the store's promotions, and any module that registers a source (loyalty points and the like) from its own service provider, used only while it is enabled.
      *
-     * First-order promotions ask Orders for the buyer's history; until Orders
-     * exists (Step 14), everyone counts as having ordered, so they fail closed.
+     * First-order promotions ask Orders for the buyer's history: their orders
+     * that weren't cancelled, by account or by the email they were placed with.
      */
     private function registerDiscountSources(): void
     {
@@ -236,7 +236,7 @@ final class AppServiceProvider extends ServiceProvider
 
             return $registry;
         });
-        $this->app->bind(OrderHistory::class, NoOrderHistory::class);
+        $this->app->bind(OrderHistory::class, PlacedOrderHistory::class);
         // A guest's Idempotency-Keys are theirs by their cart token.
         $this->app->bind(GuestRequester::class, CartGuestRequester::class);
     }

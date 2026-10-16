@@ -2,10 +2,30 @@
 
 declare(strict_types=1);
 
+use App\Shared\Money\Money;
+use App\Tenant\Catalog\Models\Attribute;
+use App\Tenant\Catalog\Models\AttributeValue;
+use App\Tenant\Catalog\Models\ProductVariant;
+use App\Tenant\Customers\Data\AddressSnapshot;
+use App\Tenant\Inventory\Actions\ReserveStock;
+use App\Tenant\Inventory\Data\StockHolder;
+use App\Tenant\Inventory\Data\StockLine;
+use App\Tenant\Inventory\Models\StockLocation;
+use App\Tenant\Orders\Actions\PlaceOrder;
+use App\Tenant\Orders\Data\OrderBuyer;
+use App\Tenant\Orders\Data\OrderDraft;
+use App\Tenant\Orders\Models\Order;
+use App\Tenant\Pricing\Data\TaxAddress;
+use App\Tenant\Promotions\Actions\ReservePromotionUses;
+use App\Tenant\Promotions\Data\DiscountBuyer;
+use App\Tenant\Promotions\Data\RedemptionHolder;
+use App\Tenant\Settings\Actions\FindStoreSettings;
+use App\Tenant\Shipping\Data\ShippingOption;
 use App\Tenant\Shipping\Enums\ShippingFulfilment;
 use App\Tenant\Shipping\Enums\ShippingPricing;
 use App\Tenant\Shipping\Models\ShippingMethod;
 use App\Tenant\Shipping\Models\ShippingZone;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -57,4 +77,92 @@ function rawOrder(array $order = []): int
     DB::table('order_events')->insert(['order_id' => $orderId, 'type' => 'placed', 'created_at' => $now]);
 
     return $orderId;
+}
+
+/**
+ * A shipping method for orders tests, made straight in the current store: shipped within a zone covering everywhere, or a pickup in Lagos.
+ */
+function orderShippingMethod(ShippingFulfilment $fulfilment = ShippingFulfilment::Ship, string $name = 'Standard'): ShippingMethod
+{
+    $zone = ShippingZone::query()->firstOrCreate(['name' => 'Everywhere'], ['is_active' => true, 'covers_rest_of_world' => false]);
+    $pickup = $fulfilment === ShippingFulfilment::Pickup;
+    $method = (new ShippingMethod)->forceFill([
+        'shipping_zone_id' => $pickup ? null : $zone->id, 'name' => ['en' => $name, 'fr' => "{$name} (fr)"], 'fulfilment' => $fulfilment, 'pricing' => ShippingPricing::Flat,
+        'currency' => app(FindStoreSettings::class)->handle()->currency_code,
+        ...($pickup ? ['stock_location_id' => StockLocation::query()->sole()->id, 'pickup_country_code' => 'NG', 'pickup_state_code' => 'LA', 'pickup_address_line1' => '1 Allen Avenue', 'pickup_city' => 'Ikeja'] : []),
+    ]);
+    $method->save();
+
+    return $method;
+}
+
+/**
+ * A shopper's address in Lagos, as Checkout would copy it.
+ */
+function orderAddress(string $line1 = '5 Allen Avenue'): AddressSnapshot
+{
+    return new AddressSnapshot('Ada Obi', null, $line1, null, 'Ikeja', 'LA', '100271', 'NG', '+2348012345678');
+}
+
+/**
+ * What Checkout would hand over for the lines given: priced with their discounts (and shipping, when a method is given), with the checkout's stock hold and promotion uses reserved, as Step 16 will.
+ *
+ * @param  list<array{0: ProductVariant, 1: int}>  $lines  Each variant and how many.
+ */
+function orderDraft(
+    array $lines,
+    ?ShippingMethod $method = null,
+    int $shippingAmount = 1500,
+    ?OrderBuyer $buyer = null,
+    ?string $currency = null,
+    ?string $code = null,
+    ?TaxAddress $destination = null,
+    ?CarbonImmutable $paymentDueAt = null,
+    string $locale = 'en',
+    ?string $checkout = null,
+    ?AddressSnapshot $billingAddress = null,
+): OrderDraft {
+    $checkout ??= strtolower((string) Str::ulid());
+    $buyer ??= OrderBuyer::guest('ada@example.com', 'Ada Obi', '+2348012345678');
+    $discountBuyer = $buyer->customer === null ? DiscountBuyer::guest($buyer->email) : DiscountBuyer::customer($buyer->customer);
+    $basket = discountedBasket($lines, $code, $discountBuyer, $method === null ? null : $shippingAmount, $currency, null, $destination, $checkout);
+    $stockHolder = new StockHolder('checkout', $checkout);
+    $promotionHolder = new RedemptionHolder('checkout', $checkout);
+
+    app(ReserveStock::class)->handle($stockHolder, array_map(static fn (array $line): StockLine => new StockLine($line[0], $line[1]), $lines), CarbonImmutable::now()->addMinutes(15));
+    app(ReservePromotionUses::class)->handle($promotionHolder, $basket->discounts, $discountBuyer, CarbonImmutable::now()->addMinutes(15));
+
+    $option = $method === null ? null : new ShippingOption($method, Money::ofMinor($shippingAmount, $basket->priced->currency), true);
+
+    return new OrderDraft(
+        $checkout, $basket, $buyer, $billingAddress, $method !== null && $method->fulfilment->needsAddress() ? orderAddress() : null,
+        $option, $stockHolder, $promotionHolder, $locale, 'Leave it at the gate.', $paymentDueAt,
+    );
+}
+
+/**
+ * Places the draft and returns the order, freshly read.
+ */
+function placeOrder(OrderDraft $draft): Order
+{
+    return app(PlaceOrder::class)->handle($draft)->order->refresh();
+}
+
+/**
+ * A variant with options, named in English and French.
+ */
+function optionedVariant(int $price): ProductVariant
+{
+    $variant = cartVariant($price, stock: 5, name: 'Linen shirt');
+    $variant->product->forceFill(['name' => ['en' => 'Linen shirt', 'fr' => 'Chemise en lin']])->save();
+    $variant->forceFill(['sku' => 'LIN-BLU-M'])->save();
+
+    foreach ([['Colour', 'Blue', 'Bleu'], ['Size', 'M', 'M']] as [$name, $en, $fr]) {
+        $attribute = Attribute::query()->create(['name' => ['en' => $name]]);
+        $value = (new AttributeValue)->forceFill(['attribute_id' => $attribute->id, 'label' => ['en' => $en, 'fr' => $fr], 'position' => 0]);
+        $value->save();
+        $variant->attributeValues()->attach($value->id, ['attribute_id' => $attribute->id]);
+    }
+
+    return $variant;
 }

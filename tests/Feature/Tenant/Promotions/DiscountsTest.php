@@ -346,14 +346,15 @@ it('gives a code that can\'t be used now the same answer as one that doesn\'t ex
     });
 });
 
-it('gives first-order promotions only to buyers known to have no orders, failing closed until Orders can tell', function (): void {
+it('gives first-order promotions only to buyers known to have no orders, and never to a guest who hasn\'t said who they are', function (): void {
     $this->store->run(function (): void {
         runningPromotion(['first_order_only' => true]);
         $variant = promotedVariant(1000);
         $customer = Customer::factory()->create();
 
+        // Orders tells: a customer with no orders gets it; a guest with no email yet can't be checked, so doesn't.
         expect(lineDiscountsOf(discountedBasket([[$variant, 1]], buyer: DiscountBuyer::guest(null))))->toBe(['line-1' => 0])
-            ->and(lineDiscountsOf(discountedBasket([[$variant, 1]], buyer: DiscountBuyer::customer($customer))))->toBe(['line-1' => 0]);
+            ->and(lineDiscountsOf(discountedBasket([[$variant, 1]], buyer: DiscountBuyer::customer($customer))))->toBe(['line-1' => 100]);
 
         $this->app->instance(OrderHistory::class, new class implements OrderHistory
         {
