@@ -176,5 +176,7 @@ return [
     // Orders
     'order_cannot_be_cancelled' => 'This order can no longer be cancelled: it is completed, already cancelled, or has started to ship. Once anything has shipped, use a return instead.',
     'order_already_paid' => 'This order is paid for, so only the store can cancel it. Contact the store.',
+    'order_address_cannot_be_corrected' => 'This order\'s shipping address can no longer be corrected: part of it has already shipped, or it is completed or cancelled.',
+    'order_address_region_changed' => 'A corrected address must stay in the same country and state, since tax and shipping were charged for them. Cancel the order and place a new one instead.',
 
 ];

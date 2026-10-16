@@ -11,6 +11,7 @@ use App\Shared\Money\Money;
 use App\Shared\Money\MoneyCast;
 use App\Shared\Money\TaxMode;
 use App\Tenant\Customers\Models\Customer;
+use App\Tenant\Orders\Data\OrderContact;
 use App\Tenant\Orders\Enums\CancellationReason;
 use App\Tenant\Orders\Enums\FulfilmentStatus;
 use App\Tenant\Orders\Enums\OrderAddressKind;
@@ -86,6 +87,9 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property-read OrderShipping|null $shippingLine
  * @property-read Collection<int, OrderAddress> $addresses
  * @property-read Collection<int, OrderEvent> $events
+ * @property-read Collection<int, OrderContactCorrection> $contactCorrections
+ * @property-read Collection<int, OrderNote> $notes
+ * @property-read Collection<int, OrderTag> $tags
  */
 final class Order extends Model implements AuditableContract
 {
@@ -124,6 +128,44 @@ final class Order extends Model implements AuditableContract
     public function awaitsPayment(): bool
     {
         return $this->status === OrderStatus::Open && $this->payment_status === PaymentStatus::Unpaid;
+    }
+
+    /**
+     * The contact details as they stand: staff's latest correction, or as given at checkout.
+     */
+    public function currentContact(): OrderContact
+    {
+        $correction = $this->contactCorrections->sortByDesc('id')->first();
+
+        return $correction === null
+            ? new OrderContact($this->contact_email, $this->contact_name, $this->contact_phone, false)
+            : new OrderContact($correction->email, $correction->name, $correction->phone, true);
+    }
+
+    /**
+     * Staff's corrections of its contact details, oldest first.
+     *
+     * @return HasMany<OrderContactCorrection, $this>
+     */
+    public function contactCorrections(): HasMany
+    {
+        return $this->hasMany(OrderContactCorrection::class)->orderBy('id');
+    }
+
+    /**
+     * @return HasMany<OrderNote, $this>
+     */
+    public function notes(): HasMany
+    {
+        return $this->hasMany(OrderNote::class);
+    }
+
+    /**
+     * @return HasMany<OrderTag, $this>
+     */
+    public function tags(): HasMany
+    {
+        return $this->hasMany(OrderTag::class);
     }
 
     /**

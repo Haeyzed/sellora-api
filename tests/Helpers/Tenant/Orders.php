@@ -2,11 +2,15 @@
 
 declare(strict_types=1);
 
+use App\Shared\Auth\AccessTokenIssuer;
+use App\Shared\Auth\Models\Role;
 use App\Shared\Money\Money;
 use App\Tenant\Catalog\Models\Attribute;
 use App\Tenant\Catalog\Models\AttributeValue;
 use App\Tenant\Catalog\Models\ProductVariant;
 use App\Tenant\Customers\Data\AddressSnapshot;
+use App\Tenant\Identity\Enums\StaffRole;
+use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Inventory\Actions\ReserveStock;
 use App\Tenant\Inventory\Data\StockHolder;
 use App\Tenant\Inventory\Data\StockLine;
@@ -15,6 +19,7 @@ use App\Tenant\Orders\Actions\MarkOrderAsPaid;
 use App\Tenant\Orders\Actions\PlaceOrder;
 use App\Tenant\Orders\Data\OrderBuyer;
 use App\Tenant\Orders\Data\OrderDraft;
+use App\Tenant\Orders\Enums\OrderPermission;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Pricing\Data\TaxAddress;
 use App\Tenant\Promotions\Actions\ReservePromotionUses;
@@ -29,6 +34,8 @@ use App\Tenant\Shipping\Models\ShippingZone;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Testing\TestResponse;
+use Spatie\Permission\Models\Permission;
 
 /*
 |--------------------------------------------------------------------------
@@ -174,4 +181,52 @@ function optionedVariant(int $price): ProductVariant
 function markPaid(Order $order): Order
 {
     return app(MarkOrderAsPaid::class)->handle($order)->refresh();
+}
+
+/**
+ * Sends a request to a store's staff API, under /api/v1/staff, as the test's owner unless another staff member is given.
+ *
+ * @param  array<string, mixed>  $data
+ * @param  array<string, string>  $headers
+ */
+function staffOrderRequest(string $method, string $path, array $data = [], ?StaffMember $as = null, array $headers = [], string $subdomain = 'orders-store'): TestResponse
+{
+    forgetSignIns();
+    $token = test()->store->run(static fn (): string => app(AccessTokenIssuer::class)->issue($as ?? test()->owner, StaffMember::GUARD, 'test')->plainTextToken);
+
+    $response = test()->withToken($token)->withHeaders($headers)->json($method, storeUrl($subdomain, '/api/v1/staff'.$path), $data);
+    test()->flushHeaders();
+    tenancy()->end();
+    forgetSignIns();
+
+    return $response;
+}
+
+/**
+ * The store's owner and a staff member who may only see orders.
+ *
+ * @return array{StaffMember, StaffMember}
+ */
+function orderStaff(): array
+{
+    $owner = StaffMember::factory()->create();
+    $owner->assignRole(StaffRole::Owner->value);
+
+    $role = Role::findOrCreate('Order viewer', StaffMember::GUARD);
+    $role->givePermissionTo(Permission::findByName(OrderPermission::OrdersView->value, StaffMember::GUARD));
+    $viewer = StaffMember::factory()->create();
+    $viewer->assignRole($role);
+
+    return [$owner, $viewer];
+}
+
+/**
+ * A shipping address in Lagos as the API takes it, with any fields changed.
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function orderAddressPayload(array $overrides = []): array
+{
+    return [...['recipient_name' => 'Ada Obi', 'line1' => '5 Allen Avenue', 'city' => 'Ikeja', 'state' => 'LA', 'postal_code' => '100271', 'country' => 'NG', 'phone' => '+2348012345678'], ...$overrides];
 }

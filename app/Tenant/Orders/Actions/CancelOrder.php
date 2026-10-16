@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tenant\Orders\Actions;
 
 use App\Shared\Auth\AccountReference;
+use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Inventory\Actions\ReleaseReservation;
 use App\Tenant\Inventory\Data\StockHolder;
 use App\Tenant\Orders\Enums\CancellationReason;
@@ -16,6 +17,7 @@ use App\Tenant\Orders\Events\OrderCancelled;
 use App\Tenant\Orders\Exceptions\OrderAlreadyPaidException;
 use App\Tenant\Orders\Exceptions\OrderCannotBeCancelledException;
 use App\Tenant\Orders\Models\Order;
+use App\Tenant\Orders\Services\OrderActivity;
 use App\Tenant\Orders\Services\OrderEventLog;
 use App\Tenant\Orders\Services\OrderProgress;
 use App\Tenant\Promotions\Actions\SettlePromotionUses;
@@ -38,7 +40,21 @@ final readonly class CancelOrder
         private OrderEventLog $orderEventLog,
         private ReleaseReservation $releaseReservation,
         private SettlePromotionUses $settlePromotionUses,
+        private OrderActivity $orderActivity,
     ) {}
+
+    /**
+     * Staff cancelling an order, recorded in the activity log.
+     *
+     * @throws OrderCannotBeCancelledException When it is completed, cancelled, or has started to ship.
+     */
+    public function byStaff(StaffMember $actor, Order $order): Order
+    {
+        $cancelled = $this->handle($order, CancellationReason::Staff, AccountReference::to($actor));
+        $this->orderActivity->record($actor, $cancelled, 'order_cancelled', 'Cancelled');
+
+        return $cancelled;
+    }
 
     /**
      * Staff, or the order's customer, cancelling it.

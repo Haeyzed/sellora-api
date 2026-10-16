@@ -39,5 +39,8 @@ final class OrderStoreTables implements ClassifiesStoreTables
             'created_by_type', 'created_by_id', 'created_at',
         ]);
         $registry->table('order_events', include: ['id', 'order_id', 'type', 'data', 'actor_type', 'actor_id', 'created_at']);
+        $registry->table('order_contact_corrections', include: ['id', 'order_id', 'email', 'name', 'phone', 'created_by_type', 'created_by_id', 'created_at']);
+        $registry->table('order_notes', include: ['id', 'public_id', 'order_id', 'author_staff_id', 'body', 'created_at']);
+        $registry->table('order_tags', include: ['order_id', 'tag']);
     }
 }

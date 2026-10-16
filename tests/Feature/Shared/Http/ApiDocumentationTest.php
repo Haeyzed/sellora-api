@@ -47,7 +47,7 @@ const PAGE_NUMBER_LISTS = [
 ];
 
 const CURSOR_LISTS = [
-    'default' => ['/staff/catalog/products', '/catalog/products', '/staff/inventory/levels', '/staff/inventory/variants/{variant}/movements', '/staff/customers', '/staff/customers/{customer}/notes', '/staff/customers/{customer}/marketing-consents', '/staff/customer-groups/{customerGroup}/members', '/staff/promotions/{promotion}/codes'],
+    'default' => ['/staff/catalog/products', '/catalog/products', '/staff/inventory/levels', '/staff/inventory/variants/{variant}/movements', '/staff/customers', '/staff/customers/{customer}/notes', '/staff/customers/{customer}/marketing-consents', '/staff/customer-groups/{customerGroup}/members', '/staff/promotions/{promotion}/codes', '/staff/orders', '/staff/customers/{customer}/orders'],
     'platform' => ['/exchange-rates'],
 ];
 
@@ -347,6 +347,40 @@ it('documents every cart endpoint', function (): void {
         ->and(collect($store['paths']['/cart/lines/{line}']['patch']['parameters'])->pluck('name')->all())->toContain('If-Match')
         ->and(json_encode($store['paths']['/cart/lines/{line}']['patch']['responses'][412]))->toContain('cart_changed')
         ->and(json_encode($store['paths']['/cart/lines/{line}']['delete']['responses'][428]))->toContain('cart_version_required');
+});
+
+/*
+ * Step 14: every order endpoint is documented, with cursor paging, the
+ * business errors, and the order as staff and customers see it.
+ */
+it('documents every order endpoint', function (): void {
+    $store = documentedApi('default');
+
+    $expected = [
+        '/staff/orders' => ['get'],
+        '/staff/orders/{order}' => ['get'],
+        '/staff/orders/{order}/events' => ['get'],
+        '/staff/orders/{order}/cancel' => ['post'],
+        '/staff/orders/{order}/tags' => ['put'],
+        '/staff/orders/{order}/contact' => ['put'],
+        '/staff/orders/{order}/shipping-address' => ['put'],
+        '/staff/orders/{order}/notes' => ['get', 'post'],
+        '/staff/orders/{order}/notes/{note}' => ['delete'],
+        '/staff/customers/{customer}/orders' => ['get'],
+    ];
+
+    foreach ($expected as $path => $methods) {
+        expect($store['paths'])->toHaveKey($path)
+            ->and(array_keys($store['paths'][$path]))->toContain(...$methods);
+    }
+
+    expect($store['paths']['/staff/orders']['get']['description'])->toContain('Paged by cursor')
+        ->and(collect($store['paths']['/staff/orders']['get']['parameters'])->pluck('name')->all())->toContain('search', 'status', 'payment_status', 'fulfilment_status', 'placed_from', 'placed_to', 'customer', 'tag')
+        ->and(json_encode($store['paths']['/staff/orders/{order}/cancel']['post']['responses'][409]))->toContain('order_cannot_be_cancelled')
+        ->and(json_encode($store['paths']['/staff/orders/{order}/shipping-address']['put']['responses'][409]))->toContain('order_address_cannot_be_corrected')
+        ->and(json_encode($store['paths']['/staff/orders/{order}/shipping-address']['put']['responses'][422]))->toContain('order_address_region_changed')
+        ->and(array_keys($store['components']['schemas']['OrderResource']['properties']))->toContain('number', 'status', 'payment_status', 'fulfilment_status', 'refund_due', 'contact', 'totals', 'exchange_rate', 'lines', 'shipping', 'shipping_address', 'billing_address', 'tags', 'payment_due_at')
+        ->and(array_keys($store['components']['schemas']['OrderResource']['properties']['contact']['properties']))->toBe(['email', 'name', 'phone', 'is_corrected']);
 });
 
 /*
