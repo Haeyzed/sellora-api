@@ -222,6 +222,25 @@ it('documents every promotion endpoint', function (): void {
 });
 
 /*
+ * Fields and filters Scramble couldn't type are documented with their real
+ * types, never as an unknown one shown as a string.
+ */
+it('documents counts and filters with their real types', function (): void {
+    $store = documentedApi('default');
+    $status = collect($store['paths']['/staff/inventory/levels']['get']['parameters'])->firstWhere('name', 'status');
+
+    expect($status['schema'])->toBe(['type' => 'string', 'enum' => ['low', 'out']])
+        ->and($store['components']['schemas']['StaffRoleResource']['properties']['staff_count']['type'])->toBe('integer')
+        ->and($store['components']['schemas']['StaffRoleResource']['required'])->not->toContain('staff_count')
+        ->and($store['components']['schemas']['PromotionResource']['properties']['times_reserved']['type'])->toBe('integer')
+        ->and($store['components']['schemas']['PromotionResource']['required'])->toContain('times_reserved');
+});
+
+it('types everything in each API, with no unknown types and no empty operations', function (string $api): void {
+    $this->artisan('scramble:analyze', ['--api' => $api, '--fail-on-unknown' => true, '--fail-on-empty' => true])->assertExitCode(0);
+})->with(['default', 'platform', 'registration']);
+
+/*
  * Step 12: every cart endpoint is documented, with the guest's cart token,
  * the version a change is made from, each line's status and price change,
  * the tax estimate, and the business errors.

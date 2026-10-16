@@ -39,7 +39,7 @@ final class StaffRoleResource extends JsonResource
             /** @var list<string> Permission names, sorted. Empty for Owner, which needs none. */
             'permissions' => $this->whenLoaded('permissions', fn (): array => array_values($this->resource->permissions->map(static fn (Permission $permission): string => $permission->name)->sort()->all())),
             /** How many staff members have the role, deactivated ones included. */
-            'staff_count' => $this->whenHas('staff_count'),
+            'staff_count' => $this->whenHas('staff_count', static fn (mixed $count): int => (int) $count),
         ];
     }
 }

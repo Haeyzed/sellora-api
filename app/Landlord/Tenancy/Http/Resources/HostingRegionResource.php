@@ -27,8 +27,9 @@ final class HostingRegionResource extends JsonResource
         $name = __('regions.'.$this->resource);
 
         return [
-            /** The code to send when registering, such as "eu". */
+            /** @var string The code to send when registering, such as "eu". */
             'code' => $this->resource,
+            /** @var string */
             'name' => is_string($name) ? $name : $this->resource,
         ];
     }

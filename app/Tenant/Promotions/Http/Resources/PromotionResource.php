@@ -76,7 +76,7 @@ final class PromotionResource extends JsonResource
             /** How many paid orders used it. */
             'times_used' => $promotion->redemptions()->where('status', RedemptionStatus::Committed->value)->count(),
             /** How many open checkouts hold a use of it now. With times_used, what counts against its limits. */
-            'times_reserved' => $promotion->redemptions()->counting()->where('status', RedemptionStatus::Reserved->value)->count(),
+            'times_reserved' => $this->timesReserved($promotion),
             'starts_at' => $this->local($promotion->starts_at),
             'ends_at' => $this->local($promotion->ends_at),
             'is_active' => $promotion->is_active,
@@ -94,6 +94,14 @@ final class PromotionResource extends JsonResource
             'updated_at' => $this->local($promotion->updated_at),
             'archived_at' => $this->local($promotion->deleted_at),
         ];
+    }
+
+    /**
+     * The uses open checkouts hold now and still count against its limits.
+     */
+    private function timesReserved(Promotion $promotion): int
+    {
+        return $promotion->redemptions()->counting()->where('status', RedemptionStatus::Reserved->value)->count();
     }
 
     private function local(?CarbonImmutable $at): ?string

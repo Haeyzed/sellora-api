@@ -39,7 +39,7 @@ final class PlatformRoleResource extends JsonResource
             /** @var list<string> Permission names, sorted. Empty for Super Admin, which needs none. */
             'permissions' => $this->whenLoaded('permissions', fn (): array => array_values($this->resource->permissions->map(static fn (Permission $permission): string => $permission->name)->sort()->all())),
             /** How many platform admins have the role, deactivated ones included. */
-            'admin_count' => $this->whenHas('admin_count'),
+            'admin_count' => $this->whenHas('admin_count', static fn (mixed $count): int => (int) $count),
         ];
     }
 }

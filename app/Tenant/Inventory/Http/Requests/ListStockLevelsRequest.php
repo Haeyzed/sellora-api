@@ -33,7 +33,7 @@ final class ListStockLevelsRequest extends CursorListRequest
             /** The location's ID; the store's default location when left out. */
             'location' => $this->locationRules(),
             /** "low" for counted variants at or below their low-stock threshold with some left, "out" for counted variants with none left to sell. */
-            'status' => ['sometimes', Rule::in(['low', 'out'])],
+            'status' => ['sometimes', 'string', Rule::in(['low', 'out'])],
             /** A product's ID: only its variants. */
             'product' => ['sometimes', 'string', Rule::exists(Product::class, 'public_id')->whereNull('deleted_at')],
         ];
