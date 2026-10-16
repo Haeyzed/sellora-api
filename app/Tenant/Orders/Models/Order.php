@@ -90,6 +90,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property-read Collection<int, OrderContactCorrection> $contactCorrections
  * @property-read Collection<int, OrderNote> $notes
  * @property-read Collection<int, OrderTag> $tags
+ * @property-read Collection<int, Shipment> $shipments
  */
 final class Order extends Model implements AuditableContract
 {
@@ -218,6 +219,16 @@ final class Order extends Model implements AuditableContract
     public function addresses(): HasMany
     {
         return $this->hasMany(OrderAddress::class)->orderBy('kind')->orderBy('version');
+    }
+
+    /**
+     * Its shipments, cancelled ones included.
+     *
+     * @return HasMany<Shipment, $this>
+     */
+    public function shipments(): HasMany
+    {
+        return $this->hasMany(Shipment::class)->orderBy('id');
     }
 
     /**

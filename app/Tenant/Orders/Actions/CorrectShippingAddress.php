@@ -44,7 +44,7 @@ final readonly class CorrectShippingAddress
             $locked = $this->orderProgress->lock($order);
             $current = $locked->load('addresses')->currentAddress(OrderAddressKind::Shipping);
 
-            if ($locked->status !== OrderStatus::Open || $current === null || $locked->fulfilment_status !== FulfilmentStatus::Unfulfilled) {
+            if ($locked->status !== OrderStatus::Open || $current === null || $locked->fulfilment_status !== FulfilmentStatus::Unfulfilled || $this->orderProgress->hasShipments($locked)) {
                 throw new OrderAddressCannotBeCorrectedException;
             }
 

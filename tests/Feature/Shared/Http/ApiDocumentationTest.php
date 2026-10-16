@@ -47,7 +47,7 @@ const PAGE_NUMBER_LISTS = [
 ];
 
 const CURSOR_LISTS = [
-    'default' => ['/staff/catalog/products', '/catalog/products', '/staff/inventory/levels', '/staff/inventory/variants/{variant}/movements', '/staff/customers', '/staff/customers/{customer}/notes', '/staff/customers/{customer}/marketing-consents', '/staff/customer-groups/{customerGroup}/members', '/staff/promotions/{promotion}/codes', '/staff/orders', '/staff/customers/{customer}/orders'],
+    'default' => ['/staff/catalog/products', '/catalog/products', '/staff/inventory/levels', '/staff/inventory/variants/{variant}/movements', '/staff/customers', '/staff/customers/{customer}/notes', '/staff/customers/{customer}/marketing-consents', '/staff/customer-groups/{customerGroup}/members', '/staff/promotions/{promotion}/codes', '/staff/orders', '/staff/customers/{customer}/orders', '/staff/shipments'],
     'platform' => ['/exchange-rates'],
 ];
 
@@ -381,6 +381,33 @@ it('documents every order endpoint', function (): void {
         ->and(json_encode($store['paths']['/staff/orders/{order}/shipping-address']['put']['responses'][422]))->toContain('order_address_region_changed')
         ->and(array_keys($store['components']['schemas']['OrderResource']['properties']))->toContain('number', 'status', 'payment_status', 'fulfilment_status', 'refund_due', 'contact', 'totals', 'exchange_rate', 'lines', 'shipping', 'shipping_address', 'billing_address', 'tags', 'payment_due_at')
         ->and(array_keys($store['components']['schemas']['OrderResource']['properties']['contact']['properties']))->toBe(['email', 'name', 'phone', 'is_corrected']);
+});
+
+it('documents every shipment endpoint', function (): void {
+    $store = documentedApi('default');
+
+    $expected = [
+        '/staff/shipments' => ['get'],
+        '/staff/shipments/{shipment}' => ['get', 'patch'],
+        '/staff/shipments/{shipment}/ready' => ['post'],
+        '/staff/shipments/{shipment}/ship' => ['post'],
+        '/staff/shipments/{shipment}/deliver' => ['post'],
+        '/staff/shipments/{shipment}/cancel' => ['post'],
+        '/staff/orders/{order}/shipments' => ['get', 'post'],
+    ];
+
+    foreach ($expected as $path => $methods) {
+        expect($store['paths'])->toHaveKey($path)
+            ->and(array_keys($store['paths'][$path]))->toContain(...$methods);
+    }
+
+    expect($store['paths']['/staff/shipments']['get']['description'])->toContain('Paged by cursor')
+        ->and(collect($store['paths']['/staff/orders/{order}/shipments']['post']['parameters'])->pluck('name')->all())->toContain('Idempotency-Key')
+        ->and(json_encode($store['paths']['/staff/orders/{order}/shipments']['post']['responses'][409]))->toContain('order_cannot_be_fulfilled')
+        ->and(json_encode($store['paths']['/staff/orders/{order}/shipments']['post']['responses'][422]))->toContain('shipment_quantity_too_high')
+        ->and(json_encode($store['paths']['/staff/shipments/{shipment}/ship']['post']['responses'][422]))->toContain('tracking_number_required')
+        ->and(json_encode($store['paths']['/staff/shipments/{shipment}/ship']['post']['responses'][409]))->toContain('shipment_transition_not_allowed')->toContain('insufficient_stock')
+        ->and(array_keys($store['components']['schemas']['ShipmentResource']['properties']))->toContain('fulfilment', 'status', 'tracking_number', 'tracking_url', 'lines', 'shipped_at', 'delivered_at');
 });
 
 /*

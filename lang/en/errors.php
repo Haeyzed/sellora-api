@@ -178,5 +178,11 @@ return [
     'order_already_paid' => 'This order is paid for, so only the store can cancel it. Contact the store.',
     'order_address_cannot_be_corrected' => 'This order\'s shipping address can no longer be corrected: part of it has already shipped, or it is completed or cancelled.',
     'order_address_region_changed' => 'A corrected address must stay in the same country and state, since tax and shipping were charged for them. Cancel the order and place a new one instead.',
+    'order_cannot_be_fulfilled' => 'This order can\'t be shipped: it must be open, paid for, and have something that ships.',
+    'shipment_quantity_too_high' => 'A shipment can\'t send more of a line than is left to ship.',
+    'shipment_quantity_left' => 'Only :left of this line is left to ship.',
+    'shipment_transition_not_allowed' => 'This shipment can\'t move to that status from where it is now.',
+    'shipment_closed' => 'This shipment has arrived or was cancelled, so its tracking can no longer change.',
+    'tracking_number_required' => 'Add the carrier\'s tracking number before marking this shipment as shipped, so the buyer can follow it.',
 
 ];

@@ -13,7 +13,9 @@ use App\Tenant\Orders\Enums\FulfilmentStatus;
 use App\Tenant\Orders\Enums\OrderEventType;
 use App\Tenant\Orders\Enums\OrderStatus;
 use App\Tenant\Orders\Enums\PaymentStatus;
+use App\Tenant\Orders\Enums\ShipmentStatus;
 use App\Tenant\Orders\Events\OrderCancelled;
+use App\Tenant\Orders\Events\ShipmentCancelled;
 use App\Tenant\Orders\Exceptions\OrderAlreadyPaidException;
 use App\Tenant\Orders\Exceptions\OrderCannotBeCancelledException;
 use App\Tenant\Orders\Models\Order;
@@ -26,7 +28,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Cancels an open order before anything has shipped, giving back the stock it holds and its promotion uses (section 13).
+ * Cancels an open order before anything has shipped, giving back the stock it holds and its promotion uses, and cancelling its shipments that haven't left (section 13).
  *
  * Staff may cancel a paid order too: it is then marked as owing a refund,
  * which Payments makes (Step 15). Its customer may cancel only before paying.
@@ -106,15 +108,31 @@ final readonly class CancelOrder
     }
 
     /**
-     * Whether anything on it has left: then it can't be cancelled.
+     * Whether anything on it has left (shipped, or a pickup collected), as its fulfilment says: then it can't be cancelled.
      */
     private function hasShipped(Order $locked): bool
     {
         return in_array($locked->fulfilment_status, [FulfilmentStatus::PartiallyFulfilled, FulfilmentStatus::Fulfilled], true);
     }
 
+    /**
+     * Its shipments that haven't left are cancelled with it, so nothing is sent for a cancelled order.
+     */
+    private function cancelOpenShipments(Order $locked, ?AccountReference $actor): void
+    {
+        $open = $locked->shipments()->whereIn('status', [ShipmentStatus::Pending->value, ShipmentStatus::ReadyForPickup->value])->lockForUpdate()->get();
+
+        foreach ($open as $shipment) {
+            $from = $shipment->status;
+            $shipment->forceFill(['status' => ShipmentStatus::Cancelled, 'cancelled_at' => CarbonImmutable::now()])->save();
+            $this->orderEventLog->record($locked, OrderEventType::ShipmentCancelled, ['shipment' => $shipment->public_id, 'from' => $from->value, 'to' => ShipmentStatus::Cancelled->value], $actor);
+            ShipmentCancelled::dispatch($shipment);
+        }
+    }
+
     private function cancel(Order $locked, CancellationReason $reason, ?AccountReference $actor): Order
     {
+        $this->cancelOpenShipments($locked, $actor);
         $this->releaseReservation->handle(StockHolder::of($locked), causer: $actor);
         $this->settlePromotionUses->release(new RedemptionHolder($locked->getMorphClass(), $locked->public_id));
 

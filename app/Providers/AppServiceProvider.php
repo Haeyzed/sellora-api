@@ -117,6 +117,7 @@ use App\Tenant\Orders\Enums\OrderPermission;
 use App\Tenant\Orders\ExpiredOrderSweep;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Orders\Models\OrderNote;
+use App\Tenant\Orders\Models\Shipment;
 use App\Tenant\Orders\OrderPricedRecords;
 use App\Tenant\Orders\OrderStoreTables;
 use App\Tenant\Orders\Services\PlacedOrderHistory;
@@ -471,6 +472,7 @@ final class AppServiceProvider extends ServiceProvider
             'shipping_method' => ShippingMethod::class,
             'order' => Order::class,
             'order_note' => OrderNote::class,
+            'shipment' => Shipment::class,
         ]);
     }
 
