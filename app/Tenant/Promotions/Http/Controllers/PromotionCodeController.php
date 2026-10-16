@@ -17,6 +17,7 @@ use App\Tenant\Promotions\Http\Requests\UpdatePromotionCodeRequest;
 use App\Tenant\Promotions\Http\Resources\PromotionCodeResource;
 use App\Tenant\Promotions\Models\Promotion;
 use App\Tenant\Promotions\Models\PromotionCode;
+use Dedoc\Scramble\Attributes\HeaderParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
@@ -65,6 +66,7 @@ final class PromotionCodeController extends Controller
      *
      * @throws PromotionTakesNoCodesException
      */
+    #[HeaderParameter('Idempotency-Key', 'A new key for each batch, 8 to 128 letters, digits, - or _. Sending the same request again with it returns the first answer instead of making a second batch.', required: true, type: 'string', example: 'codes-2f9c1a7e')]
     public function generate(GeneratePromotionCodesRequest $request, Promotion $promotion, ManagePromotionCodes $managePromotionCodes): JsonResponse
     {
         $result = $managePromotionCodes->generate($request->actor(), $promotion, $request->count(), $request->length(), $request->prefix(), $request->usageLimit());

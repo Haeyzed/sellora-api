@@ -383,6 +383,23 @@ it('documents every order endpoint', function (): void {
         ->and(array_keys($store['components']['schemas']['OrderResource']['properties']['contact']['properties']))->toBe(['email', 'name', 'phone', 'is_corrected']);
 });
 
+it('documents the required Idempotency-Key header on every endpoint that needs one', function (): void {
+    $store = documentedApi('default');
+    $idempotent = collect(Route::getRoutes()->getRoutes())->filter(static fn (Illuminate\Routing\Route $route): bool => in_array('idempotent', $route->gatherMiddleware(), true));
+
+    expect($idempotent)->not->toBeEmpty();
+
+    foreach ($idempotent as $route) {
+        $path = Str::after($route->uri(), 'api/v1');
+        $method = mb_strtolower(collect($route->methods())->reject(static fn (string $method): bool => $method === 'HEAD')->first());
+        $header = collect($store['paths'][$path][$method]['parameters'] ?? [])->firstWhere('name', 'Idempotency-Key');
+
+        expect($header)->not->toBeNull("{$method} {$path} documents Idempotency-Key")
+            ->and($header['in'])->toBe('header')
+            ->and($header['required'])->toBeTrue();
+    }
+});
+
 it('documents every shipment endpoint', function (): void {
     $store = documentedApi('default');
 
