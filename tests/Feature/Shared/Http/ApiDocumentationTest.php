@@ -47,7 +47,7 @@ const PAGE_NUMBER_LISTS = [
 ];
 
 const CURSOR_LISTS = [
-    'default' => ['/staff/catalog/products', '/catalog/products', '/staff/inventory/levels', '/staff/inventory/variants/{variant}/movements', '/staff/customers', '/staff/customers/{customer}/notes', '/staff/customers/{customer}/marketing-consents', '/staff/customer-groups/{customerGroup}/members', '/staff/promotions/{promotion}/codes', '/staff/orders', '/staff/customers/{customer}/orders', '/staff/shipments'],
+    'default' => ['/staff/catalog/products', '/catalog/products', '/staff/inventory/levels', '/staff/inventory/variants/{variant}/movements', '/staff/customers', '/staff/customers/{customer}/notes', '/staff/customers/{customer}/marketing-consents', '/staff/customer-groups/{customerGroup}/members', '/staff/promotions/{promotion}/codes', '/staff/orders', '/staff/customers/{customer}/orders', '/staff/shipments', '/customer/orders'],
     'platform' => ['/exchange-rates'],
 ];
 
@@ -408,6 +408,20 @@ it('documents every shipment endpoint', function (): void {
         ->and(json_encode($store['paths']['/staff/shipments/{shipment}/ship']['post']['responses'][422]))->toContain('tracking_number_required')
         ->and(json_encode($store['paths']['/staff/shipments/{shipment}/ship']['post']['responses'][409]))->toContain('shipment_transition_not_allowed')->toContain('insufficient_stock')
         ->and(array_keys($store['components']['schemas']['ShipmentResource']['properties']))->toContain('fulfilment', 'status', 'tracking_number', 'tracking_url', 'lines', 'shipped_at', 'delivered_at');
+});
+
+it('documents a customer\'s order history and staff answering guests\' data requests', function (): void {
+    $store = documentedApi('default');
+
+    expect(array_keys($store['paths']['/customer/orders']))->toBe(['get'])
+        ->and(array_keys($store['paths']['/customer/orders/{order}']))->toBe(['get'])
+        ->and(array_keys($store['paths']['/customer/orders/{order}/cancel']))->toBe(['post'])
+        ->and($store['paths']['/customer/orders']['get']['description'])->toContain('Paged by cursor')
+        ->and(json_encode($store['paths']['/customer/orders/{order}/cancel']['post']['responses'][409]))->toContain('order_already_paid')->toContain('order_cannot_be_cancelled')
+        ->and(array_keys($store['components']['schemas']['CustomerOrderResource']['properties']))->toContain('number', 'status', 'lines', 'totals', 'shipments')->not->toContain('tags', 'refund_due')
+        ->and(array_keys($store['paths']['/staff/guest-personal-data']))->toBe(['post'])
+        ->and(array_keys($store['paths']['/staff/guest-personal-data/erasure']))->toBe(['post'])
+        ->and(array_keys($store['components']['schemas']['StoreSettingsResource']['properties']))->toContain('order_retention_years', 'order_retention_default_years');
 });
 
 /*

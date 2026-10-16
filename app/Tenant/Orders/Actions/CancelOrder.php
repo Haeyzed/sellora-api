@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tenant\Orders\Actions;
 
 use App\Shared\Auth\AccountReference;
+use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Inventory\Actions\ReleaseReservation;
 use App\Tenant\Inventory\Data\StockHolder;
@@ -56,6 +57,29 @@ final readonly class CancelOrder
         $this->orderActivity->record($actor, $cancelled, 'order_cancelled', 'Cancelled');
 
         return $cancelled;
+    }
+
+    /**
+     * Its customer cancelling it, only before paying.
+     *
+     * @throws OrderCannotBeCancelledException When it is completed, cancelled, or has started to ship.
+     * @throws OrderAlreadyPaidException When it is paid for: only the store can cancel it then.
+     */
+    public function byCustomer(Customer $customer, Order $order): Order
+    {
+        return $this->handle($order, CancellationReason::Customer, AccountReference::to($customer));
+    }
+
+    /**
+     * Cancels an order still waiting for payment because its buyer's personal data is being erased, inside the erasure's transaction. An order no longer waiting for payment once locked is left as it is.
+     */
+    public function forErasure(Order $order, ?AccountReference $person): Order
+    {
+        return DB::transaction(function () use ($order, $person): Order {
+            $locked = $this->orderProgress->lock($order);
+
+            return $locked->awaitsPayment() ? $this->cancel($locked, CancellationReason::DataErased, $person) : $locked;
+        });
     }
 
     /**

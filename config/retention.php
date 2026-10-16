@@ -39,6 +39,9 @@ return [
         'audits' => (int) env('RETENTION_AUDITS_DAYS', 730),
         // Central market rates; orders keep the rate they used, so only recent history is needed.
         'exchange_rates' => (int) env('RETENTION_EXCHANGE_RATES_DAYS', 400),
+        // Settled orders keep their buyer's personal data for the store's own period (its setting, or its
+        // country's default in config/geography.php); this only sets a minimum, so 0 leaves it to the store.
+        'settled_orders' => (int) env('RETENTION_SETTLED_ORDERS_MIN_DAYS', 0),
     ],
 
     /*

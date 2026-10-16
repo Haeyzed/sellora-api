@@ -64,6 +64,8 @@ final class UpdateStoreSettingsRequest extends FormRequest
             /** The days the store works, by ISO number (1 Monday to 7 Sunday), such as [1, 2, 3, 4, 5]; delivery estimates count only these. */
             'working_days' => ['sometimes', 'array', 'min:1', 'max:7'],
             'working_days.*' => ['required', 'integer:strict', 'distinct', 'between:1,7'],
+            /** How many years settled orders keep their buyer's personal data before it is anonymised (the amounts and tax stay); null for the store country's default. Confirm it with your accountant. */
+            'order_retention_years' => ['sometimes', 'nullable', 'integer:strict', 'between:3,30'],
             /** Shown to customers. */
             'contact_email' => ['sometimes', 'nullable', 'string', 'email:rfc', 'max:254'],
             /** In international format (+234…), or national format for the store's country. Stored and returned in E.164. */
@@ -120,6 +122,7 @@ final class UpdateStoreSettingsRequest extends FormRequest
         $fields = [
             'name' => 'name', 'country' => 'country_code', 'currency' => 'currency_code', 'timezone' => 'timezone',
             'default_locale' => 'default_locale', 'tax_mode' => 'tax_mode', 'weight_unit' => 'weight_unit', 'dimension_unit' => 'dimension_unit', 'low_stock_threshold' => 'low_stock_threshold',
+            'order_retention_years' => 'order_retention_years',
         ];
 
         foreach ($fields as $field => $column) {

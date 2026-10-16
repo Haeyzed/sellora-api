@@ -3,10 +3,14 @@
 declare(strict_types=1);
 
 use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
+use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Identity\Models\StaffMember;
+use App\Tenant\Orders\Http\Controllers\CustomerOrderController;
+use App\Tenant\Orders\Http\Controllers\GuestPrivacyController;
 use App\Tenant\Orders\Http\Controllers\OrderNoteController;
 use App\Tenant\Orders\Http\Controllers\ShipmentController;
 use App\Tenant\Orders\Http\Controllers\StaffOrderController;
+use App\Tenant\Settings\Http\Middleware\UseStoreLanguage;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -46,4 +50,19 @@ Route::prefix('staff')
         });
 
         Route::get('customers/{customer}/orders', [StaffOrderController::class, 'forCustomer'])->name('customers.orders.index')->withTrashed();
+
+        // A guest's data-protection request. The email goes in the body, never the URL, so it stays out of logs.
+        Route::post('guest-personal-data', [GuestPrivacyController::class, 'show'])->name('guest-personal-data.show');
+        Route::post('guest-personal-data/erasure', [GuestPrivacyController::class, 'destroy'])->name('guest-personal-data.erasure.store');
     });
+
+/*
+| A signed-in customer's own orders, under /api/v1/customer/orders, guest
+| orders placed with their verified email included.
+*/
+
+Route::prefix('customer/orders')->name('customer.orders.')->middleware(['auth:'.Customer::GUARD, 'throttle:api', UseStoreLanguage::class])->group(static function (): void {
+    Route::get('/', [CustomerOrderController::class, 'index'])->name('index');
+    Route::get('{order}', [CustomerOrderController::class, 'show'])->name('show');
+    Route::post('{order}/cancel', [CustomerOrderController::class, 'cancel'])->name('cancel');
+});

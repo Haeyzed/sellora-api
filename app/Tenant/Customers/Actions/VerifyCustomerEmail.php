@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tenant\Customers\Actions;
 
 use App\Tenant\Customers\Enums\CustomerEmailTokenPurpose;
+use App\Tenant\Customers\Events\CustomerEmailVerified;
 use App\Tenant\Customers\Exceptions\InvalidCustomerEmailLinkException;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Customers\Models\CustomerEmailToken;
@@ -15,7 +16,8 @@ use Illuminate\Support\Facades\DB;
  * Confirms a customer's email from the link sent to it. The link works once, and only while the account still has the address it was sent to.
  *
  * Works without signing in, because the link is often opened on another
- * device: holding the link proves access to the mailbox.
+ * device: holding the link proves access to the mailbox. Announces it once
+ * saved, so Orders can link guest orders placed with the email.
  */
 final readonly class VerifyCustomerEmail
 {
@@ -34,6 +36,7 @@ final readonly class VerifyCustomerEmail
 
             $customer->forceFill(['email_verified_at' => CarbonImmutable::now()])->save();
             $emailToken->delete();
+            CustomerEmailVerified::dispatch($customer);
         });
     }
 }

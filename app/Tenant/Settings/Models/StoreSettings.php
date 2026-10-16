@@ -44,6 +44,7 @@ use Spatie\MediaLibrary\HasMedia;
  * @property string|null $address_country_code ISO 3166-1 alpha-2.
  * @property int $low_stock_threshold The stock level at or below which a variant counts as running low, unless the variant sets its own.
  * @property list<int> $working_days The days the store works, by ISO number (1 Monday to 7 Sunday), for delivery estimates.
+ * @property int|null $order_retention_years How many years settled orders keep their buyer's personal data; null for the store country's default.
  * @property bool $require_staff_two_factor Whether every staff member must use two-factor authentication; the owner's decision alone, never mass-assigned.
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
@@ -86,6 +87,7 @@ final class StoreSettings extends Model implements AuditableContract, HasMedia
         'address_state_code',
         'address_postal_code',
         'address_country_code',
+        'order_retention_years',
     ];
 
     /**
@@ -109,6 +111,16 @@ final class StoreSettings extends Model implements AuditableContract, HasMedia
     }
 
     /**
+     * How many years settled orders keep their buyer's personal data in the store's country, before any setting of its own (config/geography.php). Merchants should confirm it with their accountant.
+     */
+    public function defaultOrderRetentionYears(): int
+    {
+        $years = config('geography.order_retention_years.'.$this->country_code);
+
+        return is_int($years) ? $years : config()->integer('geography.order_retention_default_years');
+    }
+
+    /**
      * The details the platform keeps a copy of.
      */
     public function profileDetails(): StoreProfileDetails
@@ -125,6 +137,7 @@ final class StoreSettings extends Model implements AuditableContract, HasMedia
             'enabled_locales' => 'array',
             'require_staff_two_factor' => 'boolean',
             'low_stock_threshold' => 'integer',
+            'order_retention_years' => 'integer',
             'working_days' => 'array',
             'tax_mode' => TaxMode::class,
             'weight_unit' => WeightUnit::class,

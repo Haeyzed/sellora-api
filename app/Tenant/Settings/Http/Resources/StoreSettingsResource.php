@@ -53,6 +53,10 @@ final class StoreSettingsResource extends JsonResource
             'low_stock_threshold' => $settings->low_stock_threshold,
             /** The days the store works, by ISO number (1 Monday to 7 Sunday): delivery estimates count only these. */
             'working_days' => $settings->working_days,
+            /** How many years settled orders keep their buyer's personal data; null for the store country's default. */
+            'order_retention_years' => $settings->order_retention_years,
+            /** The store country's default, used while order_retention_years is null. */
+            'order_retention_default_years' => $settings->defaultOrderRetentionYears(),
             'contact_email' => $settings->contact_email,
             /** E.164, such as "+2348012345678". */
             'contact_phone' => $settings->contact_phone,

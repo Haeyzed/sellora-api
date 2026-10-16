@@ -7,6 +7,7 @@ namespace App\Tenant\Customers\Actions;
 use App\Shared\Auth\AccessTokenIssuer;
 use App\Tenant\Customers\CustomerEmailChangedNotification;
 use App\Tenant\Customers\Enums\CustomerEmailTokenPurpose;
+use App\Tenant\Customers\Events\CustomerEmailVerified;
 use App\Tenant\Customers\Exceptions\InvalidCustomerEmailLinkException;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Customers\Models\CustomerEmailToken;
@@ -21,7 +22,9 @@ use Illuminate\Validation\ValidationException;
  *
  * The new address counts as verified, since the link reached it. Every other
  * device is signed out, pending links and password resets for the old
- * address stop working, and the old address is told.
+ * address stop working, and the old address is told. The new address is
+ * announced as verified once saved, so Orders can link guest orders placed
+ * with it.
  */
 final readonly class ConfirmCustomerEmailChange
 {
@@ -53,6 +56,7 @@ final readonly class ConfirmCustomerEmailChange
             $customer->emailTokens()->delete();
             DB::table(config()->string('auth.passwords.'.Customer::PASSWORD_BROKER.'.table'))->where('email', $oldEmail)->delete();
             $this->accessTokenIssuer->revokeAllExceptCurrent($customer);
+            CustomerEmailVerified::dispatch($customer);
 
             return $oldEmail;
         });

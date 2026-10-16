@@ -230,3 +230,17 @@ function orderAddressPayload(array $overrides = []): array
 {
     return [...['recipient_name' => 'Ada Obi', 'line1' => '5 Allen Avenue', 'city' => 'Ikeja', 'state' => 'LA', 'postal_code' => '100271', 'country' => 'NG', 'phone' => '+2348012345678'], ...$overrides];
 }
+
+/**
+ * The personal data an order still holds, by order number.
+ *
+ * @return array<int, array{email: string|null, name: string|null, note: string|null, line1: string|null, country: string|null, anonymised: bool, total: int}>
+ */
+function personalDataOnOrders(): array
+{
+    return test()->store->run(static fn (): array => Order::query()->with('addresses')->orderBy('number')->get()->mapWithKeys(static fn (Order $order): array => [$order->number => [
+        'email' => $order->contact_email, 'name' => $order->contact_name, 'note' => $order->customer_note,
+        'line1' => $order->addresses->first()?->line1, 'country' => $order->addresses->first()?->country_code,
+        'anonymised' => $order->anonymised_at !== null, 'total' => $order->total->minorAmount(),
+    ]])->all());
+}

@@ -20,7 +20,7 @@ final class OrderStoreTables implements ClassifiesStoreTables
             'rate_source', 'rate_as_of', 'tax_mode', 'tax_calculated_by', 'tax_country_code', 'tax_state_code', 'tax_postal_code',
             'subtotal_amount', 'discount_amount', 'shipping_amount', 'shipping_discount_amount', 'tax_amount', 'total_amount', 'base_total_amount',
             'customer_note', 'placed_at', 'payment_due_at', 'paid_at', 'fulfilled_at', 'completed_at', 'cancelled_at', 'cancellation_reason',
-            'cancelled_by_type', 'cancelled_by_id', 'created_at', 'updated_at',
+            'cancelled_by_type', 'cancelled_by_id', 'anonymise_when_settled', 'anonymised_at', 'created_at', 'updated_at',
         ]);
         $registry->table('order_lines', include: [
             'id', 'public_id', 'order_id', 'position', 'product_id', 'product_variant_id', 'product_name', 'variant_name', 'sku', 'requires_shipping',

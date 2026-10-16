@@ -17,4 +17,7 @@ enum CancellationReason: string
 
     /** It wasn't paid by its deadline. */
     case PaymentExpired = 'payment_expired';
+
+    /** Its buyer's personal data was erased while it was still waiting for payment. */
+    case DataErased = 'data_erased';
 }

@@ -76,6 +76,7 @@ use App\Tenant\Customers\CustomerDataExportRetention;
 use App\Tenant\Customers\CustomerEmailTokenRetention;
 use App\Tenant\Customers\CustomerStoreTables;
 use App\Tenant\Customers\Enums\CustomerPermission;
+use App\Tenant\Customers\Events\CustomerEmailVerified;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Customers\Models\CustomerGroup;
 use App\Tenant\Customers\Privacy\CustomerAccountData;
@@ -115,11 +116,16 @@ use App\Tenant\Inventory\SettledReservationRetention;
 use App\Tenant\Inventory\StockLedgerReconciliation;
 use App\Tenant\Orders\Enums\OrderPermission;
 use App\Tenant\Orders\ExpiredOrderSweep;
+use App\Tenant\Orders\Listeners\LinkGuestOrdersWhenEmailVerified;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Orders\Models\OrderNote;
 use App\Tenant\Orders\Models\Shipment;
 use App\Tenant\Orders\OrderPricedRecords;
+use App\Tenant\Orders\OrderRetention;
 use App\Tenant\Orders\OrderStoreTables;
+use App\Tenant\Orders\Privacy\CustomerOrderData;
+use App\Tenant\Orders\Privacy\GuestDataSubject;
+use App\Tenant\Orders\Privacy\GuestOrderData;
 use App\Tenant\Orders\Services\PlacedOrderHistory;
 use App\Tenant\Pricing\Actions\CalculateTax;
 use App\Tenant\Pricing\Enums\PricingPermission;
@@ -279,6 +285,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->grantFullAccessRoles();
         $this->defineStoreLifecycleAbilities();
         $this->tagErrorReportsWithGuard();
+        $this->listenAcrossDomains();
         $this->registerApiDocumentation();
         $this->fallBackToAnyTranslation();
     }
@@ -368,7 +375,10 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(CustomerDataSubject::TYPE, 'data_exports', CustomerDataExportData::class);
             $registry->register(CustomerDataSubject::TYPE, 'promotion_uses', PromotionUseData::class);
             $registry->register(CustomerDataSubject::TYPE, 'cart', CustomerCartData::class);
+            $registry->register(CustomerDataSubject::TYPE, 'orders', CustomerOrderData::class);
             $registry->register(CustomerDataSubject::TYPE, 'account', CustomerAccountData::class);
+            // A guest has only their orders, found by the email they were placed with.
+            $registry->register(GuestDataSubject::TYPE, 'orders', GuestOrderData::class);
 
             return $registry;
         });
@@ -404,6 +414,7 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(StoreRegistrationRetention::class);
             $registry->register(StoreExportRetention::class);
             $registry->register(ExchangeRateRetention::class);
+            $registry->register(OrderRetention::class);
 
             return $registry;
         });
@@ -565,6 +576,14 @@ final class AppServiceProvider extends ServiceProvider
 
         $this->app->register(TelescopePackageServiceProvider::class);
         $this->app->register(TelescopeServiceProvider::class);
+    }
+
+    /**
+     * Listeners that live in a domain rather than app/Listeners, so they are not found on their own.
+     */
+    private function listenAcrossDomains(): void
+    {
+        Event::listen(CustomerEmailVerified::class, LinkGuestOrdersWhenEmailVerified::class);
     }
 
     /**

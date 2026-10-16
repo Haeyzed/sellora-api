@@ -45,7 +45,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property FulfilmentStatus $fulfilment_status
  * @property bool $refund_due Paid, but cancelled: the payment is owed back.
  * @property int|null $customer_id Null for a guest order not linked to an account.
- * @property string $contact_email In lower case, as given at checkout.
+ * @property string|null $contact_email In lower case, as given at checkout; null once anonymised.
  * @property string|null $contact_name
  * @property string|null $contact_phone
  * @property string $locale The language its names were copied in.
@@ -78,6 +78,8 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property CancellationReason|null $cancellation_reason
  * @property string|null $cancelled_by_type Who cancelled it, by morph name; null when the sweep did.
  * @property string|null $cancelled_by_id
+ * @property bool $anonymise_when_settled Its buyer's data was erased while it was still being fulfilled: anonymised once settled.
+ * @property CarbonImmutable|null $anonymised_at When its buyer's personal data was removed; its amounts, tax and country stay.
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property-read Customer|null $customer
@@ -271,6 +273,8 @@ final class Order extends Model implements AuditableContract
             'completed_at' => 'immutable_datetime',
             'cancelled_at' => 'immutable_datetime',
             'cancellation_reason' => CancellationReason::class,
+            'anonymise_when_settled' => 'boolean',
+            'anonymised_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];

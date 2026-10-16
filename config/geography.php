@@ -59,6 +59,22 @@ return [
     'imperial_countries' => ['LR', 'MM', 'US'],
 
     /*
+     * How many years a store keeps the buyer's personal data on settled
+     * orders, by store country, before it is anonymised (the amounts and tax
+     * stay). These follow common rules for keeping financial records, but
+     * laws differ and change: merchants should confirm their period with
+     * their accountant, and can set their own (3 to 30 years).
+     */
+    'order_retention_years' => [
+        'NG' => 6,
+        'GB' => 6,
+        'DE' => 10,
+    ],
+
+    /* For store countries not listed above: the longest common period, to be safe. */
+    'order_retention_default_years' => 10,
+
+    /*
      * The subdivision codes stores may have saved, by country, as recorded
      * from commerceguys/addressing. A package update that changes them is
      * caught by a test and listed by geography:subdivision-changes.

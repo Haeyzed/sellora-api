@@ -73,7 +73,7 @@ it('builds a verified customer\'s data export with every section, staff notes in
     $file = customerRequest('GET', "account/data-exports/{$id}/download", as: $this->customer)->assertOk()->assertDownload("my-data-{$id}.json")->streamedContent();
     $data = json_decode($file, true, flags: JSON_THROW_ON_ERROR);
 
-    expect(array_keys($data))->toBe(['exported_at', 'addresses', 'staff_notes', 'customer_groups', 'marketing_consents', 'data_exports', 'promotion_uses', 'cart', 'account'])
+    expect(array_keys($data))->toBe(['exported_at', 'addresses', 'staff_notes', 'customer_groups', 'marketing_consents', 'data_exports', 'promotion_uses', 'cart', 'orders', 'account'])
         ->and($data['account'][0])->toMatchArray(['email' => 'ada@example.com', 'phone' => '+2348031234567', 'tax_id' => '12345678'])
         ->and($data['addresses'][0]['line1'])->toBe('12 Admiralty Way')
         ->and($data['staff_notes'])->toBe([['id' => $data['staff_notes'][0]['id'], 'body' => 'Asked for gift wrapping.', 'created_at' => $data['staff_notes'][0]['created_at']]])
