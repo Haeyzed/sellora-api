@@ -236,6 +236,9 @@ This platform targets merchants and shoppers worldwide. **Never hard-code anythi
 - **Gateway amount formats belong to the integration.** Some gateways don't follow ISO 4217 decimals for every currency (for example Stripe's handling of some zero-decimal currencies). Each gateway integration converts `Money` into its own format and back, with tests. `Money` itself always follows ISO 4217.
 - **Never store or log card data.** Use the gateway's hosted checkout or tokenisation, so card details never touch our servers (this keeps PCI compliance simple).
 - Every payment call and every webhook is **idempotent**. Use idempotency keys and record processed webhook event IDs, so retries never charge twice or mark an order paid twice.
+- **A webhook only says "go and ask".** The payment or refund status always comes from asking the gateway server-side, never from the webhook's own body.
+- **Money already in motion is never blocked by plan gating.** Webhooks, verification and refunds for existing payments keep working when the gateway's integration is Locked, Disabled or Suspended, or the store is suspended (wind-down, section 8); only starting new payments is blocked.
+- **Test mode:** a gateway connection is in test or live mode, worked out from its keys. An order placed with a test-mode method is marked as a test order at placement (never changed afterwards). A test payment can mark a test order paid, but never a live one, and a live payment never pays a test order. Test orders are labelled everywhere, excluded from sales figures, and never consume invoice or credit-note numbers.
 - Refunds, partial refunds and failed payments are first-class flows, not afterthoughts.
 - **Gateways, in build order:** **Paystack** first (Africa: cards, bank transfer, USSD, mobile money), then **Stripe** (global merchants), then Flutterwave if wider African coverage is needed. Each is its own integration (`integrations/Paystack`, `integrations/Stripe`).
 - **Merchants connect their own gateway accounts.** Each store enters its own gateway credentials (stored encrypted), and customers' money goes directly to the merchant. **Sellora never holds or moves merchants' money**, so build no wallets, balances, payouts or split payments. Taking a platform fee per sale (Paystack split payments, Stripe Connect) is a later decision; ask before building anything that depends on it.
@@ -846,7 +849,7 @@ If a change needs to break a rule, stop and explain why instead of working aroun
 
 - Landlord migrations go in `database/migrations/landlord`. Tenant migrations go in `database/migrations/tenant`, and module migrations are tenant migrations too, registered by each module's provider.
 - Landlord routes are served on the central domain only. Tenant routes are served on tenant domains only, behind the tenancy identification middleware.
-- **Webhooks** from third parties arrive on the central domain. The flow is: verify the signature, look up the tenant in `Landlord\Integrations`, initialize tenancy, then hand off to the integration's handler.
+- **Webhooks** from third parties arrive on the central domain. When the provider signs with a platform-wide secret, verify the signature first. When it signs with the merchant's own key (merchant-connected gateways such as Paystack), the URL carries a random endpoint ID (never the store ID): look it up in `Landlord\Integrations` (an unknown ID is an ordinary 404), initialize tenancy, and verify the signature **before anything is parsed, stored or acted on**. Then hand off to the integration's handler.
 - Queued jobs, cache, storage and Redis must be tenant-isolated. Follow the `stancl/tenancy` skill for how.
 - Follow the `stancl/tenancy` skill for tenant creation, database provisioning, tenant migrations and tenant identification. Don't hand-roll anything the package already provides.
 
@@ -1137,6 +1140,8 @@ Names must say exactly what a thing is or does, so the code reads without explan
   - Order lines, discounts, taxes and the shipping line are protected by database triggers (no update or delete). On the order itself only status, timestamps, tags and the guest-to-customer link may change.
   - Corrections (contact details, shipping address before the first shipment) are **new versions in insert-only tables**, never updates to the original columns.
   - **Every unpaid order has a payment deadline.** Methods paid later (bank transfer) get a longer deadline set per payment method, never none, so no order holds stock forever.
+  - **Before an order expires with a gateway payment still pending, the gateway is asked one last time.** Slow methods (USSD, bank transfer through a gateway) must not lose an order that was actually paid.
+  - **Cash on delivery:** the deadline is for getting the order out the door. Once its first shipment exists the order no longer expires (its stock has left the shelf); an alert tells staff when cash hasn't been recorded as collected after delivery.
   - A payment that arrives after an order was cancelled never revives it: the order stays cancelled and is flagged for a refund.
 - **The erasure flag** (`app.erasing_personal_data`) is set in exactly one place, the Shared privacy erasure runner, for the whole erasure or retention-anonymisation transaction. Domain handlers never call `set_config` themselves.
 - **Stock is counted in whole units** in core. Stock is reserved at checkout, becomes the order's reservation when the order is placed, and leaves `on_hand` only at fulfilment. Unpaid orders don't hold stock forever: Orders releases their reservation when they expire.
@@ -1146,7 +1151,7 @@ Names must say exactly what a thing is or does, so the code reads without explan
 - Scheduled tasks that act on stores (abandoned carts, promotion start and end, subscription renewals, report generation) run **per tenant**, using the tenancy package's way of iterating tenants. They respect each store's timezone.
 - Jobs are small, retry-safe and idempotent, with sensible timeouts and retry limits. A failing job for one tenant must never block other tenants' jobs.
 - Long or heavy work (imports, exports, image conversions, bulk updates, reindexing) always runs on a queue, never inside a request.
-- **Queue workers** must listen on every queue the app uses (at least `default` and `bulk`); otherwise scheduled work such as retention purges never runs. Keep the list of queues in deployment config.
+- **Queue workers** must listen on every queue the app uses (at least `default`, `payments` and `bulk`); otherwise scheduled work such as retention purges never runs. Keep the list of queues in deployment config.
 - **Fairness between tenants:** one busy store must never delay other stores. Keep urgent work (order confirmations, payment processing) on separate queues from bulk work (imports, exports, reindexing). Split bulk work into small chunks, and rate-limit bulk jobs, imports and incoming webhooks **per tenant**, so no single store can fill a queue.
 
 ### Complex business logic, simple code
