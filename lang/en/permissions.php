@@ -59,6 +59,13 @@ return [
         'fulfil' => 'Create shipments, add tracking, and mark what has left, is ready for pickup or has arrived.',
     ],
 
+    'payments' => [
+        'view' => 'See payments, refunds and how payment gateways are connected.',
+        'confirm' => 'Confirm that a bank transfer arrived or cash on delivery was collected, and ask a gateway again about a payment.',
+        'refund' => 'Refund payments, through the gateway or as recorded by hand.',
+        'manage_gateways' => 'Connect, disconnect and set up payment gateways and payment methods.',
+    ],
+
     'pricing' => [
         'view' => 'See tax classes, tax rates, which class each variant is in, and the store\'s currencies and exchange rates.',
         'manage' => 'Change tax classes, tax rates, variants\' tax classes, the store\'s currencies, exchange rates and fixed prices.',

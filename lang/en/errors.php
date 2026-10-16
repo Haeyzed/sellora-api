@@ -184,5 +184,12 @@ return [
     'shipment_transition_not_allowed' => 'This shipment can\'t move to that status from where it is now.',
     'shipment_closed' => 'This shipment has arrived or was cancelled, so its tracking can no longer change.',
     'tracking_number_required' => 'Add the carrier\'s tracking number before marking this shipment as shipped, so the buyer can follow it.',
+    'payment_gateway_not_found' => 'No payment gateway uses that key.',
+    'payment_gateway_not_connected' => 'This payment gateway isn\'t connected to the store.',
+    'payment_gateway_unreachable' => 'The payment gateway didn\'t answer. Nothing was saved; try again shortly.',
+    'payment_gateway_credentials_invalid' => 'The payment gateway didn\'t accept these credentials. Check them in your gateway account and try again.',
+    'payment_gateway_account_changed' => 'These keys belong to another gateway account. Payments or refunds on the current account are still in progress; wait for them to finish, then replace the keys.',
+    'payment_gateway_mode_changed' => 'These keys switch the gateway between test and live while payments or refunds are still in progress. Wait for them to finish first.',
+    'payment_gateway_in_use' => 'This gateway still has payments or refunds in progress, so it can\'t be disconnected yet. Turn it off for new payments instead; it can be disconnected once they finish.',
 
 ];

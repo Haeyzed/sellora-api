@@ -441,6 +441,18 @@ it('documents a customer\'s order history and staff answering guests\' data requ
         ->and(array_keys($store['components']['schemas']['StoreSettingsResource']['properties']))->toContain('order_retention_years', 'order_retention_default_years');
 });
 
+it('documents every payment gateway endpoint, never with credentials in a response', function (): void {
+    $store = documentedApi('default');
+
+    expect(array_keys($store['paths']['/staff/payment-gateways']))->toBe(['get'])
+        ->and(array_keys($store['paths']['/staff/payment-gateways/{gateway}/connection']))->toContain('put', 'patch', 'delete')
+        ->and(array_keys($store['paths']['/staff/payment-gateways/{gateway}/connection/checks']))->toBe(['post'])
+        ->and(json_encode($store['paths']['/staff/payment-gateways/{gateway}/connection']['put']['responses'][422]))->toContain('payment_gateway_credentials_invalid')
+        ->and(json_encode($store['paths']['/staff/payment-gateways/{gateway}/connection']['put']['responses'][503]))->toContain('payment_gateway_unreachable')
+        ->and(json_encode($store['paths']['/staff/payment-gateways/{gateway}/connection']['delete']['responses'][409]))->toContain('payment_gateway_not_connected')
+        ->and(array_keys($store['components']['schemas']['PaymentGatewayConnectionResource']['properties']))->not->toContain('credentials', 'endpoint_id', 'account_id');
+});
+
 /*
  * Section 11: the docs are for development. Outside a developer's machine
  * they are shown only to platform admins signed in with two-factor

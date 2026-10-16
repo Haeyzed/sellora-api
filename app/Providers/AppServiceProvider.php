@@ -7,6 +7,7 @@ namespace App\Providers;
 use App\Landlord\Identity\Enums\PlatformRole;
 use App\Landlord\Identity\Models\PlatformAdmin;
 use App\Landlord\Identity\Models\PlatformAdminInvitation;
+use App\Landlord\Integrations\CentralWebhookEndpoints;
 use App\Landlord\Legal\Models\LegalDocument;
 use App\Landlord\Plans\Models\Plan;
 use App\Landlord\Plans\Models\PlanFeature;
@@ -33,6 +34,7 @@ use App\Shared\Geography\AddressFormats;
 use App\Shared\Http\PaginationDocumentation;
 use App\Shared\Idempotency\GuestRequester;
 use App\Shared\Idempotency\IdempotencyKeyRetention;
+use App\Shared\Integrations\Contracts\WebhookEndpoints;
 use App\Shared\Money\ExchangeRates\ExchangeRateRetention;
 use App\Shared\Money\PricedRecordsRegistry;
 use App\Shared\Privacy\PersonalDataErasure;
@@ -127,6 +129,10 @@ use App\Tenant\Orders\Privacy\CustomerOrderData;
 use App\Tenant\Orders\Privacy\GuestDataSubject;
 use App\Tenant\Orders\Privacy\GuestOrderData;
 use App\Tenant\Orders\Services\PlacedOrderHistory;
+use App\Tenant\Payments\Enums\PaymentPermission;
+use App\Tenant\Payments\Models\PaymentGatewayConnection;
+use App\Tenant\Payments\PaymentGatewayRegistry;
+use App\Tenant\Payments\PaymentStoreTables;
 use App\Tenant\Pricing\Actions\CalculateTax;
 use App\Tenant\Pricing\Enums\PricingPermission;
 use App\Tenant\Pricing\Models\FixedPrice;
@@ -248,6 +254,10 @@ final class AppServiceProvider extends ServiceProvider
             return $registry;
         });
         $this->app->bind(OrderHistory::class, PlacedOrderHistory::class);
+
+        // Gateway integrations register themselves here; webhooks find their store through Landlord\Integrations.
+        $this->app->singleton(PaymentGatewayRegistry::class);
+        $this->app->bind(WebhookEndpoints::class, CentralWebhookEndpoints::class);
         // A guest's Idempotency-Keys are theirs by their cart token.
         $this->app->bind(GuestRequester::class, CartGuestRequester::class);
     }
@@ -268,6 +278,7 @@ final class AppServiceProvider extends ServiceProvider
             $catalogue->register(PromotionPermission::class);
             $catalogue->register(ShippingPermission::class);
             $catalogue->register(OrderPermission::class);
+            $catalogue->register(PaymentPermission::class);
 
             return $catalogue;
         });
@@ -422,7 +433,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->singleton(StoreExportRegistry::class, static function (Application $app): StoreExportRegistry {
             $registry = new StoreExportRegistry;
 
-            foreach ([SharedStoreTables::class, IdentityStoreTables::class, SettingsStoreTables::class, CustomerStoreTables::class, DeliveryStoreTables::class, CatalogStoreTables::class, InventoryStoreTables::class, PricingStoreTables::class, PromotionStoreTables::class, CartStoreTables::class, ShippingStoreTables::class, OrderStoreTables::class] as $storeTables) {
+            foreach ([SharedStoreTables::class, IdentityStoreTables::class, SettingsStoreTables::class, CustomerStoreTables::class, DeliveryStoreTables::class, CatalogStoreTables::class, InventoryStoreTables::class, PricingStoreTables::class, PromotionStoreTables::class, CartStoreTables::class, ShippingStoreTables::class, OrderStoreTables::class, PaymentStoreTables::class] as $storeTables) {
                 $app->make($storeTables)->classify($registry);
             }
 
@@ -483,6 +494,7 @@ final class AppServiceProvider extends ServiceProvider
             'shipping_method' => ShippingMethod::class,
             'order' => Order::class,
             'order_note' => OrderNote::class,
+            'payment_gateway_connection' => PaymentGatewayConnection::class,
             'shipment' => Shipment::class,
         ]);
     }
