@@ -35,6 +35,7 @@ use App\Shared\Idempotency\GuestRequester;
 use App\Shared\Idempotency\IdempotencyKeyRetention;
 use App\Shared\Money\ExchangeRates\ExchangeRateRetention;
 use App\Shared\Money\PricedRecordsRegistry;
+use App\Shared\Privacy\PersonalDataErasure;
 use App\Shared\Privacy\PersonalDataRegistry;
 use App\Shared\Privacy\SharedStoreTables;
 use App\Shared\Privacy\StoreExportRegistry;
@@ -157,7 +158,6 @@ use Illuminate\Auth\Events\Authenticated;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Validation\UncompromisedVerifier;
-use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Client\Factory as HttpFactory;
@@ -348,7 +348,7 @@ final class AppServiceProvider extends ServiceProvider
     private function registerSharedRegistries(): void
     {
         $this->app->singleton(PersonalDataRegistry::class, static function (Application $app): PersonalDataRegistry {
-            $registry = new PersonalDataRegistry($app, $app->make(DatabaseManager::class));
+            $registry = new PersonalDataRegistry($app, $app->make(PersonalDataErasure::class));
 
             // The account last: the others still need the customer's email and phone to find what is theirs.
             $registry->register(CustomerDataSubject::TYPE, 'addresses', CustomerAddressData::class);

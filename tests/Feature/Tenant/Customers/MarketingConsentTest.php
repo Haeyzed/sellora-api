@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Shared\Auth\Models\Role;
+use App\Shared\Privacy\PersonalDataErasure;
 use App\Tenant\Customers\Actions\RecordMarketingConsent;
 use App\Tenant\Customers\Enums\MarketingChannel;
 use App\Tenant\Customers\Enums\MarketingConsentSource;
@@ -128,23 +129,36 @@ it('never lets an event be changed or deleted outside erasure', function (Closur
     'changed' => [fn () => DB::table('marketing_consents')->update(['status' => 'withdrawn']), 'never changed'],
     'deleted' => [fn () => DB::table('marketing_consents')->delete(), 'deleted only by erasure'],
     'emptied' => [fn () => DB::statement('truncate marketing_consents'), 'deleted only by erasure'],
-    'deleted after the flag was set and its transaction ended' => [function (): void {
-        DB::transaction(static fn () => DB::select("select set_config('app.erasing_personal_data', 'on', true)"));
+    'deleted after an erasure ended' => [function (): void {
+        app(PersonalDataErasure::class)->run(static fn (): null => null);
         DB::table('marketing_consents')->delete();
+    }, 'deleted only by erasure'],
+    'deleted after an erasure ended, in the same larger transaction' => [function (): void {
+        DB::transaction(static function (): void {
+            app(PersonalDataErasure::class)->run(static fn (): null => null);
+            DB::table('marketing_consents')->delete();
+        });
     }, 'deleted only by erasure'],
 ]);
 
-it('lets erasure delete events, inside the transaction that says so', function (): void {
+it('lets erasure delete events, inside the erasure runner\'s transaction', function (): void {
     customerRequest('PUT', 'account/marketing-consents/email', ['granted' => true], $this->customer)->assertOk();
 
-    $this->store->run(static function (): void {
-        DB::transaction(static function (): void {
-            DB::select("select set_config('app.erasing_personal_data', 'on', true)");
-            DB::table('marketing_consents')->delete();
-        });
-    });
+    $this->store->run(static fn () => app(PersonalDataErasure::class)->run(static fn (): int => DB::table('marketing_consents')->delete()));
 
     expect($this->store->run(static fn (): int => MarketingConsent::query()->count()))->toBe(0);
+});
+
+it('rolls the whole erasure back when part of it fails', function (): void {
+    customerRequest('PUT', 'account/marketing-consents/email', ['granted' => true], $this->customer)->assertOk();
+
+    expect(fn () => $this->store->run(static fn () => app(PersonalDataErasure::class)->run(static function (): never {
+        DB::table('marketing_consents')->delete();
+
+        throw new RuntimeException('Part of the erasure failed.');
+    })))->toThrow(RuntimeException::class, 'Part of the erasure failed.');
+
+    expect($this->store->run(static fn (): int => MarketingConsent::query()->count()))->toBe(1);
 });
 
 it('refuses a grant without its wording, or a staff grant, at the database too', function (array $row, string $constraint): void {

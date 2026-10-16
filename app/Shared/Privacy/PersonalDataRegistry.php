@@ -6,7 +6,6 @@ namespace App\Shared\Privacy;
 
 use App\Shared\Privacy\Contracts\PersonalDataHandler;
 use Illuminate\Contracts\Container\Container;
-use Illuminate\Database\DatabaseManager;
 use LogicException;
 
 /**
@@ -14,8 +13,9 @@ use LogicException;
  *
  * Domains and modules register their handlers from their service providers.
  * An export collects every registered section; an erase runs every handler
- * inside one transaction on the current database (the store's own database
- * during a store request), so a request is never left half done.
+ * inside one PersonalDataErasure transaction on the current database (the
+ * store's own database during a store request), so a request is never left
+ * half done.
  */
 final class PersonalDataRegistry
 {
@@ -26,7 +26,7 @@ final class PersonalDataRegistry
 
     public function __construct(
         private readonly Container $container,
-        private readonly DatabaseManager $databases,
+        private readonly PersonalDataErasure $erasure,
     ) {}
 
     /**
@@ -70,7 +70,7 @@ final class PersonalDataRegistry
     {
         $handlers = $this->handlersFor($subject);
 
-        $this->databases->connection()->transaction(static function () use ($handlers, $subject): void {
+        $this->erasure->run(static function () use ($handlers, $subject): void {
             foreach ($handlers as $handler) {
                 $handler->erase($subject);
             }

@@ -11,19 +11,16 @@ use App\Tenant\Customers\Enums\MarketingChannel;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Customers\Models\MarketingConsent;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\DB;
 
 /**
  * The customer's marketing consent events: the account's own, and any given for its current email or phone, for example as a guest at checkout.
  *
- * Erasure is the only thing allowed to delete consent events: it tells the
- * database so for the rest of its transaction (marketing_consents trigger).
+ * Erasure is the only thing allowed to delete consent events: the registry
+ * runs every handler through PersonalDataErasure, which tells the database
+ * so for that transaction (marketing_consents trigger).
  */
 final readonly class MarketingConsentData implements PersonalDataHandler
 {
-    /** Set only here; a test checks that no other code names it. */
-    private const string ERASING_SETTING = 'app.erasing_personal_data';
-
     /**
      * @return list<array<string, mixed>>
      */
@@ -54,8 +51,6 @@ final readonly class MarketingConsentData implements PersonalDataHandler
             return;
         }
 
-        // Lasts until the erasure's transaction ends, never beyond it.
-        DB::select('select set_config(?, ?, true)', [self::ERASING_SETTING, 'on']);
         self::eventsOf($customer)->delete();
     }
 
