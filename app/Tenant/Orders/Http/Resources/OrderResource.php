@@ -51,8 +51,6 @@ final class OrderResource extends JsonResource
             'customer' => $order->customer === null ? null : ['id' => $order->customer->public_id],
             /**
              * The buyer's contact details as they stand: staff's latest correction, or as given at checkout.
-             *
-             * @var array{email: string|null, name: string|null, phone: string|null, is_corrected: bool}
              */
             'contact' => ['email' => $contact->email, 'name' => $contact->name, 'phone' => $contact->phone, 'is_corrected' => $contact->isCorrected],
             /** The language its names were copied in. */
@@ -82,9 +80,6 @@ final class OrderResource extends JsonResource
                 'as_of' => $order->rate_as_of?->toIso8601String(),
                 'base_total' => new MoneyResource($order->base_total),
             ],
-            /**
-             * @var array{mode: string, country_code: string, state_code: string|null}
-             */
             'tax' => ['mode' => $order->tax_mode->value, 'country_code' => $order->tax_country_code, 'state_code' => $order->tax_state_code],
             /**
              * @var list<array{id: string, product: array{id: string, name: string}, variant: array{id: string, name: string|null, sku: string|null}, quantity: int, requires_shipping: bool, unit_price: MoneyResource, subtotal: MoneyResource, discount: MoneyResource, tax: MoneyResource, total: MoneyResource, discounts: list<array{label: string, class: string, code: string|null, amount: MoneyResource}>, taxes: list<array{name: string, rate_percent: string, amount: MoneyResource}>}>
@@ -124,13 +119,8 @@ final class OrderResource extends JsonResource
             ],
             /**
              * Where it ships to as it stands: staff's latest correction, or as placed; null when nothing ships to an address.
-             *
-             * @var array{recipient_name: string|null, company: string|null, line1: string|null, line2: string|null, city: string|null, state_code: string|null, postal_code: string|null, country_code: string, phone: string|null, version: int}|null
              */
             'shipping_address' => self::address($order->currentAddress(OrderAddressKind::Shipping)),
-            /**
-             * @var array{recipient_name: string|null, company: string|null, line1: string|null, line2: string|null, city: string|null, state_code: string|null, postal_code: string|null, country_code: string, phone: string|null, version: int}|null
-             */
             'billing_address' => self::address($order->currentAddress(OrderAddressKind::Billing)),
             /** What the buyer wrote at checkout. */
             'customer_note' => $order->customer_note,

@@ -40,8 +40,6 @@ final class OrderSummaryResource extends JsonResource
             'customer' => $order->customer === null ? null : ['id' => $order->customer->public_id],
             /**
              * The buyer's contact details as they stand.
-             *
-             * @var array{email: string|null, name: string|null}
              */
             'contact' => ['email' => $contact->email, 'name' => $contact->name],
             'total' => new MoneyResource($order->total),

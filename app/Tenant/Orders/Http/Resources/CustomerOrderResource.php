@@ -69,9 +69,6 @@ final class CustomerOrderResource extends JsonResource
             ],
             /** "ship", "own_delivery" or "pickup", and the method's name; null when nothing ships. */
             'shipping' => $order->shippingLine === null ? null : ['method_name' => $order->shippingLine->method_name, 'fulfilment' => $order->shippingLine->fulfilment->value],
-            /**
-             * @var array{recipient_name: string|null, company: string|null, line1: string|null, line2: string|null, city: string|null, state_code: string|null, postal_code: string|null, country_code: string, phone: string|null}|null
-             */
             'shipping_address' => $address instanceof OrderAddress ? $address->details() : null,
             /**
              * Each shipment and how to follow it.

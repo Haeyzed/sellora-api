@@ -82,11 +82,8 @@ final class PromotionResource extends JsonResource
             'is_active' => $promotion->is_active,
             /** Where it stands now: running, scheduled, ended, inactive or archived. */
             'status' => $promotion->status()->value,
-            /** @var array{include: list<string>, exclude: list<string>, get: list<string>} */
             'products' => $this->lists($promotion->products),
-            /** @var array{include: list<string>, exclude: list<string>, get: list<string>} */
             'variants' => $this->lists($promotion->variants),
-            /** @var array{include: list<string>, exclude: list<string>, get: list<string>} */
             'categories' => $this->lists($promotion->categories),
             /** @var list<string> The customer groups it is limited to; empty for every customer. */
             'customer_groups' => array_values($promotion->customerGroups->pluck('public_id')->sort()->values()->all()),

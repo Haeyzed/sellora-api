@@ -24,6 +24,11 @@ return [
     /*
      * The default API documents the store (tenant) API. The platform (landlord) API under
      * api/v1/platform is a separate audience, registered as its own API in AppServiceProvider.
+     *
+     * The docs are built on the central domain, where store tables don't exist, so
+     * scramble:analyze warns MD001 for each store model. That hides nothing: models'
+     * types come from their casts and @property docs, and the docs built inside a
+     * store are identical (checked for Step 14). Scramble has no way to silence it.
      */
     'api_path' => [
         'include' => 'api/v1',
