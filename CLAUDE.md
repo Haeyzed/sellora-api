@@ -1132,6 +1132,13 @@ Names must say exactly what a thing is or does, so the code reads without explan
   - When discounts can't be combined, the combination that **saves the customer the most** wins (a tie goes to the oldest promotion). A typed code that loses is told a better discount already applies.
   - Gift cards are a payment method (Payments), never a discount: tax is due on the full price.
   - Refunds give back what a line actually cost after its discounts and never re-run promotions. Returns (Step 18) must let staff lower a refund when a return breaks the condition a discount depended on (for example returning the paid items of a "buy 2, get 1 free" deal and keeping the free one).
+- **Orders:**
+  - An order has three separate statuses: order (open, completed, cancelled), payment (unpaid, paid, and later partial and refunded states) and fulfilment (unfulfilled, partially fulfilled, fulfilled, not required). Payment status is moved only by Payments; fulfilment status is worked out from shipments.
+  - Order lines, discounts, taxes and the shipping line are protected by database triggers (no update or delete). On the order itself only status, timestamps, tags and the guest-to-customer link may change.
+  - Corrections (contact details, shipping address before the first shipment) are **new versions in insert-only tables**, never updates to the original columns.
+  - **Every unpaid order has a payment deadline.** Methods paid later (bank transfer) get a longer deadline set per payment method, never none, so no order holds stock forever.
+  - A payment that arrives after an order was cancelled never revives it: the order stays cancelled and is flagged for a refund.
+- **The erasure flag** (`app.erasing_personal_data`) is set in exactly one place, the Shared privacy erasure runner, for the whole erasure or retention-anonymisation transaction. Domain handlers never call `set_config` themselves.
 - **Stock is counted in whole units** in core. Stock is reserved at checkout, becomes the order's reservation when the order is placed, and leaves `on_hand` only at fulfilment. Unpaid orders don't hold stock forever: Orders releases their reservation when they expire.
 
 ### Scheduled and background work
@@ -1266,7 +1273,7 @@ Build in this order, one step at a time. Each step ends with Pint, Larastan, the
 
 **Phase B: core commerce**
 
-6. Settings + Geography → 7. Catalog → 8. Inventory → 9. Pricing and tax → 10. Customers → 11. Promotions → 12. Cart → 13. Shipping → 14. Orders → 15. Payments (fixes F1) → 16. Checkout → 17. Delivery → 18. Returns → 19. Storefront → 20. Messaging (email channel first).
+6. Settings + Geography → 7. Catalog → 8. Inventory → 9. Pricing and tax → 10. Customers → 11. Promotions → 12. Cart → 13. Shipping → 14. Orders → 15. Payments (fixes F1) → 15b. Invoices and credit notes → 16. Checkout → 17. Delivery → 18. Returns → 19. Storefront → 20. Messaging (email channel first).
 
 **Phase C: after the core shopping flow works**
 
