@@ -88,6 +88,24 @@ final readonly class ReservationBook
         $reservation->save();
     }
 
+    /**
+     * Takes part of an active reservation off the shelf: on hand and reserved go down by the part, with the movement that records it, and the reservation keeps the rest, still active.
+     *
+     * @throws LogicException When the reservation isn't active, or the part isn't smaller than it, which is a programming mistake.
+     */
+    public function commitPart(StockReservation $reservation, StockItem $item, int $quantity, ?AccountReference $causer = null): void
+    {
+        if ($reservation->status !== ReservationStatus::Active || $quantity < 1 || $quantity >= $reservation->quantity) {
+            throw new LogicException('Only part of an active reservation can be committed this way; settle it to commit all of it.');
+        }
+
+        $this->stockLedger->record($item, StockMovementType::Committed, -$quantity, -$quantity, causer: $causer, source: StockSource::of($reservation));
+
+        $reservation->quantity -= $quantity;
+        $reservation->backordered_quantity = min($reservation->backordered_quantity, $reservation->quantity);
+        $reservation->save();
+    }
+
     public static function key(int $locationId, int $variantId): string
     {
         return "{$locationId}:{$variantId}";

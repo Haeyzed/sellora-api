@@ -11,6 +11,7 @@ use App\Tenant\Inventory\Actions\ReserveStock;
 use App\Tenant\Inventory\Data\StockHolder;
 use App\Tenant\Inventory\Data\StockLine;
 use App\Tenant\Inventory\Models\StockLocation;
+use App\Tenant\Orders\Actions\MarkOrderAsPaid;
 use App\Tenant\Orders\Actions\PlaceOrder;
 use App\Tenant\Orders\Data\OrderBuyer;
 use App\Tenant\Orders\Data\OrderDraft;
@@ -165,4 +166,12 @@ function optionedVariant(int $price): ProductVariant
     }
 
     return $variant;
+}
+
+/**
+ * Records the order as paid, as Payments will once a payment is confirmed (Step 15), and returns it freshly read.
+ */
+function markPaid(Order $order): Order
+{
+    return app(MarkOrderAsPaid::class)->handle($order)->refresh();
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Tenant\Inventory\Actions\ChangeInventorySettings;
 use App\Tenant\Inventory\Actions\CommitReservation;
+use App\Tenant\Inventory\Actions\CommitReservedStock;
 use App\Tenant\Inventory\Actions\ReceiveStock;
 use App\Tenant\Inventory\Actions\ReleaseExpiredReservations;
 use App\Tenant\Inventory\Actions\ReleaseReservation;
@@ -300,5 +301,31 @@ it('deletes ended reservations after the retention period, never active ones', f
         expect(app(SettledReservationRetention::class)->purgeOlderThan(CarbonImmutable::now()->addDay()))->toBe(1)
             ->and(StockReservation::query()->pluck('status')->all())->toBe([ReservationStatus::Active])
             ->and(StockMovement::query()->count())->toBe(4);
+    });
+});
+
+it('takes part of a holder\'s reservation off the shelf, keeping the rest held, all parts or none', function (): void {
+    $this->store->run(static function (): void {
+        $shirt = variantWithStockOnHand(10, 'SHIRT-1');
+        $lamp = variantWithStockOnHand(1, 'LAMP-1');
+        app(ChangeInventorySettings::class)->handle($lamp, new InventorySettingsData(tracksStock: true, allowsBackorder: true));
+        $holder = newStockHolder('order');
+        app(ReserveStock::class)->handle($holder, [new StockLine($shirt, 4), new StockLine($lamp, 3)]);
+
+        // Two shirts leave; two stay held.
+        expect(app(CommitReservedStock::class)->handle($holder, [$shirt->id => 2]))->toBe(2)
+            ->and(stockItemOf($shirt)->only(['on_hand', 'reserved']))->toBe(['on_hand' => 8, 'reserved' => 2])
+            ->and(StockReservation::query()->where('product_variant_id', $shirt->id)->sole()->only(['quantity']))->toBe(['quantity' => 2])
+            ->and(StockMovement::query()->where('product_variant_id', $shirt->id)->latest('id')->first()?->only(['type', 'on_hand_delta', 'reserved_delta']))->toMatchArray(['on_hand_delta' => -2, 'reserved_delta' => -2]);
+
+        // Only one lamp is on hand: neither line commits.
+        expect(static fn () => app(CommitReservedStock::class)->handle($holder, [$shirt->id => 2, $lamp->id => 2]))->toThrow(InsufficientStockException::class)
+            ->and(stockItemOf($shirt)->only(['on_hand', 'reserved']))->toBe(['on_hand' => 8, 'reserved' => 2]);
+
+        // The last two shirts settle the reservation.
+        app(CommitReservedStock::class)->handle($holder, [$shirt->id => 2]);
+        expect(StockReservation::query()->where('product_variant_id', $shirt->id)->sole()->status)->toBe(ReservationStatus::Committed)
+            ->and(static fn () => app(CommitReservedStock::class)->handle($holder, [$lamp->id => 4]))->toThrow(LogicException::class)
+            ->and(app(CommitReservedStock::class)->handle($holder, []))->toBe(0);
     });
 });

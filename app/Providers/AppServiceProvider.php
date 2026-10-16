@@ -55,6 +55,7 @@ use App\Shared\Tenancy\Contracts\StoreSessions;
 use App\Shared\Tenancy\Contracts\StoreSettingsSetup;
 use App\Shared\Tenancy\Contracts\StoreStockLedger;
 use App\Shared\Tenancy\Contracts\StoreStockReservations;
+use App\Shared\Tenancy\Contracts\StoreUnpaidOrders;
 use App\Tenant\Cart\CartStoreTables;
 use App\Tenant\Cart\CustomerCartRetention;
 use App\Tenant\Cart\GuestCartRetention;
@@ -113,6 +114,7 @@ use App\Tenant\Inventory\Models\StockReservation;
 use App\Tenant\Inventory\SettledReservationRetention;
 use App\Tenant\Inventory\StockLedgerReconciliation;
 use App\Tenant\Orders\Enums\OrderPermission;
+use App\Tenant\Orders\ExpiredOrderSweep;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Orders\OrderPricedRecords;
 use App\Tenant\Orders\OrderStoreTables;
@@ -207,6 +209,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(StoreStockLedger::class, StockLedgerReconciliation::class);
         $this->app->bind(StoreStockReservations::class, ExpiredReservationSweep::class);
         $this->app->bind(StorePromotionHolds::class, ExpiredPromotionUseSweep::class);
+        $this->app->bind(StoreUnpaidOrders::class, ExpiredOrderSweep::class);
         $this->app->bind(StockLocationSelector::class, DefaultStockLocationSelector::class);
         // One list of country tax plug-ins, filled in by modules' and integrations' service providers.
         $this->app->singleton(TaxCalculatorRegistry::class);

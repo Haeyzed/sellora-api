@@ -173,4 +173,8 @@ return [
     'shipping_rates_overlap' => 'Two of these brackets cover the same weight or order value. Brackets can leave gaps, but never overlap.',
     'rest_of_world_zone_has_regions' => 'A zone covering the rest of the world lists no regions of its own. Remove its regions first.',
 
+    // Orders
+    'order_cannot_be_cancelled' => 'This order can no longer be cancelled: it is completed, already cancelled, or has started to ship. Once anything has shipped, use a return instead.',
+    'order_already_paid' => 'This order is paid for, so only the store can cancel it. Contact the store.',
+
 ];
