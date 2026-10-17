@@ -129,6 +129,7 @@ function orderDraft(
     string $locale = 'en',
     ?string $checkout = null,
     ?AddressSnapshot $billingAddress = null,
+    bool $isTest = false,
 ): OrderDraft {
     $checkout ??= strtolower((string) Str::ulid());
     $buyer ??= OrderBuyer::guest('ada@example.com', 'Ada Obi', '+2348012345678');
@@ -144,7 +145,7 @@ function orderDraft(
 
     return new OrderDraft(
         $checkout, $basket, $buyer, $billingAddress, $method !== null && $method->fulfilment->needsAddress() ? orderAddress() : null,
-        $option, $stockHolder, $promotionHolder, $locale, 'Leave it at the gate.', $paymentDueAt,
+        $option, $stockHolder, $promotionHolder, $locale, 'Leave it at the gate.', $paymentDueAt, $isTest,
     );
 }
 

@@ -7,8 +7,8 @@ namespace App\Tenant\Orders\Http\Requests;
 use App\Shared\Http\CursorListRequest;
 use App\Tenant\Identity\Concerns\ActsAsStaffMember;
 use App\Tenant\Orders\Enums\FulfilmentStatus;
+use App\Tenant\Orders\Enums\OrderPaymentStatus;
 use App\Tenant\Orders\Enums\OrderStatus;
-use App\Tenant\Orders\Enums\PaymentStatus;
 use App\Tenant\Orders\Models\Order;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
@@ -36,7 +36,7 @@ final class ListOrdersRequest extends CursorListRequest
             /** An order number ("1042" or "#1042") or a buyer's whole email: exact matches only. An email finds orders placed with it or corrected to it. */
             'search' => ['sometimes', 'string', 'min:1', 'max:254'],
             'status' => ['sometimes', 'string', Rule::enum(OrderStatus::class)],
-            'payment_status' => ['sometimes', 'string', Rule::enum(PaymentStatus::class)],
+            'payment_status' => ['sometimes', 'string', Rule::enum(OrderPaymentStatus::class)],
             'fulfilment_status' => ['sometimes', 'string', Rule::enum(FulfilmentStatus::class)],
             /** True for cancelled orders whose payment is owed back. */
             'refund_due' => ['sometimes', 'boolean'],

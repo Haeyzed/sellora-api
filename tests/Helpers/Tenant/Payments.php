@@ -4,7 +4,15 @@ declare(strict_types=1);
 
 use App\Shared\Features\Contracts\FeatureSource;
 use App\Shared\Features\Features;
+use App\Shared\Money\Money;
+use App\Tenant\Orders\Models\Order;
 use App\Tenant\Payments\Actions\ConnectPaymentGateway;
+use App\Tenant\Payments\Actions\StartPayment;
+use App\Tenant\Payments\Actions\VerifyPayment;
+use App\Tenant\Payments\Data\GatewayPaymentResult;
+use App\Tenant\Payments\Enums\GatewayMode;
+use App\Tenant\Payments\Enums\GatewayPaymentState;
+use App\Tenant\Payments\Models\Payment;
 use App\Tenant\Payments\Models\PaymentGatewayConnection;
 use Tests\Fixtures\Features\FakeFeatureSource;
 use Tests\Fixtures\Payments\FakeGatewayScript;
@@ -69,4 +77,36 @@ function fakeGatewayCredentials(string $mode = 'test', string $suffix = '0123456
 function connectFakeGateway(string $mode = 'test', string $suffix = '0123456789', string $gateway = FakePaymentGateway::KEY): PaymentGatewayConnection
 {
     return test()->store->run(static fn (): PaymentGatewayConnection => app(ConnectPaymentGateway::class)->handle(test()->owner, $gateway, fakeGatewayCredentials($mode, $suffix)));
+}
+
+/**
+ * A live order of one shipped line, placed in the test store, unpaid.
+ */
+function unpaidOrder(int $price = 10000, ?string $currency = null, bool $isTest = false): Order
+{
+    return placeOrder(orderDraft([[cartVariant($price, stock: 5), 1]], orderShippingMethod(), currency: $currency, isTest: $isTest));
+}
+
+/**
+ * Starts a payment of what is left on the order with the fake gateway, as Checkout will.
+ */
+function startFakePayment(Order $order, ?string $idempotencyKey = null, string $gateway = FakePaymentGateway::KEY): Payment
+{
+    return app(StartPayment::class)->handle($order, $gateway, 'https://shop.example.com/orders/return', $idempotencyKey);
+}
+
+/**
+ * Makes the fake gateway answer for a payment when it is next asked.
+ */
+function gatewayAnswers(Payment $payment, GatewayPaymentState $state, ?Money $amount = null, ?GatewayMode $mode = null, ?string $cardLast4 = null): void
+{
+    app(FakeGatewayScript::class)->payments[$payment->reference] = new GatewayPaymentResult($state, $amount, $mode, 'fake_'.$payment->reference, $state === GatewayPaymentState::Failed ? 'declined' : null, $cardLast4 === null ? null : 'visa', $cardLast4);
+}
+
+/**
+ * Asks the fake gateway about a payment, as a webhook or the buyer coming back would, and returns it freshly read.
+ */
+function verifyFakePayment(Payment $payment): Payment
+{
+    return app(VerifyPayment::class)->handle($payment->refresh())->refresh();
 }

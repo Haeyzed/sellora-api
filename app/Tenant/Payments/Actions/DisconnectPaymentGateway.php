@@ -8,8 +8,10 @@ use App\Shared\Integrations\Contracts\WebhookEndpoints;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Payments\Enums\ConnectionStatus;
 use App\Tenant\Payments\Events\PaymentGatewayDisconnected;
+use App\Tenant\Payments\Exceptions\PaymentGatewayInUseException;
 use App\Tenant\Payments\Exceptions\PaymentGatewayNotConnectedException;
 use App\Tenant\Payments\Models\PaymentGatewayConnection;
+use App\Tenant\Payments\Services\MoneyInMotion;
 use App\Tenant\Payments\Services\PaymentActivity;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -26,18 +28,24 @@ final readonly class DisconnectPaymentGateway
     public function __construct(
         private WebhookEndpoints $webhookEndpoints,
         private PaymentActivity $paymentActivity,
+        private MoneyInMotion $moneyInMotion,
     ) {}
 
     /**
      * @throws PaymentGatewayNotConnectedException
+     * @throws PaymentGatewayInUseException While payments or refunds on it are still in motion; turning it off is always allowed instead.
      */
     public function handle(StaffMember $actor, string $gatewayKey): PaymentGatewayConnection
     {
-        [$connection, $endpointId] = DB::transaction(static function () use ($gatewayKey): array {
+        [$connection, $endpointId] = DB::transaction(function () use ($gatewayKey): array {
             $connection = PaymentGatewayConnection::query()->where('gateway', $gatewayKey)->lockForUpdate()->first();
 
             if ($connection === null || ! $connection->isConnected()) {
                 throw new PaymentGatewayNotConnectedException;
+            }
+
+            if ($this->moneyInMotion->on($connection)) {
+                throw new PaymentGatewayInUseException;
             }
 
             $endpointId = $connection->endpoint_id;

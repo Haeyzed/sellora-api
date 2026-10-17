@@ -8,7 +8,7 @@ use App\Shared\Privacy\Contracts\ClassifiesStoreTables;
 use App\Shared\Privacy\StoreExportRegistry;
 
 /**
- * How payments appear in a store export. Gateway credentials and webhook endpoint IDs never leave: only which gateways are connected and how.
+ * How payments appear in a store export: every payment and its history, as the store's own financial records. Gateway credentials and webhook endpoint IDs never leave: only which gateways are connected and how.
  */
 final class PaymentStoreTables implements ClassifiesStoreTables
 {
@@ -21,5 +21,12 @@ final class PaymentStoreTables implements ClassifiesStoreTables
             'credentials' => 'The gateway keys of the store: secrets, never exported.',
             'endpoint_id' => 'Its webhook endpoint ID: lets anyone holding it send webhooks to the store.',
         ]);
+        $registry->table('payments', include: [
+            'id', 'public_id', 'order_id', 'method', 'gateway', 'connection_id', 'is_test', 'status', 'currency', 'amount_amount', 'received_currency',
+            'received_amount', 'reference', 'idempotency_key', 'gateway_reference', 'redirect_url', 'failure_code', 'review_reason', 'card_brand',
+            'card_last4', 'confirmed_by_type', 'confirmed_by_id', 'succeeded_at', 'failed_at', 'needs_review_at', 'unresolved_at', 'cancelled_at',
+            'last_checked_at', 'checks', 'created_at', 'updated_at',
+        ]);
+        $registry->table('payment_events', include: ['id', 'payment_id', 'type', 'data', 'actor_type', 'actor_id', 'created_at']);
     }
 }

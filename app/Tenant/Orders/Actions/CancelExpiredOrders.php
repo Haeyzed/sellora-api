@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tenant\Orders\Actions;
 
+use App\Tenant\Orders\Enums\OrderPaymentStatus;
 use App\Tenant\Orders\Enums\OrderStatus;
-use App\Tenant\Orders\Enums\PaymentStatus;
 use App\Tenant\Orders\Models\Order;
 
 /**
@@ -26,7 +26,7 @@ final readonly class CancelExpiredOrders
         $cancelled = 0;
         $candidates = Order::query()
             ->where('status', OrderStatus::Open->value)
-            ->where('payment_status', PaymentStatus::Unpaid->value)
+            ->whereIn('payment_status', [OrderPaymentStatus::Unpaid->value, OrderPaymentStatus::PartiallyPaid->value])
             ->where('payment_due_at', '<=', now())
             ->orderBy('payment_due_at')
             ->orderBy('id')

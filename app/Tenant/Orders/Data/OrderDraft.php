@@ -27,6 +27,7 @@ final readonly class OrderDraft
      * @param  RedemptionHolder  $promotionHolder  The checkout, whose promotion uses become the order's.
      * @param  string  $locale  The language names are copied in: the buyer's.
      * @param  CarbonImmutable|null  $paymentDueAt  A later deadline for a payment method paid later (Step 15); null for the usual one. Never none.
+     * @param  bool  $isTest  Whether the chosen payment method's gateway is in test mode: the order is then a test order for good.
      */
     public function __construct(
         public string $checkoutId,
@@ -40,5 +41,6 @@ final readonly class OrderDraft
         public string $locale,
         public ?string $customerNote = null,
         public ?CarbonImmutable $paymentDueAt = null,
+        public bool $isTest = false,
     ) {}
 }

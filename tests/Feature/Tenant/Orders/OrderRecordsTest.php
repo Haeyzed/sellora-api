@@ -141,7 +141,7 @@ it('refuses statuses that don\'t fit together, at the database', function (array
     'completed but not fulfilled' => [['status' => 'completed', 'completed_at' => now(), 'payment_status' => 'paid', 'paid_at' => now()], 'orders_completed_when_done'],
     'paid with no time' => [['payment_status' => 'paid'], 'orders_paid_when_paid'],
     'cancelled with no reason' => [['status' => 'cancelled', 'cancelled_at' => now()], 'orders_cancelled_when_cancelled'],
-    'refund due while unpaid' => [['refund_due' => true, 'status' => 'cancelled', 'cancelled_at' => now(), 'cancellation_reason' => 'staff'], 'orders_refund_due_only_when_paid_and_cancelled'],
+    'refund due while unpaid' => [['refund_due' => true, 'status' => 'cancelled', 'cancelled_at' => now(), 'cancellation_reason' => 'staff'], 'orders_refund_due_only_when_money_and_cancelled'],
     'an unknown status' => [['status' => 'shipped'], 'orders_status_check'],
     'an email in capitals' => [['contact_email' => 'Ada@Example.com'], 'orders_email_lower_case'],
     'a discount over the subtotal' => [['discount_amount' => 20000], 'orders_discounts_within'],

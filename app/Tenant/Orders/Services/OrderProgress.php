@@ -7,7 +7,6 @@ namespace App\Tenant\Orders\Services;
 use App\Tenant\Orders\Enums\FulfilmentStatus;
 use App\Tenant\Orders\Enums\OrderEventType;
 use App\Tenant\Orders\Enums\OrderStatus;
-use App\Tenant\Orders\Enums\PaymentStatus;
 use App\Tenant\Orders\Enums\ShipmentStatus;
 use App\Tenant\Orders\Events\OrderCompleted;
 use App\Tenant\Orders\Events\OrderFulfilled;
@@ -36,7 +35,7 @@ final readonly class OrderProgress
      */
     public function completeIfDone(Order $locked): bool
     {
-        if ($locked->status !== OrderStatus::Open || $locked->payment_status !== PaymentStatus::Paid || ! $locked->fulfilment_status->isDone()) {
+        if ($locked->status !== OrderStatus::Open || ! $locked->payment_status->wasPaidInFull() || ! $locked->fulfilment_status->isDone()) {
             return false;
         }
 

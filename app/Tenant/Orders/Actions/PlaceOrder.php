@@ -18,8 +18,8 @@ use App\Tenant\Orders\Data\PlacedOrder;
 use App\Tenant\Orders\Enums\FulfilmentStatus;
 use App\Tenant\Orders\Enums\OrderAddressKind;
 use App\Tenant\Orders\Enums\OrderEventType;
+use App\Tenant\Orders\Enums\OrderPaymentStatus;
 use App\Tenant\Orders\Enums\OrderStatus;
-use App\Tenant\Orders\Enums\PaymentStatus;
 use App\Tenant\Orders\Events\OrderPlaced;
 use App\Tenant\Orders\Exceptions\InvalidOrderDraftException;
 use App\Tenant\Orders\Models\Order;
@@ -201,7 +201,8 @@ final readonly class PlaceOrder
         $order->forceFill([
             'checkout_id' => $draft->checkoutId,
             'status' => OrderStatus::Open,
-            'payment_status' => PaymentStatus::Unpaid,
+            'payment_status' => OrderPaymentStatus::Unpaid,
+            'is_test' => $draft->isTest,
             'fulfilment_status' => $draft->shipping === null ? FulfilmentStatus::NotRequired : FulfilmentStatus::Unfulfilled,
             'customer_id' => $customer?->id,
             'contact_email' => $draft->buyer->email,

@@ -12,8 +12,8 @@ use App\Tenant\Inventory\Data\StockHolder;
 use App\Tenant\Orders\Enums\CancellationReason;
 use App\Tenant\Orders\Enums\FulfilmentStatus;
 use App\Tenant\Orders\Enums\OrderEventType;
+use App\Tenant\Orders\Enums\OrderPaymentStatus;
 use App\Tenant\Orders\Enums\OrderStatus;
-use App\Tenant\Orders\Enums\PaymentStatus;
 use App\Tenant\Orders\Enums\ShipmentStatus;
 use App\Tenant\Orders\Events\OrderCancelled;
 use App\Tenant\Orders\Events\ShipmentCancelled;
@@ -126,7 +126,7 @@ final readonly class CancelOrder
             throw new OrderCannotBeCancelledException;
         }
 
-        if ($reason === CancellationReason::Customer && $locked->payment_status === PaymentStatus::Paid) {
+        if ($reason === CancellationReason::Customer && $locked->payment_status !== OrderPaymentStatus::Unpaid) {
             throw new OrderAlreadyPaidException;
         }
     }
@@ -166,7 +166,7 @@ final readonly class CancelOrder
             'cancellation_reason' => $reason,
             'cancelled_by_type' => $actor?->type,
             'cancelled_by_id' => $actor?->publicId,
-            'refund_due' => $locked->payment_status === PaymentStatus::Paid,
+            'refund_due' => $locked->payment_status->holdsMoney(),
         ])->save();
 
         $this->orderEventLog->record($locked, OrderEventType::Cancelled, ['from' => OrderStatus::Open->value, 'to' => OrderStatus::Cancelled->value, 'reason' => $reason->value, 'refund_due' => $locked->refund_due], $actor);

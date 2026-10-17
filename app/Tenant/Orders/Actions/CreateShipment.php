@@ -8,7 +8,6 @@ use App\Shared\Auth\AccountReference;
 use App\Tenant\Inventory\Models\StockLocation;
 use App\Tenant\Orders\Enums\OrderEventType;
 use App\Tenant\Orders\Enums\OrderStatus;
-use App\Tenant\Orders\Enums\PaymentStatus;
 use App\Tenant\Orders\Enums\ShipmentStatus;
 use App\Tenant\Orders\Events\ShipmentCreated;
 use App\Tenant\Orders\Exceptions\OrderCannotBeFulfilledException;
@@ -49,7 +48,7 @@ final readonly class CreateShipment
             $locked = $this->orderProgress->lock($order);
             $shippingLine = $locked->shippingLine()->first();
 
-            if ($locked->status !== OrderStatus::Open || $locked->payment_status !== PaymentStatus::Paid || $shippingLine === null) {
+            if ($locked->status !== OrderStatus::Open || ! $locked->payment_status->wasPaidInFull() || $shippingLine === null) {
                 throw new OrderCannotBeFulfilledException;
             }
 

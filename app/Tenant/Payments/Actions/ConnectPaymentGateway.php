@@ -13,10 +13,13 @@ use App\Tenant\Payments\Data\GatewayCredentials;
 use App\Tenant\Payments\Enums\ConnectionStatus;
 use App\Tenant\Payments\Events\PaymentGatewayConnected;
 use App\Tenant\Payments\Exceptions\GatewayUnavailableException;
+use App\Tenant\Payments\Exceptions\PaymentGatewayAccountChangedException;
 use App\Tenant\Payments\Exceptions\PaymentGatewayCredentialsInvalidException;
+use App\Tenant\Payments\Exceptions\PaymentGatewayModeChangedException;
 use App\Tenant\Payments\Exceptions\PaymentGatewayUnreachableException;
 use App\Tenant\Payments\Models\PaymentGatewayConnection;
 use App\Tenant\Payments\PaymentGatewayRegistry;
+use App\Tenant\Payments\Services\MoneyInMotion;
 use App\Tenant\Payments\Services\PaymentActivity;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -27,7 +30,8 @@ use SensitiveParameter;
  *
  * Connecting a gateway the store isn't connected to needs it on the plan.
  * Replacing the credentials of one already connected is always allowed,
- * whatever the plan, so money already in motion can still be looked after.
+ * whatever the plan, so money already in motion can still be looked after,
+ * but while it is, only with keys of the same account and mode.
  *
  * Its webhook endpoint is created on the central database first, then the
  * store saves the connection naming it: an endpoint left behind by a save
@@ -41,6 +45,7 @@ final readonly class ConnectPaymentGateway
         private Features $features,
         private WebhookEndpoints $webhookEndpoints,
         private PaymentActivity $paymentActivity,
+        private MoneyInMotion $moneyInMotion,
     ) {}
 
     /**
@@ -57,6 +62,10 @@ final readonly class ConnectPaymentGateway
         }
 
         $check = $this->checkWithGateway($gateway, $credentials);
+
+        if ($isReplacing) {
+            $this->ensureMoneyInMotionStaysPut($existing, $check);
+        }
         $endpointId = $existing->endpoint_id ?? $this->webhookEndpoints->create((string) tenant()?->getTenantKey(), $gatewayKey);
 
         $connection = DB::transaction(function () use ($existing, $gatewayKey, $credentials, $check, $endpointId, $isReplacing): PaymentGatewayConnection {
@@ -89,6 +98,27 @@ final readonly class ConnectPaymentGateway
         PaymentGatewayConnected::dispatch($connection);
 
         return $connection;
+    }
+
+    /**
+     * Payments and refunds still in motion must finish with the account and mode that took them: replacement keys may rotate them, never move them.
+     *
+     * @throws PaymentGatewayAccountChangedException
+     * @throws PaymentGatewayModeChangedException
+     */
+    private function ensureMoneyInMotionStaysPut(PaymentGatewayConnection $existing, CredentialCheck $check): void
+    {
+        if (! $this->moneyInMotion->on($existing)) {
+            return;
+        }
+
+        if ($check->mode !== $existing->mode) {
+            throw new PaymentGatewayModeChangedException;
+        }
+
+        if ($check->accountId !== null && $existing->account_id !== null && $check->accountId !== $existing->account_id) {
+            throw new PaymentGatewayAccountChangedException;
+        }
     }
 
     /**

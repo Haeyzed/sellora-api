@@ -35,6 +35,8 @@ final class OrderSummaryResource extends JsonResource
             'number' => $order->number,
             'status' => $order->status->value,
             'payment_status' => $order->payment_status->value,
+            /** Placed with a test-mode payment method: only test payments pay it, and it is never a sale. */
+            'is_test' => $order->is_test,
             'fulfilment_status' => $order->fulfilment_status->value,
             'refund_due' => $order->refund_due,
             'customer' => $order->customer === null ? null : ['id' => $order->customer->public_id],

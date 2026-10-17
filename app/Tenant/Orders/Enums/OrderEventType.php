@@ -13,6 +13,9 @@ enum OrderEventType: string
 
     case Paid = 'paid';
 
+    /** Its payment status moved other than to paid in full: partially paid, partially refunded or refunded. */
+    case PaymentStatusChanged = 'payment_status_changed';
+
     /** A payment arrived after the order was cancelled: it stays cancelled, and the payment is owed back. */
     case PaidAfterCancellation = 'paid_after_cancellation';
 

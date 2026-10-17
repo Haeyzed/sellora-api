@@ -41,6 +41,8 @@ final class CustomerOrderResource extends JsonResource
             'status' => $order->status->value,
             /** "unpaid" or "paid". */
             'payment_status' => $order->payment_status->value,
+            /** Placed with a test-mode payment method: only test payments pay it, and it is never a sale. */
+            'is_test' => $order->is_test,
             /** "unfulfilled", "partially_fulfilled", "fulfilled", or "not_required" when nothing ships. */
             'fulfilment_status' => $order->fulfilment_status->value,
             'currency' => $order->currency,

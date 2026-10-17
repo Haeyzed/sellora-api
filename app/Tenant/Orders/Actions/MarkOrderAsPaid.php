@@ -8,8 +8,8 @@ use App\Tenant\Inventory\Actions\CommitReservedStock;
 use App\Tenant\Inventory\Data\StockHolder;
 use App\Tenant\Inventory\Exceptions\InsufficientStockException;
 use App\Tenant\Orders\Enums\OrderEventType;
+use App\Tenant\Orders\Enums\OrderPaymentStatus;
 use App\Tenant\Orders\Enums\OrderStatus;
-use App\Tenant\Orders\Enums\PaymentStatus;
 use App\Tenant\Orders\Events\OrderPaid;
 use App\Tenant\Orders\Events\OrderPaidAfterCancellation;
 use App\Tenant\Orders\Models\Order;
@@ -45,11 +45,12 @@ final readonly class MarkOrderAsPaid
         return DB::transaction(function () use ($order, $paidAt): Order {
             $locked = $this->orderProgress->lock($order);
 
-            if ($locked->payment_status === PaymentStatus::Paid) {
+            if ($locked->payment_status->wasPaidInFull()) {
                 return $locked;
             }
 
-            $locked->forceFill(['payment_status' => PaymentStatus::Paid, 'paid_at' => $paidAt ?? CarbonImmutable::now()]);
+            $from = $locked->payment_status;
+            $locked->forceFill(['payment_status' => OrderPaymentStatus::Paid, 'paid_at' => $paidAt ?? CarbonImmutable::now()]);
 
             if ($locked->status === OrderStatus::Cancelled) {
                 return $this->owedBack($locked);
@@ -59,7 +60,7 @@ final readonly class MarkOrderAsPaid
             $holder = new RedemptionHolder($locked->getMorphClass(), $locked->public_id);
             $this->settlePromotionUses->commit($holder, $holder);
             $this->commitLinesThatDontShip($locked);
-            $this->orderEventLog->record($locked, OrderEventType::Paid, ['from' => PaymentStatus::Unpaid->value, 'to' => PaymentStatus::Paid->value]);
+            $this->orderEventLog->record($locked, OrderEventType::Paid, ['from' => $from->value, 'to' => OrderPaymentStatus::Paid->value]);
             OrderPaid::dispatch($locked);
             $this->orderProgress->completeIfDone($locked);
 

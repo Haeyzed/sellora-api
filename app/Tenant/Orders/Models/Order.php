@@ -15,8 +15,8 @@ use App\Tenant\Orders\Data\OrderContact;
 use App\Tenant\Orders\Enums\CancellationReason;
 use App\Tenant\Orders\Enums\FulfilmentStatus;
 use App\Tenant\Orders\Enums\OrderAddressKind;
+use App\Tenant\Orders\Enums\OrderPaymentStatus;
 use App\Tenant\Orders\Enums\OrderStatus;
-use App\Tenant\Orders\Enums\PaymentStatus;
 use App\Tenant\Pricing\Enums\ExchangeRateSource;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
@@ -41,7 +41,8 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property int $number Shown as "#1042"; per store, never used to look an order up.
  * @property string $checkout_id The checkout it was placed from.
  * @property OrderStatus $status
- * @property PaymentStatus $payment_status
+ * @property OrderPaymentStatus $payment_status Moved only by Payments.
+ * @property bool $is_test Placed with a test-mode payment method; never changes. Only test payments pay it, and it never counts as a sale.
  * @property FulfilmentStatus $fulfilment_status
  * @property bool $refund_due Paid, but cancelled: the payment is owed back.
  * @property int|null $customer_id Null for a guest order not linked to an account.
@@ -126,11 +127,11 @@ final class Order extends Model implements AuditableContract
     }
 
     /**
-     * Whether it can still be paid for: open and unpaid.
+     * Whether it can still be paid for: open, and unpaid or paid only in part.
      */
     public function awaitsPayment(): bool
     {
-        return $this->status === OrderStatus::Open && $this->payment_status === PaymentStatus::Unpaid;
+        return $this->status === OrderStatus::Open && in_array($this->payment_status, [OrderPaymentStatus::Unpaid, OrderPaymentStatus::PartiallyPaid], true);
     }
 
     /**
@@ -249,7 +250,8 @@ final class Order extends Model implements AuditableContract
         return [
             'number' => 'integer',
             'status' => OrderStatus::class,
-            'payment_status' => PaymentStatus::class,
+            'payment_status' => OrderPaymentStatus::class,
+            'is_test' => 'boolean',
             'fulfilment_status' => FulfilmentStatus::class,
             'refund_due' => 'boolean',
             'customer_id' => 'integer',
