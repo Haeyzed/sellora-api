@@ -12,8 +12,11 @@ use App\Tenant\Payments\Actions\VerifyPayment;
 use App\Tenant\Payments\Data\GatewayPaymentResult;
 use App\Tenant\Payments\Enums\GatewayMode;
 use App\Tenant\Payments\Enums\GatewayPaymentState;
+use App\Tenant\Payments\Jobs\CheckPaymentWithGateway;
 use App\Tenant\Payments\Models\Payment;
 use App\Tenant\Payments\Models\PaymentGatewayConnection;
+use Illuminate\Support\Facades\Queue;
+use Illuminate\Testing\TestResponse;
 use Tests\Fixtures\Features\FakeFeatureSource;
 use Tests\Fixtures\Payments\FakeGatewayScript;
 use Tests\Fixtures\Payments\FakePaymentGateway;
@@ -109,4 +112,37 @@ function gatewayAnswers(Payment $payment, GatewayPaymentState $state, ?Money $am
 function verifyFakePayment(Payment $payment): Payment
 {
     return app(VerifyPayment::class)->handle($payment->refresh())->refresh();
+}
+
+/**
+ * The checks with the gateway queued (on a faked queue) for a payment, by their place in its own schedule; null for a one-off check by the sweep.
+ *
+ * @return list<int|null>
+ */
+function queuedChecks(Payment $payment): array
+{
+    return array_values(Queue::pushed(CheckPaymentWithGateway::class, static fn (CheckPaymentWithGateway $job): bool => $job->paymentId === $payment->id)
+        ->map(static fn (CheckPaymentWithGateway $job): ?int => $job->checkNumber)
+        ->all());
+}
+
+/**
+ * The webhook endpoint ID of the test store's connection with a fake gateway.
+ */
+function fakeWebhookEndpoint(string $gateway = FakePaymentGateway::KEY): string
+{
+    return (string) test()->store->run(static fn (): ?string => PaymentGatewayConnection::query()->where('gateway', $gateway)->value('endpoint_id'));
+}
+
+/**
+ * Sends a webhook from the fake gateway to an endpoint on the central domain, signed with a secret key (the live test keys by default), as the gateway would.
+ *
+ * @param  array<string, mixed>  $payload
+ */
+function sendFakeWebhook(array $payload, ?string $endpointId = null, ?string $secret = null): TestResponse
+{
+    $body = (string) json_encode($payload);
+    $signature = hash_hmac('sha256', $body, $secret ?? fakeGatewayCredentials('live')['secret_key']);
+
+    return test()->call('POST', centralUrl('/webhooks/payments/'.($endpointId ?? fakeWebhookEndpoint())), server: ['CONTENT_TYPE' => 'application/json', 'HTTP_X_FAKE_SIGNATURE' => $signature], content: $body);
 }

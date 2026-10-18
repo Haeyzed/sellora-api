@@ -63,6 +63,8 @@ return [
         'cart_ip_ceiling' => (int) env('RATE_LIMIT_CART_IP_CEILING', 600),
         'cart_creation_ip_ceiling' => (int) env('RATE_LIMIT_CART_CREATION_IP_CEILING', 100),
         'tenant_webhooks' => (int) env('RATE_LIMIT_TENANT_WEBHOOKS', 300),
+        // Webhooks to endpoint IDs that lead nowhere, per IP address: guessing them is pointless, and this keeps it slow.
+        'unknown_webhook_endpoints' => (int) env('RATE_LIMIT_UNKNOWN_WEBHOOK_ENDPOINTS', 30),
         'tenant_bulk_jobs' => (int) env('RATE_LIMIT_TENANT_BULK_JOBS', 60),
     ],
 

@@ -34,6 +34,7 @@ use App\Shared\Geography\AddressFormats;
 use App\Shared\Http\PaginationDocumentation;
 use App\Shared\Idempotency\GuestRequester;
 use App\Shared\Idempotency\IdempotencyKeyRetention;
+use App\Shared\Integrations\Contracts\PaymentWebhooks;
 use App\Shared\Integrations\Contracts\WebhookEndpoints;
 use App\Shared\Money\ExchangeRates\ExchangeRateRetention;
 use App\Shared\Money\PricedRecordsRegistry;
@@ -50,6 +51,7 @@ use App\Shared\Tenancy\Contracts\StoreClosure;
 use App\Shared\Tenancy\Contracts\StoreExports;
 use App\Shared\Tenancy\Contracts\StoreOwnerAccounts;
 use App\Shared\Tenancy\Contracts\StoreOwnerContact;
+use App\Shared\Tenancy\Contracts\StorePaymentChecks;
 use App\Shared\Tenancy\Contracts\StorePermissions;
 use App\Shared\Tenancy\Contracts\StoreProfile;
 use App\Shared\Tenancy\Contracts\StorePromotionHolds;
@@ -116,6 +118,7 @@ use App\Tenant\Inventory\Models\StockMovement;
 use App\Tenant\Inventory\Models\StockReservation;
 use App\Tenant\Inventory\SettledReservationRetention;
 use App\Tenant\Inventory\StockLedgerReconciliation;
+use App\Tenant\Orders\Contracts\PaymentCheckBeforeExpiry;
 use App\Tenant\Orders\Enums\OrderPermission;
 use App\Tenant\Orders\ExpiredOrderSweep;
 use App\Tenant\Orders\Listeners\LinkGuestOrdersWhenEmailVerified;
@@ -132,10 +135,15 @@ use App\Tenant\Orders\Privacy\GuestOrderData;
 use App\Tenant\Orders\Services\PlacedOrderHistory;
 use App\Tenant\Payments\Enums\PaymentPermission;
 use App\Tenant\Payments\Events\PaymentSucceeded;
+use App\Tenant\Payments\GatewayCheckBeforeExpiry;
 use App\Tenant\Payments\Models\Payment;
 use App\Tenant\Payments\Models\PaymentGatewayConnection;
 use App\Tenant\Payments\PaymentGatewayRegistry;
 use App\Tenant\Payments\PaymentStoreTables;
+use App\Tenant\Payments\PaymentWebhookEventRetention;
+use App\Tenant\Payments\PaymentWebhookPayloadRetention;
+use App\Tenant\Payments\PaymentWebhookReceiver;
+use App\Tenant\Payments\PendingPaymentSweep;
 use App\Tenant\Pricing\Actions\CalculateTax;
 use App\Tenant\Pricing\Enums\PricingPermission;
 use App\Tenant\Pricing\Models\FixedPrice;
@@ -261,6 +269,10 @@ final class AppServiceProvider extends ServiceProvider
         // Gateway integrations register themselves here; webhooks find their store through Landlord\Integrations.
         $this->app->singleton(PaymentGatewayRegistry::class);
         $this->app->bind(WebhookEndpoints::class, CentralWebhookEndpoints::class);
+        $this->app->bind(PaymentWebhooks::class, PaymentWebhookReceiver::class);
+        $this->app->bind(StorePaymentChecks::class, PendingPaymentSweep::class);
+        // Orders asks Payments for one last check before an order expires.
+        $this->app->bind(PaymentCheckBeforeExpiry::class, GatewayCheckBeforeExpiry::class);
         // A guest's Idempotency-Keys are theirs by their cart token.
         $this->app->bind(GuestRequester::class, CartGuestRequester::class);
     }
@@ -429,6 +441,8 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(StoreExportRetention::class);
             $registry->register(ExchangeRateRetention::class);
             $registry->register(OrderRetention::class);
+            $registry->register(PaymentWebhookPayloadRetention::class);
+            $registry->register(PaymentWebhookEventRetention::class);
 
             return $registry;
         });

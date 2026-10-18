@@ -13,6 +13,7 @@ use App\Tenant\Payments\Enums\ReviewReason;
 use App\Tenant\Payments\Events\PaymentFailed;
 use App\Tenant\Payments\Events\PaymentNeedsReview;
 use App\Tenant\Payments\Events\PaymentSucceeded;
+use App\Tenant\Payments\Events\PaymentUnresolved;
 use App\Tenant\Payments\Models\Payment;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -65,6 +66,28 @@ final readonly class PaymentSettlement
             Order::query()->whereKey($payment->order_id)->lockForUpdate()->firstOrFail();
             $locked = Payment::query()->whereKey($payment->id)->lockForUpdate()->firstOrFail();
             $this->fail($locked, $failureCode);
+
+            return $locked;
+        });
+    }
+
+    /**
+     * Gives up waiting on a payment the gateway still has no final answer for: it becomes unresolved, still in motion, and staff are told.
+     */
+    public function giveUp(Payment $payment): Payment
+    {
+        return DB::transaction(function () use ($payment): Payment {
+            Order::query()->whereKey($payment->order_id)->lockForUpdate()->firstOrFail();
+            $locked = Payment::query()->whereKey($payment->id)->lockForUpdate()->firstOrFail();
+
+            if ($locked->status !== PaymentStatus::Pending) {
+                return $locked;
+            }
+
+            $locked->forceFill(['status' => PaymentStatus::Unresolved, 'unresolved_at' => CarbonImmutable::now()])->save();
+            $this->paymentEventLog->record($locked, PaymentEventType::Unresolved, ['checks' => $locked->checks]);
+            Log::warning('A payment is still pending with its gateway after checking gave up; staff should look at it.', ['payment' => $locked->public_id]);
+            PaymentUnresolved::dispatch($locked);
 
             return $locked;
         });

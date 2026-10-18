@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Landlord\Integrations\Console\CheckPendingPaymentsCommand;
 use App\Landlord\Tenancy\Console\PurgeClosedStoresCommand;
 use App\Landlord\Tenancy\Console\ReconcileStockLevelsCommand;
 use App\Landlord\Tenancy\Console\ReleaseExpiredReservationsCommand;
@@ -35,6 +36,12 @@ Schedule::command(ReconcileStockLevelsCommand::class)
 // Gives back checkout holds that ran out, stock and promotion uses (section 13); reserving also does it for the variants or promotion it touches.
 Schedule::command(ReleaseExpiredReservationsCommand::class)
     ->everyFiveMinutes()
+    ->onOneServer()
+    ->withoutOverlapping();
+
+// The safety net behind each payment's own checks with its gateway, and pruning of unused webhook endpoints (section 3.3).
+Schedule::command(CheckPendingPaymentsCommand::class)
+    ->hourly()
     ->onOneServer()
     ->withoutOverlapping();
 

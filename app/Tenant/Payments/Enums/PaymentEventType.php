@@ -15,4 +15,6 @@ enum PaymentEventType: string
     case NeedsReview = 'needs_review';
     case Unresolved = 'unresolved';
     case Cancelled = 'cancelled';
+    /** The buyer disputed it with their bank; no money state changed. */
+    case Disputed = 'disputed';
 }

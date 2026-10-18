@@ -191,6 +191,7 @@ return [
     'payment_gateway_account_changed' => 'These keys belong to another gateway account. Payments or refunds on the current account are still in progress; wait for them to finish, then replace the keys.',
     'payment_gateway_mode_changed' => 'These keys switch the gateway between test and live while payments or refunds are still in progress. Wait for them to finish first.',
     'payment_gateway_in_use' => 'This gateway still has payments or refunds in progress, so it can\'t be disconnected yet. Turn it off for new payments instead; it can be disconnected once they finish.',
+    'webhook_signature_invalid' => 'This webhook isn\'t signed with the keys of the account it was sent to.',
     'order_not_payable' => 'This order isn\'t waiting for payment: it is cancelled, completed, already paid, or past its payment deadline.',
     'payment_in_progress' => 'A payment for this order is still in progress. Finish it, or wait a few minutes until it has failed or expired, then try again.',
     'payment_gateway_not_available' => 'This way to pay isn\'t available for this order.',

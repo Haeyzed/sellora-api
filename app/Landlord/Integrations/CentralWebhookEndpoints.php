@@ -8,6 +8,7 @@ use App\Landlord\Integrations\Models\WebhookEndpoint;
 use App\Landlord\Tenancy\Enums\TenantStatus;
 use App\Shared\Integrations\Contracts\WebhookEndpoints;
 use App\Shared\Integrations\WebhookEndpointTarget;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 
@@ -46,5 +47,20 @@ final readonly class CentralWebhookEndpoints implements WebhookEndpoints
     public function delete(string $endpointId): void
     {
         WebhookEndpoint::query()->where('public_id', $endpointId)->delete();
+    }
+
+    /**
+     * Deletes a store's endpoints that none of its connections use, once older than the cutoff: younger ones may belong to a connection still being saved.
+     *
+     * @param  list<string>  $inUse
+     * @return int How many were deleted.
+     */
+    public function pruneUnused(string $tenantId, array $inUse, CarbonImmutable $createdBefore): int
+    {
+        return WebhookEndpoint::query()
+            ->where('tenant_id', $tenantId)
+            ->whereNotIn('public_id', $inUse)
+            ->where('created_at', '<', $createdBefore)
+            ->delete();
     }
 }

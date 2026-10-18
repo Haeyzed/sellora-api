@@ -28,5 +28,8 @@ final class PaymentStoreTables implements ClassifiesStoreTables
             'last_checked_at', 'checks', 'created_at', 'updated_at',
         ]);
         $registry->table('payment_events', include: ['id', 'payment_id', 'type', 'data', 'actor_type', 'actor_id', 'created_at']);
+        $registry->table('payment_webhook_events', include: ['id', 'connection_id', 'gateway', 'event_id', 'kind', 'reference', 'received_at', 'processed_at'], exclude: [
+            'payload' => 'What a gateway sent, encrypted with the platform key and kept only briefly; what it led to is in the payments.',
+        ]);
     }
 }

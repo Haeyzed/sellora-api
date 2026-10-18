@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Landlord\Identity\CreatePlatformAdminCommand;
+use App\Landlord\Integrations\Console\CheckPendingPaymentsCommand;
 use App\Landlord\Tenancy\AddDatabaseServerCommand;
 use App\Landlord\Tenancy\Console\MovePlatformDomainCommand;
 use App\Landlord\Tenancy\Console\PurgeClosedStoresCommand;
@@ -72,6 +73,7 @@ return Application::configure(basePath: dirname(__DIR__))
         PurgeExpiredRecordsCommand::class,
         RefreshExchangeRatesCommand::class,
         ListSubdivisionChangesCommand::class,
+        CheckPendingPaymentsCommand::class,
     ])
     ->withMiddleware(static function (Middleware $middleware): void {
         $middleware->prepend(ForceJsonResponse::class);

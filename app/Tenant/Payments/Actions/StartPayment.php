@@ -22,6 +22,7 @@ use App\Tenant\Payments\Models\PaymentGatewayConnection;
 use App\Tenant\Payments\PaymentGatewayRegistry;
 use App\Tenant\Payments\PaymentGatewayResolver;
 use App\Tenant\Payments\Services\OrderPayments;
+use App\Tenant\Payments\Services\PaymentChecks;
 use App\Tenant\Payments\Services\PaymentEventLog;
 use App\Tenant\Payments\Services\PaymentSettlement;
 use Illuminate\Support\Facades\DB;
@@ -34,7 +35,8 @@ use Illuminate\Support\Str;
  * still go through, it is returned again (same gateway) or a new one is
  * refused. The payment is saved before the gateway is called, outside the
  * transaction, with our reference as the gateway's idempotency key; when the
- * gateway doesn't answer, the payment stays pending and is asked about later.
+ * gateway doesn't answer, the payment stays pending and is asked about later,
+ * on its own schedule of checks, which starts before the gateway is called.
  */
 final readonly class StartPayment
 {
@@ -44,6 +46,7 @@ final readonly class StartPayment
         private OrderPayments $orderPayments,
         private PaymentEventLog $paymentEventLog,
         private PaymentSettlement $paymentSettlement,
+        private PaymentChecks $paymentChecks,
     ) {}
 
     /**
@@ -64,6 +67,9 @@ final readonly class StartPayment
         if ($payment->redirect_url !== null || $payment->status !== PaymentStatus::Pending) {
             return $payment;
         }
+
+        // Before calling the gateway, so a payment is checked on even if this request never finishes.
+        $this->paymentChecks->scheduleFirst($payment);
 
         return $this->startWithGateway($payment, $order, $connection, $returnUrl);
     }

@@ -42,6 +42,10 @@ return [
         // Settled orders keep their buyer's personal data for the store's own period (its setting, or its
         // country's default in config/geography.php); this only sets a minimum, so 0 leaves it to the store.
         'settled_orders' => (int) env('RETENTION_SETTLED_ORDERS_MIN_DAYS', 0),
+        // What payment gateways sent in webhooks may name buyers; only the event ID is kept after this, so a resend is still recognised.
+        'payment_webhook_payloads' => (int) env('RETENTION_PAYMENT_WEBHOOK_PAYLOADS_DAYS', 30),
+        // Gateways stop resending an event long before this.
+        'payment_webhook_events' => (int) env('RETENTION_PAYMENT_WEBHOOK_EVENTS_DAYS', 180),
     ],
 
     /*

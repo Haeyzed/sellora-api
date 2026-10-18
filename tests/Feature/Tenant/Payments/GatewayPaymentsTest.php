@@ -17,11 +17,13 @@ use App\Tenant\Payments\Exceptions\PaymentGatewayNotAvailableException;
 use App\Tenant\Payments\Exceptions\PaymentGatewayUnreachableException;
 use App\Tenant\Payments\Exceptions\PaymentInProgressException;
 use App\Tenant\Payments\Exceptions\PaymentRefusedByGatewayException;
+use App\Tenant\Payments\Jobs\CheckPaymentWithGateway;
 use App\Tenant\Payments\Models\Payment;
 use App\Tenant\Payments\Models\PaymentEvent;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Queue;
 use Tests\Support\SecondConnection;
 use Tests\Support\TruncatesCentralDatabase;
 
@@ -41,6 +43,8 @@ beforeEach(function (): void {
     [$this->owner, $this->viewer] = $this->store->run(static fn (): array => orderStaff());
     $this->script = useFakeGateway();
     connectFakeGateway('live');
+    // Each payment's own checks with the gateway are tested in PaymentChecksTest.
+    Queue::fake([CheckPaymentWithGateway::class]);
 });
 
 afterEach(function (): void {

@@ -95,6 +95,8 @@ final class RateLimitServiceProvider extends ServiceProvider
     private function defineStoreWideLimits(): void
     {
         RateLimiter::for('tenant-webhooks', fn (): Limit => $this->perMinute('tenant_webhooks')->by(TenantScopedKey::make('webhooks')));
+        // Counted only for webhooks that found no store, on the central domain: there is no store to count them against.
+        RateLimiter::for('unknown-webhook-endpoints', fn (Request $request): Limit => $this->perMinute('unknown_webhook_endpoints')->by($this->ipKey('unknown-webhook-endpoints', $request)));
         RateLimiter::for('tenant-bulk-jobs', fn (): Limit => $this->perMinute('tenant_bulk_jobs')->by(TenantScopedKey::make('bulk-jobs')));
     }
 
