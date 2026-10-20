@@ -20,6 +20,9 @@ enum OrderEventType: string
     case PaidAfterCancellation = 'paid_after_cancellation';
     case RefundedBeyondPaid = 'refunded_beyond_paid';
 
+    /** Its invoice was issued, once it was paid in full. */
+    case InvoiceIssued = 'invoice_issued';
+
     case Cancelled = 'cancelled';
 
     case Fulfilled = 'fulfilled';

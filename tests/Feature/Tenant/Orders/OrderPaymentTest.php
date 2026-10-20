@@ -92,7 +92,8 @@ it('records a payment once, however often it is reported', function (): void {
         return $order->events()->pluck('type')->map->value->all();
     });
 
-    expect($events)->toBe(['placed', 'paid']);
+    // Paid in full once: one invoice too.
+    expect($events)->toBe(['placed', 'paid', 'invoice_issued']);
 });
 
 it('never revives a cancelled order a payment arrives for: it stays cancelled, owes a refund, and staff are alerted', function (): void {

@@ -38,4 +38,20 @@ return [
 
     'expired_orders_per_run' => (int) env('ORDERS_EXPIRED_PER_RUN', 200),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Missing Tax Documents
+    |--------------------------------------------------------------------------
+    |
+    | Each invoice and credit note is issued on the queue as soon as it falls
+    | due. The hourly sweep issues any the queue missed, a batch at a time,
+    | once they have been due for the grace period, so it doesn't race the
+    | queue.
+    |
+    */
+
+    'missing_documents_grace_minutes' => (int) env('ORDERS_MISSING_DOCUMENTS_GRACE_MINUTES', 10),
+
+    'missing_documents_per_run' => (int) env('ORDERS_MISSING_DOCUMENTS_PER_RUN', 200),
+
 ];

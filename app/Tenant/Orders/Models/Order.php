@@ -97,6 +97,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property-read Collection<int, OrderNote> $notes
  * @property-read Collection<int, OrderTag> $tags
  * @property-read Collection<int, Shipment> $shipments
+ * @property-read Invoice|null $invoice
  */
 final class Order extends Model implements AuditableContract
 {
@@ -243,6 +244,16 @@ final class Order extends Model implements AuditableContract
     public function shipments(): HasMany
     {
         return $this->hasMany(Shipment::class)->orderBy('id');
+    }
+
+    /**
+     * Its tax invoice, issued once it was paid in full; none before.
+     *
+     * @return HasOne<Invoice, $this>
+     */
+    public function invoice(): HasOne
+    {
+        return $this->hasOne(Invoice::class);
     }
 
     /**

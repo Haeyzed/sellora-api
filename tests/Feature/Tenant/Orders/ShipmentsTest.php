@@ -69,7 +69,7 @@ it('ships a paid order in parts, taking stock off the shelf as each part ships, 
     $shown = staffOrderRequest('GET', "/orders/{$order}")->json('data');
     expect([$shown['fulfilment_status'], $shown['status']])->toBe(['fulfilled', 'completed'])
         ->and($shown['fulfilled_at'])->not->toBeNull()
-        ->and(staffOrderRequest('GET', "/orders/{$order}/events")->json('data.*.type'))->toBe(['placed', 'paid', 'shipment_created', 'shipment_created', 'shipment_shipped', 'shipment_shipped', 'fulfilled', 'completed']);
+        ->and(staffOrderRequest('GET', "/orders/{$order}/events")->json('data.*.type'))->toBe(['placed', 'paid', 'invoice_issued', 'shipment_created', 'shipment_created', 'shipment_shipped', 'shipment_shipped', 'fulfilled', 'completed']);
 
     staffOrderRequest('POST', "/shipments/{$rest}/deliver")->assertOk()->assertJsonPath('data.status', 'delivered');
     Event::assertDispatchedTimes(ShipmentCreated::class, 2);

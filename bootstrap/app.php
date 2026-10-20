@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Landlord\Identity\CreatePlatformAdminCommand;
 use App\Landlord\Integrations\Console\CheckPendingPaymentsCommand;
 use App\Landlord\Tenancy\AddDatabaseServerCommand;
+use App\Landlord\Tenancy\Console\IssueMissingTaxDocumentsCommand;
 use App\Landlord\Tenancy\Console\MovePlatformDomainCommand;
 use App\Landlord\Tenancy\Console\PurgeClosedStoresCommand;
 use App\Landlord\Tenancy\Console\ReconcileStockLevelsCommand;
@@ -74,6 +75,7 @@ return Application::configure(basePath: dirname(__DIR__))
         RefreshExchangeRatesCommand::class,
         ListSubdivisionChangesCommand::class,
         CheckPendingPaymentsCommand::class,
+        IssueMissingTaxDocumentsCommand::class,
     ])
     ->withMiddleware(static function (Middleware $middleware): void {
         $middleware->prepend(ForceJsonResponse::class);

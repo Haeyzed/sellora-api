@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Landlord\Integrations\Console\CheckPendingPaymentsCommand;
+use App\Landlord\Tenancy\Console\IssueMissingTaxDocumentsCommand;
 use App\Landlord\Tenancy\Console\PurgeClosedStoresCommand;
 use App\Landlord\Tenancy\Console\ReconcileStockLevelsCommand;
 use App\Landlord\Tenancy\Console\ReleaseExpiredReservationsCommand;
@@ -41,6 +42,12 @@ Schedule::command(ReleaseExpiredReservationsCommand::class)
 
 // The safety net behind each payment's own checks with its gateway, and pruning of unused webhook endpoints (section 3.3).
 Schedule::command(CheckPendingPaymentsCommand::class)
+    ->hourly()
+    ->onOneServer()
+    ->withoutOverlapping();
+
+// The safety net behind issuing each invoice and credit note on the queue as it falls due (section 13).
+Schedule::command(IssueMissingTaxDocumentsCommand::class)
     ->hourly()
     ->onOneServer()
     ->withoutOverlapping();

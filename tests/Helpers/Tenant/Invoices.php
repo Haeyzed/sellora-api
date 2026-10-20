@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 use App\Tenant\Orders\Data\DocumentNumber;
 use App\Tenant\Orders\Enums\TaxDocumentKind;
+use App\Tenant\Orders\Models\Order;
 use App\Tenant\Orders\Services\TaxDocumentNumbers;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Symfony\Component\Process\Process;
 
 /*
@@ -55,4 +57,21 @@ function takeInvoiceNumbersInProcesses(int $processes, int $each): array
     sort($numbers);
 
     return $numbers;
+}
+
+/**
+ * An invoices row for an order in the current store, as another request might write it straight to the database, with any columns changed. A test invoice unless changed.
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function invoiceRow(Order $order, array $overrides = []): array
+{
+    return [
+        'public_id' => strtolower((string) Str::ulid()), 'order_id' => $order->id, 'number' => 'TEST-'.$order->number, 'series' => null, 'sequence_number' => null, 'is_test' => true,
+        'issued_at' => CarbonImmutable::now(), 'paid_at' => CarbonImmutable::now(), 'locale' => 'en', 'currency' => 'NGN', 'base_currency' => 'NGN', 'exchange_rate' => 1,
+        'tax_mode' => 'inclusive', 'tax_country_code' => 'NG', 'seller_name' => 'Ada', 'seller_trading_name' => 'Ada', 'subtotal_amount' => 0, 'discount_amount' => 0,
+        'shipping_amount' => 0, 'shipping_discount_amount' => 0, 'tax_amount' => 0, 'total_amount' => 0, 'base_total_amount' => 0, 'created_at' => CarbonImmutable::now(),
+        ...$overrides,
+    ];
 }

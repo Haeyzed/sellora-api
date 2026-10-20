@@ -59,6 +59,7 @@ use App\Shared\Tenancy\Contracts\StoreSessions;
 use App\Shared\Tenancy\Contracts\StoreSettingsSetup;
 use App\Shared\Tenancy\Contracts\StoreStockLedger;
 use App\Shared\Tenancy\Contracts\StoreStockReservations;
+use App\Shared\Tenancy\Contracts\StoreTaxDocuments;
 use App\Shared\Tenancy\Contracts\StoreUnpaidOrders;
 use App\Tenant\Cart\CartStoreTables;
 use App\Tenant\Cart\CustomerCartRetention;
@@ -122,10 +123,13 @@ use App\Tenant\Orders\Contracts\PaymentCheckBeforeExpiry;
 use App\Tenant\Orders\Enums\OrderPermission;
 use App\Tenant\Orders\Events\OrderAnonymised;
 use App\Tenant\Orders\Events\OrderCancelled;
+use App\Tenant\Orders\Events\OrderPaid;
 use App\Tenant\Orders\ExpiredOrderSweep;
+use App\Tenant\Orders\Listeners\IssueInvoiceWhenOrderPaid;
 use App\Tenant\Orders\Listeners\LinkGuestOrdersWhenEmailVerified;
 use App\Tenant\Orders\Listeners\MarkOrderAsPaidWhenPaymentSucceeds;
 use App\Tenant\Orders\Listeners\RecordOrderPaymentsWhenRefundSucceeds;
+use App\Tenant\Orders\MissingTaxDocumentSweep;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Orders\Models\OrderNote;
 use App\Tenant\Orders\Models\Shipment;
@@ -244,6 +248,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(StoreStockReservations::class, ExpiredReservationSweep::class);
         $this->app->bind(StorePromotionHolds::class, ExpiredPromotionUseSweep::class);
         $this->app->bind(StoreUnpaidOrders::class, ExpiredOrderSweep::class);
+        $this->app->bind(StoreTaxDocuments::class, MissingTaxDocumentSweep::class);
         $this->app->bind(StockLocationSelector::class, DefaultStockLocationSelector::class);
         // One list of country tax plug-ins, filled in by modules' and integrations' service providers.
         $this->app->singleton(TaxCalculatorRegistry::class);
@@ -629,6 +634,7 @@ final class AppServiceProvider extends ServiceProvider
         Event::listen(PaymentSucceeded::class, MarkOrderAsPaidWhenPaymentSucceeds::class);
         Event::listen(RefundSucceeded::class, RecordOrderPaymentsWhenRefundSucceeds::class);
         Event::listen(OrderCancelled::class, CancelManualPaymentsWhenOrderCancelled::class);
+        Event::listen(OrderPaid::class, IssueInvoiceWhenOrderPaid::class);
         Event::listen(OrderAnonymised::class, ForgetCardDetailsWhenOrderAnonymised::class);
     }
 

@@ -48,5 +48,16 @@ final class OrderStoreTables implements ClassifiesStoreTables
         ]);
         $registry->table('shipment_lines', include: ['id', 'shipment_id', 'order_line_id', 'quantity']);
         $registry->table('document_sequences', include: ['id', 'kind', 'series', 'last_number', 'created_at', 'updated_at']);
+        $registry->table('invoices', include: [
+            'id', 'public_id', 'order_id', 'number', 'series', 'sequence_number', 'is_test', 'issued_at', 'paid_at', 'locale', 'currency', 'base_currency', 'exchange_rate',
+            'tax_mode', 'tax_country_code', 'tax_state_code', 'seller_name', 'seller_trading_name', 'seller_tax_registration_label', 'seller_tax_registration_number',
+            'seller_address', 'seller_email', 'seller_phone', 'buyer_name', 'buyer_email', 'buyer_phone', 'billing_address', 'shipping_address', 'buyer_erased_at', 'footer',
+            'subtotal_amount', 'discount_amount', 'shipping_amount', 'shipping_discount_amount', 'tax_amount', 'total_amount', 'base_total_amount', 'pdf_path', 'pdf_rendered_at', 'created_at',
+        ]);
+        $registry->table('invoice_lines', include: [
+            'id', 'invoice_id', 'position', 'kind', 'order_line_id', 'name', 'variant_name', 'sku', 'quantity', 'currency', 'unit_price_amount', 'subtotal_amount',
+            'discount_amount', 'net_amount', 'tax_amount', 'total_amount', 'created_at',
+        ]);
+        $registry->table('invoice_taxes', include: ['id', 'invoice_id', 'invoice_line_id', 'name', 'country_code', 'state_code', 'rate_percent', 'currency', 'tax_amount', 'created_at']);
     }
 }
