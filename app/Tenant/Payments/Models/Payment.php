@@ -60,6 +60,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property-read Order $order
  * @property-read PaymentGatewayConnection|null $connection
  * @property-read Collection<int, PaymentEvent> $events
+ * @property-read Collection<int, PaymentRefund> $refunds
  */
 final class Payment extends Model implements AuditableContract
 {
@@ -98,6 +99,14 @@ final class Payment extends Model implements AuditableContract
     public function events(): HasMany
     {
         return $this->hasMany(PaymentEvent::class)->orderBy('id');
+    }
+
+    /**
+     * @return HasMany<PaymentRefund, $this>
+     */
+    public function refunds(): HasMany
+    {
+        return $this->hasMany(PaymentRefund::class)->orderBy('id');
     }
 
     /**

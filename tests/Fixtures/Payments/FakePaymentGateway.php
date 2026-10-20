@@ -39,7 +39,7 @@ final readonly class FakePaymentGateway implements PaymentGateway
 
     public function capabilities(): GatewayCapabilities
     {
-        return new GatewayCapabilities(['NGN', 'USD', 'KWD', 'JPY', 'GBP'], null, ['card', 'bank_transfer']);
+        return new GatewayCapabilities(['NGN', 'USD', 'KWD', 'JPY', 'GBP'], null, ['card', 'bank_transfer'], $this->script->partialRefunds);
     }
 
     public function credentialFields(): array
@@ -79,14 +79,23 @@ final readonly class FakePaymentGateway implements PaymentGateway
     {
         $this->call('refund', $request->refundReference);
 
-        return $this->script->refunds[$request->refundReference] ?? new GatewayRefundResult(GatewayRefundState::Succeeded, 'fake_'.$request->refundReference, $request->amount);
+        if ($this->script->rejectsRefunds) {
+            throw new GatewayRejectedException(self::KEY, 'refund', 'refund_refused');
+        }
+
+        return $this->script->refunds[$request->refundReference]
+            ?? $this->script->refundAnswer
+            ?? new GatewayRefundResult(GatewayRefundState::Succeeded, 'fake_'.$request->refundReference, $request->amount);
     }
 
     public function verifyRefund(GatewayCredentials $credentials, string $refundReference): GatewayRefundResult
     {
         $this->call('verifyRefund', $refundReference);
+        $wasSent = $this->script->timesCalled('refund', $refundReference) > 0;
 
-        return $this->script->refunds[$refundReference] ?? new GatewayRefundResult(GatewayRefundState::NotFound);
+        return $this->script->refunds[$refundReference]
+            ?? ($wasSent ? $this->script->refundAnswer : null)
+            ?? new GatewayRefundResult(GatewayRefundState::NotFound);
     }
 
     public function verifyWebhookSignature(GatewayCredentials $credentials, IncomingWebhook $webhook): bool

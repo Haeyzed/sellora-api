@@ -21,4 +21,10 @@ enum PaymentEventType: string
     case Overpaid = 'overpaid';
     /** Staff were told cash wasn't recorded as collected a while after delivery. */
     case CollectionOverdue = 'collection_overdue';
+    /** Part of a refund was asked of the gateway, or recorded as paid back by hand. */
+    case RefundStarted = 'refund_started';
+    /** Part of a refund went back to the buyer. */
+    case Refunded = 'refunded';
+    /** Part of a refund failed at the gateway; nothing went back. */
+    case RefundFailed = 'refund_failed';
 }

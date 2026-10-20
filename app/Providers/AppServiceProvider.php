@@ -124,6 +124,7 @@ use App\Tenant\Orders\Events\OrderCancelled;
 use App\Tenant\Orders\ExpiredOrderSweep;
 use App\Tenant\Orders\Listeners\LinkGuestOrdersWhenEmailVerified;
 use App\Tenant\Orders\Listeners\MarkOrderAsPaidWhenPaymentSucceeds;
+use App\Tenant\Orders\Listeners\RecordOrderPaymentsWhenRefundSucceeds;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Orders\Models\OrderNote;
 use App\Tenant\Orders\Models\Shipment;
@@ -136,11 +137,14 @@ use App\Tenant\Orders\Privacy\GuestOrderData;
 use App\Tenant\Orders\Services\PlacedOrderHistory;
 use App\Tenant\Payments\Enums\PaymentPermission;
 use App\Tenant\Payments\Events\PaymentSucceeded;
+use App\Tenant\Payments\Events\RefundSucceeded;
 use App\Tenant\Payments\GatewayCheckBeforeExpiry;
 use App\Tenant\Payments\Listeners\CancelManualPaymentsWhenOrderCancelled;
 use App\Tenant\Payments\Models\Payment;
 use App\Tenant\Payments\Models\PaymentGatewayConnection;
 use App\Tenant\Payments\Models\PaymentMethodSetting;
+use App\Tenant\Payments\Models\PaymentRefund;
+use App\Tenant\Payments\Models\Refund;
 use App\Tenant\Payments\PaymentGatewayRegistry;
 use App\Tenant\Payments\PaymentStoreTables;
 use App\Tenant\Payments\PaymentWebhookEventRetention;
@@ -517,6 +521,8 @@ final class AppServiceProvider extends ServiceProvider
             'payment_gateway_connection' => PaymentGatewayConnection::class,
             'payment' => Payment::class,
             'payment_method_setting' => PaymentMethodSetting::class,
+            'refund' => Refund::class,
+            'payment_refund' => PaymentRefund::class,
             'shipment' => Shipment::class,
         ]);
     }
@@ -619,6 +625,7 @@ final class AppServiceProvider extends ServiceProvider
     {
         Event::listen(CustomerEmailVerified::class, LinkGuestOrdersWhenEmailVerified::class);
         Event::listen(PaymentSucceeded::class, MarkOrderAsPaidWhenPaymentSucceeds::class);
+        Event::listen(RefundSucceeded::class, RecordOrderPaymentsWhenRefundSucceeds::class);
         Event::listen(OrderCancelled::class, CancelManualPaymentsWhenOrderCancelled::class);
     }
 

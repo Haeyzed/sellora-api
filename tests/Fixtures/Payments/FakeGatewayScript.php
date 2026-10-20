@@ -39,6 +39,15 @@ final class FakeGatewayScript
      */
     public array $refunds = [];
 
+    /** What refunding answers for a refund reference not listed, and verifying it once it was sent; null succeeds at once, with the amount asked. */
+    public ?GatewayRefundResult $refundAnswer = null;
+
+    /** Whether refunding is refused for good. */
+    public bool $rejectsRefunds = false;
+
+    /** Whether it declares that it refunds part of a payment. */
+    public bool $partialRefunds = true;
+
     /**
      * Each call, as [operation, reference].
      *

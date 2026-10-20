@@ -8,7 +8,7 @@ use App\Shared\Privacy\Contracts\ClassifiesStoreTables;
 use App\Shared\Privacy\StoreExportRegistry;
 
 /**
- * How payments appear in a store export: every payment and its history, as the store's own financial records. Gateway credentials and webhook endpoint IDs never leave: only which gateways are connected and how.
+ * How payments appear in a store export: every payment, refund and their history, as the store's own financial records. Gateway credentials and webhook endpoint IDs never leave: only which gateways are connected and how.
  */
 final class PaymentStoreTables implements ClassifiesStoreTables
 {
@@ -29,6 +29,15 @@ final class PaymentStoreTables implements ClassifiesStoreTables
         ]);
         $registry->table('payment_method_settings', include: ['id', 'method', 'enabled', 'deadline_hours', 'collection_alert_hours', 'instructions', 'created_at', 'updated_at']);
         $registry->table('payment_events', include: ['id', 'payment_id', 'type', 'data', 'actor_type', 'actor_id', 'created_at']);
+        $registry->table('refunds', include: [
+            'id', 'public_id', 'order_id', 'currency', 'amount_amount', 'shipping_amount', 'shipping_tax_amount', 'reason', 'idempotency_key',
+            'requested_by_type', 'requested_by_id', 'created_at',
+        ]);
+        $registry->table('refund_lines', include: ['id', 'refund_id', 'order_line_id', 'quantity', 'currency', 'amount_amount', 'tax_amount', 'created_at']);
+        $registry->table('payment_refunds', include: [
+            'id', 'public_id', 'refund_id', 'payment_id', 'status', 'currency', 'amount_amount', 'reference', 'gateway_reference', 'failure_code',
+            'recorded_by_type', 'recorded_by_id', 'succeeded_at', 'failed_at', 'last_checked_at', 'checks', 'created_at', 'updated_at',
+        ]);
         $registry->table('payment_webhook_events', include: ['id', 'connection_id', 'gateway', 'event_id', 'kind', 'reference', 'received_at', 'processed_at'], exclude: [
             'payload' => 'What a gateway sent, encrypted with the platform key and kept only briefly; what it led to is in the payments.',
         ]);

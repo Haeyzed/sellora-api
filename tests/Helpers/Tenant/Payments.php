@@ -6,6 +6,8 @@ use App\Shared\Auth\AccountReference;
 use App\Shared\Features\Contracts\FeatureSource;
 use App\Shared\Features\Features;
 use App\Shared\Money\Money;
+use App\Tenant\Catalog\Models\ProductVariant;
+use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Orders\Actions\CreateShipment;
 use App\Tenant\Orders\Actions\MoveShipment;
 use App\Tenant\Orders\Models\Order;
@@ -13,10 +15,12 @@ use App\Tenant\Orders\Models\Shipment;
 use App\Tenant\Payments\Actions\ChangeManualPaymentMethod;
 use App\Tenant\Payments\Actions\ConnectPaymentGateway;
 use App\Tenant\Payments\Actions\RecordManualPayment;
+use App\Tenant\Payments\Actions\RefundOrder;
 use App\Tenant\Payments\Actions\StartManualPayment;
 use App\Tenant\Payments\Actions\StartPayment;
 use App\Tenant\Payments\Actions\VerifyPayment;
 use App\Tenant\Payments\Data\GatewayPaymentResult;
+use App\Tenant\Payments\Data\RefundRequest;
 use App\Tenant\Payments\Enums\GatewayMode;
 use App\Tenant\Payments\Enums\GatewayPaymentState;
 use App\Tenant\Payments\Enums\PaymentMethod;
@@ -24,6 +28,7 @@ use App\Tenant\Payments\Jobs\CheckPaymentWithGateway;
 use App\Tenant\Payments\Models\Payment;
 use App\Tenant\Payments\Models\PaymentEvent;
 use App\Tenant\Payments\Models\PaymentGatewayConnection;
+use App\Tenant\Payments\Models\Refund;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Testing\TestResponse;
@@ -199,6 +204,35 @@ function manuallyPaidOrder(PaymentMethod $method, int $price = 10000): array
 function recordReceived(Payment $payment, int $minorAmount, ?string $reference = null): Payment
 {
     return test()->store->run(static fn (): Payment => app(RecordManualPayment::class)->handle(test()->owner, $payment->refresh(), Money::ofMinor($minorAmount, $payment->currency), $reference)->refresh());
+}
+
+/**
+ * An order in the test store paid in full through the fake gateway (connected live): one line of ₦100 unless others are given, shipped for ₦15 when they are. Returns it and its payment, freshly read.
+ *
+ * @param  list<array{0: ProductVariant, 1: int}>|null  $lines  Each variant and how many.
+ * @return array{Order, Payment}
+ */
+function gatewayPaidOrder(?array $lines = null): array
+{
+    return test()->store->run(static function () use ($lines): array {
+        $order = $lines === null ? unpaidOrder(10000) : placeOrder(orderDraft($lines, orderShippingMethod()));
+        $payment = startFakePayment($order);
+        gatewayAnswers($payment, GatewayPaymentState::Succeeded, $order->total, GatewayMode::Live);
+
+        return [$order->refresh(), verifyFakePayment($payment)];
+    });
+}
+
+/**
+ * Staff (the owner unless another is given) refunding an order: an amount in minor units of its currency, or lines (units by line public ID) and shipping; from one payment when given.
+ *
+ * @param  array<string, int>  $lines
+ */
+function refundOrder(Order $order, ?int $amount = null, array $lines = [], bool $shipping = false, ?Payment $from = null, ?string $idempotencyKey = null, ?StaffMember $as = null): Refund
+{
+    $request = new RefundRequest($amount === null ? null : Money::ofMinor($amount, $order->currency), $lines, $shipping, $from?->public_id, 'Changed their mind', $idempotencyKey);
+
+    return test()->store->run(static fn (): Refund => app(RefundOrder::class)->handle($as ?? test()->owner, $order, $request));
 }
 
 /**

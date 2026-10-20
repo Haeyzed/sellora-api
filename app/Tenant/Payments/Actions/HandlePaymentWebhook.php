@@ -8,23 +8,26 @@ use App\Tenant\Payments\Enums\GatewayWebhookKind;
 use App\Tenant\Payments\Enums\PaymentEventType;
 use App\Tenant\Payments\Events\PaymentDisputed;
 use App\Tenant\Payments\Models\Payment;
+use App\Tenant\Payments\Models\PaymentRefund;
 use App\Tenant\Payments\Models\PaymentWebhookEvent;
 use App\Tenant\Payments\Services\PaymentEventLog;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Log;
 
 /**
  * Acts on a recorded payment webhook. It only says "go and ask": a payment it names is verified with the gateway, server-side, and nothing in the webhook itself is trusted.
  *
- * A dispute is recorded on the payment and staff are told; no money state
- * changes (disputes are handled later). Refund webhooks are acted on once
- * refunds exist (Step 15.5). A webhook naming a payment that isn't ours
- * (another app on the same gateway account) is handled by doing nothing.
+ * A refund it names is verified the same way. A dispute is recorded on the
+ * payment and staff are told; no money state changes (disputes are handled
+ * later). A webhook naming a payment or refund that isn't ours (another app
+ * on the same gateway account) is handled by doing nothing.
  */
 final readonly class HandlePaymentWebhook
 {
     public function __construct(
         private VerifyPayment $verifyPayment,
+        private VerifyRefund $verifyRefund,
         private PaymentEventLog $paymentEventLog,
     ) {}
 
@@ -34,15 +37,35 @@ final readonly class HandlePaymentWebhook
             return;
         }
 
-        $payment = $this->paymentNamedBy($event);
-
         match ($event->kind) {
-            GatewayWebhookKind::Payment => $payment === null ? null : $this->verifyPayment->handle($payment),
-            GatewayWebhookKind::Dispute => $this->reportDispute($event, $payment),
-            GatewayWebhookKind::Refund, GatewayWebhookKind::Ignored => null,
+            GatewayWebhookKind::Payment => $this->verifyNamedPayment($event),
+            GatewayWebhookKind::Dispute => $this->reportDispute($event, $this->paymentNamedBy($event)),
+            GatewayWebhookKind::Refund => $this->verifyNamedRefund($event),
+            GatewayWebhookKind::Ignored => null,
         };
 
         $event->forceFill(['processed_at' => CarbonImmutable::now()])->save();
+    }
+
+    private function verifyNamedPayment(PaymentWebhookEvent $event): void
+    {
+        $payment = $this->paymentNamedBy($event);
+
+        if ($payment !== null) {
+            $this->verifyPayment->handle($payment);
+        }
+    }
+
+    private function verifyNamedRefund(PaymentWebhookEvent $event): void
+    {
+        $paymentRefund = $event->reference === null ? null : PaymentRefund::query()
+            ->where('reference', $event->reference)
+            ->whereHas('payment', static fn (Builder $payment) => $payment->where('connection_id', $event->connection_id))
+            ->first();
+
+        if ($paymentRefund !== null) {
+            $this->verifyRefund->handle($paymentRefund);
+        }
     }
 
     /**

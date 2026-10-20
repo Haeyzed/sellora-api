@@ -21,16 +21,16 @@ enum OrderPaymentStatus: string
     case Refunded = 'refunded';
 
     /**
-     * The status for an order's total, what was paid toward it, and what was refunded.
+     * The status for an order's total, what was paid toward it, and what was refunded. Giving back only what was paid over the total (an overpayment) leaves it paid.
      */
     public static function forAmounts(Money $total, Money $paid, Money $refunded): self
     {
         return match (true) {
             ! $paid->isPositive() => self::Unpaid,
             $refunded->isPositive() && ! $refunded->isLessThan($paid) => self::Refunded,
+            ! $paid->subtract($refunded)->isLessThan($total) => self::Paid,
             $refunded->isPositive() => self::PartiallyRefunded,
-            $paid->isLessThan($total) => self::PartiallyPaid,
-            default => self::Paid,
+            default => self::PartiallyPaid,
         };
     }
 
