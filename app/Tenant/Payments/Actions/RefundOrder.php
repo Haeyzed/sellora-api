@@ -14,11 +14,14 @@ use App\Tenant\Payments\Data\RefundRequest;
 use App\Tenant\Payments\Enums\PaymentEventType;
 use App\Tenant\Payments\Enums\PaymentMethod;
 use App\Tenant\Payments\Enums\PaymentStatus;
+use App\Tenant\Payments\Enums\RefundPurpose;
 use App\Tenant\Payments\Enums\RefundStatus;
 use App\Tenant\Payments\Exceptions\OrderNotRefundableException;
 use App\Tenant\Payments\Exceptions\PartialRefundNotSupportedException;
 use App\Tenant\Payments\Exceptions\PaymentGatewayNotConnectedException;
+use App\Tenant\Payments\Exceptions\RefundExceedsOverpaymentException;
 use App\Tenant\Payments\Exceptions\RefundExceedsRefundableException;
+use App\Tenant\Payments\Exceptions\RefundExceedsSaleException;
 use App\Tenant\Payments\Exceptions\RefundInvalidException;
 use App\Tenant\Payments\Models\Payment;
 use App\Tenant\Payments\Models\PaymentRefund;
@@ -30,6 +33,7 @@ use App\Tenant\Payments\Services\PaymentEventLog;
 use App\Tenant\Payments\Services\RefundAmounts;
 use App\Tenant\Payments\Services\RefundChecks;
 use App\Tenant\Payments\Services\RefundSettlement;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -51,6 +55,12 @@ use Illuminate\Support\Str;
  * key (pending until the gateway says it went through), or for a payment
  * made by hand, recorded as paid back by hand at once. The same
  * Idempotency-Key returns the same refund.
+ *
+ * Every refund says what it does to the sale (RefundPurpose): lines and
+ * shipping reduce it; an order never sold only gets money back; an amount on
+ * an order that was sold is a price reduction unless staff say it gives back
+ * the overpayment. Reductions never add up to more than the order's total,
+ * nor overpayments given back to more than was paid over it.
  */
 final readonly class RefundOrder
 {
@@ -68,6 +78,8 @@ final readonly class RefundOrder
      * @throws OrderNotRefundableException
      * @throws RefundInvalidException
      * @throws RefundExceedsRefundableException
+     * @throws RefundExceedsSaleException
+     * @throws RefundExceedsOverpaymentException
      * @throws PartialRefundNotSupportedException
      * @throws PaymentGatewayNotConnectedException When a payment drawn on came through a gateway that is no longer connected.
      */
@@ -126,6 +138,7 @@ final readonly class RefundOrder
         }
 
         $this->ensureOrderHoldsMoney($locked);
+        $purpose = $this->purpose($locked, $request);
         $lines = $this->refundAmounts->lines($locked, $request);
         [$shipping, $shippingTax] = $this->refundAmounts->shipping($locked, $request);
         $amount = $request->amount ?? Money::sum($locked->currency, [$shipping, ...array_map(static fn (RefundedLine $line): Money => $line->amount, $lines)]);
@@ -135,7 +148,8 @@ final readonly class RefundOrder
         }
 
         $draws = $this->draws($named === null ? $payments->where('status', PaymentStatus::Succeeded)->sortByDesc('id') : collect([$named]), $amount);
-        $refund = $this->createRefund($actor, $locked, $amount, $shipping, $shippingTax, $request);
+        $this->ensureWithinPurpose($locked, $payments, $purpose, $amount);
+        $refund = $this->createRefund($actor, $locked, $amount, $shipping, $shippingTax, $purpose, $request);
         $this->createLines($refund, $lines);
         $this->createParts($actor, $refund, $locked, $draws);
 
@@ -176,8 +190,12 @@ final readonly class RefundOrder
             throw new RefundInvalidException;
         }
 
+        if ($request->purpose === RefundPurpose::ReducesSale) {
+            throw new RefundInvalidException;
+        }
+
         $draws = $this->draws(collect([$payment]), $received);
-        $refund = $this->createRefund($actor, $order, $received, Money::zero($received->currency()), Money::zero($received->currency()), $request);
+        $refund = $this->createRefund($actor, $order, $received, Money::zero($received->currency()), Money::zero($received->currency()), RefundPurpose::ReturnsPayment, $request);
         $this->createParts($actor, $refund, $order, $draws);
 
         return $refund->load(['lines', 'paymentRefunds']);
@@ -193,6 +211,70 @@ final readonly class RefundOrder
         if (! $holds) {
             throw new OrderNotRefundableException;
         }
+    }
+
+    /**
+     * What the refund does to the sale. An order never sold (cancelled before it was paid in full) only gets money back; lines and shipping always reduce the sale; an amount on an order that was sold reduces it unless staff say it gives back the overpayment.
+     *
+     * @throws RefundInvalidException When the purpose asked for doesn't fit.
+     */
+    private function purpose(Order $order, RefundRequest $request): RefundPurpose
+    {
+        if (! $order->hasBeenSold()) {
+            return $request->purpose === RefundPurpose::ReducesSale ? throw new RefundInvalidException : RefundPurpose::ReturnsPayment;
+        }
+
+        if (! $request->isByAmount()) {
+            return $request->purpose === RefundPurpose::ReturnsPayment ? throw new RefundInvalidException : RefundPurpose::ReducesSale;
+        }
+
+        return $request->purpose ?? RefundPurpose::ReducesSale;
+    }
+
+    /**
+     * Sale reductions never take back more than the order's total, so credit notes never exceed the invoice; an overpayment given back on an order that was sold is never more than was paid over its total. Both count parts still holding money.
+     *
+     * @param  Collection<int, Payment>  $payments  The order's payments, already locked.
+     *
+     * @throws RefundExceedsSaleException
+     * @throws RefundExceedsOverpaymentException
+     */
+    private function ensureWithinPurpose(Order $order, Collection $payments, RefundPurpose $purpose, Money $amount): void
+    {
+        $alreadyGiven = $this->heldFor($order, $purpose)->add($amount);
+
+        if ($purpose === RefundPurpose::ReducesSale && $alreadyGiven->isGreaterThan($order->total)) {
+            throw new RefundExceedsSaleException;
+        }
+
+        if ($purpose === RefundPurpose::ReturnsPayment && $order->hasBeenSold() && $alreadyGiven->isGreaterThan($this->overpaid($order, $payments))) {
+            throw new RefundExceedsOverpaymentException;
+        }
+    }
+
+    /**
+     * What the order's refunds with this purpose already give back, counting parts pending or succeeded.
+     */
+    private function heldFor(Order $order, RefundPurpose $purpose): Money
+    {
+        $held = PaymentRefund::query()
+            ->whereIn('status', RefundStatus::holdingMoney())
+            ->whereHas('refund', static fn (Builder $refunds) => $refunds->where('order_id', $order->id)->where('purpose', $purpose->value))
+            ->sum('amount_amount');
+
+        return Money::ofMinor((int) $held, $order->currency);
+    }
+
+    /**
+     * What the order's succeeded payments received over its total.
+     *
+     * @param  Collection<int, Payment>  $payments
+     */
+    private function overpaid(Order $order, Collection $payments): Money
+    {
+        $received = Money::sum($order->currency, $payments->where('status', PaymentStatus::Succeeded)->map(static fn (Payment $payment): Money => $payment->received ?? Money::zero($order->currency)));
+
+        return $received->isGreaterThan($order->total) ? $received->subtract($order->total) : Money::zero($order->currency);
     }
 
     /**
@@ -264,7 +346,7 @@ final readonly class RefundOrder
         }
     }
 
-    private function createRefund(AccountReference $actor, Order $order, Money $amount, Money $shipping, Money $shippingTax, RefundRequest $request): Refund
+    private function createRefund(AccountReference $actor, Order $order, Money $amount, Money $shipping, Money $shippingTax, RefundPurpose $purpose, RefundRequest $request): Refund
     {
         $refund = new Refund;
         $refund->forceFill([
@@ -272,6 +354,7 @@ final readonly class RefundOrder
             'amount' => $amount,
             'shipping' => $shipping,
             'shipping_tax' => $shippingTax,
+            'purpose' => $purpose,
             'reason' => $request->reason,
             'idempotency_key' => $request->idempotencyKey,
             'requested_by_type' => $actor->type,

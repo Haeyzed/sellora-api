@@ -17,6 +17,7 @@ use App\Tenant\Payments\Enums\GatewayMode;
 use App\Tenant\Payments\Enums\GatewayPaymentState;
 use App\Tenant\Payments\Enums\GatewayRefundState;
 use App\Tenant\Payments\Enums\PaymentMethod;
+use App\Tenant\Payments\Enums\RefundPurpose;
 use App\Tenant\Payments\Events\RefundFailed;
 use App\Tenant\Payments\Events\RefundStillPending;
 use App\Tenant\Payments\Events\RefundSucceeded;
@@ -25,7 +26,9 @@ use App\Tenant\Payments\Exceptions\OrderNotRefundableException;
 use App\Tenant\Payments\Exceptions\PartialRefundNotSupportedException;
 use App\Tenant\Payments\Exceptions\PaymentGatewayInUseException;
 use App\Tenant\Payments\Exceptions\PaymentGatewayNotConnectedException;
+use App\Tenant\Payments\Exceptions\RefundExceedsOverpaymentException;
 use App\Tenant\Payments\Exceptions\RefundExceedsRefundableException;
+use App\Tenant\Payments\Exceptions\RefundExceedsSaleException;
 use App\Tenant\Payments\Exceptions\RefundInvalidException;
 use App\Tenant\Payments\Jobs\CheckPaymentWithGateway;
 use App\Tenant\Payments\Jobs\CheckRefundWithGateway;
@@ -186,7 +189,7 @@ it('reads what is left to give back only under the order\'s lock, so two refunds
 
         // Meanwhile the other request gives back ₦60 and commits.
         $other->run(static function (Connection $db) use ($order, $payment): void {
-            $refundId = $db->table('refunds')->insertGetId(['public_id' => Str::lower((string) Str::ulid()), 'order_id' => $order->id, 'currency' => 'NGN', 'amount_amount' => 6000, 'requested_by_type' => 'staff_member', 'requested_by_id' => 'someone', 'created_at' => now()]);
+            $refundId = $db->table('refunds')->insertGetId(['public_id' => Str::lower((string) Str::ulid()), 'order_id' => $order->id, 'currency' => 'NGN', 'amount_amount' => 6000, 'purpose' => 'reduces_sale', 'requested_by_type' => 'staff_member', 'requested_by_id' => 'someone', 'created_at' => now()]);
             $db->table('payment_refunds')->insert(['public_id' => Str::lower((string) Str::ulid()), 'refund_id' => $refundId, 'payment_id' => $payment->id, 'status' => 'pending', 'currency' => 'NGN', 'amount_amount' => 6000, 'reference' => 'rfd_other', 'created_at' => now(), 'updated_at' => now()]);
         });
         $other->commit();
@@ -296,11 +299,110 @@ it('leaves an overpaid order paid when only what was paid over is given back', f
     // ₦120 received of ₦115.
     recordReceived($payment, 12000);
 
-    refundOrder($order, 500);
-    expect($this->store->run(static fn (): string => $order->refresh()->payment_status->value))->toBe('paid');
+    expect(refundOrder($order, 500, purpose: RefundPurpose::ReturnsPayment)->purpose)->toBe(RefundPurpose::ReturnsPayment)
+        ->and($this->store->run(static fn (): string => $order->refresh()->payment_status->value))->toBe('paid');
 
     refundOrder($order, 1);
     expect($this->store->run(static fn (): string => $order->refresh()->payment_status->value))->toBe('partially_refunded');
+});
+
+it('says what each refund does to the sale: lines, shipping and amounts on an order that was sold reduce it', function (): void {
+    [$order] = gatewayPaidOrder();
+    $line = $this->store->run(static fn (): string => $order->lines()->sole()->public_id);
+
+    expect(refundOrder($order, lines: [$line => 1])->purpose)->toBe(RefundPurpose::ReducesSale)
+        ->and(fn () => refundOrder($order, shipping: true, purpose: RefundPurpose::ReturnsPayment))->toThrow(RefundInvalidException::class)
+        // Nothing was paid over its total.
+        ->and(fn () => refundOrder($order, 1, purpose: RefundPurpose::ReturnsPayment))->toThrow(RefundExceedsOverpaymentException::class)
+        ->and(refundOrder($order, 1000)->purpose)->toBe(RefundPurpose::ReducesSale);
+});
+
+it('never reduces the sale by more than its total, and gives back an overpayment only up to what was paid over', function (): void {
+    [$order, $payment] = manuallyPaidOrder(PaymentMethod::BankTransfer);
+    // ₦130 received of ₦115: ₦15 over.
+    recordReceived($payment, 13000);
+
+    refundOrder($order, 300, purpose: RefundPurpose::ReturnsPayment);
+    expect(fn () => refundOrder($order, 1201, purpose: RefundPurpose::ReturnsPayment))->toThrow(RefundExceedsOverpaymentException::class);
+
+    refundOrder($order, 11500);
+    expect(fn () => refundOrder($order, 1))->toThrow(RefundExceedsSaleException::class)
+        ->and(refundOrder($order, 1200, purpose: RefundPurpose::ReturnsPayment)->purpose)->toBe(RefundPurpose::ReturnsPayment);
+});
+
+it('frees a failed sale reduction, so the sale can be reduced again', function (): void {
+    [$order] = gatewayPaidOrder();
+    $this->script->rejectsRefunds = true;
+    refundOrder($order, 11500);
+    $this->script->rejectsRefunds = false;
+
+    expect(refundOrder($order, 11500)->purpose)->toBe(RefundPurpose::ReducesSale);
+});
+
+it('only gives the payment back on an order never sold, and reduces the sale of one cancelled after it was paid', function (): void {
+    [$partlyPaid, $payment] = manuallyPaidOrder(PaymentMethod::BankTransfer);
+    recordReceived($payment, 4000);
+    $this->store->run(fn () => app(CancelOrder::class)->byStaff($this->owner, $partlyPaid));
+
+    expect(fn () => refundOrder($partlyPaid, 1000, purpose: RefundPurpose::ReducesSale))->toThrow(RefundInvalidException::class)
+        ->and(refundOrder($partlyPaid, 1000)->purpose)->toBe(RefundPurpose::ReturnsPayment);
+
+    // Paid in full only after it was cancelled: never sold.
+    $paidLate = $this->store->run(function (): Payment {
+        $payment = startFakePayment(unpaidOrder(10000));
+        app(CancelOrder::class)->byStaff($this->owner, $payment->order);
+        gatewayAnswers($payment, GatewayPaymentState::Succeeded, $payment->amount, GatewayMode::Live);
+
+        return verifyFakePayment($payment);
+    });
+    $lateOrder = $this->store->run(static fn () => $paidLate->order);
+
+    expect($lateOrder->payment_status->value)->toBe('paid')
+        ->and(refundOrder($lateOrder, 11500)->purpose)->toBe(RefundPurpose::ReturnsPayment);
+
+    [$sold] = gatewayPaidOrder();
+    $this->store->run(fn () => app(CancelOrder::class)->byStaff($this->owner, $sold));
+
+    expect(refundOrder($sold, 11500)->purpose)->toBe(RefundPurpose::ReducesSale);
+});
+
+it('fills in what refunds made before purposes existed did to the sale', function (): void {
+    [$sold] = gatewayPaidOrder();
+    $reduction = refundOrder($sold, 1000);
+    [$partlyPaid, $transfer] = manuallyPaidOrder(PaymentMethod::BankTransfer);
+    recordReceived($transfer, 4000);
+    $this->store->run(fn () => app(CancelOrder::class)->byStaff($this->owner, $partlyPaid));
+    $neverSold = refundOrder($partlyPaid, 1000);
+    $inReview = $this->store->run(static function (): Payment {
+        $payment = startFakePayment(unpaidOrder(10000));
+        gatewayAnswers($payment, GatewayPaymentState::Succeeded, Money::ofMinor(9000, 'NGN'), GatewayMode::Live);
+
+        return verifyFakePayment($payment);
+    });
+    $review = refundOrder($this->store->run(static fn () => $inReview->order), 9000, from: $inReview);
+
+    $purposes = $this->store->run(static function () use ($reduction, $neverSold, $review): array {
+        $migration = require database_path('migrations/tenant/2026_10_20_090000_add_purpose_to_refunds.php');
+        $migration->down();
+        $migration->up();
+
+        return Refund::query()->whereKey([$reduction->id, $neverSold->id, $review->id])->orderBy('id')->pluck('purpose')->map(static fn (RefundPurpose $purpose): string => $purpose->value)->all();
+    });
+
+    expect($purposes)->toBe(['reduces_sale', 'returns_payment', 'returns_payment']);
+});
+
+it('gives money in review back as a payment, never as a sale reduction', function (): void {
+    $payment = $this->store->run(static function (): Payment {
+        $payment = startFakePayment(unpaidOrder(10000));
+        gatewayAnswers($payment, GatewayPaymentState::Succeeded, Money::ofMinor(9000, 'NGN'), GatewayMode::Live);
+
+        return verifyFakePayment($payment);
+    });
+    $order = $this->store->run(static fn () => $payment->order);
+
+    expect(fn () => refundOrder($order, 9000, from: $payment, purpose: RefundPurpose::ReducesSale))->toThrow(RefundInvalidException::class)
+        ->and(refundOrder($order, 9000, from: $payment)->purpose)->toBe(RefundPurpose::ReturnsPayment);
 });
 
 it('keeps a refund pending until the gateway says it went through with exactly the amount asked', function (): void {

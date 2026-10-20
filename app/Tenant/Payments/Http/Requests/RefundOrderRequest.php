@@ -8,8 +8,10 @@ use App\Shared\Money\Money;
 use App\Tenant\Identity\Concerns\ActsAsStaffMember;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Payments\Data\RefundRequest;
+use App\Tenant\Payments\Enums\RefundPurpose;
 use App\Tenant\Payments\Models\Payment;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 /**
  * What to give back on an order: an amount, or lines and shipping, never both. Needs the payments.refund permission.
@@ -42,6 +44,8 @@ final class RefundOrderRequest extends FormRequest
             'payment' => ['sometimes', 'string', 'max:26'],
             /** Why, for the store's own records. */
             'reason' => ['sometimes', 'nullable', 'string', 'max:500'],
+            /** What it does to the sale: "reduces_sale" (returned items, shipping, a price reduction; it gets a credit note) or "returns_payment" (money never part of the sale, such as an overpayment). Left out, lines and shipping reduce the sale, an amount on an order that was sold is a price reduction, and an order never sold only gets its payment back. */
+            'purpose' => ['sometimes', Rule::enum(RefundPurpose::class)],
         ];
     }
 
@@ -61,6 +65,7 @@ final class RefundOrderRequest extends FormRequest
             $this->filled('payment') ? $this->string('payment')->value() : null,
             $this->filled('reason') ? $this->string('reason')->trim()->value() : null,
             $this->header('Idempotency-Key'),
+            $this->filled('purpose') ? $this->enum('purpose', RefundPurpose::class) : null,
         );
     }
 }

@@ -138,8 +138,11 @@ it('refunds an order by amount or by lines, once per Idempotency-Key', function 
         ->assertJsonPath('data.status', 'succeeded')
         ->assertJsonPath('data.amount.amount', 1500)
         ->assertJsonPath('data.reason', 'Late delivery')
+        ->assertJsonPath('data.purpose', 'reduces_sale')
         ->assertJsonPath('data.parts.0.payment', $payment->public_id)
         ->json('data.id');
+    $refund(['amount' => 100, 'purpose' => 'goodwill'], 'refund-key-5')->assertUnprocessable()->assertJsonValidationErrors('purpose');
+    $refund(['amount' => 100, 'purpose' => 'returns_payment'], 'refund-key-6')->assertUnprocessable()->assertJsonPath('code', 'refund_exceeds_overpayment');
     expect($refund(['amount' => 1500, 'reason' => 'Late delivery'], 'refund-key-1')->assertCreated()->json('data.id'))->toBe($first);
 
     $refund(['amount' => 100, 'lines' => [['line' => $line, 'quantity' => 1]]], 'refund-key-2')->assertUnprocessable()->assertJsonValidationErrors('amount');

@@ -41,6 +41,8 @@ final class RefundResource extends JsonResource
             /** The part for shipping, its tax included. */
             'shipping' => new MoneyResource($refund->shipping),
             'shipping_tax' => new MoneyResource($refund->shipping_tax),
+            /** "reduces_sale" (returned items, shipping, a price reduction; it gets a credit note) or "returns_payment" (money never part of the sale). */
+            'purpose' => $refund->purpose,
             'reason' => $refund->reason,
             /** Who asked for it, by account type and ID. */
             'requested_by' => ['type' => $refund->requested_by_type, 'id' => $refund->requested_by_id],

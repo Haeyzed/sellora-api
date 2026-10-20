@@ -10,7 +10,9 @@ use App\Tenant\Payments\Actions\RefundOrder;
 use App\Tenant\Payments\Exceptions\OrderNotRefundableException;
 use App\Tenant\Payments\Exceptions\PartialRefundNotSupportedException;
 use App\Tenant\Payments\Exceptions\PaymentGatewayNotConnectedException;
+use App\Tenant\Payments\Exceptions\RefundExceedsOverpaymentException;
 use App\Tenant\Payments\Exceptions\RefundExceedsRefundableException;
+use App\Tenant\Payments\Exceptions\RefundExceedsSaleException;
 use App\Tenant\Payments\Exceptions\RefundInvalidException;
 use App\Tenant\Payments\Http\Requests\ListRefundsRequest;
 use App\Tenant\Payments\Http\Requests\RefundOrderRequest;
@@ -58,10 +60,15 @@ final class RefundController extends Controller
      * part goes back the way its payment came: through its gateway (pending
      * until the gateway confirms), or recorded as paid back by hand. An open
      * order must be paid in full; a cancelled one gives back what it holds.
+     * Each refund has a purpose: one that reduces the sale gets a credit note
+     * and never takes back more than the order's total; money paid over the
+     * total goes back as an overpayment.
      *
      * @throws OrderNotRefundableException
      * @throws RefundInvalidException
      * @throws RefundExceedsRefundableException
+     * @throws RefundExceedsSaleException
+     * @throws RefundExceedsOverpaymentException
      * @throws PartialRefundNotSupportedException
      * @throws PaymentGatewayNotConnectedException
      */

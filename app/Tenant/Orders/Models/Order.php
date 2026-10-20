@@ -15,6 +15,7 @@ use App\Tenant\Orders\Data\OrderContact;
 use App\Tenant\Orders\Enums\CancellationReason;
 use App\Tenant\Orders\Enums\FulfilmentStatus;
 use App\Tenant\Orders\Enums\OrderAddressKind;
+use App\Tenant\Orders\Enums\OrderEventType;
 use App\Tenant\Orders\Enums\OrderPaymentStatus;
 use App\Tenant\Orders\Enums\OrderStatus;
 use App\Tenant\Pricing\Enums\ExchangeRateSource;
@@ -134,6 +135,14 @@ final class Order extends Model implements AuditableContract
     public function awaitsPayment(): bool
     {
         return $this->status === OrderStatus::Open && in_array($this->payment_status, [OrderPaymentStatus::Unpaid, OrderPaymentStatus::PartiallyPaid], true);
+    }
+
+    /**
+     * Whether a sale took place: it was paid in full while still open, as its history records. A payment that arrives after it was cancelled never makes it one.
+     */
+    public function hasBeenSold(): bool
+    {
+        return $this->payment_status->wasPaidInFull() && $this->events()->where('type', OrderEventType::Paid->value)->exists();
     }
 
     /**

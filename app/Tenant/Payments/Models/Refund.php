@@ -8,6 +8,7 @@ use App\Shared\Concerns\HasPublicId;
 use App\Shared\Money\Money;
 use App\Shared\Money\MoneyCast;
 use App\Tenant\Orders\Models\Order;
+use App\Tenant\Payments\Enums\RefundPurpose;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -29,6 +30,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property Money $amount All of it: lines, shipping, or an amount.
  * @property Money $shipping The part for shipping, its tax included; zero without.
  * @property Money $shipping_tax
+ * @property RefundPurpose $purpose Whether it reduces the sale, which gets a credit note, or returns money that was never part of it.
  * @property string|null $reason
  * @property string|null $idempotency_key The client's.
  * @property string $requested_by_type By morph name.
@@ -86,6 +88,7 @@ final class Refund extends Model implements AuditableContract
             'amount' => MoneyCast::class.':currency',
             'shipping' => MoneyCast::class.':currency',
             'shipping_tax' => MoneyCast::class.':currency',
+            'purpose' => RefundPurpose::class,
             'created_at' => 'immutable_datetime',
         ];
     }

@@ -26,6 +26,7 @@ use App\Tenant\Payments\Enums\GatewayMode;
 use App\Tenant\Payments\Enums\GatewayPaymentState;
 use App\Tenant\Payments\Enums\PaymentMethod;
 use App\Tenant\Payments\Enums\PaymentPermission;
+use App\Tenant\Payments\Enums\RefundPurpose;
 use App\Tenant\Payments\Jobs\CheckPaymentWithGateway;
 use App\Tenant\Payments\Models\Payment;
 use App\Tenant\Payments\Models\PaymentEvent;
@@ -227,13 +228,13 @@ function gatewayPaidOrder(?array $lines = null): array
 }
 
 /**
- * Staff (the owner unless another is given) refunding an order: an amount in minor units of its currency, or lines (units by line public ID) and shipping; from one payment when given.
+ * Staff (the owner unless another is given) refunding an order: an amount in minor units of its currency, or lines (units by line public ID) and shipping; from one payment when given, and with a purpose when given.
  *
  * @param  array<string, int>  $lines
  */
-function refundOrder(Order $order, ?int $amount = null, array $lines = [], bool $shipping = false, ?Payment $from = null, ?string $idempotencyKey = null, ?StaffMember $as = null): Refund
+function refundOrder(Order $order, ?int $amount = null, array $lines = [], bool $shipping = false, ?Payment $from = null, ?string $idempotencyKey = null, ?StaffMember $as = null, ?RefundPurpose $purpose = null): Refund
 {
-    $request = new RefundRequest($amount === null ? null : Money::ofMinor($amount, $order->currency), $lines, $shipping, $from?->public_id, 'Changed their mind', $idempotencyKey);
+    $request = new RefundRequest($amount === null ? null : Money::ofMinor($amount, $order->currency), $lines, $shipping, $from?->public_id, 'Changed their mind', $idempotencyKey, $purpose);
 
     return test()->store->run(static fn (): Refund => app(RefundOrder::class)->handle($as ?? test()->owner, $order, $request));
 }
