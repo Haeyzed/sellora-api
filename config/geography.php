@@ -75,6 +75,22 @@ return [
     'order_retention_default_years' => 10,
 
     /*
+     * What a store's tax registration number is usually called on invoices,
+     * by store country, until the store sets its own label.
+     */
+    'tax_registration_labels' => [
+        'NG' => 'TIN',
+        'GB' => 'VAT',
+        'DE' => 'USt-IdNr.',
+        'FR' => 'TVA',
+        'KE' => 'PIN',
+        'ZA' => 'VAT',
+    ],
+
+    /* For store countries not listed above. */
+    'tax_registration_default_label' => 'Tax ID',
+
+    /*
      * The subdivision codes stores may have saved, by country, as recorded
      * from commerceguys/addressing. A package update that changes them is
      * caught by a test and listed by geography:subdivision-changes.

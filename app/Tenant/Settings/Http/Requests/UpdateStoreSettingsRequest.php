@@ -13,7 +13,9 @@ use App\Shared\Geography\Rules\Timezone;
 use App\Shared\Money\TaxMode;
 use App\Tenant\Identity\Concerns\ActsAsStaffMember;
 use App\Tenant\Settings\Actions\FindStoreSettings;
+use App\Tenant\Settings\Concerns\ValidatesStoreTranslations;
 use App\Tenant\Settings\Enums\DimensionUnit;
+use App\Tenant\Settings\Enums\InvoiceNumbering;
 use App\Tenant\Settings\Enums\WeightUnit;
 use App\Tenant\Settings\Models\StoreSettings;
 use Closure;
@@ -29,6 +31,7 @@ use Propaganistas\LaravelPhone\Rules\Phone;
 final class UpdateStoreSettingsRequest extends FormRequest
 {
     use ActsAsStaffMember;
+    use ValidatesStoreTranslations;
 
     private ?StoreSettings $currentSettings = null;
 
@@ -85,6 +88,20 @@ final class UpdateStoreSettingsRequest extends FormRequest
             'address.postal_code' => ['nullable', 'string', 'max:20'],
             /** ISO 3166-1 alpha-2. */
             'address.country' => ['required_with:address', 'string', new CountryCode],
+            /** The name invoices and credit notes are issued in; null for the store name. Applies to documents issued from now on. */
+            'legal_name' => ['sometimes', 'nullable', 'string', 'max:200'],
+            /** What the tax registration number is called on documents, such as "VAT" or "TIN"; null for the store country's usual one. */
+            'tax_registration_label' => ['sometimes', 'nullable', 'string', 'max:40'],
+            /** Printed on invoices and credit notes. */
+            'tax_registration_number' => ['sometimes', 'nullable', 'string', 'max:64'],
+            /** Starts every invoice number, such as "INV-": 1 to 12 letters and - / _, never digits, and never starting with "TEST" (test orders' documents use it). Applies to invoices issued from now on. */
+            'invoice_prefix' => ['sometimes', 'string', 'regex:/^[A-Za-z\/_-]{1,12}$/', 'not_regex:/^test/i'],
+            /** Starts every credit note number, such as "CN-", with the same rules as the invoice prefix. */
+            'credit_note_prefix' => ['sometimes', 'string', 'regex:/^[A-Za-z\/_-]{1,12}$/', 'not_regex:/^test/i'],
+            /** "yearly": numbers start again each year, and the year is in the number (INV-2026-000001); "continuous": one series that never starts again (INV-000001). */
+            'invoice_numbering' => ['sometimes', Rule::enum(InvoiceNumbering::class)],
+            /** Printed at the foot of invoices and credit notes, by language, such as {"en": "Thank you for shopping with us."}; a language set to null loses its text; null removes the footer in every language. */
+            'invoice_footer' => ['sometimes', 'nullable', 'array', $this->storeTranslatedText(500)],
         ];
     }
 
@@ -123,6 +140,8 @@ final class UpdateStoreSettingsRequest extends FormRequest
             'name' => 'name', 'country' => 'country_code', 'currency' => 'currency_code', 'timezone' => 'timezone',
             'default_locale' => 'default_locale', 'tax_mode' => 'tax_mode', 'weight_unit' => 'weight_unit', 'dimension_unit' => 'dimension_unit', 'low_stock_threshold' => 'low_stock_threshold',
             'order_retention_years' => 'order_retention_years',
+            'legal_name' => 'legal_name', 'tax_registration_label' => 'tax_registration_label', 'tax_registration_number' => 'tax_registration_number',
+            'invoice_prefix' => 'invoice_prefix', 'credit_note_prefix' => 'credit_note_prefix', 'invoice_numbering' => 'invoice_numbering',
         ];
 
         foreach ($fields as $field => $column) {
@@ -153,6 +172,12 @@ final class UpdateStoreSettingsRequest extends FormRequest
 
         if ($this->has('address')) {
             $changes += $this->addressChanges();
+        }
+
+        if ($this->has('invoice_footer')) {
+            /** @var array<string, string|null>|null $footer */
+            $footer = $this->input('invoice_footer') === null ? null : $this->array('invoice_footer');
+            $changes['invoice_footer'] = $footer;
         }
 
         return $changes;

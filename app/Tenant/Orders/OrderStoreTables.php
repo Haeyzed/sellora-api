@@ -47,5 +47,6 @@ final class OrderStoreTables implements ClassifiesStoreTables
             'ready_at', 'shipped_at', 'delivered_at', 'cancelled_at', 'created_by_type', 'created_by_id', 'created_at', 'updated_at',
         ]);
         $registry->table('shipment_lines', include: ['id', 'shipment_id', 'order_line_id', 'quantity']);
+        $registry->table('document_sequences', include: ['id', 'kind', 'series', 'last_number', 'created_at', 'updated_at']);
     }
 }

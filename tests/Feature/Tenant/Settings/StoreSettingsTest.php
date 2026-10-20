@@ -73,6 +73,9 @@ it('starts a store with what it was registered with and its country\'s tax mode 
         'weight_unit' => 'kg', 'dimension_unit' => 'cm', 'low_stock_threshold' => 5, 'working_days' => [1, 2, 3, 4, 5], 'contact_email' => null, 'contact_phone' => null, 'address' => null,
         // Nigeria's default for keeping personal data on settled orders, until the store sets its own.
         'order_retention_years' => null, 'order_retention_default_years' => 6,
+        // Invoices are issued in the store's name, with Nigeria's usual label for the tax number, numbered yearly.
+        'legal_name' => null, 'tax_registration_label' => null, 'tax_registration_default_label' => 'TIN', 'tax_registration_number' => null,
+        'invoice_prefix' => 'INV-', 'credit_note_prefix' => 'CN-', 'invoice_numbering' => 'yearly', 'invoice_footer' => [],
         'updated_at' => $updatedAt,
     ]]);
 });
@@ -221,6 +224,48 @@ it('fails loudly when a store has no settings, instead of creating them on read'
 
     expect($this->store->run(static fn (): int => DB::table('store_settings')->count()))->toBe(0)
         ->and(fn () => $this->store->run(static fn () => app(FindStoreSettings::class)->handle()))->toThrow(MissingStoreSettingsException::class);
+});
+
+it('sets what invoices say about the store and how they are numbered', function (): void {
+    storeSettingsRequest('PATCH', [
+        'legal_name' => ' Ada Fabrics Limited ', 'tax_registration_label' => 'VAT', 'tax_registration_number' => '12345678-0001',
+        'invoice_prefix' => 'ADA/', 'credit_note_prefix' => 'ADA-CN-', 'invoice_numbering' => 'continuous', 'invoice_footer' => ['en' => 'Thank you for shopping with us.'],
+    ])->assertOk()
+        ->assertJsonPath('data.legal_name', 'Ada Fabrics Limited')
+        ->assertJsonPath('data.tax_registration_label', 'VAT')
+        ->assertJsonPath('data.tax_registration_default_label', 'TIN')
+        ->assertJsonPath('data.tax_registration_number', '12345678-0001')
+        ->assertJsonPath('data.invoice_prefix', 'ADA/')
+        ->assertJsonPath('data.credit_note_prefix', 'ADA-CN-')
+        ->assertJsonPath('data.invoice_numbering', 'continuous')
+        ->assertJsonPath('data.invoice_footer', ['en' => 'Thank you for shopping with us.']);
+
+    expect(currentStoreSettings()->taxRegistrationLabel())->toBe('VAT');
+
+    // The default language keeps its footer while any is set; null removes the footer altogether.
+    storeSettingsRequest('PATCH', ['invoice_footer' => ['en' => null]])->assertUnprocessable()->assertJsonValidationErrors('invoice_footer');
+    storeSettingsRequest('PATCH', ['tax_registration_label' => null, 'invoice_footer' => null])->assertOk()
+        ->assertJsonPath('data.tax_registration_label', null)
+        ->assertJsonPath('data.invoice_footer', []);
+
+    expect(currentStoreSettings()->taxRegistrationLabel())->toBe('TIN');
+});
+
+it('refuses prefixes with digits, too long or starting with TEST, numbering it doesn\'t know, and footers in languages the store doesn\'t publish in', function (): void {
+    foreach (['INV1-', 'test-', 'Test', 'ABCDEFGHIJKLM', 'IN V', ''] as $prefix) {
+        storeSettingsRequest('PATCH', ['invoice_prefix' => $prefix])->assertUnprocessable()->assertJsonValidationErrors('invoice_prefix');
+        storeSettingsRequest('PATCH', ['credit_note_prefix' => $prefix])->assertUnprocessable()->assertJsonValidationErrors('credit_note_prefix');
+    }
+
+    storeSettingsRequest('PATCH', ['invoice_numbering' => 'monthly'])->assertUnprocessable()->assertJsonValidationErrors('invoice_numbering');
+    storeSettingsRequest('PATCH', ['invoice_footer' => ['fr' => 'Merci']])->assertUnprocessable()->assertJsonValidationErrors('invoice_footer');
+
+    // The database refuses them too.
+    $this->store->run(static function (): void {
+        expect(static fn () => DB::transaction(static fn () => DB::table('store_settings')->update(['invoice_prefix' => 'TEST-'])))->toThrow(QueryException::class, 'store_settings_document_prefixes_check')
+            ->and(static fn () => DB::transaction(static fn () => DB::table('store_settings')->update(['credit_note_prefix' => 'CN2-'])))->toThrow(QueryException::class, 'store_settings_document_prefixes_check')
+            ->and(static fn () => DB::transaction(static fn () => DB::table('store_settings')->update(['invoice_numbering' => 'monthly'])))->toThrow(QueryException::class, 'store_settings_invoice_numbering_check');
+    });
 });
 
 it('lets staff set the store\'s low-stock threshold, a whole number from 0', function (): void {

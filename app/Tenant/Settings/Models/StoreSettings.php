@@ -8,7 +8,9 @@ use App\Shared\Media\Concerns\HasStorefrontImages;
 use App\Shared\Media\StorefrontImage;
 use App\Shared\Money\TaxMode;
 use App\Shared\Tenancy\StoreProfileDetails;
+use App\Tenant\Settings\Concerns\HasStoreTranslations;
 use App\Tenant\Settings\Enums\DimensionUnit;
+use App\Tenant\Settings\Enums\InvoiceNumbering;
 use App\Tenant\Settings\Enums\WeightUnit;
 use App\Tenant\Settings\StoreLocales;
 use Carbon\CarbonImmutable;
@@ -46,6 +48,13 @@ use Spatie\MediaLibrary\HasMedia;
  * @property list<int> $working_days The days the store works, by ISO number (1 Monday to 7 Sunday), for delivery estimates.
  * @property int|null $order_retention_years How many years settled orders keep their buyer's personal data; null for the store country's default.
  * @property bool $require_staff_two_factor Whether every staff member must use two-factor authentication; the owner's decision alone, never mass-assigned.
+ * @property string|null $legal_name The name invoices are issued in; null for the store name.
+ * @property string|null $tax_registration_label Such as "VAT" or "TIN"; null for the store country's usual one.
+ * @property string|null $tax_registration_number
+ * @property string $invoice_prefix Letters and - / _ only, such as "INV-".
+ * @property string $credit_note_prefix Letters and - / _ only, such as "CN-".
+ * @property InvoiceNumbering $invoice_numbering
+ * @property string|null $invoice_footer Printed at the foot of invoices and credit notes, in the current language (getTranslations() for all of them).
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  */
@@ -56,6 +65,7 @@ final class StoreSettings extends Model implements AuditableContract, HasMedia
 
     use Auditable;
     use HasStorefrontImages;
+    use HasStoreTranslations;
 
     /** The settings that the platform keeps a copy of, so changing one is sent on to it (section 6). */
     public const array PROFILE_FIELDS = ['name', 'country_code', 'currency_code', 'timezone', 'default_locale'];
@@ -88,7 +98,20 @@ final class StoreSettings extends Model implements AuditableContract, HasMedia
         'address_postal_code',
         'address_country_code',
         'order_retention_years',
+        'legal_name',
+        'tax_registration_label',
+        'tax_registration_number',
+        'invoice_prefix',
+        'credit_note_prefix',
+        'invoice_numbering',
     ];
+
+    /**
+     * Text shown in the store's languages.
+     *
+     * @var list<string>
+     */
+    public array $translatable = ['invoice_footer'];
 
     /**
      * @var list<string>
@@ -121,6 +144,24 @@ final class StoreSettings extends Model implements AuditableContract, HasMedia
     }
 
     /**
+     * What the tax registration number is called on documents: the store's own label, or its country's usual one (config/geography.php).
+     */
+    public function taxRegistrationLabel(): string
+    {
+        return $this->tax_registration_label ?? $this->countryTaxRegistrationLabel();
+    }
+
+    /**
+     * What the tax registration number is usually called in the store's country (config/geography.php).
+     */
+    public function countryTaxRegistrationLabel(): string
+    {
+        $label = config('geography.tax_registration_labels.'.$this->country_code);
+
+        return is_string($label) ? $label : config()->string('geography.tax_registration_default_label');
+    }
+
+    /**
      * The details the platform keeps a copy of.
      */
     public function profileDetails(): StoreProfileDetails
@@ -138,6 +179,7 @@ final class StoreSettings extends Model implements AuditableContract, HasMedia
             'require_staff_two_factor' => 'boolean',
             'low_stock_threshold' => 'integer',
             'order_retention_years' => 'integer',
+            'invoice_numbering' => InvoiceNumbering::class,
             'working_days' => 'array',
             'tax_mode' => TaxMode::class,
             'weight_unit' => WeightUnit::class,

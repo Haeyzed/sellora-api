@@ -36,7 +36,17 @@ final readonly class UpdateStoreSettings
     {
         return StoreSettings::query()->getConnection()->transaction(function () use ($changes): StoreSettings {
             $settings = $this->findStoreSettings->forUpdate();
+            $changesFooter = array_key_exists('invoice_footer', $changes);
+            $footer = $changes['invoice_footer'] ?? null;
+            unset($changes['invoice_footer']);
             $settings->fill($changes);
+
+            if (is_array($footer)) {
+                /** @var array<string, string|null> $footer */
+                $settings->changeTranslations('invoice_footer', $footer);
+            } elseif ($changesFooter) {
+                $settings->forgetTranslations('invoice_footer', asNull: true);
+            }
 
             if ($settings->isDirty(StoreSettings::PRICING_FIELDS) && $this->pricedRecordsRegistry->anyExist()) {
                 throw new PricingSettingsLockedException;

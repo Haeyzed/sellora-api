@@ -71,6 +71,23 @@ final class StoreSettingsResource extends JsonResource
                 /** ISO 3166-1 alpha-2. */
                 'country' => $settings->address_country_code,
             ],
+            /** The name invoices and credit notes are issued in; null for the store name. */
+            'legal_name' => $settings->legal_name,
+            /** What the tax registration number is called on documents; null for the store country's usual one. */
+            'tax_registration_label' => $settings->tax_registration_label,
+            /** The label documents use while tax_registration_label is null. */
+            'tax_registration_default_label' => $settings->countryTaxRegistrationLabel(),
+            'tax_registration_number' => $settings->tax_registration_number,
+            'invoice_prefix' => $settings->invoice_prefix,
+            'credit_note_prefix' => $settings->credit_note_prefix,
+            /** "yearly" (INV-2026-000001) or "continuous" (INV-000001). */
+            'invoice_numbering' => $settings->invoice_numbering,
+            /**
+             * Printed at the foot of invoices and credit notes, by language.
+             *
+             * @var array<string, string>
+             */
+            'invoice_footer' => $settings->getTranslations('invoice_footer'),
             'updated_at' => $settings->updated_at?->toIso8601String(),
         ];
     }
