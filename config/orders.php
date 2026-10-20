@@ -54,4 +54,21 @@ return [
 
     'missing_documents_per_run' => (int) env('ORDERS_MISSING_DOCUMENTS_PER_RUN', 200),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Tax Document PDFs
+    |--------------------------------------------------------------------------
+    |
+    | Each invoice and credit note is rendered to PDF once, on the default
+    | queue (limited per store by api.rate_limits.tax_document_pdfs), and kept
+    | on this private disk, which tenancy keeps apart per store. It is only
+    | ever downloaded through the API, never served by URL.
+    |
+    */
+
+    'documents_disk' => env('TAX_DOCUMENTS_DISK', 'local'),
+
+    // mPDF's font cache and working files, shared by every store: read here, before any store's storage path applies, so fonts are prepared once rather than per store. Holds no store data once a render ends.
+    'pdf_working_dir' => env('TAX_DOCUMENTS_PDF_WORKING_DIR', storage_path('framework/cache/mpdf')),
+
 ];

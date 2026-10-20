@@ -82,6 +82,9 @@ final readonly class IssueInvoice
             'is_test' => $order->is_test,
             'issued_at' => $issuedAt,
             'paid_at' => $order->paid_at ?? $issuedAt,
+            // The dates printed, in the store's timezone as it is now.
+            'issued_on' => $issuedAt->setTimezone($settings->timezone)->toDateString(),
+            'paid_on' => ($order->paid_at ?? $issuedAt)->setTimezone($settings->timezone)->toDateString(),
             'locale' => $order->locale,
             'currency' => $order->currency,
             'base_currency' => $order->base_currency,

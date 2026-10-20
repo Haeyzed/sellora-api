@@ -98,6 +98,8 @@ final class RateLimitServiceProvider extends ServiceProvider
         // Counted only for webhooks that found no store, on the central domain: there is no store to count them against.
         RateLimiter::for('unknown-webhook-endpoints', fn (Request $request): Limit => $this->perMinute('unknown_webhook_endpoints')->by($this->ipKey('unknown-webhook-endpoints', $request)));
         RateLimiter::for('tenant-bulk-jobs', fn (): Limit => $this->perMinute('tenant_bulk_jobs')->by(TenantScopedKey::make('bulk-jobs')));
+        // Rendering PDFs is heavy: one store issuing many documents at once never holds up another's on the default queue.
+        RateLimiter::for('tax-document-pdfs', fn (): Limit => $this->perMinute('tax_document_pdfs')->by(TenantScopedKey::make('tax-document-pdfs')));
     }
 
     private function perMinute(string $limitName): Limit

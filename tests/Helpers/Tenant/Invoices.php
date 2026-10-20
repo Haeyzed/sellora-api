@@ -60,6 +60,45 @@ function takeInvoiceNumbersInProcesses(int $processes, int $each): array
 }
 
 /**
+ * Starts a web server in its own process that answers every request with 404 and logs its URL, and returns its address and a function giving the URLs asked for so far. It stops when the test ends.
+ *
+ * @return array{string, Closure(): list<string>}
+ */
+function recordingServer(): array
+{
+    $socket = stream_socket_server('tcp://127.0.0.1:0');
+
+    if ($socket === false) {
+        throw new RuntimeException('No free port for the recording server.');
+    }
+
+    // A free port, given back for the server to take.
+    $address = (string) stream_socket_get_name($socket, false);
+    fclose($socket);
+    $log = (string) tempnam(sys_get_temp_dir(), 'requests');
+    $server = new Process([PHP_BINARY, '-S', $address, base_path('tests/Fixtures/Orders/record-requests.php')], null, ['REQUEST_LOG' => $log]);
+    $server->start();
+    test()->beforeApplicationDestroyed(static function () use ($server, $log): void {
+        $server->stop(0);
+        @unlink($log);
+    });
+
+    $answers = static fn (): bool => @file_get_contents('http://'.$address.'/ready', false, stream_context_create(['http' => ['ignore_errors' => true, 'timeout' => 1]])) !== false;
+
+    for ($tries = 0; ! $answers(); $tries++) {
+        if ($tries === 50) {
+            throw new RuntimeException('The recording server did not start: '.$server->getErrorOutput());
+        }
+
+        usleep(100_000);
+    }
+
+    file_put_contents($log, '');
+
+    return ['http://'.$address, static fn (): array => array_values(array_filter(explode(PHP_EOL, (string) file_get_contents($log))))];
+}
+
+/**
  * An invoices row for an order in the current store, as another request might write it straight to the database, with any columns changed. A test invoice unless changed.
  *
  * @param  array<string, mixed>  $overrides
@@ -69,7 +108,7 @@ function invoiceRow(Order $order, array $overrides = []): array
 {
     return [
         'public_id' => strtolower((string) Str::ulid()), 'order_id' => $order->id, 'number' => 'TEST-'.$order->number, 'series' => null, 'sequence_number' => null, 'is_test' => true,
-        'issued_at' => CarbonImmutable::now(), 'paid_at' => CarbonImmutable::now(), 'locale' => 'en', 'currency' => 'NGN', 'base_currency' => 'NGN', 'exchange_rate' => 1,
+        'issued_at' => CarbonImmutable::now(), 'paid_at' => CarbonImmutable::now(), 'issued_on' => CarbonImmutable::now()->toDateString(), 'paid_on' => CarbonImmutable::now()->toDateString(), 'locale' => 'en', 'currency' => 'NGN', 'base_currency' => 'NGN', 'exchange_rate' => 1,
         'tax_mode' => 'inclusive', 'tax_country_code' => 'NG', 'seller_name' => 'Ada', 'seller_trading_name' => 'Ada', 'subtotal_amount' => 0, 'discount_amount' => 0,
         'shipping_amount' => 0, 'shipping_discount_amount' => 0, 'tax_amount' => 0, 'total_amount' => 0, 'base_total_amount' => 0, 'created_at' => CarbonImmutable::now(),
         ...$overrides,

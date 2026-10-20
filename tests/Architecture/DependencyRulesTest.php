@@ -87,6 +87,19 @@ arch('integrations never import modules')
     ->expect('Integrations')
     ->not->toUse('Modules');
 
+arch('only the tax document renderer uses the PDF library, which it keeps from loading anything outside the document')
+    ->expect('App')
+    ->not->toUse('Mpdf')
+    ->ignoring('App\Tenant\Orders\Documents');
+
+arch('modules never use the PDF library')
+    ->expect('Modules')
+    ->not->toUse('Mpdf');
+
+arch('integrations never use the PDF library')
+    ->expect('Integrations')
+    ->not->toUse('Mpdf');
+
 arch('only the Geography wrapper uses the world reference data package, which it identifies by ISO codes')
     ->expect('App')
     ->not->toUse('Nnjeim\World')

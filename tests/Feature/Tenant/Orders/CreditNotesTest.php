@@ -235,7 +235,8 @@ it('keeps credit notes as issued: the database refuses changing or deleting them
         $refused(static fn () => DB::table('credit_note_taxes')->where('credit_note_id', $note->id)->delete(), 'credit_note_taxes rows are financial records');
         $refused(static fn () => (clone $row)->update(['buyer_email' => null]), 'only through erasure');
 
-        (clone $row)->update(['pdf_path' => 'credit-notes/a.pdf', 'pdf_rendered_at' => CarbonImmutable::now()]);
+        // Stored once it was issued, and never replaced.
+        expect($note->pdf_path)->not->toBeNull();
         $refused(static fn () => (clone $row)->update(['pdf_path' => 'credit-notes/b.pdf']), 'stored once');
 
         $erase = static fn (array $changes) => app(PersonalDataErasure::class)->run(static fn (): int => (clone $row)->update($changes));

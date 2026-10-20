@@ -34,6 +34,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property bool $is_test
  * @property CarbonImmutable $issued_at
  * @property CarbonImmutable $paid_at When the order was paid in full: the date of the sale.
+ * @property CarbonImmutable $issued_on The issue date printed, in the store's timezone when it was issued.
+ * @property CarbonImmutable $paid_on The date of the sale printed, in the store's timezone when it was issued.
  * @property string $locale
  * @property string $currency
  * @property string $base_currency
@@ -126,6 +128,8 @@ final class Invoice extends Model
             'is_test' => 'boolean',
             'issued_at' => 'immutable_datetime',
             'paid_at' => 'immutable_datetime',
+            'issued_on' => 'immutable_date',
+            'paid_on' => 'immutable_date',
             'exchange_rate' => DecimalCast::class.':12',
             'tax_mode' => TaxMode::class,
             'seller_address' => 'array',

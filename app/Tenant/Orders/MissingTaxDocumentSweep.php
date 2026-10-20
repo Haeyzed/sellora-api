@@ -10,13 +10,17 @@ use App\Tenant\Orders\Actions\IssueInvoice;
 use App\Tenant\Orders\Contracts\RefundsAwaitingCreditNotes;
 use App\Tenant\Orders\Enums\OrderEventType;
 use App\Tenant\Orders\Enums\OrderPaymentStatus;
+use App\Tenant\Orders\Enums\TaxDocumentKind;
 use App\Tenant\Orders\Exceptions\CreditNoteExceedsInvoiceException;
+use App\Tenant\Orders\Jobs\RenderTaxDocumentPdf;
+use App\Tenant\Orders\Models\CreditNote;
+use App\Tenant\Orders\Models\Invoice;
 use App\Tenant\Orders\Models\Order;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
- * The current store's part of the hourly sweep: invoices for sales paid in full, and credit notes for refund parts that reduced a sale, that the queue didn't issue.
+ * The current store's part of the hourly sweep: invoices for sales paid in full, and credit notes for refund parts that reduced a sale, that the queue didn't issue; and PDFs it didn't render, queued again.
  */
 final readonly class MissingTaxDocumentSweep implements StoreTaxDocuments
 {
@@ -30,7 +34,27 @@ final readonly class MissingTaxDocumentSweep implements StoreTaxDocuments
     {
         $dueBefore = CarbonImmutable::now()->subMinutes(config()->integer('orders.missing_documents_grace_minutes'));
 
-        return $this->issueMissingInvoices($dueBefore) + $this->issueMissingCreditNotes($dueBefore);
+        return $this->issueMissingInvoices($dueBefore) + $this->issueMissingCreditNotes($dueBefore) + $this->queueMissingPdfs($dueBefore);
+    }
+
+    /**
+     * Documents issued a while ago without a PDF get it queued again (rendering is limited per store, so it may still be waiting).
+     */
+    private function queueMissingPdfs(CarbonImmutable $dueBefore): int
+    {
+        $limit = config()->integer('orders.missing_documents_per_run');
+        $invoices = Invoice::query()->whereNull('pdf_path')->where('issued_at', '<=', $dueBefore)->orderBy('id')->limit($limit)->pluck('id');
+        $creditNotes = CreditNote::query()->whereNull('pdf_path')->where('issued_at', '<=', $dueBefore)->orderBy('id')->limit($limit)->pluck('id');
+
+        foreach ($invoices as $id) {
+            RenderTaxDocumentPdf::dispatch(TaxDocumentKind::Invoice, $id);
+        }
+
+        foreach ($creditNotes as $id) {
+            RenderTaxDocumentPdf::dispatch(TaxDocumentKind::CreditNote, $id);
+        }
+
+        return $invoices->count() + $creditNotes->count();
     }
 
     private function issueMissingCreditNotes(CarbonImmutable $dueBefore): int

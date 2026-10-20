@@ -222,8 +222,8 @@ it('keeps invoices as issued: the database refuses changing or deleting them, an
         // A live invoice always has a number of its series; a test one never does.
         $refused(static fn () => DB::table('invoices')->insert(invoiceRow(unpaidOrder(), ['number' => 'TEST-1', 'is_test' => false, 'series' => '2026', 'sequence_number' => 2])), 'invoices_test_take_no_number');
 
-        // Its PDF is stored once.
-        (clone $row)->update(['pdf_path' => 'invoices/a.pdf', 'pdf_rendered_at' => CarbonImmutable::now()]);
+        // Its PDF was stored once it was issued, and is never replaced.
+        expect($invoice->pdf_path)->not->toBeNull();
         $refused(static fn () => (clone $row)->update(['pdf_path' => 'invoices/b.pdf']), 'stored once');
         $refused(static fn () => DB::table('invoices')->insert(invoiceRow(unpaidOrder(), ['pdf_path' => 'invoices/c.pdf'])), 'invoices_pdf_complete');
 

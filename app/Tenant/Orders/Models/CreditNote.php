@@ -35,6 +35,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int|null $sequence_number
  * @property bool $is_test
  * @property CarbonImmutable $issued_at
+ * @property CarbonImmutable $issued_on The issue date printed, in the store's timezone when it was issued.
  * @property string $locale
  * @property string $currency
  * @property string $base_currency
@@ -110,6 +111,7 @@ final class CreditNote extends Model
             'sequence_number' => 'integer',
             'is_test' => 'boolean',
             'issued_at' => 'immutable_datetime',
+            'issued_on' => 'immutable_date',
             'exchange_rate' => DecimalCast::class.':12',
             'tax_mode' => TaxMode::class,
             'seller_address' => 'array',

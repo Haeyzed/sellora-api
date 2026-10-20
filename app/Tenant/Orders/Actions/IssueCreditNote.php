@@ -22,6 +22,7 @@ use App\Tenant\Orders\Models\Order;
 use App\Tenant\Orders\Services\OrderEventLog;
 use App\Tenant\Orders\Services\OrderProgress;
 use App\Tenant\Orders\Services\TaxDocumentNumbers;
+use App\Tenant\Settings\Actions\FindStoreSettings;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -45,6 +46,7 @@ final readonly class IssueCreditNote
         private IssueInvoice $issueInvoice,
         private TaxDocumentNumbers $taxDocumentNumbers,
         private OrderEventLog $orderEventLog,
+        private FindStoreSettings $findStoreSettings,
     ) {}
 
     /**
@@ -204,6 +206,7 @@ final readonly class IssueCreditNote
             'sequence_number' => $number?->sequenceNumber,
             'is_test' => $invoice->is_test,
             'issued_at' => $issuedAt,
+            'issued_on' => $issuedAt->setTimezone($this->findStoreSettings->handle()->timezone)->toDateString(),
             ...$invoice->only([
                 'locale', 'currency', 'base_currency', 'exchange_rate', 'tax_mode', 'seller_name', 'seller_trading_name', 'seller_tax_registration_label',
                 'seller_tax_registration_number', 'seller_address', 'seller_email', 'seller_phone', 'buyer_name', 'buyer_email', 'buyer_phone',

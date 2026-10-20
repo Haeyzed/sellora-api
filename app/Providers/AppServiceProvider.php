@@ -122,6 +122,8 @@ use App\Tenant\Inventory\StockLedgerReconciliation;
 use App\Tenant\Orders\Contracts\PaymentCheckBeforeExpiry;
 use App\Tenant\Orders\Contracts\RefundsAwaitingCreditNotes;
 use App\Tenant\Orders\Enums\OrderPermission;
+use App\Tenant\Orders\Events\CreditNoteIssued;
+use App\Tenant\Orders\Events\InvoiceIssued;
 use App\Tenant\Orders\Events\OrderAnonymised;
 use App\Tenant\Orders\Events\OrderCancelled;
 use App\Tenant\Orders\Events\OrderPaid;
@@ -130,6 +132,7 @@ use App\Tenant\Orders\Listeners\IssueInvoiceWhenOrderPaid;
 use App\Tenant\Orders\Listeners\LinkGuestOrdersWhenEmailVerified;
 use App\Tenant\Orders\Listeners\MarkOrderAsPaidWhenPaymentSucceeds;
 use App\Tenant\Orders\Listeners\RecordOrderPaymentsWhenRefundSucceeds;
+use App\Tenant\Orders\Listeners\RenderPdfWhenTaxDocumentIssued;
 use App\Tenant\Orders\MissingTaxDocumentSweep;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Orders\Models\OrderNote;
@@ -640,6 +643,7 @@ final class AppServiceProvider extends ServiceProvider
         Event::listen(RefundSucceeded::class, IssueCreditNoteWhenRefundSucceeds::class);
         Event::listen(OrderCancelled::class, CancelManualPaymentsWhenOrderCancelled::class);
         Event::listen(OrderPaid::class, IssueInvoiceWhenOrderPaid::class);
+        Event::listen([InvoiceIssued::class, CreditNoteIssued::class], RenderPdfWhenTaxDocumentIssued::class);
         Event::listen(OrderAnonymised::class, ForgetCardDetailsWhenOrderAnonymised::class);
     }
 

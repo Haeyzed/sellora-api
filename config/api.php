@@ -66,6 +66,8 @@ return [
         // Webhooks to endpoint IDs that lead nowhere, per IP address: guessing them is pointless, and this keeps it slow.
         'unknown_webhook_endpoints' => (int) env('RATE_LIMIT_UNKNOWN_WEBHOOK_ENDPOINTS', 30),
         'tenant_bulk_jobs' => (int) env('RATE_LIMIT_TENANT_BULK_JOBS', 60),
+        // Invoice and credit note PDFs rendered per store per minute; the rest wait their turn on the queue.
+        'tax_document_pdfs' => (int) env('RATE_LIMIT_TAX_DOCUMENT_PDFS', 30),
     ],
 
     /*
