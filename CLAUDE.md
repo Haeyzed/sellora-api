@@ -93,6 +93,7 @@ On a fresh project, **the first task is installing and configuring all dependenc
 | Error tracking | `sentry/sentry-laravel` | follow its skill; DSN from environment only |
 | Translations | `spatie/laravel-translatable` | install at the start of Step 7 (Catalog); follow its skill or official docs |
 | Two-factor login | `pragmarx/google2fa` | TOTP codes for platform admins and staff (section 10); the frontend renders the QR code from the `otpauth://` URL |
+| Social sign-in | `laravel/socialite` | customers only (section 10); follow its skill; used only inside `Tenant\Customers` (approved for Step 10b) |
 | Debugging (dev) | `laravel/telescope` | `composer require --dev`, local environment only |
 | Testing (dev) | `pestphp/pest`, `pestphp/pest-plugin-laravel` | replace PHPUnit tests with Pest |
 | Static analysis (dev) | `larastan/larastan` | **level 8**, with a `phpstan.neon` |
@@ -240,6 +241,7 @@ This platform targets merchants and shoppers worldwide. **Never hard-code anythi
 - **Money already in motion is never blocked by plan gating.** Webhooks, verification and refunds for existing payments keep working when the gateway's integration is Locked, Disabled or Suspended, or the store is suspended (wind-down, section 8); only starting new payments is blocked.
 - **Test mode:** a gateway connection is in test or live mode, worked out from its keys. An order placed with a test-mode method is marked as a test order at placement (never changed afterwards). A test payment can mark a test order paid, but never a live one, and a live payment never pays a test order. Test orders are labelled everywhere, excluded from sales figures, and never consume invoice or credit-note numbers.
 - Refunds, partial refunds and failed payments are first-class flows, not afterthoughts.
+- **The gateway's latest word wins, loudly.** If a refund reported as failed later succeeds, it's recorded as refunded, staff are alerted, and an order refunded beyond what was paid (because staff refunded again after the failure) is flagged for them. Money that actually moved is never hidden to keep the books tidy.
 - **Gateways, in build order:** **Paystack** first (Africa: cards, bank transfer, USSD, mobile money), then **Stripe** (global merchants), then Flutterwave if wider African coverage is needed. Each is its own integration (`integrations/Paystack`, `integrations/Stripe`).
 - **Merchants connect their own gateway accounts.** Each store enters its own gateway credentials (stored encrypted), and customers' money goes directly to the merchant. **Sellora never holds or moves merchants' money**, so build no wallets, balances, payouts or split payments. Taking a platform fee per sale (Paystack split payments, Stripe Connect) is a later decision; ask before building anything that depends on it.
 - **Merchant billing** (Sellora charging merchants for their subscription) uses Paystack for African merchants, through the separate billing contract in `Landlord\Billing` (section 14).
@@ -946,6 +948,11 @@ There are four guards, all on Sanctum. Each guard has its own model, provider, l
 - **Customers** can only access their own data (orders, addresses, profile). This is enforced with Policies and scoped queries, not roles.
 - **Guest checkout** is a store setting, on by default. The `customers` table holds accounts only; a guest order keeps its own copy of the contact details. Guest orders are linked to an account only when the account's **verified** email matches the order's email, never on an unverified one, or anyone could claim another person's orders by signing up with their email.
 - **Unverified customers** can sign in and shop, but can't link guest orders or download a data export.
+- **Social sign-in** (`laravel/socialite`) is for **customers only**, never staff, drivers or platform admins (it would bypass their 2FA). A store chooses which providers to offer (a store setting).
+  - The account is identified by the provider's own user ID, unique per provider and store, never by email.
+  - An email counts as verified only when the provider asserts it and the provider is on the trusted list in config (Google and Apple at first). Otherwise the account starts unverified, so social sign-in can never be used to claim guest orders.
+  - **Never link automatically to an existing account with the same email.** The customer proves they own it first (signs in with its password, or uses a link emailed to it), so nobody takes over an account by creating a provider account with someone else's email.
+  - A customer can unlink a provider only while another way to sign in remains. Linked identities are in the customer's data export and are removed by erasure; provider access tokens are not kept.
 - **Changing a customer's email** needs the current password, takes effect only when a link sent to the new address is used, tells the old address, and signs out every other device.
 - **Drivers** can only see and update deliveries assigned to them. Authorization is by assignment, through Policies, not staff roles. A driver never sees other drivers' deliveries, unassigned orders, prices beyond what delivery needs, or store settings.
 
@@ -1278,7 +1285,7 @@ Build in this order, one step at a time. Each step ends with Pint, Larastan, the
 
 **Phase B: core commerce**
 
-6. Settings + Geography → 7. Catalog → 8. Inventory → 9. Pricing and tax → 10. Customers → 11. Promotions → 12. Cart → 13. Shipping → 14. Orders → 15. Payments (fixes F1) → 15b. Invoices and credit notes → 16. Checkout → 17. Delivery → 18. Returns → 19. Storefront → 20. Messaging (email channel first).
+6. Settings + Geography → 7. Catalog → 8. Inventory → 9. Pricing and tax → 10. Customers → 11. Promotions → 12. Cart → 13. Shipping → 14. Orders → 15. Payments (fixes F1) → 15b. Invoices and credit notes → 10b. Customer social sign-in → 16. Checkout → 17. Delivery → 18. Returns → 19. Storefront → 20. Messaging (email channel first).
 
 **Phase C: after the core shopping flow works**
 
