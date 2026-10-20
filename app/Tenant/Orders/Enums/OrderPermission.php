@@ -17,4 +17,7 @@ enum OrderPermission: string
 
     /** Create and update shipments: what is sent, tracking, and when it leaves or arrives. */
     case OrdersFulfil = 'orders.fulfil';
+
+    /** See invoices and credit notes, with the buyer's details on them, and download their PDFs. */
+    case InvoicesView = 'invoices.view';
 }

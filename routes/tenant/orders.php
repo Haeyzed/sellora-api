@@ -6,10 +6,12 @@ use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Orders\Http\Controllers\CustomerOrderController;
+use App\Tenant\Orders\Http\Controllers\CustomerTaxDocumentController;
 use App\Tenant\Orders\Http\Controllers\GuestPrivacyController;
 use App\Tenant\Orders\Http\Controllers\OrderNoteController;
 use App\Tenant\Orders\Http\Controllers\ShipmentController;
 use App\Tenant\Orders\Http\Controllers\StaffOrderController;
+use App\Tenant\Orders\Http\Controllers\TaxDocumentController;
 use App\Tenant\Settings\Http\Middleware\UseStoreLanguage;
 use Illuminate\Support\Facades\Route;
 
@@ -17,7 +19,8 @@ use Illuminate\Support\Facades\Route;
 | Orders (Tenant\Orders). Staff work with them under /api/v1/staff/orders
 | with the orders.view, orders.manage and orders.fulfil permissions, and their
 | shipments under /api/v1/staff/shipments. Orders are found by their ID,
-| never by their number.
+| never by their number. Invoices and credit notes, under
+| /api/v1/staff/invoices and /api/v1/staff/credit-notes, need invoices.view.
 */
 
 Route::prefix('staff')
@@ -49,6 +52,18 @@ Route::prefix('staff')
             Route::post('{shipment}/cancel', [ShipmentController::class, 'cancel'])->name('cancel');
         });
 
+        Route::prefix('invoices')->name('invoices.')->group(static function (): void {
+            Route::get('/', [TaxDocumentController::class, 'invoices'])->name('index');
+            Route::get('{invoice}', [TaxDocumentController::class, 'invoice'])->name('show');
+            Route::get('{invoice}/pdf', [TaxDocumentController::class, 'invoicePdf'])->name('pdf');
+        });
+
+        Route::prefix('credit-notes')->name('credit-notes.')->group(static function (): void {
+            Route::get('/', [TaxDocumentController::class, 'creditNotes'])->name('index');
+            Route::get('{creditNote}', [TaxDocumentController::class, 'creditNote'])->name('show');
+            Route::get('{creditNote}/pdf', [TaxDocumentController::class, 'creditNotePdf'])->name('pdf');
+        });
+
         Route::get('customers/{customer}/orders', [StaffOrderController::class, 'forCustomer'])->name('customers.orders.index')->withTrashed();
 
         // A guest's data-protection request. The email goes in the body, never the URL, so it stays out of logs.
@@ -58,11 +73,16 @@ Route::prefix('staff')
 
 /*
 | A signed-in customer's own orders, under /api/v1/customer/orders, guest
-| orders placed with their verified email included.
+| orders placed with their verified email included, with their invoices and
+| credit notes.
 */
 
 Route::prefix('customer/orders')->name('customer.orders.')->middleware(['auth:'.Customer::GUARD, 'throttle:api', UseStoreLanguage::class])->group(static function (): void {
     Route::get('/', [CustomerOrderController::class, 'index'])->name('index');
     Route::get('{order}', [CustomerOrderController::class, 'show'])->name('show');
     Route::post('{order}/cancel', [CustomerOrderController::class, 'cancel'])->name('cancel');
+    Route::get('{order}/invoice', [CustomerTaxDocumentController::class, 'invoice'])->name('invoice.show');
+    Route::get('{order}/invoice/pdf', [CustomerTaxDocumentController::class, 'invoicePdf'])->name('invoice.pdf');
+    Route::get('{order}/credit-notes/{creditNote}', [CustomerTaxDocumentController::class, 'creditNote'])->name('credit-notes.show');
+    Route::get('{order}/credit-notes/{creditNote}/pdf', [CustomerTaxDocumentController::class, 'creditNotePdf'])->name('credit-notes.pdf');
 });

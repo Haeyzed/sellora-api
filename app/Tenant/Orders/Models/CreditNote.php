@@ -62,6 +62,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property CarbonImmutable|null $pdf_rendered_at
  * @property CarbonImmutable $created_at
  * @property-read Invoice $invoice
+ * @property-read Order $order
  * @property-read Collection<int, CreditNoteLine> $lines
  * @property-read Collection<int, CreditNoteTax> $taxes
  */
@@ -82,6 +83,14 @@ final class CreditNote extends Model
     public function invoice(): BelongsTo
     {
         return $this->belongsTo(Invoice::class);
+    }
+
+    /**
+     * @return BelongsTo<Order, $this>
+     */
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(Order::class);
     }
 
     /**

@@ -2,8 +2,15 @@
 
 declare(strict_types=1);
 
+use App\Shared\Money\Money;
+use App\Tenant\Customers\Models\Customer;
+use App\Tenant\Orders\Actions\IssueCreditNote;
+use App\Tenant\Orders\Data\CreditRequest;
 use App\Tenant\Orders\Data\DocumentNumber;
+use App\Tenant\Orders\Data\OrderBuyer;
 use App\Tenant\Orders\Enums\TaxDocumentKind;
+use App\Tenant\Orders\Models\CreditNote;
+use App\Tenant\Orders\Models\Invoice;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Orders\Services\TaxDocumentNumbers;
 use Carbon\CarbonImmutable;
@@ -96,6 +103,25 @@ function recordingServer(): array
     file_put_contents($log, '');
 
     return ['http://'.$address, static fn (): array => array_values(array_filter(explode(PHP_EOL, (string) file_get_contents($log))))];
+}
+
+/**
+ * A paid order in the test store with a credit note for a ₦10 price reduction, placed by the customer when one is given, else by a guest.
+ *
+ * @return array{Order, Invoice, CreditNote}
+ */
+function invoicedOrder(?Customer $customer = null): array
+{
+    return test()->store->run(static function () use ($customer): array {
+        $order = markPaid(placeOrder(orderDraft([[cartVariant(10000), 1]], orderShippingMethod(), buyer: $customer === null ? OrderBuyer::guest('guest@example.com') : OrderBuyer::customer($customer))));
+        $creditNote = app(IssueCreditNote::class)->handle(new CreditRequest($order->id, 'rfd_'.$order->number, 'rf_'.$order->number, Money::ofMinor(1000, 'NGN'), [], Money::zero('NGN'), Money::zero('NGN'), Money::ofMinor(1000, 'NGN')));
+
+        if ($creditNote === null) {
+            throw new RuntimeException('The order has no invoice to credit.');
+        }
+
+        return [$order, Invoice::query()->where('order_id', $order->id)->sole(), $creditNote];
+    });
 }
 
 /**

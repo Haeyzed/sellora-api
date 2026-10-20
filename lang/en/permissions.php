@@ -59,6 +59,10 @@ return [
         'fulfil' => 'Create shipments, add tracking, and mark what has left, is ready for pickup or has arrived.',
     ],
 
+    'invoices' => [
+        'view' => 'See invoices and credit notes, with the buyer\'s details on them, and download their PDFs.',
+    ],
+
     'payments' => [
         'view' => 'See payments, refunds and how payment gateways are connected.',
         'confirm' => 'Confirm that a bank transfer arrived or cash on delivery was collected, and ask a gateway again about a payment.',

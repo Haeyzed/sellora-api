@@ -26,4 +26,12 @@ final class OrderPolicy
     {
         return $actor->can(OrderPermission::OrdersFulfil->value);
     }
+
+    /**
+     * Invoices and credit notes, apart from seeing orders: they are tax records, kept after the order's buyer is erased.
+     */
+    public function viewInvoices(StaffMember $actor): bool
+    {
+        return $actor->can(OrderPermission::InvoicesView->value);
+    }
 }
