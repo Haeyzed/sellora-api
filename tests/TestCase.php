@@ -6,6 +6,7 @@ namespace Tests;
 
 use GuzzleHttp\Promise\PromiseInterface;
 use Illuminate\Database\DatabaseManager;
+use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
@@ -51,7 +52,7 @@ abstract class TestCase extends BaseTestCase
     }
 
     /**
-     * Tests never call real outside services. The fake breached-password service answers like the real one, from markAsBreached().
+     * Tests never call real outside services, nor write to cloud storage. The fake breached-password service answers like the real one, from markAsBreached().
      *
      * Store databases get a prefix of their own per test process, so parallel
      * processes never share or clean up each other's store databases (each
@@ -66,6 +67,33 @@ abstract class TestCase extends BaseTestCase
 
         Http::preventStrayRequests();
         Http::fake(['api.pwnedpasswords.com/range/*' => fn (Request $request): PromiseInterface => Http::response($this->breachedPasswordRange($request))]);
+        $this->keepFilesLocal();
+    }
+
+    /**
+     * Tests never reach cloud storage: whatever the environment says, every disk that isn't local becomes a local one under storage/framework/testing/disks, before anything uses it. Cloud SDKs also find credentials outside the environment (~/.aws, instance roles), so blank keys alone wouldn't do.
+     */
+    private function keepFilesLocal(): void
+    {
+        $filesystems = $this->app?->make(FilesystemManager::class);
+
+        /** @var array<string, array<string, mixed>> $disks */
+        $disks = config()->array('filesystems.disks');
+
+        foreach ($disks as $name => $disk) {
+            if (($disk['driver'] ?? null) === 'local') {
+                continue;
+            }
+
+            config(["filesystems.disks.{$name}" => [
+                'driver' => 'local',
+                'root' => storage_path("framework/testing/disks/{$name}"),
+                'visibility' => $disk['visibility'] ?? 'private',
+                'throw' => $disk['throw'] ?? false,
+                'report' => false,
+            ]]);
+            $filesystems?->forgetDisk($name);
+        }
     }
 
     /**

@@ -36,11 +36,30 @@
         <env name="DB_URL" value=""/>
         <env name="TENANT_DATABASE_PREFIX" value="sellora_testing_tenant_"/>
         <env name="PLATFORM_CENTRAL_DOMAINS" value="localhost"/>
-        <env name="FILESYSTEM_DISK" value="local"/>
-        <env name="STOREFRONT_IMAGE_DISK" value="public"/>
-        <env name="STORE_EXPORT_AFRICA_DRIVER" value="local"/>
-        <env name="STORE_EXPORT_EU_DRIVER" value="local"/>
-        <env name="STORE_EXPORT_US_DRIVER" value="local"/>
+        <!-- Tests never reach cloud storage, whatever .env or the shell says: every disk is local, and no cloud credentials are set (TestCase also swaps any disk that isn't local, and CloudStorageTest checks both). -->
+        <env name="FILESYSTEM_DISK" value="local" force="true"/>
+        <env name="STOREFRONT_IMAGE_DISK" value="public" force="true"/>
+        <env name="MEDIA_DISK" value="public" force="true"/>
+        <env name="CUSTOMER_DATA_EXPORT_DISK" value="local" force="true"/>
+        <env name="STORE_EXPORT_DISK" value="store_exports" force="true"/>
+        <env name="STORE_EXPORT_AFRICA_DRIVER" value="local" force="true"/>
+        <env name="STORE_EXPORT_EU_DRIVER" value="local" force="true"/>
+        <env name="STORE_EXPORT_US_DRIVER" value="local" force="true"/>
+        <env name="STORE_EXPORT_AFRICA_KEY" value="" force="true"/>
+        <env name="STORE_EXPORT_AFRICA_SECRET" value="" force="true"/>
+        <env name="STORE_EXPORT_AFRICA_BUCKET" value="" force="true"/>
+        <env name="STORE_EXPORT_EU_KEY" value="" force="true"/>
+        <env name="STORE_EXPORT_EU_SECRET" value="" force="true"/>
+        <env name="STORE_EXPORT_EU_BUCKET" value="" force="true"/>
+        <env name="STORE_EXPORT_US_KEY" value="" force="true"/>
+        <env name="STORE_EXPORT_US_SECRET" value="" force="true"/>
+        <env name="STORE_EXPORT_US_BUCKET" value="" force="true"/>
+        <env name="AWS_ACCESS_KEY_ID" value="" force="true"/>
+        <env name="AWS_SECRET_ACCESS_KEY" value="" force="true"/>
+        <env name="AWS_SESSION_TOKEN" value="" force="true"/>
+        <env name="AWS_BUCKET" value="" force="true"/>
+        <env name="AWS_URL" value="" force="true"/>
+        <env name="AWS_ENDPOINT" value="" force="true"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
