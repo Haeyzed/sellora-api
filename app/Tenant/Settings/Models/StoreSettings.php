@@ -100,7 +100,7 @@ final class StoreSettings extends Model implements AuditableContract, HasMedia
      */
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection(self::LOGO)->singleFile()->useDisk(StorefrontImage::DISK);
+        $this->addMediaCollection(self::LOGO)->singleFile()->useDisk(StorefrontImage::disk());
     }
 
     protected static function booted(): void

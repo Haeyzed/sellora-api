@@ -112,7 +112,7 @@ final class Product extends Model implements AuditableContract, HasMedia
 
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection(self::GALLERY)->useDisk(StorefrontImage::DISK);
+        $this->addMediaCollection(self::GALLERY)->useDisk(StorefrontImage::disk());
     }
 
     /**

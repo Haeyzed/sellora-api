@@ -13,7 +13,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * For models with storefront images: the resized copies every such image gets, in WebP, made on the queue.
  *
  * The model declares its own collections (a gallery, a logo) on the public
- * disk, StorefrontImage::DISK.
+ * disk, StorefrontImage::disk().
  */
 trait HasStorefrontImages
 {

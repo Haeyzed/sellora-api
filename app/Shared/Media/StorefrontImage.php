@@ -15,14 +15,19 @@ use Illuminate\Validation\Rules\File;
  */
 final class StorefrontImage
 {
-    /** The public disk storefront images go on; every other upload stays private. */
-    public const string DISK = 'public';
-
     /** A small square-ish copy for lists, at most 400 pixels across. */
     public const string THUMBNAIL = 'thumbnail';
 
     /** A copy for product pages, at most 1600 pixels across. */
     public const string LARGE = 'large';
+
+    /**
+     * The public disk storefront images go on (config media.storefront_images.disk): "public", served on the store's own domain, until S3 behind a CDN is set up. Every other upload stays private.
+     */
+    public static function disk(): string
+    {
+        return config()->string('media.storefront_images.disk');
+    }
 
     /**
      * @return list<mixed>

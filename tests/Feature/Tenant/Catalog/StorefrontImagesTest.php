@@ -85,7 +85,7 @@ it('keeps a product\'s gallery on the public disk, in order, served on the store
     $this->store->run(static function (): void {
         $media = Media::query()->orderBy('id')->get();
 
-        expect($media->pluck('disk')->unique()->all())->toBe([StorefrontImage::DISK])
+        expect($media->pluck('disk')->unique()->all())->toBe([StorefrontImage::disk()])
             ->and(Storage::disk('public')->exists($media[0]->getPathRelativeToRoot()))->toBeTrue()
             // Tenancy roots the private disk one level above the public folder: nothing is kept outside it.
             ->and(array_filter(Storage::disk('local')->allFiles(), static fn (string $path): bool => ! str_starts_with($path, 'public/')))->toBe([]);

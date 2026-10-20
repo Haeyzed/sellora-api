@@ -36,7 +36,7 @@ final readonly class StorefrontImageUploader
 
             return $model->addMedia($image)
                 ->withCustomProperties(['width' => $dimensions[0], 'height' => $dimensions[1]])
-                ->toMediaCollection($collection, StorefrontImage::DISK);
+                ->toMediaCollection($collection, StorefrontImage::disk());
         });
     }
 }

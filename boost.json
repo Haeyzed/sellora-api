@@ -23,6 +23,7 @@
         "laravel-best-practices",
         "testing-best-practices",
         "scout-development",
+        "socialite-development",
         "telescope-debugging",
         "tailwindcss-development",
         "scramble-development",

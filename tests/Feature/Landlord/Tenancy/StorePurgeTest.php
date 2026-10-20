@@ -44,7 +44,7 @@ beforeEach(function (): void {
 });
 
 afterEach(function (): void {
-    File::deleteDirectory(storage_path('tenant'.test()->purgedStore->id));
+    File::deleteDirectory(storage_path(config()->string('tenancy.filesystem.suffix_base').test()->purgedStore->id));
     deleteAllStores();
 });
 
@@ -64,7 +64,7 @@ it('deletes a closed store\'s data for good once its purge date has passed, keep
     $this->seed(PlatformPermissionSeeder::class);
     $store = $this->purgedStore;
     $store->run(static fn () => Storage::disk('local')->put('logos/logo.png', 'an image'));
-    expect(File::isDirectory(storage_path('tenant'.$store->id)))->toBeTrue();
+    expect(File::isDirectory(storage_path(config()->string('tenancy.filesystem.suffix_base').$store->id)))->toBeTrue();
 
     $storeExport = new StoreExport(['disk' => 'store_exports', 'expires_at' => now()->addDays(7)]);
     $storeExport->forceFill(['tenant_id' => $store->id, 'requested_by_type' => 'platform_admin', 'requested_by_id' => 'someone', 'status' => StoreExportStatus::Ready, 'path' => "{$store->id}/export.zip"])->save();
@@ -85,7 +85,7 @@ it('deletes a closed store\'s data for good once its purge date has passed, keep
         ->and($store->owner_email)->toBeNull()
         ->and($store->closure_reason)->toBeNull()
         ->and(purgedStoreDatabaseExists($store))->toBeFalse()
-        ->and(File::isDirectory(storage_path('tenant'.$store->id)))->toBeFalse()
+        ->and(File::isDirectory(storage_path(config()->string('tenancy.filesystem.suffix_base').$store->id)))->toBeFalse()
         ->and(StoreExport::query()->count())->toBe(0)
         ->and(Domain::query()->where('tenant_id', $store->id)->exists())->toBeFalse()
         ->and(Subscription::query()->whereKey($subscription->id)->exists())->toBeTrue()
