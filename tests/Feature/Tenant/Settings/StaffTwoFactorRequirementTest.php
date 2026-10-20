@@ -73,8 +73,8 @@ it('audits the change and logs it, and can turn it off again', function (): void
     requireStaffTwoFactor(false, ['code' => twoFactorCode($secret, stepsFromNow: 1)])->assertOk()->assertJsonPath('data.require_staff_two_factor', false);
 
     $this->store->run(function (): void {
-        expect(Activity::query()->where('causer_id', $this->owner->id)->pluck('event')->all())->toBe(['staff_two_factor_required', 'staff_two_factor_no_longer_required'])
-            ->and(Audit::query()->where('auditable_type', 'store_settings')->where('event', 'updated')->get()->map(static fn (Audit $audit): mixed => $audit->new_values['require_staff_two_factor'] ?? null)->all())->toBe([true, false]);
+        expect(Activity::query()->where('causer_id', $this->owner->id)->orderBy('id')->pluck('event')->all())->toBe(['staff_two_factor_required', 'staff_two_factor_no_longer_required'])
+            ->and(Audit::query()->where('auditable_type', 'store_settings')->where('event', 'updated')->orderBy('id')->get()->map(static fn (Audit $audit): mixed => $audit->new_values['require_staff_two_factor'] ?? null)->all())->toBe([true, false]);
     });
 });
 
