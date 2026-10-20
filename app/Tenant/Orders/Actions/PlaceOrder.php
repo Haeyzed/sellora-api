@@ -112,6 +112,10 @@ final readonly class PlaceOrder
             throw new InvalidOrderDraftException('An order needs at least one line.');
         }
 
+        if ($draft->payOnDelivery && $draft->isTest) {
+            throw new InvalidOrderDraftException('Cash on delivery is never a test payment method.');
+        }
+
         if ($outcome->currency !== $priced->currency) {
             throw new InvalidOrderDraftException('The discounts and the prices must be in the same currency.');
         }
@@ -203,6 +207,7 @@ final readonly class PlaceOrder
             'status' => OrderStatus::Open,
             'payment_status' => OrderPaymentStatus::Unpaid,
             'is_test' => $draft->isTest,
+            'pay_on_delivery' => $draft->payOnDelivery,
             'fulfilment_status' => $draft->shipping === null ? FulfilmentStatus::NotRequired : FulfilmentStatus::Unfulfilled,
             'customer_id' => $customer?->id,
             'contact_email' => $draft->buyer->email,

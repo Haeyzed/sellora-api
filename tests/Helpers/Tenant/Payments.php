@@ -2,19 +2,29 @@
 
 declare(strict_types=1);
 
+use App\Shared\Auth\AccountReference;
 use App\Shared\Features\Contracts\FeatureSource;
 use App\Shared\Features\Features;
 use App\Shared\Money\Money;
+use App\Tenant\Orders\Actions\CreateShipment;
+use App\Tenant\Orders\Actions\MoveShipment;
 use App\Tenant\Orders\Models\Order;
+use App\Tenant\Orders\Models\Shipment;
+use App\Tenant\Payments\Actions\ChangeManualPaymentMethod;
 use App\Tenant\Payments\Actions\ConnectPaymentGateway;
+use App\Tenant\Payments\Actions\RecordManualPayment;
+use App\Tenant\Payments\Actions\StartManualPayment;
 use App\Tenant\Payments\Actions\StartPayment;
 use App\Tenant\Payments\Actions\VerifyPayment;
 use App\Tenant\Payments\Data\GatewayPaymentResult;
 use App\Tenant\Payments\Enums\GatewayMode;
 use App\Tenant\Payments\Enums\GatewayPaymentState;
+use App\Tenant\Payments\Enums\PaymentMethod;
 use App\Tenant\Payments\Jobs\CheckPaymentWithGateway;
 use App\Tenant\Payments\Models\Payment;
+use App\Tenant\Payments\Models\PaymentEvent;
 use App\Tenant\Payments\Models\PaymentGatewayConnection;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Testing\TestResponse;
 use Tests\Fixtures\Features\FakeFeatureSource;
@@ -83,11 +93,11 @@ function connectFakeGateway(string $mode = 'test', string $suffix = '0123456789'
 }
 
 /**
- * A live order of one shipped line, placed in the test store, unpaid.
+ * A live order of one shipped line, placed in the test store, unpaid; paid on delivery, or with a later deadline, when asked.
  */
-function unpaidOrder(int $price = 10000, ?string $currency = null, bool $isTest = false): Order
+function unpaidOrder(int $price = 10000, ?string $currency = null, bool $isTest = false, bool $payOnDelivery = false, ?CarbonImmutable $paymentDueAt = null): Order
 {
-    return placeOrder(orderDraft([[cartVariant($price, stock: 5), 1]], orderShippingMethod(), currency: $currency, isTest: $isTest));
+    return placeOrder(orderDraft([[cartVariant($price, stock: 5), 1]], orderShippingMethod(), currency: $currency, paymentDueAt: $paymentDueAt, isTest: $isTest, payOnDelivery: $payOnDelivery));
 }
 
 /**
@@ -145,4 +155,59 @@ function sendFakeWebhook(array $payload, ?string $endpointId = null, ?string $se
     $signature = hash_hmac('sha256', $body, $secret ?? fakeGatewayCredentials('live')['secret_key']);
 
     return test()->call('POST', centralUrl('/webhooks/payments/'.($endpointId ?? fakeWebhookEndpoint())), server: ['CONTENT_TYPE' => 'application/json', 'HTTP_X_FAKE_SIGNATURE' => $signature], content: $body);
+}
+
+/**
+ * A payment's history, oldest first, by event type.
+ *
+ * @return list<string>
+ */
+function paymentHistory(Payment $payment): array
+{
+    return array_values($payment->events()->get()->map(static fn (PaymentEvent $event): string => $event->type->value)->all());
+}
+
+/**
+ * Turns on a payment method paid by hand in the test store, as its owner, with any settings given.
+ *
+ * @param  array{enabled?: bool, deadline_hours?: int, collection_alert_hours?: int, instructions?: string|null}  $settings
+ */
+function offerManualMethod(PaymentMethod $method, array $settings = []): void
+{
+    test()->store->run(static fn () => app(ChangeManualPaymentMethod::class)->handle(test()->owner, $method, ['enabled' => true, ...$settings]));
+}
+
+/**
+ * An order in the test store expecting payment by a method paid by hand (turned on first), and its pending payment.
+ *
+ * @return array{Order, Payment}
+ */
+function manuallyPaidOrder(PaymentMethod $method, int $price = 10000): array
+{
+    offerManualMethod($method);
+
+    return test()->store->run(static function () use ($method, $price): array {
+        $order = unpaidOrder($price, payOnDelivery: $method === PaymentMethod::CashOnDelivery, paymentDueAt: CarbonImmutable::now()->addHours(72));
+
+        return [$order, app(StartManualPayment::class)->handle($order, $method)];
+    });
+}
+
+/**
+ * Staff (the owner) recording money received for a payment paid by hand, in minor units of its currency.
+ */
+function recordReceived(Payment $payment, int $minorAmount, ?string $reference = null): Payment
+{
+    return test()->store->run(static fn (): Payment => app(RecordManualPayment::class)->handle(test()->owner, $payment->refresh(), Money::ofMinor($minorAmount, $payment->currency), $reference)->refresh());
+}
+
+/**
+ * Ships all of an order's line in one shipment as the owner, and delivers it when asked; returns the shipment.
+ */
+function shipOrder(Order $order, bool $deliver = false): Shipment
+{
+    $staff = AccountReference::to(test()->owner);
+    $shipment = app(MoveShipment::class)->ship(app(CreateShipment::class)->handle($order, [$order->lines()->firstOrFail()->public_id => 1], $staff, 'TRK'), $staff);
+
+    return $deliver ? app(MoveShipment::class)->deliver($shipment, $staff) : $shipment;
 }

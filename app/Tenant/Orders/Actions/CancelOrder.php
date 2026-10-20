@@ -99,14 +99,14 @@ final readonly class CancelOrder
     }
 
     /**
-     * Cancels an order whose payment deadline has passed, if it is still open and unpaid once locked: a payment may have arrived meanwhile. Says whether it did.
+     * Cancels an order whose payment deadline has passed, if it is still open and unpaid once locked: a payment may have arrived meanwhile, or, paid on delivery, a shipment been made. Says whether it did.
      */
     public function expire(Order $order): bool
     {
         return DB::transaction(function () use ($order): bool {
             $locked = $this->orderProgress->lock($order);
 
-            if (! $locked->awaitsPayment() || $locked->payment_due_at->isFuture()) {
+            if (! $locked->awaitsPayment() || $locked->payment_due_at->isFuture() || $this->isOnItsWayForCash($locked)) {
                 return false;
             }
 
@@ -129,6 +129,14 @@ final readonly class CancelOrder
         if ($reason === CancellationReason::Customer && $locked->payment_status !== OrderPaymentStatus::Unpaid) {
             throw new OrderAlreadyPaidException;
         }
+    }
+
+    /**
+     * An order paid on delivery whose first shipment exists: its stock has left the shelf, so its deadline no longer applies.
+     */
+    private function isOnItsWayForCash(Order $locked): bool
+    {
+        return $locked->pay_on_delivery && $locked->shipments()->where('status', '<>', ShipmentStatus::Cancelled->value)->exists();
     }
 
     /**

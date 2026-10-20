@@ -15,4 +15,22 @@ enum PaymentMethod: string
     case BankTransfer = 'bank_transfer';
     /** In cash when the order is delivered; staff (and later drivers) record it as collected. */
     case CashOnDelivery = 'cash_on_delivery';
+
+    /**
+     * Paid by hand, and confirmed by staff recording what arrived.
+     */
+    public function isManual(): bool
+    {
+        return $this !== self::Gateway;
+    }
+
+    /**
+     * The methods paid by hand, which each store sets up.
+     *
+     * @return list<self>
+     */
+    public static function manual(): array
+    {
+        return [self::BankTransfer, self::CashOnDelivery];
+    }
 }

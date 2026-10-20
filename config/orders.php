@@ -25,14 +25,16 @@ return [
     |
     | Every unpaid order has a deadline, so none holds stock forever. Checkout
     | gives a longer one for payment methods paid later, such as a bank
-    | transfer, never longer than the maximum. Unpaid orders past their
-    | deadline are cancelled by the scheduled sweep, a batch at a time.
+    | transfer or cash on delivery (config/payments.php), never longer than
+    | the maximum: 30 days, the longest a store can give cash on delivery.
+    | Unpaid orders past their deadline are cancelled by the scheduled sweep,
+    | a batch at a time.
     |
     */
 
     'unpaid_expiry_minutes' => (int) env('ORDERS_UNPAID_EXPIRY_MINUTES', 60),
 
-    'max_payment_window_minutes' => (int) env('ORDERS_MAX_PAYMENT_WINDOW_MINUTES', 10080),
+    'max_payment_window_minutes' => (int) env('ORDERS_MAX_PAYMENT_WINDOW_MINUTES', 43200),
 
     'expired_orders_per_run' => (int) env('ORDERS_EXPIRED_PER_RUN', 200),
 

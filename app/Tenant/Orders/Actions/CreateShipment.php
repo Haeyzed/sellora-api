@@ -21,7 +21,7 @@ use App\Tenant\Orders\Services\OrderProgress;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Staff starting a shipment of a paid order: which lines, and how many of each, go together (section 13).
+ * Staff starting a shipment of a paid order, or of one paid in cash on delivery: which lines, and how many of each, go together (section 13).
  *
  * Checked under the order's lock, so two shipments made at once never send
  * more of a line than was bought: what a line has in shipments that aren't
@@ -39,7 +39,7 @@ final readonly class CreateShipment
     /**
      * @param  array<string, int>  $quantities  How many of each line, by the order line's public ID.
      *
-     * @throws OrderCannotBeFulfilledException When the order isn't open, isn't paid, or ships nothing.
+     * @throws OrderCannotBeFulfilledException When the order isn't open, isn't paid (nor paid on delivery), or ships nothing.
      * @throws ShipmentQuantityTooHighException When a line would ship more than is left of it, or isn't one that ships.
      */
     public function handle(Order $order, array $quantities, AccountReference $actor, ?string $trackingNumber = null, ?string $trackingUrl = null): Shipment
@@ -48,7 +48,7 @@ final readonly class CreateShipment
             $locked = $this->orderProgress->lock($order);
             $shippingLine = $locked->shippingLine()->first();
 
-            if ($locked->status !== OrderStatus::Open || ! $locked->payment_status->wasPaidInFull() || $shippingLine === null) {
+            if ($locked->status !== OrderStatus::Open || ! $this->mayShip($locked) || $shippingLine === null) {
                 throw new OrderCannotBeFulfilledException;
             }
 
@@ -79,6 +79,14 @@ final readonly class CreateShipment
 
             return $shipment->load('lines.orderLine');
         });
+    }
+
+    /**
+     * Paid in full, or paid in cash when it arrives.
+     */
+    private function mayShip(Order $locked): bool
+    {
+        return $locked->pay_on_delivery || $locked->payment_status->wasPaidInFull();
     }
 
     /**

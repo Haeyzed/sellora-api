@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
 use App\Tenant\Identity\Models\StaffMember;
+use App\Tenant\Payments\Http\Controllers\ManualPaymentMethodController;
 use App\Tenant\Payments\Http\Controllers\PaymentGatewayController;
 use Illuminate\Support\Facades\Route;
 
@@ -24,5 +25,10 @@ Route::prefix('staff')
             Route::patch('{gateway}/connection', [PaymentGatewayController::class, 'update'])->name('connection.change');
             Route::delete('{gateway}/connection', [PaymentGatewayController::class, 'disconnect'])->name('connection.destroy');
             Route::post('{gateway}/connection/checks', [PaymentGatewayController::class, 'check'])->name('connection.checks.store');
+        });
+
+        Route::prefix('payment-methods')->name('payment-methods.')->group(static function (): void {
+            Route::get('/', [ManualPaymentMethodController::class, 'index'])->name('index');
+            Route::patch('{method}', [ManualPaymentMethodController::class, 'update'])->whereIn('method', ['bank_transfer', 'cash_on_delivery'])->name('update');
         });
     });

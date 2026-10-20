@@ -186,7 +186,7 @@ it('gives every order a payment deadline: the usual one, or a later one up to th
         $later = CarbonImmutable::now()->addDays(3)->startOfSecond();
 
         expect(placeOrder(orderDraft([[$shirt, 1]], $method, paymentDueAt: $later))->payment_due_at->equalTo($later))->toBeTrue()
-            ->and(fn () => placeOrder(orderDraft([[$shirt, 1]], $method, paymentDueAt: CarbonImmutable::now()->addDays(8))))->toThrow(InvalidOrderDraftException::class, 'max_payment_window_minutes')
+            ->and(fn () => placeOrder(orderDraft([[$shirt, 1]], $method, paymentDueAt: CarbonImmutable::now()->addDays(31))))->toThrow(InvalidOrderDraftException::class, 'max_payment_window_minutes')
             ->and(fn () => placeOrder(orderDraft([[$shirt, 1]], $method, paymentDueAt: CarbonImmutable::now()->subMinute())))->toThrow(InvalidOrderDraftException::class, 'in the future')
             // The database refuses an order without one, too.
             ->and(fn () => rawOrder(['payment_due_at' => null]))->toThrow(QueryException::class, 'payment_due_at');

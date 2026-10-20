@@ -28,6 +28,7 @@ final readonly class OrderDraft
      * @param  string  $locale  The language names are copied in: the buyer's.
      * @param  CarbonImmutable|null  $paymentDueAt  A later deadline for a payment method paid later (Step 15); null for the usual one. Never none.
      * @param  bool  $isTest  Whether the chosen payment method's gateway is in test mode: the order is then a test order for good.
+     * @param  bool  $payOnDelivery  Whether the buyer pays in cash on delivery: the order may then ship before it is paid. Never a test order.
      */
     public function __construct(
         public string $checkoutId,
@@ -42,5 +43,6 @@ final readonly class OrderDraft
         public ?string $customerNote = null,
         public ?CarbonImmutable $paymentDueAt = null,
         public bool $isTest = false,
+        public bool $payOnDelivery = false,
     ) {}
 }

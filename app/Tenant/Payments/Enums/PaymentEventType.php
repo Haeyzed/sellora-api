@@ -17,4 +17,8 @@ enum PaymentEventType: string
     case Cancelled = 'cancelled';
     /** The buyer disputed it with their bank; no money state changed. */
     case Disputed = 'disputed';
+    /** More arrived than was expected: it all counts, and the difference is owed back. */
+    case Overpaid = 'overpaid';
+    /** Staff were told cash wasn't recorded as collected a while after delivery. */
+    case CollectionOverdue = 'collection_overdue';
 }

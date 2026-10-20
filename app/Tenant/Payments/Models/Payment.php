@@ -54,6 +54,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property CarbonImmutable|null $cancelled_at
  * @property CarbonImmutable|null $last_checked_at When the gateway was last asked about it.
  * @property int $checks How often the gateway was asked about it.
+ * @property CarbonImmutable|null $collection_alerted_at Cash on delivery: when staff were told the cash wasn't recorded after delivery.
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property-read Order $order
@@ -73,7 +74,7 @@ final class Payment extends Model implements AuditableContract
      *
      * @var list<string>
      */
-    protected $auditExclude = ['id', 'public_id', 'redirect_url', 'last_checked_at', 'checks', 'updated_at'];
+    protected $auditExclude = ['id', 'public_id', 'redirect_url', 'last_checked_at', 'checks', 'collection_alerted_at', 'updated_at'];
 
     /**
      * @return BelongsTo<Order, $this>
@@ -118,6 +119,7 @@ final class Payment extends Model implements AuditableContract
             'cancelled_at' => 'immutable_datetime',
             'last_checked_at' => 'immutable_datetime',
             'checks' => 'integer',
+            'collection_alerted_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];

@@ -25,8 +25,9 @@ final class PaymentStoreTables implements ClassifiesStoreTables
             'id', 'public_id', 'order_id', 'method', 'gateway', 'connection_id', 'is_test', 'status', 'currency', 'amount_amount', 'received_currency',
             'received_amount', 'reference', 'idempotency_key', 'gateway_reference', 'redirect_url', 'failure_code', 'review_reason', 'card_brand',
             'card_last4', 'confirmed_by_type', 'confirmed_by_id', 'succeeded_at', 'failed_at', 'needs_review_at', 'unresolved_at', 'cancelled_at',
-            'last_checked_at', 'checks', 'created_at', 'updated_at',
+            'last_checked_at', 'checks', 'collection_alerted_at', 'created_at', 'updated_at',
         ]);
+        $registry->table('payment_method_settings', include: ['id', 'method', 'enabled', 'deadline_hours', 'collection_alert_hours', 'instructions', 'created_at', 'updated_at']);
         $registry->table('payment_events', include: ['id', 'payment_id', 'type', 'data', 'actor_type', 'actor_id', 'created_at']);
         $registry->table('payment_webhook_events', include: ['id', 'connection_id', 'gateway', 'event_id', 'kind', 'reference', 'received_at', 'processed_at'], exclude: [
             'payload' => 'What a gateway sent, encrypted with the platform key and kept only briefly; what it led to is in the payments.',

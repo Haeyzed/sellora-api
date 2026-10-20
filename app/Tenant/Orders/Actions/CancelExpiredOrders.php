@@ -7,11 +7,14 @@ namespace App\Tenant\Orders\Actions;
 use App\Tenant\Orders\Contracts\PaymentCheckBeforeExpiry;
 use App\Tenant\Orders\Enums\OrderPaymentStatus;
 use App\Tenant\Orders\Enums\OrderStatus;
+use App\Tenant\Orders\Enums\ShipmentStatus;
 use App\Tenant\Orders\Models\Order;
+use Illuminate\Database\Eloquent\Builder;
 
 /**
  * Cancels unpaid orders whose payment deadline has passed, a batch at a time, oldest deadline first, for the scheduled sweep. Safe to run twice and alongside payments.
  *
+ * An order paid on delivery stops expiring once its first shipment exists.
  * A gateway payment still under way is asked about one last time first,
  * outside any transaction. Each order is then cancelled in its own short
  * transaction, and only if it is still open and unpaid once locked: a
@@ -34,6 +37,10 @@ final readonly class CancelExpiredOrders
             ->where('status', OrderStatus::Open->value)
             ->whereIn('payment_status', [OrderPaymentStatus::Unpaid->value, OrderPaymentStatus::PartiallyPaid->value])
             ->where('payment_due_at', '<=', now())
+            // Paid on delivery and on its way: it no longer expires, so it must not hold up the batch.
+            ->where(static fn (Builder $expiring) => $expiring
+                ->where('pay_on_delivery', false)
+                ->orWhereDoesntHave('shipments', static fn (Builder $shipments) => $shipments->where('status', '<>', ShipmentStatus::Cancelled->value)))
             ->orderBy('payment_due_at')
             ->orderBy('id')
             ->limit($limit)

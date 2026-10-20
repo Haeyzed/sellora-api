@@ -128,7 +128,7 @@ it('never lets a test payment pay a live order, or a live payment a test order',
         expect($payment->is_test)->toBeTrue()
             ->and(verifyFakePayment($payment)->review_reason?->value)->toBe('mode_mismatch')
             ->and($test->refresh()->payment_status->value)->toBe('unpaid')
-            ->and(static fn () => DB::table('orders')->where('id', $live->id)->update(['is_test' => true]))->toThrow(QueryException::class, 'test flag never change');
+            ->and(static fn () => DB::table('orders')->where('id', $live->id)->update(['is_test' => true]))->toThrow(QueryException::class, 'test flag and way of paying never change');
 
         // Even a test payment that somehow ended up on the live order, and that the gateway confirms in test mode, never pays it.
         $stray = new Payment;

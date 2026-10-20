@@ -20,6 +20,13 @@ interface StorePaymentChecks
     public function queueOverdueChecks(): int;
 
     /**
+     * Alerts staff, once per payment, about orders paid on delivery that were delivered a while ago without their cash recorded as collected.
+     *
+     * @return int How many alerts were raised.
+     */
+    public function alertOverdueCollections(): int;
+
+    /**
      * The webhook endpoint IDs the store's gateway connections use, so the platform can prune the ones left behind.
      *
      * @return list<string>

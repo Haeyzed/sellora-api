@@ -43,6 +43,34 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Payment Methods Paid by Hand
+    |--------------------------------------------------------------------------
+    |
+    | How long a buyer has to pay, until the store changes it within these
+    | limits. A bank transfer's deadline is for the money to arrive; cash on
+    | delivery's is for getting the order out of the door, after which it no
+    | longer expires. Staff are alerted when cash hasn't been recorded as
+    | collected collection_alert_hours after delivery.
+    |
+    */
+
+    'manual_methods' => [
+        'bank_transfer' => [
+            'deadline_hours' => 72,
+            'min_deadline_hours' => 24,
+            'max_deadline_hours' => 168,
+        ],
+        'cash_on_delivery' => [
+            'deadline_hours' => 336,
+            'min_deadline_hours' => 72,
+            'max_deadline_hours' => 720,
+            'collection_alert_hours' => 48,
+            'max_collection_alert_hours' => 720,
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Webhook Endpoints
     |--------------------------------------------------------------------------
     |

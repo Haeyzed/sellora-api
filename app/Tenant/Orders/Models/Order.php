@@ -43,6 +43,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property OrderStatus $status
  * @property OrderPaymentStatus $payment_status Moved only by Payments.
  * @property bool $is_test Placed with a test-mode payment method; never changes. Only test payments pay it, and it never counts as a sale.
+ * @property bool $pay_on_delivery Paid in cash on delivery; never changes. It may ship before it is paid, and stops expiring once a shipment exists.
  * @property FulfilmentStatus $fulfilment_status
  * @property bool $refund_due Paid, but cancelled: the payment is owed back.
  * @property int|null $customer_id Null for a guest order not linked to an account.
@@ -252,6 +253,7 @@ final class Order extends Model implements AuditableContract
             'status' => OrderStatus::class,
             'payment_status' => OrderPaymentStatus::class,
             'is_test' => 'boolean',
+            'pay_on_delivery' => 'boolean',
             'fulfilment_status' => FulfilmentStatus::class,
             'refund_due' => 'boolean',
             'customer_id' => 'integer',

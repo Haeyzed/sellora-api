@@ -15,7 +15,7 @@ final class OrderStoreTables implements ClassifiesStoreTables
     public function classify(StoreExportRegistry $registry): void
     {
         $registry->table('orders', include: [
-            'id', 'public_id', 'number', 'checkout_id', 'status', 'payment_status', 'fulfilment_status', 'refund_due', 'is_test', 'customer_id',
+            'id', 'public_id', 'number', 'checkout_id', 'status', 'payment_status', 'fulfilment_status', 'refund_due', 'is_test', 'pay_on_delivery', 'customer_id',
             'contact_email', 'contact_name', 'contact_phone', 'locale', 'currency', 'base_currency', 'exchange_rate', 'market_rate', 'margin_percent',
             'rate_source', 'rate_as_of', 'tax_mode', 'tax_calculated_by', 'tax_country_code', 'tax_state_code', 'tax_postal_code',
             'subtotal_amount', 'discount_amount', 'shipping_amount', 'shipping_discount_amount', 'tax_amount', 'total_amount', 'base_total_amount',
