@@ -68,6 +68,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read Order $order
  * @property-read Collection<int, InvoiceLine> $lines
  * @property-read Collection<int, InvoiceTax> $taxes
+ * @property-read Collection<int, CreditNote> $creditNotes
  */
 final class Invoice extends Model
 {
@@ -94,6 +95,16 @@ final class Invoice extends Model
     public function lines(): HasMany
     {
         return $this->hasMany(InvoiceLine::class)->orderBy('position');
+    }
+
+    /**
+     * The credit notes against it, oldest first.
+     *
+     * @return HasMany<CreditNote, $this>
+     */
+    public function creditNotes(): HasMany
+    {
+        return $this->hasMany(CreditNote::class)->orderBy('id');
     }
 
     /**

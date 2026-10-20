@@ -23,6 +23,9 @@ enum OrderEventType: string
     /** Its invoice was issued, once it was paid in full. */
     case InvoiceIssued = 'invoice_issued';
 
+    /** A credit note was issued against its invoice, for part of a refund that reduced the sale. */
+    case CreditNoteIssued = 'credit_note_issued';
+
     case Cancelled = 'cancelled';
 
     case Fulfilled = 'fulfilled';

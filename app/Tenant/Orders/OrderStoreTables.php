@@ -59,5 +59,15 @@ final class OrderStoreTables implements ClassifiesStoreTables
             'discount_amount', 'net_amount', 'tax_amount', 'total_amount', 'created_at',
         ]);
         $registry->table('invoice_taxes', include: ['id', 'invoice_id', 'invoice_line_id', 'name', 'country_code', 'state_code', 'rate_percent', 'currency', 'tax_amount', 'created_at']);
+        $registry->table('credit_notes', include: [
+            'id', 'public_id', 'invoice_id', 'order_id', 'reference', 'refund_reference', 'number', 'series', 'sequence_number', 'is_test', 'issued_at', 'locale', 'currency',
+            'base_currency', 'exchange_rate', 'tax_mode', 'seller_name', 'seller_trading_name', 'seller_tax_registration_label', 'seller_tax_registration_number',
+            'seller_address', 'seller_email', 'seller_phone', 'buyer_name', 'buyer_email', 'buyer_phone', 'billing_address', 'shipping_address', 'buyer_erased_at', 'footer',
+            'net_amount', 'tax_amount', 'total_amount', 'pdf_path', 'pdf_rendered_at', 'created_at',
+        ]);
+        $registry->table('credit_note_lines', include: [
+            'id', 'credit_note_id', 'position', 'kind', 'invoice_line_id', 'name', 'variant_name', 'sku', 'quantity', 'currency', 'net_amount', 'tax_amount', 'total_amount', 'created_at',
+        ]);
+        $registry->table('credit_note_taxes', include: ['id', 'credit_note_id', 'credit_note_line_id', 'name', 'country_code', 'state_code', 'rate_percent', 'currency', 'tax_amount', 'created_at']);
     }
 }
