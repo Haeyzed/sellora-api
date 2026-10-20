@@ -18,6 +18,7 @@ use App\Tenant\Payments\Enums\GatewayPaymentState;
 use App\Tenant\Payments\Enums\GatewayRefundState;
 use App\Tenant\Payments\Enums\PaymentMethod;
 use App\Tenant\Payments\Events\RefundFailed;
+use App\Tenant\Payments\Events\RefundStillPending;
 use App\Tenant\Payments\Events\RefundSucceeded;
 use App\Tenant\Payments\Events\RefundSucceededAfterFailing;
 use App\Tenant\Payments\Exceptions\OrderNotRefundableException;
@@ -479,6 +480,56 @@ it('asks again in the hourly sweep about gateway refunds no one asked about for 
     $this->artisan('payments:check-pending')->assertSuccessful();
 
     Queue::assertPushed(CheckRefundWithGateway::class, static fn (CheckRefundWithGateway $job): bool => $job->paymentRefundId === $part->id && $job->checkNumber === null);
+});
+
+it('asks about a refund still pending after days once a day, and alerts staff once', function (): void {
+    Event::fake([RefundStillPending::class]);
+    config(['payments.checks.refund_daily_after_days' => 5]);
+    [$order, $payment] = gatewayPaidOrder();
+    $this->script->refundAnswer = new GatewayRefundResult(GatewayRefundState::Pending);
+    $part = refundOrder($order, 4000)->paymentRefunds->sole();
+    $sweeps = static fn (): int => Queue::pushed(CheckRefundWithGateway::class, static fn (CheckRefundWithGateway $job): bool => $job->paymentRefundId === $part->id && $job->checkNumber === null)->count();
+    $checkNow = fn () => $this->store->run(static fn () => app(CheckPendingRefund::class)->handle($part->refresh()));
+
+    // Under the age, it is asked about whenever an hour went by without a check, and nobody is alerted.
+    $this->travel(4)->days();
+    $checkNow();
+    $this->travel(2)->hours();
+    $this->artisan('payments:check-pending')->assertSuccessful();
+    expect($sweeps())->toBe(1);
+    Event::assertNotDispatched(RefundStillPending::class);
+
+    // Past it, only once a day, and staff are told once.
+    $this->travel(1)->days();
+    $checkNow();
+    $this->travel(2)->hours();
+    $this->artisan('payments:check-pending')->assertSuccessful();
+    $this->artisan('payments:check-pending')->assertSuccessful();
+    expect($sweeps())->toBe(1)
+        ->and($this->store->run(static fn (): bool => $part->refresh()->slow_alerted_at !== null))->toBeTrue()
+        ->and($this->store->run(static fn (): array => paymentHistory($payment)))->toContain('refund_still_pending');
+    Event::assertDispatchedTimes(RefundStillPending::class, 1);
+    Event::assertDispatched(RefundStillPending::class, static fn (RefundStillPending $event): bool => $event->paymentRefund->is($part));
+
+    $this->travel(23)->hours();
+    $this->artisan('payments:check-pending')->assertSuccessful();
+    expect($sweeps())->toBe(2);
+    Event::assertDispatchedTimes(RefundStillPending::class, 1);
+});
+
+it('alerts nobody about an old refund that settled', function (): void {
+    Event::fake([RefundStillPending::class]);
+    [$order] = gatewayPaidOrder();
+    $this->script->refundAnswer = new GatewayRefundResult(GatewayRefundState::Pending);
+    $part = refundOrder($order, 4000)->paymentRefunds->sole();
+    $this->script->refundAnswer = new GatewayRefundResult(GatewayRefundState::Succeeded, 'fake_r', Money::ofMinor(4000, 'NGN'));
+    $this->store->run(static fn () => app(CheckPendingRefund::class)->handle($part->refresh()));
+
+    $this->travel(config()->integer('payments.checks.refund_daily_after_days') + 1)->days();
+    $this->artisan('payments:check-pending')->assertSuccessful();
+
+    Event::assertNotDispatched(RefundStillPending::class);
+    Queue::assertNotPushed(CheckRefundWithGateway::class, static fn (CheckRefundWithGateway $job): bool => $job->checkNumber === null);
 });
 
 it('announces each part that went back inside the transaction, with the order\'s totals', function (): void {

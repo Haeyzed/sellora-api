@@ -12,6 +12,7 @@ use App\Tenant\Payments\Enums\PaymentMethod;
 use App\Tenant\Payments\Enums\PaymentStatus;
 use App\Tenant\Payments\Enums\RefundStatus;
 use App\Tenant\Payments\Events\CashCollectionOverdue;
+use App\Tenant\Payments\Events\RefundStillPending;
 use App\Tenant\Payments\Jobs\CheckPaymentWithGateway;
 use App\Tenant\Payments\Jobs\CheckRefundWithGateway;
 use App\Tenant\Payments\Jobs\ProcessPaymentWebhook;
@@ -31,9 +32,10 @@ use Illuminate\Support\Facades\Log;
  * for config payments.checks.sweep_after_minutes, and every unresolved one
  * not asked about for recheck_unresolved_after_hours; handles again any
  * recorded webhook still unhandled after as long; and asks again about every
- * gateway refund still pending that long. Never gated by the plan or
- * the store's status. Also alerts staff about cash on delivery not recorded
- * as collected a while after delivery.
+ * gateway refund still pending that long (once a day, and staff alerted once,
+ * after refund_daily_after_days). Never gated by the plan or the store's
+ * status. Also alerts staff about cash on delivery not recorded as collected
+ * a while after delivery.
  */
 final readonly class PendingPaymentSweep implements StorePaymentChecks
 {
@@ -92,6 +94,23 @@ final readonly class PendingPaymentSweep implements StorePaymentChecks
         return $alerted;
     }
 
+    public function alertSlowRefunds(): int
+    {
+        $slow = $this->pendingGatewayRefunds()
+            ->where('created_at', '<', $this->dailyRefundChecksFrom())
+            ->whereNull('slow_alerted_at')
+            ->orderBy('id')
+            ->limit(config()->integer('payments.checks.sweep_per_run'))
+            ->get();
+        $alerted = 0;
+
+        foreach ($slow as $paymentRefund) {
+            $alerted += $this->alertSlowRefundOnce($paymentRefund) ? 1 : 0;
+        }
+
+        return $alerted;
+    }
+
     public function webhookEndpointsInUse(): array
     {
         return array_values(PaymentGatewayConnection::query()->whereNotNull('endpoint_id')->orderBy('id')->pluck('endpoint_id')->all());
@@ -119,20 +138,63 @@ final readonly class PendingPaymentSweep implements StorePaymentChecks
     }
 
     /**
-     * Refunds still on their way back through a gateway, not asked about for a while.
+     * Refunds still on their way back through a gateway, not asked about for a while: a day, once they are older than refund_daily_after_days.
      *
      * @return Builder<PaymentRefund>
      */
     private function overdueRefunds(): Builder
     {
         $cutoff = $this->pendingCutoff();
+        $dailyFrom = $this->dailyRefundChecksFrom();
+        $dailyCutoff = CarbonImmutable::now()->subDay();
 
+        return $this->pendingGatewayRefunds()->where(static fn (Builder $due) => $due
+            ->where(static fn (Builder $recent) => $recent
+                ->where('created_at', '>=', $dailyFrom)
+                ->where(static fn (Builder $quiet) => $quiet
+                    ->where('last_checked_at', '<', $cutoff)
+                    ->orWhere(static fn (Builder $never) => $never->whereNull('last_checked_at')->where('created_at', '<', $cutoff))))
+            ->orWhere(static fn (Builder $old) => $old
+                ->where('created_at', '<', $dailyFrom)
+                ->where(static fn (Builder $quiet) => $quiet->whereNull('last_checked_at')->orWhere('last_checked_at', '<', $dailyCutoff))));
+    }
+
+    /**
+     * @return Builder<PaymentRefund>
+     */
+    private function pendingGatewayRefunds(): Builder
+    {
         return PaymentRefund::query()
             ->where('status', RefundStatus::Pending->value)
-            ->whereNull('recorded_by_type')
-            ->where(static fn (Builder $quiet) => $quiet
-                ->where('last_checked_at', '<', $cutoff)
-                ->orWhere(static fn (Builder $never) => $never->whereNull('last_checked_at')->where('created_at', '<', $cutoff)));
+            ->whereNull('recorded_by_type');
+    }
+
+    private function dailyRefundChecksFrom(): CarbonImmutable
+    {
+        return CarbonImmutable::now()->subDays(config()->integer('payments.checks.refund_daily_after_days'));
+    }
+
+    /**
+     * Marked in one conditional update, so two sweeps at once alert once.
+     */
+    private function alertSlowRefundOnce(PaymentRefund $paymentRefund): bool
+    {
+        $marked = PaymentRefund::query()
+            ->whereKey($paymentRefund->id)
+            ->where('status', RefundStatus::Pending->value)
+            ->whereNull('slow_alerted_at')
+            ->update(['slow_alerted_at' => CarbonImmutable::now()]);
+
+        if ($marked !== 1) {
+            return false;
+        }
+
+        $this->paymentEventLog->record($paymentRefund->payment, PaymentEventType::RefundStillPending, ['refund' => $paymentRefund->public_id]);
+        // Only public IDs: staff find the rest from there.
+        Log::warning('A refund is still pending at the gateway days after it was sent; it is asked about daily now.', ['refund' => $paymentRefund->public_id]);
+        RefundStillPending::dispatch($paymentRefund->refresh());
+
+        return true;
     }
 
     /**

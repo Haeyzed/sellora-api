@@ -29,7 +29,9 @@ return [
     | once every recheck_unresolved_after_hours, because money may yet arrive.
     |
     | The hourly sweep is the safety net: it asks about anything pending whose
-    | last check is older than sweep_after_minutes, however that happened.
+    | last check is older than sweep_after_minutes, however that happened. A
+    | gateway refund still pending refund_daily_after_days after it was sent
+    | is asked about once a day from then on, and staff are alerted once.
     |
     */
 
@@ -39,6 +41,7 @@ return [
         'recheck_unresolved_after_hours' => (int) env('PAYMENTS_RECHECK_UNRESOLVED_AFTER_HOURS', 24),
         'sweep_after_minutes' => (int) env('PAYMENTS_SWEEP_AFTER_MINUTES', 60),
         'sweep_per_run' => (int) env('PAYMENTS_SWEEP_PER_RUN', 200),
+        'refund_daily_after_days' => (int) env('PAYMENTS_REFUND_DAILY_AFTER_DAYS', 7),
     ],
 
     /*

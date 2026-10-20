@@ -27,6 +27,13 @@ interface StorePaymentChecks
     public function alertOverdueCollections(): int;
 
     /**
+     * Alerts staff, once per part, about refunds still pending at the gateway days after they were sent.
+     *
+     * @return int How many alerts were raised.
+     */
+    public function alertSlowRefunds(): int;
+
+    /**
      * The webhook endpoint IDs the store's gateway connections use, so the platform can prune the ones left behind.
      *
      * @return list<string>

@@ -33,6 +33,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property CarbonImmutable|null $failed_at
  * @property CarbonImmutable|null $last_checked_at When the gateway was last asked about it.
  * @property int $checks How often the gateway was asked about it.
+ * @property CarbonImmutable|null $slow_alerted_at When staff were told it was still pending at the gateway.
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property-read Refund $refund
@@ -81,6 +82,7 @@ final class PaymentRefund extends Model implements AuditableContract
             'failed_at' => 'immutable_datetime',
             'last_checked_at' => 'immutable_datetime',
             'checks' => 'integer',
+            'slow_alerted_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];
