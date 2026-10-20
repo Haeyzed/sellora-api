@@ -93,6 +93,7 @@ On a fresh project, **the first task is installing and configuring all dependenc
 | Error tracking | `sentry/sentry-laravel` | follow its skill; DSN from environment only |
 | Translations | `spatie/laravel-translatable` | install at the start of Step 7 (Catalog); follow its skill or official docs |
 | Two-factor login | `pragmarx/google2fa` | TOTP codes for platform admins and staff (section 10); the frontend renders the QR code from the `otpauth://` URL |
+| PDF documents | `mpdf/mpdf` | invoices and credit notes (Step 15b), chosen for right-to-left and non-Latin scripts; remote resource loading off, only bundled fonts and embedded images; used only inside `Tenant\Orders` invoicing (approved in Step 15b, if it supports PHP 8.4) |
 | Social sign-in | `laravel/socialite` | customers only (section 10); follow its skill; used only inside `Tenant\Customers` (approved for Step 10b) |
 | Debugging (dev) | `laravel/telescope` | `composer require --dev`, local environment only |
 | Testing (dev) | `pestphp/pest`, `pestphp/pest-plugin-laravel` | replace PHPUnit tests with Pest |
@@ -1150,6 +1151,12 @@ Names must say exactly what a thing is or does, so the code reads without explan
   - **Before an order expires with a gateway payment still pending, the gateway is asked one last time.** Slow methods (USSD, bank transfer through a gateway) must not lose an order that was actually paid.
   - **Cash on delivery:** the deadline is for getting the order out the door. Once its first shipment exists the order no longer expires (its stock has left the shelf); an alert tells staff when cash hasn't been recorded as collected after delivery.
   - A payment that arrives after an order was cancelled never revives it: the order stays cancelled and is flagged for a refund.
+- **Invoices and credit notes:**
+  - An invoice is issued when the order becomes **paid in full** (cash on delivery: when the cash is recorded as collected), never at placement, so unpaid orders never consume numbers. At most one invoice per order.
+  - Numbers are **gap-free and sequential per store**, separate for invoices and credit notes, taken under a row lock in the same transaction that saves the document (never a database sequence, which skips numbers on rollback). Test orders never consume numbers.
+  - Invoices and credit notes are insert-only (triggers) and **copy every value** (seller, buyer, addresses, lines, tax per rate, currency and exchange rate); nothing is read live when showing or rendering them. The PDF is rendered once and stored.
+  - **A credit note is issued only for a refund that reduces the sale** (returned items, a price reduction, shipping). Giving back money that was never part of the sale (an overpayment, a payment in review) is a refund without a credit note. Credit notes never exceed the invoice.
+  - **Tax documents outlive erasure:** a customer's erasure doesn't clear the buyer details on invoices and credit notes until the store's tax-record retention period ends (a legal-obligation exception), and the erasure response tells the customer so.
 - **The erasure flag** (`app.erasing_personal_data`) is set in exactly one place, the Shared privacy erasure runner, for the whole erasure or retention-anonymisation transaction. Domain handlers never call `set_config` themselves.
 - **Stock is counted in whole units** in core. Stock is reserved at checkout, becomes the order's reservation when the order is placed, and leaves `on_hand` only at fulfilment. Unpaid orders don't hold stock forever: Orders releases their reservation when they expire.
 
