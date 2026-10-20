@@ -12,6 +12,7 @@ use App\Tenant\Payments\Enums\PaymentEventType;
 use App\Tenant\Payments\Enums\RefundStatus;
 use App\Tenant\Payments\Events\RefundFailed;
 use App\Tenant\Payments\Events\RefundSucceeded;
+use App\Tenant\Payments\Events\RefundSucceededAfterFailing;
 use App\Tenant\Payments\Models\Payment;
 use App\Tenant\Payments\Models\PaymentRefund;
 use Carbon\CarbonImmutable;
@@ -25,7 +26,10 @@ use Illuminate\Support\Facades\Log;
  * with exactly the amount asked. A success without an amount stays pending
  * and is asked about again; one with another amount stays pending too, and
  * staff are told. A success announces RefundSucceeded inside the same
- * transaction, so the order's payment status moves with it.
+ * transaction, so the order's payment status moves with it. The gateway's
+ * latest word wins, loudly: a refund it reported as failed that goes through
+ * later counts, and staff are told (Orders flags the order if refunds then
+ * exceed what was paid).
  */
 final readonly class RefundSettlement
 {
@@ -116,10 +120,26 @@ final readonly class RefundSettlement
 
     private function succeed(PaymentRefund $locked, Payment $payment, Order $order, ?AccountReference $actor): void
     {
+        $hadFailed = $locked->status === RefundStatus::Failed;
         $locked->forceFill(['status' => RefundStatus::Succeeded, 'succeeded_at' => CarbonImmutable::now(), 'failed_at' => null, 'failure_code' => null])->save();
         $this->paymentEventLog->record($payment, PaymentEventType::Refunded, ['refund' => $locked->public_id, 'amount' => $locked->amount->minorAmount()], $actor);
 
+        if ($hadFailed) {
+            $this->reportSuccessAfterFailing($locked, $payment);
+        }
+
         RefundSucceeded::dispatch($locked, $order, $this->orderPayments->totals($order));
+    }
+
+    /**
+     * The money moved after all: it counts, and staff are told, since they may have refunded again after the failure.
+     */
+    private function reportSuccessAfterFailing(PaymentRefund $locked, Payment $payment): void
+    {
+        $this->paymentEventLog->record($payment, PaymentEventType::RefundSucceededAfterFailing, ['refund' => $locked->public_id]);
+        // Only public IDs: staff find the rest from there.
+        Log::warning('A gateway reported a refund as failed and later as gone through; it counts as refunded.', ['refund' => $locked->public_id, 'payment' => $payment->public_id]);
+        RefundSucceededAfterFailing::dispatch($locked);
     }
 
     private function fail(PaymentRefund $locked, Payment $payment, ?string $failureCode): void

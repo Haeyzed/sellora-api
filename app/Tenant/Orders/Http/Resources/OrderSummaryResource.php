@@ -41,6 +41,7 @@ final class OrderSummaryResource extends JsonResource
             'pay_on_delivery' => $order->pay_on_delivery,
             'fulfilment_status' => $order->fulfilment_status->value,
             'refund_due' => $order->refund_due,
+            'refunded_beyond_paid' => $order->refunded_beyond_paid,
             'customer' => $order->customer === null ? null : ['id' => $order->customer->public_id],
             /**
              * The buyer's contact details as they stand.

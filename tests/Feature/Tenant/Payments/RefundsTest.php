@@ -5,6 +5,8 @@ declare(strict_types=1);
 use App\Landlord\Tenancy\Enums\TenantStatus;
 use App\Shared\Money\Money;
 use App\Tenant\Orders\Actions\CancelOrder;
+use App\Tenant\Orders\Actions\RecordOrderPayments;
+use App\Tenant\Orders\Events\OrderRefundedBeyondPaid;
 use App\Tenant\Payments\Actions\CheckPendingRefund;
 use App\Tenant\Payments\Actions\DisconnectPaymentGateway;
 use App\Tenant\Payments\Actions\RefundOrder;
@@ -17,6 +19,7 @@ use App\Tenant\Payments\Enums\GatewayRefundState;
 use App\Tenant\Payments\Enums\PaymentMethod;
 use App\Tenant\Payments\Events\RefundFailed;
 use App\Tenant\Payments\Events\RefundSucceeded;
+use App\Tenant\Payments\Events\RefundSucceededAfterFailing;
 use App\Tenant\Payments\Exceptions\OrderNotRefundableException;
 use App\Tenant\Payments\Exceptions\PartialRefundNotSupportedException;
 use App\Tenant\Payments\Exceptions\PaymentGatewayInUseException;
@@ -29,6 +32,7 @@ use App\Tenant\Payments\Models\Payment;
 use App\Tenant\Payments\Models\PaymentRefund;
 use App\Tenant\Payments\Models\Refund;
 use App\Tenant\Payments\Models\RefundLine;
+use App\Tenant\Payments\Services\OrderPayments;
 use Illuminate\Database\Connection;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -353,7 +357,7 @@ it('sends a refund again, with the same reference, when the gateway never got it
 });
 
 it('marks a refund the gateway refuses as failed, tells staff, and frees what it held', function (): void {
-    Event::fake([RefundFailed::class]);
+    Event::fake([RefundFailed::class, RefundSucceededAfterFailing::class, OrderRefundedBeyondPaid::class]);
     [$order, $payment] = gatewayPaidOrder();
     $this->script->rejectsRefunds = true;
 
@@ -363,11 +367,49 @@ it('marks a refund the gateway refuses as failed, tells staff, and frees what it
         ->and($this->store->run(static fn (): array => [$order->refresh()->payment_status->value, paymentHistory($payment)]))->toBe(['paid', ['started', 'succeeded', 'refund_started', 'refund_failed']]);
     Event::assertDispatched(RefundFailed::class, static fn (RefundFailed $event): bool => $event->paymentRefund->is($part));
 
-    // A gateway that refunds after saying it failed is believed: the money went back.
+    // A gateway that refunds after saying it failed is believed: the money went back, and staff are told.
     $this->script->refunds[$part->reference] = new GatewayRefundResult(GatewayRefundState::Succeeded, 'fake_late', Money::ofMinor(11500, 'NGN'));
     sendFakeWebhook(['id' => 'evt_refund', 'type' => 'refund', 'reference' => $part->reference])->assertOk();
 
-    expect($this->store->run(static fn (): array => [$part->refresh()->status->value, $order->refresh()->payment_status->value]))->toBe(['succeeded', 'refunded']);
+    expect($this->store->run(static fn (): array => [$part->refresh()->status->value, $order->refresh()->payment_status->value, $order->refunded_beyond_paid, paymentHistory($payment)]))
+        ->toBe(['succeeded', 'refunded', false, ['started', 'succeeded', 'refund_started', 'refund_failed', 'refunded', 'refund_succeeded_after_failing']]);
+    Event::assertDispatched(RefundSucceededAfterFailing::class, static fn (RefundSucceededAfterFailing $event): bool => $event->paymentRefund->is($part));
+    Event::assertNotDispatched(OrderRefundedBeyondPaid::class);
+});
+
+it('flags an order once when a refund goes through after failing and staff had refunded again, keeping what the gateway reports', function (): void {
+    Event::fake([RefundSucceededAfterFailing::class, OrderRefundedBeyondPaid::class]);
+    [$other] = gatewayPaidOrder();
+    [$order, $payment] = gatewayPaidOrder();
+    $this->script->rejectsRefunds = true;
+    $failed = refundOrder($order, 11500)->paymentRefunds->sole();
+    $this->script->rejectsRefunds = false;
+
+    // Staff refund again after the failure; the order is refunded, and nothing is wrong yet.
+    refundOrder($order, 11500);
+    expect($this->store->run(static fn (): array => [$order->refresh()->payment_status->value, $order->refunded_beyond_paid]))->toBe(['refunded', false]);
+
+    // Then the gateway says the first one went through after all.
+    $this->script->refunds[$failed->reference] = new GatewayRefundResult(GatewayRefundState::Succeeded, 'fake_late', Money::ofMinor(11500, 'NGN'));
+    sendFakeWebhook(['id' => 'evt_late', 'type' => 'refund', 'reference' => $failed->reference])->assertOk();
+    sendFakeWebhook(['id' => 'evt_late_again', 'type' => 'refund', 'reference' => $failed->reference])->assertOk();
+
+    $this->store->run(static function () use ($order, $payment, $failed): void {
+        // Later payment news for the order doesn't flag it again.
+        $totals = app(OrderPayments::class)->totals($order);
+        app(RecordOrderPayments::class)->handle($order, $totals->paid, $totals->refunded);
+        $order->refresh();
+
+        expect([$failed->refresh()->status->value, $order->payment_status->value, $order->refunded_beyond_paid])->toBe(['succeeded', 'refunded', true])
+            ->and(app(OrderPayments::class)->totals($order)->refunded->minorAmount())->toBe(23000)
+            ->and($order->events()->where('type', 'refunded_beyond_paid')->sole()->data)->toBe(['paid' => 11500, 'refunded' => 23000])
+            ->and(paymentHistory($payment))->toContain('refund_succeeded_after_failing');
+    });
+    Event::assertDispatchedTimes(OrderRefundedBeyondPaid::class, 1);
+    Event::assertDispatchedTimes(RefundSucceededAfterFailing::class, 1);
+    expect(staffOrderRequest('GET', '/orders?refunded_beyond_paid=1')->assertOk()->json('data.*.id'))->toBe([$order->public_id])
+        ->and(staffOrderRequest('GET', '/orders?refunded_beyond_paid=0')->assertOk()->json('data.*.id'))->toBe([$other->public_id])
+        ->and(staffOrderRequest('GET', "/orders/{$order->public_id}")->assertOk()->json('data.refunded_beyond_paid'))->toBeTrue();
 });
 
 it('asks the gateway about the refund a webhook names, only through the connection it came to', function (): void {

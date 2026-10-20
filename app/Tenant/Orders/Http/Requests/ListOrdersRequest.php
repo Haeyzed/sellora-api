@@ -40,6 +40,8 @@ final class ListOrdersRequest extends CursorListRequest
             'fulfilment_status' => ['sometimes', 'string', Rule::enum(FulfilmentStatus::class)],
             /** True for cancelled orders whose payment is owed back. */
             'refund_due' => ['sometimes', 'boolean'],
+            /** True for orders refunded beyond what was paid, for staff to look at. */
+            'refunded_beyond_paid' => ['sometimes', 'boolean'],
             /** Placed at or after this moment (ISO 8601). */
             'placed_from' => ['sometimes', 'date'],
             /** Placed before this moment (ISO 8601). */
@@ -76,8 +78,10 @@ final class ListOrdersRequest extends CursorListRequest
             }
         }
 
-        if ($this->has('refund_due')) {
-            $query->where('refund_due', $this->boolean('refund_due'));
+        foreach (['refund_due', 'refunded_beyond_paid'] as $flag) {
+            if ($this->has($flag)) {
+                $query->where($flag, $this->boolean($flag));
+            }
         }
 
         if ($this->filled('placed_from')) {

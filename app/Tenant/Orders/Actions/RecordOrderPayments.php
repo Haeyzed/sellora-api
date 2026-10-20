@@ -9,6 +9,7 @@ use App\Tenant\Orders\Enums\OrderEventType;
 use App\Tenant\Orders\Enums\OrderPaymentStatus;
 use App\Tenant\Orders\Enums\OrderStatus;
 use App\Tenant\Orders\Events\OrderPaidAfterCancellation;
+use App\Tenant\Orders\Events\OrderRefundedBeyondPaid;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Orders\Services\OrderEventLog;
 use App\Tenant\Orders\Services\OrderProgress;
@@ -21,7 +22,9 @@ use Illuminate\Support\Facades\Log;
  * Becoming paid in full runs MarkOrderAsPaid (promotion uses committed,
  * lines that don't ship fulfilled, completion). Money for a cancelled order
  * never revives it: the order stays cancelled and owes it back, until it is
- * all refunded.
+ * all refunded. Refunds beyond what was paid (a refund that went through
+ * after the gateway said it failed, and staff refunded again) are kept as
+ * the gateway reports them, and the order is flagged for staff once.
  */
 final readonly class RecordOrderPayments
 {
@@ -35,6 +38,7 @@ final readonly class RecordOrderPayments
     {
         return DB::transaction(function () use ($order, $paid, $refunded): Order {
             $locked = $this->orderProgress->lock($order);
+            $this->flagIfRefundedBeyondPaid($locked, $paid, $refunded);
             $status = OrderPaymentStatus::forAmounts($locked->total, $paid, $refunded);
 
             if ($status === $locked->payment_status) {
@@ -74,5 +78,21 @@ final readonly class RecordOrderPayments
         }
 
         $locked->refund_due = $owes;
+    }
+
+    /**
+     * Flags the order, once, when more went back than was paid.
+     */
+    private function flagIfRefundedBeyondPaid(Order $locked, Money $paid, Money $refunded): void
+    {
+        if ($locked->refunded_beyond_paid || ! $paid->isLessThan($refunded)) {
+            return;
+        }
+
+        $locked->forceFill(['refunded_beyond_paid' => true])->save();
+        $this->orderEventLog->record($locked, OrderEventType::RefundedBeyondPaid, ['paid' => $paid->minorAmount(), 'refunded' => $refunded->minorAmount()]);
+        // Only the public ID: staff find the rest from there.
+        Log::warning('More was refunded on an order than was paid; staff should look at it.', ['order' => $locked->public_id]);
+        OrderRefundedBeyondPaid::dispatch($locked);
     }
 }

@@ -51,6 +51,8 @@ final class OrderResource extends JsonResource
             'fulfilment_status' => $order->fulfilment_status->value,
             /** True for a cancelled order whose payment is owed back. */
             'refund_due' => $order->refund_due,
+            /** True when more was refunded than was paid, such as a refund that went through after the gateway said it failed. */
+            'refunded_beyond_paid' => $order->refunded_beyond_paid,
             /** The account it belongs to; null for a guest order. */
             'customer' => $order->customer === null ? null : ['id' => $order->customer->public_id],
             /**

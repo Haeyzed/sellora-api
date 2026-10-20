@@ -18,6 +18,7 @@ enum OrderEventType: string
 
     /** A payment arrived after the order was cancelled: it stays cancelled, and the payment is owed back. */
     case PaidAfterCancellation = 'paid_after_cancellation';
+    case RefundedBeyondPaid = 'refunded_beyond_paid';
 
     case Cancelled = 'cancelled';
 

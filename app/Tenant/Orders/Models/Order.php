@@ -46,6 +46,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property bool $pay_on_delivery Paid in cash on delivery; never changes. It may ship before it is paid, and stops expiring once a shipment exists.
  * @property FulfilmentStatus $fulfilment_status
  * @property bool $refund_due Paid, but cancelled: the payment is owed back.
+ * @property bool $refunded_beyond_paid More was refunded than was paid, such as a refund that went through after the gateway said it failed: staff should look at it.
  * @property int|null $customer_id Null for a guest order not linked to an account.
  * @property string|null $contact_email In lower case, as given at checkout; null once anonymised.
  * @property string|null $contact_name
@@ -256,6 +257,7 @@ final class Order extends Model implements AuditableContract
             'pay_on_delivery' => 'boolean',
             'fulfilment_status' => FulfilmentStatus::class,
             'refund_due' => 'boolean',
+            'refunded_beyond_paid' => 'boolean',
             'customer_id' => 'integer',
             'exchange_rate' => DecimalCast::class.':12',
             'market_rate' => DecimalCast::class.':12',
