@@ -36,6 +36,24 @@ function withScratchProcessDatabase(Closure $work): void
 
 /*
 |--------------------------------------------------------------------------
+| For QueueWorkersTest.php
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * The queues named in a command's "--queue=" option in a file of the project.
+ *
+ * @return list<string>
+ */
+function queuesListenedIn(string $path, string $command): array
+{
+    preg_match('/'.preg_quote($command, '/').' --queue=([a-z0-9_,-]+)/', (string) file_get_contents(base_path($path)), $matches);
+
+    return isset($matches[1]) ? explode(',', $matches[1]) : [];
+}
+
+/*
+|--------------------------------------------------------------------------
 | For StoreIsolationTest.php
 |--------------------------------------------------------------------------
 */

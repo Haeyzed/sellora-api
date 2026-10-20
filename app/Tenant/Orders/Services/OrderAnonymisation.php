@@ -7,6 +7,7 @@ namespace App\Tenant\Orders\Services;
 use App\Tenant\Orders\Enums\OrderEventType;
 use App\Tenant\Orders\Enums\OrderStatus;
 use App\Tenant\Orders\Enums\ShipmentStatus;
+use App\Tenant\Orders\Events\OrderAnonymised;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Orders\Models\OrderNote;
 use Carbon\CarbonImmutable;
@@ -16,6 +17,7 @@ use Illuminate\Support\Facades\DB;
  * Anonymises orders, which are financial records and so are never deleted (section 3.3): the buyer's contact details, note, addresses (all but the country and state) and corrections go, and staff notes, which may name them; the amounts, tax and country stay.
  *
  * Only inside a PersonalDataErasure run: the database refuses it otherwise.
+ * Other domains remove theirs through OrderAnonymised, in the same run.
  */
 final readonly class OrderAnonymisation
 {
@@ -52,5 +54,6 @@ final readonly class OrderAnonymisation
         OrderNote::query()->where('order_id', $order->id)->delete();
 
         $this->orderEventLog->record($order, OrderEventType::Anonymised);
+        OrderAnonymised::dispatch($order);
     }
 }

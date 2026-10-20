@@ -9,6 +9,7 @@ use App\Shared\Money\Money;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Payments\Enums\PaymentEventType;
+use App\Tenant\Payments\Enums\PaymentMethod;
 use App\Tenant\Payments\Enums\PaymentStatus;
 use App\Tenant\Payments\Events\PaymentOverpaid;
 use App\Tenant\Payments\Events\PaymentSucceeded;
@@ -41,21 +42,23 @@ final readonly class RecordManualPayment
 
     /**
      * @param  string|null  $reference  The bank's or the store's own reference for the money, if any.
+     * @param  PaymentMethod|null  $method  The method staff say it was paid by (a transfer received, cash collected); null for either.
      *
-     * @throws PaymentNotAwaitingReceiptException When it isn't paid by hand, or isn't pending or cancelled.
+     * @throws PaymentNotAwaitingReceiptException When it isn't paid by hand (or by that method), or isn't pending or cancelled.
      * @throws PaymentReceiptInvalidException When what arrived isn't a positive amount in the payment's currency.
      */
-    public function handle(StaffMember $actor, Payment $payment, Money $received, ?string $reference = null): Payment
+    public function handle(StaffMember $actor, Payment $payment, Money $received, ?string $reference = null, ?PaymentMethod $method = null): Payment
     {
         if (! $received->isPositive() || ! $received->hasSameCurrencyAs($payment->amount)) {
             throw new PaymentReceiptInvalidException;
         }
 
-        $recorded = DB::transaction(function () use ($actor, $payment, $received, $reference): Payment {
+        $recorded = DB::transaction(function () use ($actor, $payment, $received, $reference, $method): Payment {
             $order = Order::query()->whereKey($payment->order_id)->lockForUpdate()->firstOrFail();
             $locked = Payment::query()->whereKey($payment->id)->lockForUpdate()->firstOrFail();
+            $isThatMethod = $method === null || $locked->method === $method;
 
-            if (! $locked->method->isManual() || ! in_array($locked->status, [PaymentStatus::Pending, PaymentStatus::Cancelled], true)) {
+            if (! $locked->method->isManual() || ! $isThatMethod || ! in_array($locked->status, [PaymentStatus::Pending, PaymentStatus::Cancelled], true)) {
                 throw new PaymentNotAwaitingReceiptException;
             }
 

@@ -47,7 +47,7 @@ const PAGE_NUMBER_LISTS = [
 ];
 
 const CURSOR_LISTS = [
-    'default' => ['/staff/catalog/products', '/catalog/products', '/staff/inventory/levels', '/staff/inventory/variants/{variant}/movements', '/staff/customers', '/staff/customers/{customer}/notes', '/staff/customers/{customer}/marketing-consents', '/staff/customer-groups/{customerGroup}/members', '/staff/promotions/{promotion}/codes', '/staff/orders', '/staff/customers/{customer}/orders', '/staff/shipments', '/customer/orders'],
+    'default' => ['/staff/catalog/products', '/catalog/products', '/staff/inventory/levels', '/staff/inventory/variants/{variant}/movements', '/staff/customers', '/staff/customers/{customer}/notes', '/staff/customers/{customer}/marketing-consents', '/staff/customer-groups/{customerGroup}/members', '/staff/promotions/{promotion}/codes', '/staff/orders', '/staff/customers/{customer}/orders', '/staff/shipments', '/customer/orders', '/staff/payments', '/staff/refunds'],
     'platform' => ['/exchange-rates'],
 ];
 
@@ -451,6 +451,36 @@ it('documents every payment gateway endpoint, never with credentials in a respon
         ->and(json_encode($store['paths']['/staff/payment-gateways/{gateway}/connection']['put']['responses'][503]))->toContain('payment_gateway_unreachable')
         ->and(json_encode($store['paths']['/staff/payment-gateways/{gateway}/connection']['delete']['responses'][409]))->toContain('payment_gateway_not_connected')
         ->and(array_keys($store['components']['schemas']['PaymentGatewayConnectionResource']['properties']))->not->toContain('credentials', 'endpoint_id', 'account_id');
+});
+
+it('documents every payment and refund endpoint, never with card numbers', function (): void {
+    $store = documentedApi('default');
+
+    $expected = [
+        '/staff/payments' => ['get'],
+        '/staff/payments/{payment}' => ['get'],
+        '/staff/payments/{payment}/receipts' => ['post'],
+        '/staff/payments/{payment}/collections' => ['post'],
+        '/staff/payments/{payment}/checks' => ['post'],
+        '/staff/orders/{order}/payments' => ['get'],
+        '/staff/orders/{order}/refunds' => ['post'],
+        '/staff/refunds' => ['get'],
+        '/staff/refunds/{refund}' => ['get'],
+    ];
+
+    foreach ($expected as $path => $methods) {
+        expect($store['paths'])->toHaveKey($path)
+            ->and(array_keys($store['paths'][$path]))->toBe($methods);
+    }
+
+    expect($store['paths']['/staff/payments']['get']['description'])->toContain('Paged by cursor')
+        ->and($store['paths']['/staff/refunds']['get']['description'])->toContain('Paged by cursor')
+        ->and(collect($store['paths']['/staff/orders/{order}/refunds']['post']['parameters'])->pluck('name')->all())->toContain('Idempotency-Key')
+        ->and(json_encode($store['paths']['/staff/orders/{order}/refunds']['post']['responses'][409]))->toContain('order_not_refundable')
+        ->and(json_encode($store['paths']['/staff/orders/{order}/refunds']['post']['responses'][422]))->toContain('refund_exceeds_refundable')->toContain('refund_invalid')->toContain('partial_refund_not_supported')
+        ->and(json_encode($store['paths']['/staff/payments/{payment}/receipts']['post']['responses'][409]))->toContain('payment_not_awaiting_receipt')
+        ->and(array_keys($store['components']['schemas']['PaymentResource']['properties']))->toContain('status', 'amount', 'received', 'refunded', 'card_last4', 'events')->not->toContain('card_number', 'redirect_url')
+        ->and(array_keys($store['components']['schemas']['RefundResource']['properties']))->toContain('status', 'amount', 'shipping', 'lines', 'parts');
 });
 
 /*

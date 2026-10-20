@@ -120,6 +120,7 @@ use App\Tenant\Inventory\SettledReservationRetention;
 use App\Tenant\Inventory\StockLedgerReconciliation;
 use App\Tenant\Orders\Contracts\PaymentCheckBeforeExpiry;
 use App\Tenant\Orders\Enums\OrderPermission;
+use App\Tenant\Orders\Events\OrderAnonymised;
 use App\Tenant\Orders\Events\OrderCancelled;
 use App\Tenant\Orders\ExpiredOrderSweep;
 use App\Tenant\Orders\Listeners\LinkGuestOrdersWhenEmailVerified;
@@ -140,6 +141,7 @@ use App\Tenant\Payments\Events\PaymentSucceeded;
 use App\Tenant\Payments\Events\RefundSucceeded;
 use App\Tenant\Payments\GatewayCheckBeforeExpiry;
 use App\Tenant\Payments\Listeners\CancelManualPaymentsWhenOrderCancelled;
+use App\Tenant\Payments\Listeners\ForgetCardDetailsWhenOrderAnonymised;
 use App\Tenant\Payments\Models\Payment;
 use App\Tenant\Payments\Models\PaymentGatewayConnection;
 use App\Tenant\Payments\Models\PaymentMethodSetting;
@@ -627,6 +629,7 @@ final class AppServiceProvider extends ServiceProvider
         Event::listen(PaymentSucceeded::class, MarkOrderAsPaidWhenPaymentSucceeds::class);
         Event::listen(RefundSucceeded::class, RecordOrderPaymentsWhenRefundSucceeds::class);
         Event::listen(OrderCancelled::class, CancelManualPaymentsWhenOrderCancelled::class);
+        Event::listen(OrderAnonymised::class, ForgetCardDetailsWhenOrderAnonymised::class);
     }
 
     /**

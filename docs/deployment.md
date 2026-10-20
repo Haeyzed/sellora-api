@@ -25,11 +25,13 @@ which runs:
 
 ## Queue workers
 
-Workers must listen on every queue the app uses, or that work never runs
-(store exports, for example, go on `bulk`):
+Workers must listen on every queue the app uses, or that work never runs:
+`payments` (checks with payment gateways and webhooks, set by
+`PAYMENTS_QUEUE`), `default`, and `bulk` (store exports). Payments come first,
+so money never waits behind bulk work:
 
 ```sh
-php artisan queue:work --queue=default,bulk
+php artisan queue:work --queue=payments,default,bulk
 ```
 
 ## Scheduler

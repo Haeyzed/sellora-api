@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Shared\Auth\AccountReference;
+use App\Shared\Auth\Models\Role;
 use App\Shared\Features\Contracts\FeatureSource;
 use App\Shared\Features\Features;
 use App\Shared\Money\Money;
@@ -24,6 +25,7 @@ use App\Tenant\Payments\Data\RefundRequest;
 use App\Tenant\Payments\Enums\GatewayMode;
 use App\Tenant\Payments\Enums\GatewayPaymentState;
 use App\Tenant\Payments\Enums\PaymentMethod;
+use App\Tenant\Payments\Enums\PaymentPermission;
 use App\Tenant\Payments\Jobs\CheckPaymentWithGateway;
 use App\Tenant\Payments\Models\Payment;
 use App\Tenant\Payments\Models\PaymentEvent;
@@ -32,6 +34,7 @@ use App\Tenant\Payments\Models\Refund;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Testing\TestResponse;
+use Spatie\Permission\Models\Permission;
 use Tests\Fixtures\Features\FakeFeatureSource;
 use Tests\Fixtures\Payments\FakeGatewayScript;
 use Tests\Fixtures\Payments\FakePaymentGateway;
@@ -233,6 +236,23 @@ function refundOrder(Order $order, ?int $amount = null, array $lines = [], bool 
     $request = new RefundRequest($amount === null ? null : Money::ofMinor($amount, $order->currency), $lines, $shipping, $from?->public_id, 'Changed their mind', $idempotencyKey);
 
     return test()->store->run(static fn (): Refund => app(RefundOrder::class)->handle($as ?? test()->owner, $order, $request));
+}
+
+/**
+ * A staff member in the test store holding only the payment permissions given.
+ *
+ * @param  list<PaymentPermission>  $permissions
+ */
+function paymentsStaff(array $permissions): StaffMember
+{
+    return test()->store->run(static function () use ($permissions): StaffMember {
+        $role = Role::findOrCreate('Payments '.implode(' ', array_map(static fn (PaymentPermission $permission): string => $permission->value, $permissions)), StaffMember::GUARD);
+        $role->syncPermissions(array_map(static fn (PaymentPermission $permission): Permission => Permission::findByName($permission->value, StaffMember::GUARD), $permissions));
+        $staff = StaffMember::factory()->create();
+        $staff->assignRole($role);
+
+        return $staff;
+    });
 }
 
 /**
