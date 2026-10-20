@@ -31,7 +31,7 @@ uses(TruncatesCentralDatabase::class);
 beforeEach(function (): void {
     seedWorld();
     $this->store = createStore('first-store', ['country_code' => 'NG', 'name' => 'Ada Fabrics']);
-    $this->store->run(static fn () => StoreSettings::query()->whereKey(1)->update(['enabled_locales' => ['en', 'fr']]));
+    $this->store->run(static fn () => StoreSettings::query()->whereKey(1)->update(['enabled_locales' => ['en', 'fi']]));
     $this->customer = firstStoreCustomer();
 
     [$this->owner, $this->viewer] = $this->store->run(static function (): array {
@@ -72,8 +72,9 @@ it('records each answer as it was given, with the exact wording and its language
 });
 
 it('records the language the wording was really shown in when there is no translation', function (): void {
-    $this->withHeader('Accept-Language', 'fr');
-    customerRequest('PUT', 'account/marketing-consents/email', ['granted' => true], $this->customer)->assertOk()->assertHeader('Content-Language', 'fr');
+    // The store offers Finnish, but nothing is translated into it.
+    $this->withHeader('Accept-Language', 'fi');
+    customerRequest('PUT', 'account/marketing-consents/email', ['granted' => true], $this->customer)->assertOk()->assertHeader('Content-Language', 'fi');
 
     expect($this->store->run(static fn (): ?string => MarketingConsent::query()->sole()->locale))->toBe('en');
 });
