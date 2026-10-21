@@ -15,6 +15,8 @@ use App\Tenant\Orders\Models\CreditNoteTax;
 use App\Tenant\Orders\Models\DocumentSequence;
 use App\Tenant\Orders\Models\Invoice;
 use App\Tenant\Orders\Models\InvoiceTax;
+use App\Tenant\Payments\Enums\GatewayMode;
+use App\Tenant\Payments\Enums\GatewayPaymentState;
 use App\Tenant\Payments\Enums\PaymentMethod;
 use App\Tenant\Payments\Enums\RefundPurpose;
 use App\Tenant\Payments\Jobs\CheckPaymentWithGateway;
@@ -148,6 +150,35 @@ it('issues no credit note for money given back that was never part of the sale',
     Artisan::call('orders:issue-missing-tax-documents');
 
     expect($this->store->run(static fn (): int => CreditNote::query()->count()))->toBe(0);
+});
+
+it('credits the invoice of an order cancelled after it was sold, and issues nothing for a payment that arrived after cancellation', function (): void {
+    // Invoiced, then cancelled: the refund reduces the sale.
+    [$sold] = gatewayPaidOrder();
+    $this->store->run(fn () => app(CancelOrder::class)->byStaff($this->owner, $sold));
+    $reduction = refundOrder($sold, 11500);
+
+    // Paid only after it was cancelled: never sold, so no invoice, and the refund returns the money.
+    $paidLate = $this->store->run(function (): Payment {
+        $payment = startFakePayment(unpaidOrder(10000));
+        app(CancelOrder::class)->byStaff($this->owner, $payment->order);
+        gatewayAnswers($payment, GatewayPaymentState::Succeeded, $payment->amount, GatewayMode::Live);
+
+        return verifyFakePayment($payment);
+    });
+    $returned = refundOrder($this->store->run(static fn () => $paidLate->order), 11500);
+
+    expect([$reduction->purpose, $returned->purpose])->toBe([RefundPurpose::ReducesSale, RefundPurpose::ReturnsPayment])
+        ->and($this->store->run(static fn (): array => [
+            Invoice::query()->pluck('order_id')->all(),
+            CreditNote::query()->get()->map(static fn (CreditNote $creditNote): array => [$creditNote->order_id, $creditNote->total->minorAmount()])->all(),
+        ]))->toBe([[$sold->id], [[$sold->id, 11500]]]);
+
+    // The hourly sweep finds nothing more due, not even for an order never sold.
+    $this->travel(11)->minutes();
+    Artisan::call('orders:issue-missing-tax-documents');
+
+    expect($this->store->run(static fn (): array => [Invoice::query()->count(), CreditNote::query()->count()]))->toBe([1, 1]);
 });
 
 it('leaves out of the sweep a refund recorded as reducing the sale of an order never sold, which has no invoice to credit', function (): void {
