@@ -54,6 +54,7 @@ use Spatie\MediaLibrary\HasMedia;
  * @property string $invoice_prefix Letters and - / _ only, such as "INV-".
  * @property string $credit_note_prefix Letters and - / _ only, such as "CN-".
  * @property InvoiceNumbering $invoice_numbering
+ * @property list<string> $social_sign_in_providers The social sign-in providers offered to customers, such as ["google", "apple"].
  * @property string|null $invoice_footer Printed at the foot of invoices and credit notes, in the current language (getTranslations() for all of them).
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
@@ -104,6 +105,7 @@ final class StoreSettings extends Model implements AuditableContract, HasMedia
         'invoice_prefix',
         'credit_note_prefix',
         'invoice_numbering',
+        'social_sign_in_providers',
     ];
 
     /**
@@ -191,6 +193,7 @@ final class StoreSettings extends Model implements AuditableContract, HasMedia
             'order_retention_years' => 'integer',
             'invoice_numbering' => InvoiceNumbering::class,
             'working_days' => 'array',
+            'social_sign_in_providers' => 'array',
             'tax_mode' => TaxMode::class,
             'weight_unit' => WeightUnit::class,
             'dimension_unit' => DimensionUnit::class,

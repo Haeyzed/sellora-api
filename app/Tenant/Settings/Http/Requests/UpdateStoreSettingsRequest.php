@@ -11,6 +11,7 @@ use App\Shared\Geography\Rules\CurrencyCode;
 use App\Shared\Geography\Rules\StateCode;
 use App\Shared\Geography\Rules\Timezone;
 use App\Shared\Money\TaxMode;
+use App\Tenant\Customers\Enums\SocialProvider;
 use App\Tenant\Identity\Concerns\ActsAsStaffMember;
 use App\Tenant\Settings\Actions\FindStoreSettings;
 use App\Tenant\Settings\Concerns\ValidatesStoreTranslations;
@@ -102,6 +103,9 @@ final class UpdateStoreSettingsRequest extends FormRequest
             'invoice_numbering' => ['sometimes', Rule::enum(InvoiceNumbering::class)],
             /** Printed at the foot of invoices and credit notes, by language, such as {"en": "Thank you for shopping with us."}; a language set to null loses its text; null removes the footer in every language. */
             'invoice_footer' => ['sometimes', 'nullable', 'array', $this->storeTranslatedText(500)],
+            /** The social sign-in providers to offer customers, replacing the list, such as ["google", "apple"]; [] offers none. Only providers the platform has set up can be chosen. */
+            'social_sign_in_providers' => ['sometimes', 'array', 'max:'.count(SocialProvider::cases())],
+            'social_sign_in_providers.*' => ['required', 'string', 'distinct', Rule::in(array_map(static fn (SocialProvider $provider): string => $provider->value, SocialProvider::available()))],
         ];
     }
 
@@ -158,6 +162,10 @@ final class UpdateStoreSettingsRequest extends FormRequest
 
         if ($this->has('enabled_locales')) {
             $changes['enabled_locales'] = array_values($this->array('enabled_locales'));
+        }
+
+        if ($this->has('social_sign_in_providers')) {
+            $changes['social_sign_in_providers'] = array_values($this->array('social_sign_in_providers'));
         }
 
         if ($this->has('contact_email')) {

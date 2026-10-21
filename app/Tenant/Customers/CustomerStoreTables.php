@@ -53,5 +53,13 @@ final class CustomerStoreTables implements ClassifiesStoreTables
         );
 
         $registry->excludeTable('customer_email_tokens', 'Pending verification and email-change links: secrets that expire within a day.');
+
+        $registry->table(
+            'customer_identities',
+            include: ['id', 'public_id', 'customer_id', 'provider', 'email', 'email_verified', 'is_private_relay', 'last_used_at', 'created_at'],
+            exclude: ['provider_user_id' => 'The provider\'s ID for the person: an identifier that only works with the platform\'s own provider apps.'],
+        );
+        $registry->excludeTable('social_sign_in_attempts', 'Social sign-ins in progress: one-time secrets that expire within minutes.');
+        $registry->excludeTable('social_sign_in_tickets', 'What a social sign-in still needs from the customer: one-time secrets that expire within minutes.');
     }
 }

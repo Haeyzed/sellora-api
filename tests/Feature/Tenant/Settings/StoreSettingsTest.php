@@ -75,7 +75,7 @@ it('starts a store with what it was registered with and its country\'s tax mode 
         'order_retention_years' => null, 'order_retention_default_years' => 6, 'tax_record_retention_years' => 6,
         // Invoices are issued in the store's name, with Nigeria's usual label for the tax number, numbered yearly.
         'legal_name' => null, 'tax_registration_label' => null, 'tax_registration_default_label' => 'TIN', 'tax_registration_number' => null,
-        'invoice_prefix' => 'INV-', 'credit_note_prefix' => 'CN-', 'invoice_numbering' => 'yearly', 'invoice_footer' => [],
+        'invoice_prefix' => 'INV-', 'credit_note_prefix' => 'CN-', 'invoice_numbering' => 'yearly', 'invoice_footer' => [], 'social_sign_in_providers' => [],
         'updated_at' => $updatedAt,
     ]]);
 });

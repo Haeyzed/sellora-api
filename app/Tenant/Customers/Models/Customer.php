@@ -42,7 +42,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property string|null $tax_id_country ISO 3166-1 alpha-2; set exactly when tax_id is (a database constraint).
  * @property int|null $default_shipping_address_id Always one of the customer's own addresses (a database constraint).
  * @property int|null $default_billing_address_id Always one of the customer's own addresses (a database constraint).
- * @property string|null $password Null only once erased.
+ * @property string|null $password Null once erased, and for an account that has only ever signed in with a provider (Step 10b) until a password is set.
  * @property CarbonImmutable|null $erased_at When the customer's personal data was erased; every personal field is then empty (a database constraint).
  * @property bool $is_active
  * @property CarbonImmutable|null $last_signed_in_at
@@ -55,6 +55,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property-read Collection<int, CustomerNote> $notes
  * @property-read Collection<int, CustomerDataExport> $dataExports
  * @property-read Collection<int, CustomerGroup> $groups
+ * @property-read Collection<int, CustomerIdentity> $identities
  */
 final class Customer extends User implements AuditableContract, HasApiTokensContract, HasLocalePreference
 {
@@ -161,6 +162,16 @@ final class Customer extends User implements AuditableContract, HasApiTokensCont
     public function emailTokens(): HasMany
     {
         return $this->hasMany(CustomerEmailToken::class);
+    }
+
+    /**
+     * The providers the customer signs in with (Step 10b).
+     *
+     * @return HasMany<CustomerIdentity, $this>
+     */
+    public function identities(): HasMany
+    {
+        return $this->hasMany(CustomerIdentity::class);
     }
 
     /**
