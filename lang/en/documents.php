@@ -44,5 +44,6 @@ return [
     'prices_exclude_tax' => 'Prices exclude tax.',
     'currency' => 'Currency',
     'exchange_rate' => '1 :base = :rate :currency',
+    'page' => 'Page',
 
 ];
