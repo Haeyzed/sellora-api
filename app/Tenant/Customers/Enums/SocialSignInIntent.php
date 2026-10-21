@@ -14,4 +14,7 @@ enum SocialSignInIntent: string
 
     /** Connect the provider to the signed-in customer's account. */
     case Link = 'link';
+
+    /** Prove again, with a provider connected to the signed-in customer's account, that it is them: to confirm erasing an account without a password (section 3.3). */
+    case Reauthenticate = 'reauthenticate';
 }

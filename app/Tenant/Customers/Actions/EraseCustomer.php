@@ -9,10 +9,13 @@ use App\Shared\Auth\Exceptions\IncorrectCurrentPasswordException;
 use App\Shared\Auth\Exceptions\TooManyIncorrectAttemptsException;
 use App\Shared\Privacy\ErasureOutcome;
 use App\Shared\Privacy\PersonalDataRegistry;
+use App\Tenant\Customers\Exceptions\InvalidErasureConfirmationException;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Customers\Privacy\CustomerDataSubject;
 use App\Tenant\Customers\Services\CustomerActivity;
+use App\Tenant\Customers\Services\ErasureConfirmations;
 use App\Tenant\Identity\Models\StaffMember;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Erases a customer's personal data from every feature, all or nothing (section 3.3): on their own request, at staff's on their behalf, or once they have been in the trash for the retention period.
@@ -26,19 +29,29 @@ final readonly class EraseCustomer
         private PersonalDataRegistry $personalDataRegistry,
         private CurrentPasswordCheck $currentPasswordCheck,
         private CustomerActivity $customerActivity,
+        private ErasureConfirmations $erasureConfirmations,
     ) {}
 
     /**
-     * The customer erasing their own account, with their current password.
+     * The customer erasing their own account: with their current password when they have one, otherwise with a one-time erasure confirmation, used up with the erasure (section 3.3).
      *
      * @throws IncorrectCurrentPasswordException
      * @throws TooManyIncorrectAttemptsException
+     * @throws InvalidErasureConfirmationException
      */
-    public function bySelf(Customer $customer, string $currentPassword): ErasureOutcome
+    public function bySelf(Customer $customer, ?string $currentPassword, ?string $erasureToken): ErasureOutcome
     {
-        $this->currentPasswordCheck->ensureCorrect($customer, $currentPassword);
+        if ($customer->password !== null) {
+            $this->currentPasswordCheck->ensureCorrect($customer, (string) $currentPassword);
 
-        return $this->erase($customer);
+            return $this->erase($customer);
+        }
+
+        return DB::transaction(function () use ($customer, $erasureToken): ErasureOutcome {
+            $this->erasureConfirmations->consume($customer, (string) $erasureToken);
+
+            return $this->erase($customer);
+        });
     }
 
     /**

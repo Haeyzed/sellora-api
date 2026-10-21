@@ -53,7 +53,7 @@ final class CustomerIdentityController extends Controller
      */
     public function start(StartSocialSignInRequest $request, SocialProvider $provider, StartSocialSignIn $startSocialSignIn): JsonResponse
     {
-        return (new SocialAuthorizationResource($startSocialSignIn->handle($provider, $this->customer($request), $request->returnPath())))->response()->setStatusCode(Response::HTTP_CREATED);
+        return (new SocialAuthorizationResource($startSocialSignIn->handle($provider, SocialSignInIntent::Link, $this->customer($request), $request->returnPath())))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
     /**

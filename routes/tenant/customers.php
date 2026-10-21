@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
 use App\Tenant\Customers\Http\Controllers\CustomerAccountController;
 use App\Tenant\Customers\Http\Controllers\CustomerAddressController;
+use App\Tenant\Customers\Http\Controllers\CustomerErasureConfirmationController;
 use App\Tenant\Customers\Http\Controllers\CustomerGroupController;
 use App\Tenant\Customers\Http\Controllers\CustomerIdentityController;
 use App\Tenant\Customers\Http\Controllers\CustomerNoteController;
@@ -49,6 +50,10 @@ Route::prefix('customer/account')->name('customer.account.')->middleware(['auth:
     Route::post('identities/{provider}/authorizations', [CustomerIdentityController::class, 'start'])->middleware('throttle:social-sign-in')->name('identities.authorizations.store');
     Route::post('identities/{provider}', [CustomerIdentityController::class, 'store'])->middleware('throttle:social-sign-in')->name('identities.store');
     Route::delete('identities/{identity}', [CustomerIdentityController::class, 'destroy'])->name('identities.destroy');
+    // Confirming erasure without a password (section 3.3).
+    Route::post('erasure-emails', [CustomerErasureConfirmationController::class, 'sendEmail'])->middleware('throttle:account-emails')->name('erasure-emails.store');
+    Route::post('erasure-reauthentications/{provider}/authorizations', [CustomerErasureConfirmationController::class, 'start'])->middleware('throttle:social-sign-in')->name('erasure-reauthentications.authorizations.store');
+    Route::post('erasure-reauthentications/{provider}', [CustomerErasureConfirmationController::class, 'store'])->middleware('throttle:social-sign-in')->name('erasure-reauthentications.store');
 
     Route::middleware('throttle:account-emails')->group(static function (): void {
         Route::post('email-verifications', [EmailVerificationController::class, 'store'])->name('email-verifications.store');

@@ -11,6 +11,7 @@ use App\Shared\Privacy\ErasureOutcomeResource;
 use App\Tenant\Customers\Actions\EraseCustomer;
 use App\Tenant\Customers\Actions\RequestCustomerDataExport;
 use App\Tenant\Customers\Exceptions\CustomerEmailNotVerifiedException;
+use App\Tenant\Customers\Exceptions\InvalidErasureConfirmationException;
 use App\Tenant\Customers\Http\Requests\EraseCustomerRequest;
 use App\Tenant\Customers\Http\Resources\CustomerDataExportResource;
 use App\Tenant\Customers\Models\Customer;
@@ -79,18 +80,21 @@ final class CustomerPrivacyController extends Controller
     /**
      * Erase my account.
      *
-     * Needs the current password. Erases everything the store holds about
-     * you and signs you out everywhere; it can't be undone. Past orders stay,
-     * without your details. Invoices and credit notes are tax records the law
-     * makes the store keep, your details on them included, until the date
-     * returned; they are erased then.
+     * Needs the current password when your account has one. Without one,
+     * ask for an erasure email or sign in again with a connected provider,
+     * then send the token it gives; it works once. Erases everything the store
+     * holds about you and signs you out everywhere; it can't be undone. Past
+     * orders stay, without your details. Invoices and credit notes are tax
+     * records the law makes the store keep, your details on them included,
+     * until the date returned; they are erased then.
      *
      * @throws IncorrectCurrentPasswordException
      * @throws TooManyIncorrectAttemptsException
+     * @throws InvalidErasureConfirmationException
      */
     public function destroy(EraseCustomerRequest $request, EraseCustomer $eraseCustomer): ErasureOutcomeResource
     {
-        return new ErasureOutcomeResource($eraseCustomer->bySelf($request->customer(), $request->string('current_password')->value()));
+        return new ErasureOutcomeResource($eraseCustomer->bySelf($request->customer(), $request->currentPassword(), $request->erasureToken()));
     }
 
     private function customer(Request $request): Customer

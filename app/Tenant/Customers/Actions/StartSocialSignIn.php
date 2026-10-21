@@ -13,9 +13,10 @@ use App\Tenant\Customers\Models\SocialSignInAttempt;
 use App\Tenant\Customers\Services\SocialProviders;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
+use LogicException;
 
 /**
- * Starts a customer's social sign-in, or the signed-in customer's linking of a provider (Step 10b), and returns the provider's address to send the browser to.
+ * Starts a customer's social sign-in, or the signed-in customer's linking of a provider or signing in again to confirm erasure (Step 10b), and returns the provider's address to send the browser to.
  *
  * A new one-time state is made for it. The store keeps, keyed by the state's
  * hash, what the sign-in is for, the customer linking, the PKCE verifier and
@@ -30,12 +31,17 @@ final readonly class StartSocialSignIn
     ) {}
 
     /**
+     * @param  Customer|null  $customer  The signed-in customer linking a provider or signing in again; null to sign in.
      * @param  string|null  $returnPath  A path in the storefront, already checked to be one, handed back when the sign-in finishes.
      *
      * @throws SocialProviderNotOfferedException When the store doesn't offer the provider.
      */
-    public function handle(SocialProvider $provider, ?Customer $linking, ?string $returnPath): string
+    public function handle(SocialProvider $provider, SocialSignInIntent $intent, ?Customer $customer, ?string $returnPath): string
     {
+        if (($intent === SocialSignInIntent::SignIn) !== ($customer === null)) {
+            throw new LogicException('Only signing in is started without a signed-in customer.');
+        }
+
         $this->socialProviders->ensureOffered($provider);
 
         $state = Str::random(64);
@@ -47,8 +53,8 @@ final readonly class StartSocialSignIn
         $attempt->forceFill([
             'state_hash' => SocialSignInAttempt::hash($state),
             'provider' => $provider,
-            'intent' => $linking === null ? SocialSignInIntent::SignIn : SocialSignInIntent::Link,
-            'customer_id' => $linking?->id,
+            'intent' => $intent,
+            'customer_id' => $customer?->id,
             'code_verifier' => $verifier,
             'nonce' => $nonce,
             'return_path' => $returnPath,

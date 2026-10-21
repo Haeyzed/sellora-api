@@ -9,6 +9,7 @@ use App\Shared\Http\Controller;
 use App\Tenant\Customers\Actions\FinishSocialSignIn;
 use App\Tenant\Customers\Actions\StartSocialSignIn;
 use App\Tenant\Customers\Enums\SocialProvider;
+use App\Tenant\Customers\Enums\SocialSignInIntent;
 use App\Tenant\Customers\Enums\SocialSignInStatus;
 use App\Tenant\Customers\Exceptions\InvalidSocialSignInException;
 use App\Tenant\Customers\Exceptions\SocialProviderNotOfferedException;
@@ -59,7 +60,7 @@ final class SocialSignInController extends Controller
      */
     public function store(StartSocialSignInRequest $request, SocialProvider $provider, StartSocialSignIn $startSocialSignIn): JsonResponse
     {
-        return (new SocialAuthorizationResource($startSocialSignIn->handle($provider, null, $request->returnPath())))->response()->setStatusCode(Response::HTTP_CREATED);
+        return (new SocialAuthorizationResource($startSocialSignIn->handle($provider, SocialSignInIntent::SignIn, null, $request->returnPath())))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
     /**

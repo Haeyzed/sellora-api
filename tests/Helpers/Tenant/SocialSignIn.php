@@ -70,6 +70,38 @@ function startSocialSignIn(string $provider = 'google', array $data = [], string
 }
 
 /**
+ * Whether the test store's customer has been erased.
+ */
+function isErased(Customer $customer): bool
+{
+    return test()->store->run(static fn (): bool => Customer::withTrashed()->findOrFail($customer->id)->erased_at !== null);
+}
+
+/**
+ * Starts the signed-in customer's signing in again with Google, to confirm erasing their account, and returns the response and the one-time state.
+ *
+ * @return array{TestResponse, string}
+ */
+function startErasureReauthentication(Customer|string $as, string $provider = 'google'): array
+{
+    $response = customerRequest('POST', "account/erasure-reauthentications/{$provider}/authorizations", as: $as, subdomain: 'social-store');
+    parse_str((string) parse_url((string) $response->json('data.authorization_url'), PHP_URL_QUERY), $query);
+
+    return [$response, is_string($query['state'] ?? null) ? $query['state'] : ''];
+}
+
+/**
+ * Starts the signed-in customer's connecting Google to their account, and returns the one-time state.
+ */
+function linkingState(Customer|string $as): string
+{
+    $url = customerRequest('POST', 'account/identities/google/authorizations', as: $as, subdomain: 'social-store')->assertCreated()->json('data.authorization_url');
+    parse_str((string) parse_url((string) $url, PHP_URL_QUERY), $query);
+
+    return is_string($query['state'] ?? null) ? $query['state'] : '';
+}
+
+/**
  * Makes the provider's servers fake ones for the next sign-in: they accept the code and say this about the person (Google's userinfo claims), or refuse it.
  *
  * @param  array<string, mixed>  $person

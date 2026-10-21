@@ -18,6 +18,9 @@ enum CustomerEmailTokenPurpose: string
     /** Confirms connecting a sign-in provider to the account, when its owner proves ownership by email (Step 10b). Its token is kept on the social sign-in ticket, not with the customer's other links. */
     case SocialLink = 'social_link';
 
+    /** Confirms a customer without a password erasing their account (section 3.3): emailed to their account address, or given after a fresh provider sign-in, for which it expires sooner. */
+    case Erasure = 'erasure';
+
     /**
      * The key of this purpose's link settings in config/customers.php, and of its email texts in lang/<locale>/customers.php.
      */
@@ -27,6 +30,7 @@ enum CustomerEmailTokenPurpose: string
             self::Verification => 'email_verification',
             self::EmailChange => 'email_change',
             self::SocialLink => 'social_link',
+            self::Erasure => 'erasure',
         };
     }
 

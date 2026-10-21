@@ -28,6 +28,14 @@ return [
         'ignore' => 'If this wasn\'t you, ignore this email: nothing is connected, and your account stays as it is.',
     ],
 
+    'erasure' => [
+        'subject' => 'Confirm erasing your account',
+        'reason' => 'You asked to erase your account at this store. Open this link while signed in to confirm: everything the store holds about you is erased, and this can\'t be undone.',
+        'action' => 'Erase my account',
+        'expiry' => 'This link works once and expires in :minutes minutes.',
+        'ignore' => 'If you didn\'t ask for this, ignore this email: nothing is erased. Someone else may be signed in to your account, so sign out of your other devices.',
+    ],
+
     /*
      * The consent text shown to customers and guests. Its exact wording, in
      * the language shown, is stored with each answer, so changing a text

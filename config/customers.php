@@ -52,6 +52,18 @@ return [
     ],
 
     /*
+     * Confirms erasure for a customer without a password (section 3.3): a
+     * link emailed to their account address, used while signed in, or a
+     * token given after a fresh sign-in with a connected provider, which
+     * must be used within minutes.
+     */
+    'erasure' => [
+        'url' => env('CUSTOMER_ERASURE_URL', 'https://{domain}/account/confirm-erasure?token={token}'),
+        'expire_minutes' => (int) env('CUSTOMER_ERASURE_EXPIRE_MINUTES', 15),
+        'reauthentication_expire_minutes' => (int) env('CUSTOMER_ERASURE_REAUTHENTICATION_EXPIRE_MINUTES', 5),
+    ],
+
+    /*
     |--------------------------------------------------------------------------
     | Social sign-in (Step 10b, customers only)
     |--------------------------------------------------------------------------
