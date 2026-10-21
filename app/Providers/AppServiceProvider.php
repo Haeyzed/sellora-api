@@ -22,6 +22,7 @@ use App\Landlord\Tenancy\PlatformStoreExports;
 use App\Landlord\Tenancy\PlatformStoreOwnerContact;
 use App\Landlord\Tenancy\PlatformStoreProfile;
 use App\Landlord\Tenancy\Services\SocialSignInRoutes;
+use App\Landlord\Tenancy\SocialSignInStateRetention;
 use App\Landlord\Tenancy\StoreExportRetention;
 use App\Landlord\Tenancy\StoreRegistrationRetention;
 use App\Shared\Auth\Contracts\TwoFactorRequirement;
@@ -94,6 +95,9 @@ use App\Tenant\Customers\Privacy\CustomerDataSubject;
 use App\Tenant\Customers\Privacy\CustomerGroupData;
 use App\Tenant\Customers\Privacy\CustomerNoteData;
 use App\Tenant\Customers\Privacy\MarketingConsentData;
+use App\Tenant\Customers\Privacy\SocialIdentityData;
+use App\Tenant\Customers\SocialSignInAttemptRetention;
+use App\Tenant\Customers\SocialSignInTicketRetention;
 use App\Tenant\Customers\TrashedCustomerRetention;
 use App\Tenant\Delivery\DeliveryStoreTables;
 use App\Tenant\Delivery\Models\Driver;
@@ -430,6 +434,7 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(CustomerDataSubject::TYPE, 'cart', CustomerCartData::class);
             $registry->register(CustomerDataSubject::TYPE, 'orders', CustomerOrderData::class);
             $registry->register(CustomerDataSubject::TYPE, 'tax_documents', TaxDocumentData::class);
+            $registry->register(CustomerDataSubject::TYPE, 'social_identities', SocialIdentityData::class);
             $registry->register(CustomerDataSubject::TYPE, 'account', CustomerAccountData::class);
             // A guest has only their orders, found by the email they were placed with, and those orders' tax documents.
             $registry->register(GuestDataSubject::TYPE, 'orders', GuestOrderData::class);
@@ -462,6 +467,9 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(CustomerEmailTokenRetention::class);
             $registry->register(TrashedCustomerRetention::class);
             $registry->register(CustomerDataExportRetention::class);
+            $registry->register(SocialSignInStateRetention::class);
+            $registry->register(SocialSignInAttemptRetention::class);
+            $registry->register(SocialSignInTicketRetention::class);
             $registry->register(SettledReservationRetention::class);
             $registry->register(ReleasedPromotionUseRetention::class);
             $registry->register(GuestCartRetention::class);

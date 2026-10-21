@@ -100,6 +100,19 @@ arch('integrations never use the PDF library')
     ->expect('Integrations')
     ->not->toUse('Mpdf');
 
+arch('only customer accounts use the sign-in provider libraries, so no other account signs in through a provider')
+    ->expect('App')
+    ->not->toUse(['Laravel\Socialite', 'SocialiteProviders'])
+    ->ignoring('App\Tenant\Customers');
+
+arch('modules never use the sign-in provider libraries')
+    ->expect('Modules')
+    ->not->toUse(['Laravel\Socialite', 'SocialiteProviders']);
+
+arch('integrations never use the sign-in provider libraries')
+    ->expect('Integrations')
+    ->not->toUse(['Laravel\Socialite', 'SocialiteProviders']);
+
 arch('only the Geography wrapper uses the world reference data package, which it identifies by ISO codes')
     ->expect('App')
     ->not->toUse('Nnjeim\World')

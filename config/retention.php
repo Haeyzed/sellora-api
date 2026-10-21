@@ -39,6 +39,11 @@ return [
         'audits' => (int) env('RETENTION_AUDITS_DAYS', 730),
         // Central market rates; orders keep the rate they used, so only recent history is needed.
         'exchange_rates' => (int) env('RETENTION_EXCHANGE_RATES_DAYS', 400),
+        // Social sign-ins started, what the relay needs to route them and what an unfinished one still needs
+        // from the customer, after they expire; each works for minutes.
+        'social_sign_in_states' => (int) env('RETENTION_SOCIAL_SIGN_IN_STATES_DAYS', 1),
+        'social_sign_in_attempts' => (int) env('RETENTION_SOCIAL_SIGN_IN_ATTEMPTS_DAYS', 1),
+        'social_sign_in_tickets' => (int) env('RETENTION_SOCIAL_SIGN_IN_TICKETS_DAYS', 1),
         // Settled orders keep their buyer's personal data for the store's own period (its setting, or its
         // country's default in config/geography.php); this only sets a minimum, so 0 leaves it to the store.
         'settled_orders' => (int) env('RETENTION_SETTLED_ORDERS_MIN_DAYS', 0),
