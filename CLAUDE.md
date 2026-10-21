@@ -95,6 +95,7 @@ On a fresh project, **the first task is installing and configuring all dependenc
 | Two-factor login | `pragmarx/google2fa` | TOTP codes for platform admins and staff (section 10); the frontend renders the QR code from the `otpauth://` URL |
 | PDF documents | `mpdf/mpdf` | invoices and credit notes (Step 15b), chosen for right-to-left and non-Latin scripts; remote resource loading off, only bundled fonts and embedded images; used only inside `Tenant\Orders` invoicing (approved in Step 15b, if it supports PHP 8.4) |
 | Social sign-in | `laravel/socialite` | customers only (section 10); follow its skill; used only inside `Tenant\Customers` (approved for Step 10b) |
+| Sign in with Apple | `socialiteproviders/apple` (with `socialiteproviders/manager`) | the Apple provider for Socialite; MIT; used only inside `Tenant\Customers` (approved in Step 10b) |
 | Debugging (dev) | `laravel/telescope` | `composer require --dev`, local environment only |
 | Testing (dev) | `pestphp/pest`, `pestphp/pest-plugin-laravel` | replace PHPUnit tests with Pest |
 | Static analysis (dev) | `larastan/larastan` | **level 8**, with a `phpstan.neon` |
@@ -954,6 +955,8 @@ There are four guards, all on Sanctum. Each guard has its own model, provider, l
   - An email counts as verified only when the provider asserts it and the provider is on the trusted list in config (Google and Apple at first). Otherwise the account starts unverified, so social sign-in can never be used to claim guest orders.
   - **Never link automatically to an existing account with the same email.** The customer proves they own it first (signs in with its password, or uses a link emailed to it), so nobody takes over an account by creating a provider account with someone else's email.
   - A customer can unlink a provider only while another way to sign in remains. Linked identities are in the customer's data export and are removed by erasure; provider access tokens are not kept.
+  - **One platform-owned app per provider, with a relay page on the central domain.** The relay redirects only to the store bound to the (hashed, single-use, short-lived) state, never to an address from the request, and answers with `Referrer-Policy: no-referrer`. The central database holds only what the relay needs to route (state hash, store, provider, expiry); everything about the customer (intent, PKCE verifier, nonce, the account being linked, anything the provider sent) stays in the store's database.
+  - **Proving ownership by emailed link** is allowed only when the provider is on the trusted list and asserts the email is verified; otherwise only the account's password proves it. The email says plainly that someone is connecting a sign-in provider and to ignore it if that wasn't them. (An emailed link alone would let an attacker with an untrusted provider account in the victim's email get the victim to click "confirm".)
 - **Changing a customer's email** needs the current password, takes effect only when a link sent to the new address is used, tells the old address, and signs out every other device.
 - **Drivers** can only see and update deliveries assigned to them. Authorization is by assignment, through Policies, not staff roles. A driver never sees other drivers' deliveries, unassigned orders, prices beyond what delivery needs, or store settings.
 
