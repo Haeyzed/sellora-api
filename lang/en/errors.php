@@ -208,6 +208,10 @@ return [
     'social_provider_not_offered' => 'This store doesn\'t offer signing in with that provider.',
     'social_sign_in_invalid' => 'This sign-in has expired or was already used. Start signing in again.',
     'social_sign_in_failed' => 'The sign-in provider didn\'t accept this sign-in. Start signing in again.',
+    'social_link_email_not_allowed' => 'This sign-in provider can\'t vouch for the email, so only the account\'s password can prove it is yours.',
+    'social_identity_in_use' => 'This sign-in account is already connected to another customer at this store.',
+    'social_provider_already_linked' => 'Another account of this sign-in provider is already connected. Disconnect it first.',
+    'last_sign_in_method' => 'This is your only way to sign in. Set a password (with a password reset) or connect another provider first.',
     'tax_document_pdf_not_ready' => 'This document\'s PDF is still being prepared. Try again in a few minutes.',
 
 ];

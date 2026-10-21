@@ -20,6 +20,14 @@ return [
         'ignore' => 'If you didn\'t ask for this, you can ignore this email; nothing changes.',
     ],
 
+    'social_link' => [
+        'subject' => 'Someone is connecting a sign-in to your account',
+        'reason' => 'Someone signed in with :provider using this email address and asked to connect it to your account. Confirm only if that was you: once connected, signing in with :provider opens your account.',
+        'action' => 'Yes, connect :provider',
+        'expiry' => 'This link works once and expires in :minutes minutes.',
+        'ignore' => 'If this wasn\'t you, ignore this email: nothing is connected, and your account stays as it is.',
+    ],
+
     /*
      * The consent text shown to customers and guests. Its exact wording, in
      * the language shown, is stored with each answer, so changing a text

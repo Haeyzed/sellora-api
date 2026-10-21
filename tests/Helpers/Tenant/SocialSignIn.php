@@ -3,7 +3,10 @@
 declare(strict_types=1);
 
 use App\Landlord\Tenancy\Models\Tenant;
+use App\Tenant\Customers\Models\Customer;
+use App\Tenant\Customers\Models\CustomerIdentity;
 use App\Tenant\Settings\Models\StoreSettings;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 use Laravel\Socialite\Contracts\Factory as Socialite;
@@ -135,6 +138,83 @@ function relayedFragment(TestResponse $response): array
 
     /** @var array<string, string> $fragment */
     return $fragment;
+}
+
+/**
+ * Signs in with Google as this person, who has the email of an existing account, and returns the ticket to prove ownership and how it may be proved.
+ *
+ * @param  array<string, mixed>  $person
+ * @return array{string, list<string>}
+ */
+function linkTicketFor(array $person): array
+{
+    fakeSocialProvider('google', $person);
+    $answer = finishSocialSignIn('google')->assertStatus(202)->assertJsonPath('data.status', 'link_account');
+
+    /** @var list<string> $proofs */
+    $proofs = $answer->json('data.proof_methods');
+
+    return [(string) $answer->json('data.ticket'), $proofs];
+}
+
+/**
+ * A customer of the test store with an identity for each provider given, made directly; no password unless one is given.
+ *
+ * @param  list<string>  $providers
+ * @return array{Customer, list<CustomerIdentity>}
+ */
+function customerWithIdentities(array $providers, ?string $password = null, string $email = 'ada@example.com'): array
+{
+    return test()->store->run(static function () use ($providers, $password, $email): array {
+        $customer = Customer::factory()->create(['email' => $email, 'password' => $password]);
+        $identities = [];
+
+        foreach ($providers as $provider) {
+            $identity = new CustomerIdentity;
+            $identity->forceFill([
+                'customer_id' => $customer->id, 'provider' => $provider, 'provider_user_id' => "{$provider}-{$customer->id}", 'email' => $email,
+                'email_verified' => true, 'created_at' => CarbonImmutable::now(),
+            ])->save();
+            $identities[] = $identity;
+        }
+
+        return [$customer, $identities];
+    });
+}
+
+/**
+ * Disconnects each identity from several PHP processes at the same moment, as two devices would, and returns what each did: "disconnected" or "refused".
+ *
+ * @param  list<CustomerIdentity>  $identities
+ * @return list<string>
+ */
+function disconnectIdentitiesInProcesses(Customer $customer, array $identities): array
+{
+    $startAt = (string) (microtime(true) + 2.0);
+    $running = [];
+
+    foreach ($identities as $identity) {
+        $process = new Process([PHP_BINARY, base_path('tests/Fixtures/Customers/disconnect-customer-identity.php'), DB::connection()->getDatabaseName(), (string) test()->store->getTenantKey(), (string) $customer->id, (string) $identity->id, $startAt]);
+        $process->setTimeout(60);
+        $process->start();
+        $running[] = $process;
+    }
+
+    $answers = [];
+
+    foreach ($running as $process) {
+        $process->wait();
+
+        if (! $process->isSuccessful()) {
+            throw new RuntimeException('A process disconnecting an identity failed: '.$process->getErrorOutput().$process->getOutput());
+        }
+
+        $answers[] = trim($process->getOutput());
+    }
+
+    sort($answers);
+
+    return $answers;
 }
 
 /**

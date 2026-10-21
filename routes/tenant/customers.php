@@ -6,6 +6,7 @@ use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
 use App\Tenant\Customers\Http\Controllers\CustomerAccountController;
 use App\Tenant\Customers\Http\Controllers\CustomerAddressController;
 use App\Tenant\Customers\Http\Controllers\CustomerGroupController;
+use App\Tenant\Customers\Http\Controllers\CustomerIdentityController;
 use App\Tenant\Customers\Http\Controllers\CustomerNoteController;
 use App\Tenant\Customers\Http\Controllers\CustomerPrivacyController;
 use App\Tenant\Customers\Http\Controllers\CustomerTaxIdController;
@@ -43,6 +44,11 @@ Route::prefix('customer/account')->name('customer.account.')->middleware(['auth:
     Route::delete('tax-id', [CustomerTaxIdController::class, 'destroy'])->name('tax-id.destroy');
     Route::get('marketing-consents', [MarketingConsentController::class, 'index'])->name('marketing-consents.index');
     Route::put('marketing-consents/{channel}', [MarketingConsentController::class, 'update'])->name('marketing-consents.update')->whereIn('channel', ['email', 'sms']);
+    // The providers the customer signs in with (Step 10b).
+    Route::get('identities', [CustomerIdentityController::class, 'index'])->name('identities.index');
+    Route::post('identities/{provider}/authorizations', [CustomerIdentityController::class, 'start'])->middleware('throttle:social-sign-in')->name('identities.authorizations.store');
+    Route::post('identities/{provider}', [CustomerIdentityController::class, 'store'])->middleware('throttle:social-sign-in')->name('identities.store');
+    Route::delete('identities/{identity}', [CustomerIdentityController::class, 'destroy'])->name('identities.destroy');
 
     Route::middleware('throttle:account-emails')->group(static function (): void {
         Route::post('email-verifications', [EmailVerificationController::class, 'store'])->name('email-verifications.store');

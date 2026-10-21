@@ -25,6 +25,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property bool $is_private_relay
  * @property string|null $name
  * @property int|null $customer_id The existing account to link to.
+ * @property string|null $email_link_token_hash SHA-256 of the token in the link emailed to the account, when one was sent.
+ * @property CarbonImmutable|null $email_link_sent_at
  * @property CarbonImmutable $expires_at
  * @property CarbonImmutable $created_at
  */
@@ -35,6 +37,7 @@ final class SocialSignInTicket extends Model
     protected $hidden = [
         'token_hash',
         'provider_user_id',
+        'email_link_token_hash',
     ];
 
     /**
@@ -56,6 +59,7 @@ final class SocialSignInTicket extends Model
             'email_verified' => 'boolean',
             'is_private_relay' => 'boolean',
             'customer_id' => 'integer',
+            'email_link_sent_at' => 'immutable_datetime',
             'expires_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
         ];

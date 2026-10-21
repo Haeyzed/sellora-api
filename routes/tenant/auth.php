@@ -13,6 +13,7 @@ use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
 use App\Tenant\Customers\Http\Controllers\CurrentCustomerController;
 use App\Tenant\Customers\Http\Controllers\RegistrationController;
 use App\Tenant\Customers\Http\Controllers\SignInController as CustomerSignInController;
+use App\Tenant\Customers\Http\Controllers\SocialAccountLinkController;
 use App\Tenant\Customers\Http\Controllers\SocialSignInController;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Identity\Http\Controllers\CurrentStaffMemberController;
@@ -69,6 +70,10 @@ Route::prefix('customer/auth')->name('customer.auth.')->group(static function ()
     Route::get('social/providers', [SocialSignInController::class, 'index'])->middleware('throttle:public')->name('social.providers.index');
     Route::post('social/{provider}/authorizations', [SocialSignInController::class, 'store'])->middleware('throttle:social-sign-in')->name('social.authorizations.store');
     Route::post('social/{provider}/callbacks', [SocialSignInController::class, 'callback'])->middleware('throttle:social-sign-in')->name('social.callbacks.store');
+    // Proving an existing account is yours before a provider is connected to it.
+    Route::post('social/link-confirmations', [SocialAccountLinkController::class, 'confirm'])->middleware('throttle:social-sign-in')->name('social.link-confirmations.store');
+    Route::post('social/link-emails', [SocialAccountLinkController::class, 'sendEmail'])->middleware('throttle:social-link-emails')->name('social.link-emails.store');
+    Route::post('social/link-email-confirmations', [SocialAccountLinkController::class, 'confirmEmail'])->middleware('throttle:social-sign-in')->name('social.link-email-confirmations.store');
 
     Route::middleware('throttle:password-reset')->group(static function (): void {
         Route::post('password-reset-links', [PasswordResetLinkController::class, 'store'])->defaults('broker', Customer::PASSWORD_BROKER)->name('password-reset-links.store');

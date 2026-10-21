@@ -88,6 +88,11 @@ final class RateLimitServiceProvider extends ServiceProvider
         RateLimiter::for('one-time-password', fn (Request $request): Limit => $this->perMinute('one_time_password')->by($this->identifierKey('one-time-password', $request)));
         // Starting a social sign-in has nothing to tell shoppers apart by yet, so only a ceiling per address, high enough for many shoppers behind one.
         RateLimiter::for('social-sign-in', fn (Request $request): Limit => $this->perMinute('social_sign_in_ip_ceiling')->by($this->ipKey('social-sign-in', $request)));
+        // Links emailed to an existing account to confirm connecting a provider: per ticket, under a ceiling per address, so a mailbox can't be flooded.
+        RateLimiter::for('social-link-emails', fn (Request $request): array => [
+            $this->perMinute('account_emails')->by(TenantScopedKey::forIdentifier('social-link-emails', $request->string('ticket')->value())),
+            $this->perMinute('social_sign_in_ip_ceiling')->by($this->ipKey('social-link-emails', $request)),
+        ]);
         // The central relay page: each state works once anyway; this only stops floods from one address.
         RateLimiter::for('social-sign-in-relay', fn (Request $request): Limit => $this->perMinute('social_sign_in_relay_ip_ceiling')->by($this->ipKey('social-sign-in-relay', $request)));
     }
