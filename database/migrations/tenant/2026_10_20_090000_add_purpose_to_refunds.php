@@ -14,11 +14,10 @@ use Illuminate\Support\Facades\Schema;
  * before it was paid in full). Only a sale reduction gets a credit note.
  *
  * Refunds never change, so the trigger is set aside for this one backfill:
- * refunds from a payment in review, or on an order never sold (no "paid" in
- * its history: it was cancelled before it was paid in full), return a
- * payment; every other refund reduced the sale (an overpayment given back
- * before purposes existed can't be told apart, and counts as a reduction).
- * New refunds always say which they are.
+ * refunds drawn on a payment in review, or on a payment that succeeded after
+ * its order was cancelled, return money; every other refund reduced the sale
+ * (an overpayment given back before purposes existed can't be told apart,
+ * and counts as a reduction). New refunds always say which they are.
  */
 return new class extends Migration
 {
@@ -35,11 +34,9 @@ return new class extends Migration
             where exists (
                 select 1 from payment_refunds
                 join payments on payments.id = payment_refunds.payment_id
-                where payment_refunds.refund_id = refunds.id and payments.status = 'needs_review'
-            )
-            or not exists (
-                select 1 from order_events
-                where order_events.order_id = refunds.order_id and order_events.type = 'paid'
+                join orders on orders.id = refunds.order_id
+                where payment_refunds.refund_id = refunds.id
+                    and (payments.status = 'needs_review' or payments.succeeded_at > orders.cancelled_at)
             );
 
             alter table refunds enable trigger refunds_never_change;

@@ -369,10 +369,16 @@ it('only gives the payment back on an order never sold, and reduces the sale of 
 it('fills in what refunds made before purposes existed did to the sale', function (): void {
     [$sold] = gatewayPaidOrder();
     $reduction = refundOrder($sold, 1000);
+    // Sold, then cancelled: its invoice is reduced.
+    [$cancelledAfterSale] = gatewayPaidOrder();
+    $this->store->run(fn () => app(CancelOrder::class)->byStaff($this->owner, $cancelledAfterSale));
+    $afterSale = refundOrder($cancelledAfterSale, 11500);
+    // Part paid, then cancelled: neither case below, so it stays a reduction.
     [$partlyPaid, $transfer] = manuallyPaidOrder(PaymentMethod::BankTransfer);
     recordReceived($transfer, 4000);
     $this->store->run(fn () => app(CancelOrder::class)->byStaff($this->owner, $partlyPaid));
-    $neverSold = refundOrder($partlyPaid, 1000);
+    $partPaid = refundOrder($partlyPaid, 1000);
+    // A payment in review.
     $inReview = $this->store->run(static function (): Payment {
         $payment = startFakePayment(unpaidOrder(10000));
         gatewayAnswers($payment, GatewayPaymentState::Succeeded, Money::ofMinor(9000, 'NGN'), GatewayMode::Live);
@@ -380,16 +386,26 @@ it('fills in what refunds made before purposes existed did to the sale', functio
         return verifyFakePayment($payment);
     });
     $review = refundOrder($this->store->run(static fn () => $inReview->order), 9000, from: $inReview);
+    // A payment that succeeded after its order was cancelled.
+    $paidLate = $this->store->run(function (): Payment {
+        $payment = startFakePayment(unpaidOrder(10000));
+        app(CancelOrder::class)->byStaff($this->owner, $payment->order);
+        $this->travel(1)->minutes();
+        gatewayAnswers($payment, GatewayPaymentState::Succeeded, $payment->amount, GatewayMode::Live);
 
-    $purposes = $this->store->run(static function () use ($reduction, $neverSold, $review): array {
+        return verifyFakePayment($payment);
+    });
+    $late = refundOrder($this->store->run(static fn () => $paidLate->order), 11500);
+
+    $purposes = $this->store->run(static function () use ($reduction, $afterSale, $partPaid, $review, $late): array {
         $migration = require database_path('migrations/tenant/2026_10_20_090000_add_purpose_to_refunds.php');
         $migration->down();
         $migration->up();
 
-        return Refund::query()->whereKey([$reduction->id, $neverSold->id, $review->id])->orderBy('id')->pluck('purpose')->map(static fn (RefundPurpose $purpose): string => $purpose->value)->all();
+        return Refund::query()->whereKey([$reduction->id, $afterSale->id, $partPaid->id, $review->id, $late->id])->orderBy('id')->pluck('purpose')->map(static fn (RefundPurpose $purpose): string => $purpose->value)->all();
     });
 
-    expect($purposes)->toBe(['reduces_sale', 'returns_payment', 'returns_payment']);
+    expect($purposes)->toBe(['reduces_sale', 'reduces_sale', 'reduces_sale', 'returns_payment', 'returns_payment']);
 });
 
 it('gives money in review back as a payment, never as a sale reduction', function (): void {

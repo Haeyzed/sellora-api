@@ -8,6 +8,7 @@ use App\Shared\Money\Money;
 use App\Tenant\Orders\Contracts\RefundsAwaitingCreditNotes;
 use App\Tenant\Orders\Data\CreditedLine;
 use App\Tenant\Orders\Data\CreditRequest;
+use App\Tenant\Orders\Enums\OrderEventType;
 use App\Tenant\Payments\Enums\RefundPurpose;
 use App\Tenant\Payments\Enums\RefundStatus;
 use App\Tenant\Payments\Models\PaymentRefund;
@@ -58,7 +59,9 @@ final readonly class RefundCredits implements RefundsAwaitingCreditNotes
         return array_values(array_filter(PaymentRefund::query()
             ->where('status', RefundStatus::Succeeded->value)
             ->where('succeeded_at', '<=', $time)
-            ->whereHas('refund', static fn (Builder $refunds): Builder => $refunds->where('purpose', RefundPurpose::ReducesSale->value))
+            // Only orders that were sold have an invoice to credit; any other would come back every run.
+            ->whereHas('refund', static fn (Builder $refunds): Builder => $refunds->where('purpose', RefundPurpose::ReducesSale->value)
+                ->whereExists(static fn (QueryBuilder $paid): QueryBuilder => $paid->select(DB::raw(1))->from('order_events')->whereColumn('order_events.order_id', 'refunds.order_id')->where('order_events.type', OrderEventType::Paid->value)))
             ->whereNotExists(static fn (QueryBuilder $creditNotes): QueryBuilder => $creditNotes->select(DB::raw(1))->from('credit_notes')->whereColumn('credit_notes.reference', 'payment_refunds.public_id'))
             ->orderBy('id')
             ->limit($limit)

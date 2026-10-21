@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Shared\Money\Money;
 use App\Shared\Privacy\PersonalDataErasure;
 use App\Tenant\Catalog\Models\ProductVariant;
+use App\Tenant\Orders\Actions\CancelOrder;
 use App\Tenant\Orders\Actions\IssueCreditNote;
 use App\Tenant\Orders\Data\CreditRequest;
 use App\Tenant\Orders\Exceptions\CreditNoteExceedsInvoiceException;
@@ -147,6 +148,25 @@ it('issues no credit note for money given back that was never part of the sale',
     Artisan::call('orders:issue-missing-tax-documents');
 
     expect($this->store->run(static fn (): int => CreditNote::query()->count()))->toBe(0);
+});
+
+it('leaves out of the sweep a refund recorded as reducing the sale of an order never sold, which has no invoice to credit', function (): void {
+    // Part paid, then cancelled; refunds like it from before purposes existed were filled in as reductions.
+    [$partlyPaid, $transfer] = manuallyPaidOrder(PaymentMethod::BankTransfer);
+    recordReceived($transfer, 4000);
+    $this->store->run(fn () => app(CancelOrder::class)->byStaff($this->owner, $partlyPaid));
+    $refund = refundOrder($partlyPaid, 1000);
+    $this->store->run(static function () use ($refund): void {
+        DB::unprepared('alter table refunds disable trigger refunds_never_change');
+        DB::table('refunds')->where('id', $refund->id)->update(['purpose' => 'reduces_sale']);
+        DB::unprepared('alter table refunds enable trigger refunds_never_change');
+    });
+
+    $this->travel(11)->minutes();
+
+    expect($this->store->run(static fn (): array => app(RefundCredits::class)->wentBackBefore(CarbonImmutable::now(), 200)))->toBe([]);
+    Artisan::call('orders:issue-missing-tax-documents');
+    expect($this->store->run(static fn (): int => Invoice::query()->count() + CreditNote::query()->count()))->toBe(0);
 });
 
 it('splits a refund drawn on two payments into a credit note for each, in turn, so each line adds up exactly', function (): void {
