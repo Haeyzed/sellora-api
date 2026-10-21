@@ -11,6 +11,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * How a social sign-in ended: signed in with a token, or what the customer still has to do, with a ticket for it.
+ *
+ * @property-read SocialSignInResult $resource
  */
 final class SocialSignInResultResource extends JsonResource
 {
@@ -33,11 +35,7 @@ final class SocialSignInResultResource extends JsonResource
             'new_account' => $this->result->newAccount,
             /** For "link_account" and "email_required": send it back with the next step. Works once, for 10 minutes. */
             'ticket' => $this->result->ticket,
-            /**
-             * For "link_account": "password" (the account's password), and "email_link" (a link emailed to the account) when allowed.
-             *
-             * @var list<string>
-             */
+            /** For "link_account": "password" (the account's password), and "email_link" (a link emailed to the account) when allowed. */
             'proof_methods' => $this->result->proofMethods,
             /** The storefront path given when the sign-in started, if any. */
             'return_path' => $this->result->returnPath,

@@ -7,6 +7,7 @@ namespace App\Tenant\Payments\Http\Resources;
 use App\Shared\Features\FeatureState;
 use App\Tenant\Payments\Contracts\PaymentGateway;
 use App\Tenant\Payments\Data\CredentialField;
+use App\Tenant\Payments\Data\OfferedPaymentGateway;
 use App\Tenant\Payments\Models\PaymentGatewayConnection;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -14,16 +15,13 @@ use Illuminate\Http\Resources\Json\JsonResource;
 /**
  * A payment gateway the platform offers: what it can do, the credentials it needs, whether the store's plan includes it, and how the store is connected to it.
  *
- * @property PaymentGateway $resource
+ * @property-read OfferedPaymentGateway $resource
  */
 final class PaymentGatewayResource extends JsonResource
 {
-    public function __construct(
-        PaymentGateway $gateway,
-        private readonly FeatureState $availability,
-        private readonly ?PaymentGatewayConnection $connection,
-    ) {
-        parent::__construct($gateway);
+    public function __construct(PaymentGateway $gateway, FeatureState $availability, ?PaymentGatewayConnection $connection)
+    {
+        parent::__construct(new OfferedPaymentGateway($gateway, $availability, $connection));
     }
 
     /**
@@ -31,26 +29,27 @@ final class PaymentGatewayResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $gateway = $this->resource;
+        $gateway = $this->resource->gateway;
+        $connection = $this->resource->connection;
         $capabilities = $gateway->capabilities();
 
         return [
-            /** @var string Such as "paystack". */
+            /** Such as "paystack". */
             'key' => $gateway->key(),
-            /** @var list<string> ISO 4217 codes it takes payments in. */
+            /** ISO 4217 codes it takes payments in. */
             'currencies' => $capabilities->currencies,
-            /** @var list<string>|null Where buyers may pay from; null for anywhere. */
+            /** Where buyers may pay from; null for anywhere. */
             'countries' => $capabilities->countries,
-            /** @var list<string> How buyers pay on its page, such as "card" or "bank_transfer". */
+            /** How buyers pay on its page, such as "card" or "bank_transfer". */
             'methods' => $capabilities->methods,
-            /** @var bool Whether it refunds part of a payment. */
+            /** Whether it refunds part of a payment. */
             'partial_refunds' => $capabilities->partialRefunds,
             /** What to send in "credentials" to connect it. Secret ones are never shown again. */
             'credential_fields' => array_map(static fn (CredentialField $field): array => ['name' => $field->name, 'secret' => $field->isSecret], $gateway->credentialFields()),
             /** Whether the store's plan includes it: "enabled" to connect it and take new payments; otherwise only payments already under way are looked after. */
-            'availability' => $this->availability->value,
+            'availability' => $this->resource->availability->value,
             /** Null when the store has never connected it. */
-            'connection' => $this->connection === null ? null : new PaymentGatewayConnectionResource($this->connection),
+            'connection' => $connection === null ? null : new PaymentGatewayConnectionResource($connection),
         ];
     }
 }

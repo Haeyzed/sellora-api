@@ -1,6 +1,6 @@
 # Section 15: Pint, Larastan, the full Pest suite (architecture and tenant
-# isolation included) and composer audit on every push. Nothing is merged
-# while it fails.
+# isolation included), composer audit and Scramble's analysis of the API
+# docs on every push. Nothing is merged while it fails.
 #
 # Runs on pushes to every branch only. Checks belong to the commit, so a pull
 # request from a branch of this repository shows the push run's checks; a
@@ -67,6 +67,72 @@ jobs:
 
       - name: composer audit
         run: composer audit --locked
+
+  api-docs:
+    name: Scramble (API documentation)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        # Scramble reads model column types from the central database, so it is migrated first.
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: sellora_central
+          POSTGRES_PASSWORD: ci-run-${{ github.run_id }}-${{ github.run_attempt }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: ${{ env.PHP_EXTENSIONS }}
+          coverage: none
+          tools: composer:v2
+
+      - name: Cache Composer downloads
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.composer/cache/files
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Install dependencies from the lock file
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Make an .env and migrate the central database
+        env:
+          DOCS_DB_PASSWORD: ci-run-${{ github.run_id }}-${{ github.run_attempt }}
+        # No Redis here: cache, sessions and queues stay in memory.
+        run: |
+          cp .env.example .env
+          sed -i \
+            -e 's/^DB_HOST=.*/DB_HOST=127.0.0.1/' \
+            -e 's/^DB_PORT=.*/DB_PORT=5432/' \
+            -e 's/^DB_DATABASE=.*/DB_DATABASE=sellora_central/' \
+            -e 's/^DB_USERNAME=.*/DB_USERNAME=postgres/' \
+            -e "s/^DB_PASSWORD=.*/DB_PASSWORD=$DOCS_DB_PASSWORD/" \
+            -e 's/^CACHE_STORE=.*/CACHE_STORE=array/' \
+            -e 's/^SESSION_DRIVER=.*/SESSION_DRIVER=array/' \
+            -e 's/^QUEUE_CONNECTION=.*/QUEUE_CONNECTION=sync/' \
+            .env
+          php artisan key:generate --ansi
+          php artisan migrate --force --no-interaction
+
+      # Fails on anything Scramble reports, except column types it can't read
+      # for store models (store tables exist only in store databases); prints
+      # that accepted list.
+      - name: Scramble analysis
+        run: php .github/scripts/scramble-check.php
 
   tests:
     name: Pest (parallel, PostgreSQL 18, Redis)

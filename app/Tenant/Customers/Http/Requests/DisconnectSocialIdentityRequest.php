@@ -6,6 +6,7 @@ namespace App\Tenant\Customers\Http\Requests;
 
 use App\Tenant\Customers\Concerns\ActsAsCustomer;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 /**
  * The signed-in customer disconnecting a provider: with their current password when the account has one.
@@ -21,7 +22,7 @@ final class DisconnectSocialIdentityRequest extends FormRequest
     {
         return [
             /** Your current password; needed when the account has one. */
-            'current_password' => [$this->customer()->password !== null ? 'required' : 'sometimes', 'string', 'max:128'],
+            'current_password' => [Rule::requiredIf(fn (): bool => $this->customer()->password !== null), 'string', 'max:128'],
         ];
     }
 
