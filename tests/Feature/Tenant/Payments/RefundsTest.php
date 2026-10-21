@@ -408,6 +408,30 @@ it('fills in what refunds made before purposes existed did to the sale', functio
     expect($purposes)->toBe(['reduces_sale', 'reduces_sale', 'reduces_sale', 'returns_payment', 'returns_payment']);
 });
 
+it('corrects refunds the backfill recorded as reducing the sale of an order never sold, and leaves sold orders\' reductions alone', function (): void {
+    // Part paid, then cancelled: never sold. The first backfill recorded refunds like this as reductions.
+    [$partlyPaid, $transfer] = manuallyPaidOrder(PaymentMethod::BankTransfer);
+    recordReceived($transfer, 4000);
+    $this->store->run(fn () => app(CancelOrder::class)->byStaff($this->owner, $partlyPaid));
+    $partPaid = refundOrder($partlyPaid, 1000);
+    // Sold, then cancelled: still a reduction.
+    [$sold] = gatewayPaidOrder();
+    $this->store->run(fn () => app(CancelOrder::class)->byStaff($this->owner, $sold));
+    $afterSale = refundOrder($sold, 11500);
+
+    $purposes = $this->store->run(static function () use ($partPaid, $afterSale): array {
+        DB::unprepared('alter table refunds disable trigger refunds_never_change');
+        DB::table('refunds')->where('id', $partPaid->id)->update(['purpose' => 'reduces_sale']);
+        DB::unprepared('alter table refunds enable trigger refunds_never_change');
+
+        (require database_path('migrations/tenant/2026_10_21_090000_correct_refund_purposes_on_unsold_orders.php'))->up();
+
+        return Refund::query()->whereKey([$partPaid->id, $afterSale->id])->orderBy('id')->pluck('purpose')->map(static fn (RefundPurpose $purpose): string => $purpose->value)->all();
+    });
+
+    expect($purposes)->toBe(['returns_payment', 'reduces_sale']);
+});
+
 it('gives money in review back as a payment, never as a sale reduction', function (): void {
     $payment = $this->store->run(static function (): Payment {
         $payment = startFakePayment(unpaidOrder(10000));
