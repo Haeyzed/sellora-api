@@ -58,14 +58,13 @@ final readonly class StartSocialSignIn
 
         $this->storeSocialSignInRoutes->open(SocialSignInAttempt::hash($state), $provider->value, $expiresAt);
 
-        return $this->socialProviders->driver($provider)
-            ->with([
-                'state' => $state,
-                'code_challenge' => rtrim(strtr(base64_encode(hash('sha256', $verifier, true)), '+/', '-_'), '='),
-                'code_challenge_method' => 'S256',
-                'nonce' => $nonce,
-            ])
-            ->redirect()
-            ->getTargetUrl();
+        $parameters = ['state' => $state, 'nonce' => $nonce];
+
+        if ($provider->usesPkce()) {
+            $parameters['code_challenge'] = rtrim(strtr(base64_encode(hash('sha256', $verifier, true)), '+/', '-_'), '=');
+            $parameters['code_challenge_method'] = 'S256';
+        }
+
+        return $this->socialProviders->driver($provider, $nonce)->with($parameters)->redirect()->getTargetUrl();
     }
 }

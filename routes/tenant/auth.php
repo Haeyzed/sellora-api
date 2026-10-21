@@ -70,6 +70,7 @@ Route::prefix('customer/auth')->name('customer.auth.')->group(static function ()
     Route::get('social/providers', [SocialSignInController::class, 'index'])->middleware('throttle:public')->name('social.providers.index');
     Route::post('social/{provider}/authorizations', [SocialSignInController::class, 'store'])->middleware('throttle:social-sign-in')->name('social.authorizations.store');
     Route::post('social/{provider}/callbacks', [SocialSignInController::class, 'callback'])->middleware('throttle:social-sign-in')->name('social.callbacks.store');
+    Route::post('social/email-completions', [SocialSignInController::class, 'complete'])->middleware('throttle:social-sign-in')->name('social.email-completions.store');
     // Proving an existing account is yours before a provider is connected to it.
     Route::post('social/link-confirmations', [SocialAccountLinkController::class, 'confirm'])->middleware('throttle:social-sign-in')->name('social.link-confirmations.store');
     Route::post('social/link-emails', [SocialAccountLinkController::class, 'sendEmail'])->middleware('throttle:social-link-emails')->name('social.link-emails.store');

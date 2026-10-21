@@ -84,6 +84,7 @@ use App\Tenant\Customers\CustomerEmailTokenRetention;
 use App\Tenant\Customers\CustomerStoreTables;
 use App\Tenant\Customers\Enums\CustomerPermission;
 use App\Tenant\Customers\Events\CustomerEmailVerified;
+use App\Tenant\Customers\Listeners\RegisterAppleSignIn;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Customers\Models\CustomerGroup;
 use App\Tenant\Customers\Privacy\CustomerAccountData;
@@ -647,6 +648,7 @@ final class AppServiceProvider extends ServiceProvider
     private function listenAcrossDomains(): void
     {
         Event::listen(CustomerEmailVerified::class, LinkGuestOrdersWhenEmailVerified::class);
+        RegisterAppleSignIn::listenOn($this->app->make('events'));
         Event::listen(PaymentSucceeded::class, MarkOrderAsPaidWhenPaymentSucceeds::class);
         Event::listen(RefundSucceeded::class, RecordOrderPaymentsWhenRefundSucceeds::class);
         Event::listen(RefundSucceeded::class, IssueCreditNoteWhenRefundSucceeds::class);

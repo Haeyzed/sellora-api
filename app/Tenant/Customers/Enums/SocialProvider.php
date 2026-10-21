@@ -29,6 +29,14 @@ enum SocialProvider: string
     }
 
     /**
+     * Whether the code exchange is bound to the sign-in with PKCE. Apple doesn't document PKCE; its sign-in is bound instead by the nonce in the signed identity token, besides the one-time state.
+     */
+    public function usesPkce(): bool
+    {
+        return $this === self::Google;
+    }
+
+    /**
      * Whether the store believes this provider when it says an email is verified (config/customers.php).
      */
     public function isTrustedForEmail(): bool

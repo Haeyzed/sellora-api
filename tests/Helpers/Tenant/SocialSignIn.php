@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Landlord\Tenancy\Models\Tenant;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Customers\Models\CustomerIdentity;
+use App\Tenant\Customers\Models\SocialSignInAttempt;
 use App\Tenant\Settings\Models\StoreSettings;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -14,7 +15,9 @@ use Laravel\Socialite\SocialiteManager;
 use Laravel\Socialite\Two\AbstractProvider;
 use Laravel\Socialite\Two\GoogleProvider;
 use Symfony\Component\Process\Process;
+use Tests\Fixtures\Customers\AppleIdentityTokens;
 use Tests\Fixtures\Customers\FakeSocialProviderHttp;
+use Tests\Fixtures\Customers\TestAppleProvider;
 
 /*
 |--------------------------------------------------------------------------
@@ -85,6 +88,7 @@ function fakeSocialProvider(string $provider, array $person = [], bool $refuses 
     $socialite->extend($provider, static function () use ($provider, $http): AbstractProvider {
         $class = match ($provider) {
             'google' => GoogleProvider::class,
+            'apple' => TestAppleProvider::class,
             default => throw new InvalidArgumentException("No fake for {$provider}."),
         };
         $driver = new $class(request(), config()->string("services.{$provider}.client_id"), config()->string("services.{$provider}.client_secret"), config()->string("services.{$provider}.redirect"));
@@ -94,6 +98,24 @@ function fakeSocialProvider(string $provider, array $person = [], bool $refuses 
     });
 
     return $http;
+}
+
+/**
+ * Starts a Sign in with Apple at the store, has Apple answer the code with an identity token signed with Apple's (test) key for these claims, bound to the sign-in's nonce unless one is given, and finishes it as the storefront would.
+ *
+ * @param  array<string, mixed>  $claims
+ * @param  array<string, mixed>  $finishData
+ * @return array{TestResponse, FakeSocialProviderHttp}
+ */
+function finishAppleSignIn(string $subject, array $claims, array $finishData = [], ?string $nonce = null, bool $forged = false, ?string $audience = null): array
+{
+    [$started, $state] = startSocialSignIn('apple');
+    $started->assertCreated();
+    $kept = test()->store->run(static fn (): string => SocialSignInAttempt::query()->where('state_hash', SocialSignInAttempt::hash($state))->sole()->nonce);
+    $token = AppleIdentityTokens::token($audience ?? config()->string('services.apple.client_id'), $subject, ['nonce' => $nonce ?? $kept, ...$claims], $forged);
+    $http = fakeSocialProvider('apple', tokenResponse: ['id_token' => $token]);
+
+    return [customerRequest('POST', 'auth/social/apple/callbacks', ['state' => $state, 'code' => 'apple-code', ...$finishData], subdomain: 'social-store'), $http];
 }
 
 /**

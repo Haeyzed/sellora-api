@@ -50,7 +50,26 @@ final class SocialSignInRelayRequest extends FormRequest
             'state' => $this->state(),
             'code' => $error === null ? $this->field('code', 2048) : '',
             'error' => $error ?? '',
+            'name' => $error === null ? $this->appleName() : '',
         ], static fn (string $value): bool => $value !== '');
+    }
+
+    /**
+     * The name Apple posts the first time someone signs in ("user", unsigned JSON), passed on as display text only and never stored here; the store checks it again when the storefront sends it back. Apple's email in it is ignored: only its signed identity token is believed.
+     */
+    private function appleName(): string
+    {
+        $user = $this->field('user', 2048);
+        $decoded = $user === '' ? null : json_decode($user, true);
+
+        if (! is_array($decoded) || ! is_array($decoded['name'] ?? null)) {
+            return '';
+        }
+
+        $parts = array_filter([$decoded['name']['firstName'] ?? null, $decoded['name']['lastName'] ?? null], is_string(...));
+        $name = trim((string) preg_replace('/[\p{C}]+/u', '', implode(' ', $parts)));
+
+        return mb_substr($name, 0, 120);
     }
 
     private function field(string $key, int $maxLength): string

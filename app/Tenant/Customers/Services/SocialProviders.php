@@ -11,6 +11,7 @@ use Laravel\Socialite\Contracts\Factory as Socialite;
 use Laravel\Socialite\SocialiteManager;
 use Laravel\Socialite\Two\AbstractProvider;
 use LogicException;
+use SocialiteProviders\Apple\Provider as AppleProvider;
 
 /**
  * The social sign-in providers the current store offers its customers (Step 10b), and Socialite set up for each: stateless, since the store keeps the one-time state itself, and answering to the central relay page.
@@ -55,7 +56,7 @@ final readonly class SocialProviders
     /**
      * A fresh Socialite driver for the provider, without its session state (the store keeps its own), answering to the relay page. Never one already used, so nothing set for one request carries into another.
      */
-    public function driver(SocialProvider $provider): AbstractProvider
+    public function driver(SocialProvider $provider, ?string $nonce = null): AbstractProvider
     {
         if ($this->socialite instanceof SocialiteManager) {
             $this->socialite->forgetDrivers();
@@ -67,7 +68,14 @@ final readonly class SocialProviders
             throw new LogicException("The {$provider->value} sign-in driver is not an OAuth 2 provider.");
         }
 
-        return $driver->stateless()->redirectUrl(self::relayUrl($provider));
+        $driver->stateless()->redirectUrl(self::relayUrl($provider));
+
+        // Apple checks the nonce in its signed identity token against the one the store kept for the sign-in.
+        if ($driver instanceof AppleProvider && $nonce !== null) {
+            $driver->setNonce($nonce);
+        }
+
+        return $driver;
     }
 
     /**

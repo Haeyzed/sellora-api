@@ -28,10 +28,10 @@ final readonly class FinishSocialSignIn
      * @throws SocialSignInFailedException
      * @throws AccountDeactivatedException
      */
-    public function handle(SocialProvider $provider, string $state, string $deviceName): SocialSignInResult
+    public function handle(SocialProvider $provider, string $state, string $deviceName, ?string $displayName = null): SocialSignInResult
     {
         $attempt = $this->socialSignInAttempts->consume($provider, $state, SocialSignInIntent::SignIn);
-        $profile = $this->socialSignInAttempts->profile($attempt);
+        $profile = $this->socialSignInAttempts->profile($attempt, $displayName);
 
         return $this->socialAccounts->signIn($profile, $deviceName)->withReturnPath($attempt->return_path);
     }

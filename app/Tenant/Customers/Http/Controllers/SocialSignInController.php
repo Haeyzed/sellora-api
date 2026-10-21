@@ -13,11 +13,13 @@ use App\Tenant\Customers\Enums\SocialSignInStatus;
 use App\Tenant\Customers\Exceptions\InvalidSocialSignInException;
 use App\Tenant\Customers\Exceptions\SocialProviderNotOfferedException;
 use App\Tenant\Customers\Exceptions\SocialSignInFailedException;
+use App\Tenant\Customers\Http\Requests\CompleteSocialSignUpRequest;
 use App\Tenant\Customers\Http\Requests\FinishSocialSignInRequest;
 use App\Tenant\Customers\Http\Requests\StartSocialSignInRequest;
 use App\Tenant\Customers\Http\Resources\SocialAuthorizationResource;
 use App\Tenant\Customers\Http\Resources\SocialProviderResource;
 use App\Tenant\Customers\Http\Resources\SocialSignInResultResource;
+use App\Tenant\Customers\Services\SocialAccounts;
 use App\Tenant\Customers\Services\SocialProviders;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -81,7 +83,31 @@ final class SocialSignInController extends Controller
      */
     public function callback(FinishSocialSignInRequest $request, SocialProvider $provider, FinishSocialSignIn $finishSocialSignIn): JsonResponse
     {
-        $result = $finishSocialSignIn->handle($provider, $request->state(), $request->deviceName());
+        $result = $finishSocialSignIn->handle($provider, $request->state(), $request->deviceName(), $request->displayName());
+
+        if ($result->status !== SocialSignInStatus::SignedIn) {
+            return (new SocialSignInResultResource($result))->response()->setStatusCode(Response::HTTP_ACCEPTED);
+        }
+
+        return (new SocialSignInResultResource($result))->response()->setStatusCode(Response::HTTP_OK);
+    }
+
+    /**
+     * Give an email to finish signing in.
+     *
+     * After a sign-in answered "email_required" (the provider gave no email).
+     * Makes the account with it, unverified, and emails a link to verify it.
+     * When an account already has the email, answers 202 "link_account": its
+     * owner proves it with the account's password.
+     *
+     * @unauthenticated
+     *
+     * @throws InvalidSocialSignInException
+     * @throws AccountDeactivatedException
+     */
+    public function complete(CompleteSocialSignUpRequest $request, SocialAccounts $socialAccounts): JsonResponse
+    {
+        $result = $socialAccounts->completeWithEmail($request->ticket(), $request->normalisedEmail(), $request->deviceName());
 
         if ($result->status !== SocialSignInStatus::SignedIn) {
             return (new SocialSignInResultResource($result))->response()->setStatusCode(Response::HTTP_ACCEPTED);

@@ -13,6 +13,7 @@ use App\Tenant\Customers\Enums\CustomerEmailTokenPurpose;
 use App\Tenant\Customers\Enums\SocialSignInStatus;
 use App\Tenant\Customers\Enums\SocialSignInTicketKind;
 use App\Tenant\Customers\Events\CustomerEmailVerified;
+use App\Tenant\Customers\Exceptions\InvalidSocialSignInException;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Customers\Models\CustomerIdentity;
 use Carbon\CarbonImmutable;
@@ -50,6 +51,31 @@ final readonly class SocialAccounts
             // Another sign-in made the account or identity at the same moment: decide again, now that it exists.
             return DB::transaction(fn (): SocialSignInResult => $this->decide($profile, $deviceName));
         }
+    }
+
+    /**
+     * Finishes a sign-in whose provider gave no email, with the email the customer gave. It starts unverified: nobody proved it yet. An account that already has it is never connected automatically: its owner proves it with its password.
+     *
+     * @param  string  $email  Trimmed and lower-cased.
+     *
+     * @throws InvalidSocialSignInException When the ticket is unknown, used or expired.
+     * @throws AccountDeactivatedException
+     */
+    public function completeWithEmail(string $ticket, string $email, string $deviceName): SocialSignInResult
+    {
+        return DB::transaction(function () use ($ticket, $email, $deviceName): SocialSignInResult {
+            $found = $this->socialSignInTickets->find($ticket, SocialSignInTicketKind::EmailRequired);
+
+            if ($found === null) {
+                throw new InvalidSocialSignInException;
+            }
+
+            $given = $this->socialSignInTickets->profile($found);
+            $profile = new SocialProfile($given->provider, $given->providerUserId, $email, false, false, $given->name);
+            $found->delete();
+
+            return $this->decide($profile, $deviceName);
+        });
     }
 
     /**

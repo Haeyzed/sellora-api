@@ -50,39 +50,44 @@ final readonly class SocialSignInAttempts
     }
 
     /**
-     * Exchanges the code for who the person is, with the verifier kept when the sign-in started.
+     * Exchanges the code for who the person is: with the PKCE verifier kept when the sign-in started (Google), or checking the nonce kept then against Apple's signed identity token.
      *
-     * @throws SocialSignInFailedException When the provider refuses the code or doesn't answer.
+     * @param  string|null  $displayName  For Apple: the name the storefront sends back from Apple's unsigned answer, already checked, as display text only.
+     *
+     * @throws SocialSignInFailedException When the provider refuses the code or doesn't answer, or its identity token doesn't check out.
      */
-    public function profile(SocialSignInAttempt $attempt): SocialProfile
+    public function profile(SocialSignInAttempt $attempt, ?string $displayName = null): SocialProfile
     {
         try {
-            $user = $this->socialProviders->driver($attempt->provider)->with(['code_verifier' => $attempt->code_verifier])->user();
+            $driver = $this->socialProviders->driver($attempt->provider, $attempt->nonce);
+            $user = ($attempt->provider->usesPkce() ? $driver->with(['code_verifier' => $attempt->code_verifier]) : $driver)->user();
         } catch (Throwable $exception) {
             Log::warning('A social sign-in provider refused or failed the sign-in.', ['provider' => $attempt->provider->value, 'exception' => $exception::class]);
 
             throw new SocialSignInFailedException;
         }
 
-        return $this->fromProvider($attempt->provider, $user);
+        return $this->fromProvider($attempt->provider, $user, $displayName);
     }
 
     /**
-     * What the provider said, as the store reads it: Google's "email_verified" claim says whether the email is verified.
+     * What the provider said, as the store reads it. Google's userinfo and Apple's signed identity token both say whether the email is verified ("email_verified"); Apple's also says whether it is a private relay address ("is_private_email"). Apple's name never comes from the provider driver, which reads it from the unsigned request.
      */
-    private function fromProvider(SocialProvider $provider, SocialiteUser $user): SocialProfile
+    private function fromProvider(SocialProvider $provider, SocialiteUser $user, ?string $displayName): SocialProfile
     {
         $raw = method_exists($user, 'getRaw') ? $user->getRaw() : [];
         $email = $user->getEmail();
         $email = is_string($email) && trim($email) !== '' ? mb_strtolower(trim($email)) : null;
+        $claim = static fn (string $key): bool => ($raw[$key] ?? false) === true || ($raw[$key] ?? false) === 'true';
+        $name = $provider === SocialProvider::Apple ? $displayName : $user->getName();
 
         return new SocialProfile(
             provider: $provider,
             providerUserId: (string) $user->getId(),
             email: $email,
-            emailVerified: ($raw['email_verified'] ?? false) === true || ($raw['email_verified'] ?? false) === 'true',
-            isPrivateRelay: false,
-            name: is_string($user->getName()) ? mb_substr(trim($user->getName()), 0, 120) : null,
+            emailVerified: $claim('email_verified'),
+            isPrivateRelay: $provider === SocialProvider::Apple && ($claim('is_private_email') || ($email !== null && str_ends_with($email, '@privaterelay.appleid.com'))),
+            name: is_string($name) && trim($name) !== '' ? mb_substr(trim($name), 0, 120) : null,
         );
     }
 }
