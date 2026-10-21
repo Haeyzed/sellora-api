@@ -68,6 +68,10 @@ return [
         'tenant_bulk_jobs' => (int) env('RATE_LIMIT_TENANT_BULK_JOBS', 60),
         // Invoice and credit note PDFs rendered per store per minute; the rest wait their turn on the queue.
         'tax_document_pdfs' => (int) env('RATE_LIMIT_TAX_DOCUMENT_PDFS', 30),
+        // Customer social sign-ins started per IP address per store, high enough for many shoppers behind one address.
+        'social_sign_in_ip_ceiling' => (int) env('RATE_LIMIT_SOCIAL_SIGN_IN_IP_CEILING', 60),
+        // Answers from sign-in providers to the central relay page, per IP address.
+        'social_sign_in_relay_ip_ceiling' => (int) env('RATE_LIMIT_SOCIAL_SIGN_IN_RELAY_IP_CEILING', 120),
     ],
 
     /*

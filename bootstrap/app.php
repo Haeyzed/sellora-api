@@ -51,6 +51,12 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->name('webhooks.')
                 ->group(base_path('routes/webhooks.php'));
 
+            // The relay page every customer social sign-in provider returns to (Step 10b).
+            Route::middleware(['api', EnsureCentralDomain::class])
+                ->prefix('oauth')
+                ->name('social-sign-in.')
+                ->group(base_path('routes/social-sign-in-relay.php'));
+
             // Reference data for forms, on the central domain and on every store's domain alike.
             Route::middleware(['api', IdentifyStoreUnlessCentral::class])
                 ->prefix('api/v1')

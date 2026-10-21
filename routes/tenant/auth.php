@@ -13,6 +13,7 @@ use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
 use App\Tenant\Customers\Http\Controllers\CurrentCustomerController;
 use App\Tenant\Customers\Http\Controllers\RegistrationController;
 use App\Tenant\Customers\Http\Controllers\SignInController as CustomerSignInController;
+use App\Tenant\Customers\Http\Controllers\SocialSignInController;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Identity\Http\Controllers\CurrentStaffMemberController;
 use App\Tenant\Identity\Http\Controllers\SignInController as StaffSignInController;
@@ -63,6 +64,10 @@ Route::prefix('staff/auth')->name('staff.auth.')->group(static function (): void
 Route::prefix('customer/auth')->name('customer.auth.')->group(static function (): void {
     Route::post('accounts', RegistrationController::class)->middleware('throttle:registration')->name('accounts.store');
     Route::post('tokens', CustomerSignInController::class)->middleware('throttle:login')->name('tokens.store');
+
+    // Signing in with a provider the store offers (Step 10b): customers only.
+    Route::get('social/providers', [SocialSignInController::class, 'index'])->middleware('throttle:public')->name('social.providers.index');
+    Route::post('social/{provider}/authorizations', [SocialSignInController::class, 'store'])->middleware('throttle:social-sign-in')->name('social.authorizations.store');
 
     Route::middleware('throttle:password-reset')->group(static function (): void {
         Route::post('password-reset-links', [PasswordResetLinkController::class, 'store'])->defaults('broker', Customer::PASSWORD_BROKER)->name('password-reset-links.store');

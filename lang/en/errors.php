@@ -205,6 +205,7 @@ return [
     'payment_in_progress' => 'A payment for this order is still in progress. Finish it, or wait a few minutes until it has failed or expired, then try again.',
     'payment_gateway_not_available' => 'This way to pay isn\'t available for this order.',
     'payment_refused_by_gateway' => 'The payment provider refused to start this payment. Nothing was charged; try again or choose another way to pay.',
+    'social_provider_not_offered' => 'This store doesn\'t offer signing in with that provider.',
     'tax_document_pdf_not_ready' => 'This document\'s PDF is still being prepared. Try again in a few minutes.',
 
 ];

@@ -21,6 +21,7 @@ use App\Landlord\Tenancy\PlatformStoreClosure;
 use App\Landlord\Tenancy\PlatformStoreExports;
 use App\Landlord\Tenancy\PlatformStoreOwnerContact;
 use App\Landlord\Tenancy\PlatformStoreProfile;
+use App\Landlord\Tenancy\Services\SocialSignInRoutes;
 use App\Landlord\Tenancy\StoreExportRetention;
 use App\Landlord\Tenancy\StoreRegistrationRetention;
 use App\Shared\Auth\Contracts\TwoFactorRequirement;
@@ -57,6 +58,7 @@ use App\Shared\Tenancy\Contracts\StoreProfile;
 use App\Shared\Tenancy\Contracts\StorePromotionHolds;
 use App\Shared\Tenancy\Contracts\StoreSessions;
 use App\Shared\Tenancy\Contracts\StoreSettingsSetup;
+use App\Shared\Tenancy\Contracts\StoreSocialSignInRoutes;
 use App\Shared\Tenancy\Contracts\StoreStockLedger;
 use App\Shared\Tenancy\Contracts\StoreStockReservations;
 use App\Shared\Tenancy\Contracts\StoreTaxDocuments;
@@ -257,6 +259,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(StorePromotionHolds::class, ExpiredPromotionUseSweep::class);
         $this->app->bind(StoreUnpaidOrders::class, ExpiredOrderSweep::class);
         $this->app->bind(StoreTaxDocuments::class, MissingTaxDocumentSweep::class);
+        $this->app->bind(StoreSocialSignInRoutes::class, SocialSignInRoutes::class);
         $this->app->bind(RefundsAwaitingCreditNotes::class, RefundCredits::class);
         $this->app->bind(StockLocationSelector::class, DefaultStockLocationSelector::class);
         // One list of country tax plug-ins, filled in by modules' and integrations' service providers.

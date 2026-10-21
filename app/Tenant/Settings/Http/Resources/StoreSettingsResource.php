@@ -90,11 +90,7 @@ final class StoreSettingsResource extends JsonResource
              * @var array<string, string>
              */
             'invoice_footer' => $settings->getTranslations('invoice_footer'),
-            /**
-             * The social sign-in providers offered to customers, such as ["google", "apple"].
-             *
-             * @var list<string>
-             */
+            /** The social sign-in providers offered to customers, such as ["google", "apple"]. */
             'social_sign_in_providers' => $settings->social_sign_in_providers,
             'updated_at' => $settings->updated_at?->toIso8601String(),
         ];

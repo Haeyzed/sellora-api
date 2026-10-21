@@ -164,6 +164,25 @@ final class Tenant extends BaseTenant implements TenantWithDatabase
         return $subdomain.'.'.config()->string('platform.domain');
     }
 
+    /**
+     * The store's own address on the platform domain, such as "mystore.sellora.com"; null when it has none (a purged store). Custom domains (Phase C) are never it.
+     */
+    public function platformDomain(): ?string
+    {
+        $suffix = '.'.config()->string('platform.domain');
+
+        foreach ($this->domains()->orderBy('id')->pluck('domain') as $domain) {
+            $domain = (string) $domain;
+            $subdomain = str_ends_with($domain, $suffix) ? substr($domain, 0, -strlen($suffix)) : '';
+
+            if ($subdomain !== '' && ! str_contains($subdomain, '.')) {
+                return $domain;
+            }
+        }
+
+        return null;
+    }
+
     protected static function newFactory(): TenantFactory
     {
         return TenantFactory::new();
