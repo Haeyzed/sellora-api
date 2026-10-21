@@ -30,7 +30,7 @@ The legacy code may contain bugs, security holes, shortcuts and wrong business r
 3. **Always follow the Laravel best-practices skill** for every piece of code, alongside this guide. Package skills cover their package; the Laravel best-practices skill covers everything else.
 4. Follow them. A skill's documented pattern takes priority over generic Laravel habits. If a skill conflicts with this guide, or two skills conflict with each other, stop, explain the conflict, and ask.
 5. Check `composer.json` for installed packages and versions, and use the documented API for that version. Never invent methods.
-6. Don't add a new package without asking. Say what it solves and what the alternative would be.
+6. Don't add a new package without asking. Say what it solves, what the alternative would be, **and its licence**. Sellora is proprietary (`"license": "proprietary"` in `composer.json`); GPL and AGPL packages need my explicit approval, and AGPL is never used, because it applies even to software only offered as a service.
 7. Briefly state which skills you used at the start of your response.
 
 ### 2.1 Installed packages and how they fit
@@ -1155,7 +1155,7 @@ Names must say exactly what a thing is or does, so the code reads without explan
   - An invoice is issued when the order becomes **paid in full** (cash on delivery: when the cash is recorded as collected), never at placement, so unpaid orders never consume numbers. At most one invoice per order.
   - Numbers are **gap-free and sequential per store**, separate for invoices and credit notes, taken under a row lock in the same transaction that saves the document (never a database sequence, which skips numbers on rollback). Test orders never consume numbers.
   - Invoices and credit notes are insert-only (triggers) and **copy every value** (seller, buyer, addresses, lines, tax per rate, currency and exchange rate); nothing is read live when showing or rendering them. The PDF is rendered once and stored.
-  - **A credit note is issued only for a refund that reduces the sale** (returned items, a price reduction, shipping). Giving back money that was never part of the sale (an overpayment, a payment in review) is a refund without a credit note. Credit notes never exceed the invoice.
+  - **A credit note is issued only for a refund that reduces the sale** (returned items, a price reduction, shipping). Giving back money that was never part of the sale (an overpayment, a payment in review, a payment that arrived after the order was cancelled) is a refund without a credit note. A refund on an order that was invoiced and later cancelled does reduce the sale, so it gets a credit note. Credit notes never exceed the invoice.
   - **Tax documents outlive erasure:** a customer's erasure doesn't clear the buyer details on invoices and credit notes until the store's tax-record retention period ends (a legal-obligation exception), and the erasure response tells the customer so.
 - **The erasure flag** (`app.erasing_personal_data`) is set in exactly one place, the Shared privacy erasure runner, for the whole erasure or retention-anonymisation transaction. Domain handlers never call `set_config` themselves.
 - **Stock is counted in whole units** in core. Stock is reserved at checkout, becomes the order's reservation when the order is placed, and leaves `on_hand` only at fulfilment. Unpaid orders don't hold stock forever: Orders releases their reservation when they expire.
