@@ -7,6 +7,7 @@ namespace App\Tenant\Orders\Actions;
 use App\Shared\Auth\CurrentPasswordCheck;
 use App\Shared\Auth\Exceptions\IncorrectCurrentPasswordException;
 use App\Shared\Auth\Exceptions\TooManyIncorrectAttemptsException;
+use App\Shared\Privacy\ErasureOutcome;
 use App\Shared\Privacy\PersonalDataRegistry;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Orders\Privacy\GuestDataSubject;
@@ -28,11 +29,15 @@ final readonly class EraseGuest
      * @throws IncorrectCurrentPasswordException
      * @throws TooManyIncorrectAttemptsException
      */
-    public function byStaff(StaffMember $actor, string $email, string $actorPassword): void
+    public function byStaff(StaffMember $actor, string $email, string $actorPassword): ErasureOutcome
     {
         $this->currentPasswordCheck->ensureCorrect($actor, $actorPassword);
-        $this->personalDataRegistry->erase(GuestDataSubject::of($email));
+        $subject = GuestDataSubject::of($email);
+        $keptUntil = $this->personalDataRegistry->keptByLawUntil($subject);
+        $this->personalDataRegistry->erase($subject);
 
         activity('orders')->causedBy($actor)->event('guest_erased')->log('Erased the personal data of a guest');
+
+        return new ErasureOutcome($keptUntil);
     }
 }

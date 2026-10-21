@@ -106,7 +106,7 @@ it('answers a guest\'s data request by email: their guest orders only, erased wi
 
     staffOrderRequest('POST', '/guest-personal-data', ['email' => 'guest@example.com'], as: $this->viewer, subdomain: 'first-store')->assertForbidden();
     staffOrderRequest('POST', '/guest-personal-data/erasure', ['email' => 'guest@example.com', 'password' => 'wrong'], subdomain: 'first-store')->assertJsonPath('code', 'current_password_incorrect');
-    staffOrderRequest('POST', '/guest-personal-data/erasure', ['email' => 'guest@example.com', 'password' => 'Password@123'], subdomain: 'first-store')->assertNoContent();
+    staffOrderRequest('POST', '/guest-personal-data/erasure', ['email' => 'guest@example.com', 'password' => 'Password@123'], subdomain: 'first-store')->assertOk();
 
     $data = personalDataOnOrders();
     // The paid one is still being fulfilled, so it keeps what it needs until it settles.

@@ -73,7 +73,7 @@ it('builds a verified customer\'s data export with every section, staff notes in
     $file = customerRequest('GET', "account/data-exports/{$id}/download", as: $this->customer)->assertOk()->assertDownload("my-data-{$id}.json")->streamedContent();
     $data = json_decode($file, true, flags: JSON_THROW_ON_ERROR);
 
-    expect(array_keys($data))->toBe(['exported_at', 'addresses', 'staff_notes', 'customer_groups', 'marketing_consents', 'data_exports', 'promotion_uses', 'cart', 'orders', 'account'])
+    expect(array_keys($data))->toBe(['exported_at', 'addresses', 'staff_notes', 'customer_groups', 'marketing_consents', 'data_exports', 'promotion_uses', 'cart', 'orders', 'tax_documents', 'account'])
         ->and($data['account'][0])->toMatchArray(['email' => 'ada@example.com', 'phone' => '+2348031234567', 'tax_id' => '12345678'])
         ->and($data['addresses'][0]['line1'])->toBe('12 Admiralty Way')
         ->and($data['staff_notes'])->toBe([['id' => $data['staff_notes'][0]['id'], 'body' => 'Asked for gift wrapping.', 'created_at' => $data['staff_notes'][0]['created_at']]])
@@ -101,7 +101,7 @@ it('erases every personal field when the customer asks, keeping the row, and fre
     $token = customerTokenFor($this->customer);
     $exportPath = exportFileOf(customerRequest('POST', 'account/data-exports', as: $this->customer)->json('data.id'));
 
-    customerRequest('DELETE', 'account', ['current_password' => 'a-long-shopper-password'], $token)->assertNoContent();
+    customerRequest('DELETE', 'account', ['current_password' => 'a-long-shopper-password'], $token)->assertOk()->assertJsonPath('data.tax_documents_kept_until', null);
 
     $erased = $this->store->run(fn (): array => Customer::withTrashed()->findOrFail($this->customer->id)->only([
         'name', 'email', 'password', 'phone', 'locale', 'tax_id', 'tax_id_country', 'is_tax_exempt', 'is_active', 'search_text', 'default_shipping_address_id', 'default_billing_address_id',
@@ -137,7 +137,7 @@ it('lets staff with the privacy permission see and erase a customer\'s data, wit
     staffCustomerRequest('POST', "/{$this->customer->public_id}/erasure", ['password' => 'a-long-shopper-password'], $this->owner)
         ->assertUnprocessable()
         ->assertJsonPath('code', 'current_password_incorrect');
-    staffCustomerRequest('POST', "/{$this->customer->public_id}/erasure", ['password' => 'a-long-staff-password'], $this->owner)->assertNoContent();
+    staffCustomerRequest('POST', "/{$this->customer->public_id}/erasure", ['password' => 'a-long-staff-password'], $this->owner)->assertOk()->assertJsonPath('data.tax_documents_kept_until', null);
 
     staffCustomerRequest('GET', "/{$this->customer->public_id}", as: $this->owner)
         ->assertOk()

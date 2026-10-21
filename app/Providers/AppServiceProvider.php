@@ -143,7 +143,9 @@ use App\Tenant\Orders\OrderStoreTables;
 use App\Tenant\Orders\Privacy\CustomerOrderData;
 use App\Tenant\Orders\Privacy\GuestDataSubject;
 use App\Tenant\Orders\Privacy\GuestOrderData;
+use App\Tenant\Orders\Privacy\TaxDocumentData;
 use App\Tenant\Orders\Services\PlacedOrderHistory;
+use App\Tenant\Orders\TaxDocumentRetention;
 use App\Tenant\Payments\Enums\PaymentPermission;
 use App\Tenant\Payments\Events\PaymentSucceeded;
 use App\Tenant\Payments\Events\RefundSucceeded;
@@ -423,9 +425,11 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(CustomerDataSubject::TYPE, 'promotion_uses', PromotionUseData::class);
             $registry->register(CustomerDataSubject::TYPE, 'cart', CustomerCartData::class);
             $registry->register(CustomerDataSubject::TYPE, 'orders', CustomerOrderData::class);
+            $registry->register(CustomerDataSubject::TYPE, 'tax_documents', TaxDocumentData::class);
             $registry->register(CustomerDataSubject::TYPE, 'account', CustomerAccountData::class);
-            // A guest has only their orders, found by the email they were placed with.
+            // A guest has only their orders, found by the email they were placed with, and those orders' tax documents.
             $registry->register(GuestDataSubject::TYPE, 'orders', GuestOrderData::class);
+            $registry->register(GuestDataSubject::TYPE, 'tax_documents', TaxDocumentData::class);
 
             return $registry;
         });
@@ -462,6 +466,8 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(StoreExportRetention::class);
             $registry->register(ExchangeRateRetention::class);
             $registry->register(OrderRetention::class);
+            // After orders: the tax documents of orders anonymised in the same purge are cleared then too, once their retention ended.
+            $registry->register(TaxDocumentRetention::class);
             $registry->register(PaymentWebhookPayloadRetention::class);
             $registry->register(PaymentWebhookEventRetention::class);
 

@@ -7,6 +7,7 @@ namespace App\Tenant\Customers\Actions;
 use App\Shared\Auth\CurrentPasswordCheck;
 use App\Shared\Auth\Exceptions\IncorrectCurrentPasswordException;
 use App\Shared\Auth\Exceptions\TooManyIncorrectAttemptsException;
+use App\Shared\Privacy\ErasureOutcome;
 use App\Shared\Privacy\PersonalDataRegistry;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Customers\Privacy\CustomerDataSubject;
@@ -33,10 +34,11 @@ final readonly class EraseCustomer
      * @throws IncorrectCurrentPasswordException
      * @throws TooManyIncorrectAttemptsException
      */
-    public function bySelf(Customer $customer, string $currentPassword): void
+    public function bySelf(Customer $customer, string $currentPassword): ErasureOutcome
     {
         $this->currentPasswordCheck->ensureCorrect($customer, $currentPassword);
-        $this->erase($customer);
+
+        return $this->erase($customer);
     }
 
     /**
@@ -45,18 +47,26 @@ final readonly class EraseCustomer
      * @throws IncorrectCurrentPasswordException
      * @throws TooManyIncorrectAttemptsException
      */
-    public function byStaff(StaffMember $actor, Customer $customer, string $actorPassword): void
+    public function byStaff(StaffMember $actor, Customer $customer, string $actorPassword): ErasureOutcome
     {
         $this->currentPasswordCheck->ensureCorrect($actor, $actorPassword);
-        $this->erase($customer);
+        $outcome = $this->erase($customer);
         $this->customerActivity->record($actor, $customer, 'customer_erased', 'Erased the personal data of');
+
+        return $outcome;
     }
 
     /**
      * Erases without asking anyone, for the retention purge of customers long in the trash.
+     *
+     * @return ErasureOutcome What the law makes the store keep, such as tax invoices, and until when.
      */
-    public function erase(Customer $customer): void
+    public function erase(Customer $customer): ErasureOutcome
     {
-        $this->personalDataRegistry->erase(CustomerDataSubject::of($customer));
+        $subject = CustomerDataSubject::of($customer);
+        $keptUntil = $this->personalDataRegistry->keptByLawUntil($subject);
+        $this->personalDataRegistry->erase($subject);
+
+        return new ErasureOutcome($keptUntil);
     }
 }

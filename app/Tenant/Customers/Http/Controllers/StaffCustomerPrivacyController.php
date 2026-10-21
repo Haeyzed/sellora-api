@@ -7,13 +7,13 @@ namespace App\Tenant\Customers\Http\Controllers;
 use App\Shared\Auth\Exceptions\IncorrectCurrentPasswordException;
 use App\Shared\Auth\Exceptions\TooManyIncorrectAttemptsException;
 use App\Shared\Http\Controller;
+use App\Shared\Privacy\ErasureOutcomeResource;
 use App\Shared\Privacy\PersonalDataRegistry;
 use App\Tenant\Customers\Actions\EraseCustomer;
 use App\Tenant\Customers\Http\Requests\CustomerPrivacyRequest;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Customers\Privacy\CustomerDataSubject;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Response;
 
 /**
  * Staff answering a customer's data-protection request, for example one made by email.
@@ -37,14 +37,14 @@ final class StaffCustomerPrivacyController extends Controller
      * Needs the customers.privacy permission and your own password. Erases
      * everything the store holds about the customer and signs them out
      * everywhere; it can't be undone. Past orders stay, without their details.
+     * Invoices and credit notes keep them, as tax law requires, until the
+     * date returned; tell the customer.
      *
      * @throws IncorrectCurrentPasswordException
      * @throws TooManyIncorrectAttemptsException
      */
-    public function destroy(CustomerPrivacyRequest $request, Customer $customer, EraseCustomer $eraseCustomer): Response
+    public function destroy(CustomerPrivacyRequest $request, Customer $customer, EraseCustomer $eraseCustomer): ErasureOutcomeResource
     {
-        $eraseCustomer->byStaff($request->actor(), $customer, $request->string('password')->value());
-
-        return response()->noContent();
+        return new ErasureOutcomeResource($eraseCustomer->byStaff($request->actor(), $customer, $request->string('password')->value()));
     }
 }

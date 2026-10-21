@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Shared\Privacy;
 
+use App\Shared\Privacy\Contracts\KeepsPersonalDataByLaw;
 use App\Shared\Privacy\Contracts\PersonalDataHandler;
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Container\Container;
 use LogicException;
 
@@ -59,6 +61,24 @@ final class PersonalDataRegistry
         }
 
         return $exportedSections;
+    }
+
+    /**
+     * The last day the law makes the store keep any of the person's details after they are erased, such as on tax invoices; null when nothing is kept. Ask before erasing.
+     */
+    public function keptByLawUntil(DataSubject $subject): ?CarbonImmutable
+    {
+        $latest = null;
+
+        foreach ($this->handlersFor($subject) as $handler) {
+            $until = $handler instanceof KeepsPersonalDataByLaw ? $handler->keptUntil($subject) : null;
+
+            if ($until !== null && ($latest === null || $until->isAfter($latest))) {
+                $latest = $until;
+            }
+        }
+
+        return $latest;
     }
 
     /**

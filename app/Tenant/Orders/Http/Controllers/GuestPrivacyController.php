@@ -7,12 +7,12 @@ namespace App\Tenant\Orders\Http\Controllers;
 use App\Shared\Auth\Exceptions\IncorrectCurrentPasswordException;
 use App\Shared\Auth\Exceptions\TooManyIncorrectAttemptsException;
 use App\Shared\Http\Controller;
+use App\Shared\Privacy\ErasureOutcomeResource;
 use App\Shared\Privacy\PersonalDataRegistry;
 use App\Tenant\Orders\Actions\EraseGuest;
 use App\Tenant\Orders\Http\Requests\GuestPrivacyRequest;
 use App\Tenant\Orders\Privacy\GuestDataSubject;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Response;
 
 /**
  * Staff answering a guest's data-protection request: someone who ordered without an account, known by the email they ordered with.
@@ -37,15 +37,15 @@ final class GuestPrivacyController extends Controller
      *
      * Needs the customers.privacy permission and your own password. Their
      * orders are anonymised once settled (an unpaid one is cancelled first);
-     * the amounts, tax and country stay. It can't be undone.
+     * the amounts, tax and country stay. It can't be undone. Invoices and
+     * credit notes keep their details, as tax law requires, until the date
+     * returned; tell the guest.
      *
      * @throws IncorrectCurrentPasswordException
      * @throws TooManyIncorrectAttemptsException
      */
-    public function destroy(GuestPrivacyRequest $request, EraseGuest $eraseGuest): Response
+    public function destroy(GuestPrivacyRequest $request, EraseGuest $eraseGuest): ErasureOutcomeResource
     {
-        $eraseGuest->byStaff($request->actor(), $request->email(), $request->string('password')->value());
-
-        return response()->noContent();
+        return new ErasureOutcomeResource($eraseGuest->byStaff($request->actor(), $request->email(), $request->string('password')->value()));
     }
 }

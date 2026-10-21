@@ -2,9 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Shared\Auth\AccountReference;
 use App\Shared\Money\Money;
 use App\Tenant\Customers\Models\Customer;
+use App\Tenant\Orders\Actions\CreateShipment;
 use App\Tenant\Orders\Actions\IssueCreditNote;
+use App\Tenant\Orders\Actions\MoveShipment;
 use App\Tenant\Orders\Data\CreditRequest;
 use App\Tenant\Orders\Data\DocumentNumber;
 use App\Tenant\Orders\Data\OrderBuyer;
@@ -122,6 +125,31 @@ function invoicedOrder(?Customer $customer = null): array
 
         return [$order, Invoice::query()->where('order_id', $order->id)->sole(), $creditNote];
     });
+}
+
+/**
+ * Ships and delivers all of an order's single line in the test store, as its owner, so it completes.
+ */
+function deliverOrder(Order $order): void
+{
+    test()->store->run(static function () use ($order): void {
+        $staff = AccountReference::to(test()->owner);
+        $order->load('lines');
+        app(MoveShipment::class)->deliver(app(MoveShipment::class)->ship(app(CreateShipment::class)->handle($order, [$order->lines[0]->public_id => $order->lines[0]->quantity], $staff, 'TRK'), $staff), $staff);
+    });
+}
+
+/**
+ * The buyer's email on every invoice and credit note in the test store, by number: invoices first, then credit notes.
+ *
+ * @return array<string, string|null>
+ */
+function buyerEmailsOnTaxDocuments(): array
+{
+    return test()->store->run(static fn (): array => [
+        ...Invoice::query()->orderBy('id')->pluck('buyer_email', 'number')->all(),
+        ...CreditNote::query()->orderBy('id')->pluck('buyer_email', 'number')->all(),
+    ]);
 }
 
 /**

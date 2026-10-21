@@ -144,6 +144,16 @@ final class StoreSettings extends Model implements AuditableContract, HasMedia
     }
 
     /**
+     * How many years invoices and credit notes must be kept as issued, buyer's details included, in the store's country (config/geography.php). Stores can't change it.
+     */
+    public function taxRecordRetentionYears(): int
+    {
+        $years = config('geography.tax_record_retention_years.'.$this->country_code);
+
+        return is_int($years) ? $years : config()->integer('geography.tax_record_retention_default_years');
+    }
+
+    /**
      * What the tax registration number is called on documents: the store's own label, or its country's usual one (config/geography.php).
      */
     public function taxRegistrationLabel(): string
