@@ -6,7 +6,12 @@ use App\Landlord\Tenancy\Models\Tenant;
 use App\Tenant\Settings\Models\StoreSettings;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
+use Laravel\Socialite\Contracts\Factory as Socialite;
+use Laravel\Socialite\SocialiteManager;
+use Laravel\Socialite\Two\AbstractProvider;
+use Laravel\Socialite\Two\GoogleProvider;
 use Symfony\Component\Process\Process;
+use Tests\Fixtures\Customers\FakeSocialProviderHttp;
 
 /*
 |--------------------------------------------------------------------------
@@ -59,6 +64,50 @@ function startSocialSignIn(string $provider = 'google', array $data = [], string
 }
 
 /**
+ * Makes the provider's servers fake ones for the next sign-in: they accept the code and say this about the person (Google's userinfo claims), or refuse it.
+ *
+ * @param  array<string, mixed>  $person
+ * @param  array<string, mixed>  $tokenResponse
+ */
+function fakeSocialProvider(string $provider, array $person = [], bool $refuses = false, array $tokenResponse = []): FakeSocialProviderHttp
+{
+    $http = new FakeSocialProviderHttp($person, $refuses, $tokenResponse);
+
+    $socialite = app(Socialite::class);
+
+    if (! $socialite instanceof SocialiteManager) {
+        throw new LogicException('Socialite is not its usual manager.');
+    }
+
+    $socialite->extend($provider, static function () use ($provider, $http): AbstractProvider {
+        $class = match ($provider) {
+            'google' => GoogleProvider::class,
+            default => throw new InvalidArgumentException("No fake for {$provider}."),
+        };
+        $driver = new $class(request(), config()->string("services.{$provider}.client_id"), config()->string("services.{$provider}.client_secret"), config()->string("services.{$provider}.redirect"));
+        $driver->setHttpClient($http->client);
+
+        return $driver;
+    });
+
+    return $http;
+}
+
+/**
+ * Starts a social sign-in at the store, then finishes it as the storefront's callback page would, with the code from the relay.
+ *
+ * @param  array<string, mixed>  $startData
+ * @param  array<string, mixed>  $finishData
+ */
+function finishSocialSignIn(string $provider = 'google', string $code = 'provider-code', array $startData = [], string $subdomain = 'social-store', array $finishData = []): TestResponse
+{
+    [$started, $state] = startSocialSignIn($provider, $startData, $subdomain);
+    $started->assertCreated();
+
+    return customerRequest('POST', "auth/social/{$provider}/callbacks", ['state' => $state, 'code' => $code, ...$finishData], subdomain: $subdomain);
+}
+
+/**
  * Brings a provider's answer to the central relay page.
  *
  * @param  array<string, string>  $parameters
@@ -86,6 +135,40 @@ function relayedFragment(TestResponse $response): array
 
     /** @var array<string, string> $fragment */
     return $fragment;
+}
+
+/**
+ * Uses up the same state in the test store from several PHP processes at the same moment, as the storefront's callback reaching different servers would, and returns what each did: "used" or "refused".
+ *
+ * @return list<string>
+ */
+function consumeSocialStateInProcesses(string $provider, string $state, int $processes): array
+{
+    $startAt = (string) (microtime(true) + 2.0);
+    $running = [];
+
+    for ($started = 0; $started < $processes; $started++) {
+        $process = new Process([PHP_BINARY, base_path('tests/Fixtures/Customers/consume-social-sign-in-attempt.php'), DB::connection()->getDatabaseName(), (string) test()->store->getTenantKey(), $provider, $state, $startAt]);
+        $process->setTimeout(60);
+        $process->start();
+        $running[] = $process;
+    }
+
+    $answers = [];
+
+    foreach ($running as $process) {
+        $process->wait();
+
+        if (! $process->isSuccessful()) {
+            throw new RuntimeException('A process using a sign-in state failed: '.$process->getErrorOutput().$process->getOutput());
+        }
+
+        $answers[] = trim($process->getOutput());
+    }
+
+    sort($answers);
+
+    return $answers;
 }
 
 /**

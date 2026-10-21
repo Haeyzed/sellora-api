@@ -68,6 +68,7 @@ Route::prefix('customer/auth')->name('customer.auth.')->group(static function ()
     // Signing in with a provider the store offers (Step 10b): customers only.
     Route::get('social/providers', [SocialSignInController::class, 'index'])->middleware('throttle:public')->name('social.providers.index');
     Route::post('social/{provider}/authorizations', [SocialSignInController::class, 'store'])->middleware('throttle:social-sign-in')->name('social.authorizations.store');
+    Route::post('social/{provider}/callbacks', [SocialSignInController::class, 'callback'])->middleware('throttle:social-sign-in')->name('social.callbacks.store');
 
     Route::middleware('throttle:password-reset')->group(static function (): void {
         Route::post('password-reset-links', [PasswordResetLinkController::class, 'store'])->defaults('broker', Customer::PASSWORD_BROKER)->name('password-reset-links.store');

@@ -8,6 +8,7 @@ use App\Tenant\Customers\Enums\SocialProvider;
 use App\Tenant\Customers\Exceptions\SocialProviderNotOfferedException;
 use App\Tenant\Settings\Actions\FindStoreSettings;
 use Laravel\Socialite\Contracts\Factory as Socialite;
+use Laravel\Socialite\SocialiteManager;
 use Laravel\Socialite\Two\AbstractProvider;
 use LogicException;
 
@@ -52,10 +53,14 @@ final readonly class SocialProviders
     }
 
     /**
-     * Socialite's driver for the provider, without its session state (the store keeps its own), answering to the relay page.
+     * A fresh Socialite driver for the provider, without its session state (the store keeps its own), answering to the relay page. Never one already used, so nothing set for one request carries into another.
      */
     public function driver(SocialProvider $provider): AbstractProvider
     {
+        if ($this->socialite instanceof SocialiteManager) {
+            $this->socialite->forgetDrivers();
+        }
+
         $driver = $this->socialite->driver($provider->value);
 
         if (! $driver instanceof AbstractProvider) {

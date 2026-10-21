@@ -206,6 +206,8 @@ return [
     'payment_gateway_not_available' => 'This way to pay isn\'t available for this order.',
     'payment_refused_by_gateway' => 'The payment provider refused to start this payment. Nothing was charged; try again or choose another way to pay.',
     'social_provider_not_offered' => 'This store doesn\'t offer signing in with that provider.',
+    'social_sign_in_invalid' => 'This sign-in has expired or was already used. Start signing in again.',
+    'social_sign_in_failed' => 'The sign-in provider didn\'t accept this sign-in. Start signing in again.',
     'tax_document_pdf_not_ready' => 'This document\'s PDF is still being prepared. Try again in a few minutes.',
 
 ];
