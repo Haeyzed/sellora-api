@@ -1155,6 +1155,11 @@ Names must say exactly what a thing is or does, so the code reads without explan
   - **Before an order expires with a gateway payment still pending, the gateway is asked one last time.** Slow methods (USSD, bank transfer through a gateway) must not lose an order that was actually paid.
   - **Cash on delivery:** the deadline is for getting the order out the door. Once its first shipment exists the order no longer expires (its stock has left the shelf); an alert tells staff when cash hasn't been recorded as collected after delivery.
   - A payment that arrives after an order was cancelled never revives it: the order stays cancelled and is flagged for a refund.
+- **Checkout:**
+  - **Nobody is charged an amount they weren't shown.** Placing an order sends back the quote version; the server recalculates everything under the locks, and any difference returns the new quote for the customer to confirm. The exchange rate shown in a quote is kept for that quote's short lifetime, so an hourly rate refresh doesn't keep interrupting shoppers.
+  - Stock and promotion uses are held only when the order is placed, never by checkouts that may be abandoned. Anything a module holds at placement (for example a gift-card balance) follows the same lifecycle: committed when the order is paid, released when it expires or is cancelled.
+  - The gateway is never called inside the placement transaction.
+  - **Bearer tokens travel in headers, never in URL paths or query strings** (which end up in logs). A link that must carry one (for example in an email) puts it in the URL fragment.
 - **Invoices and credit notes:**
   - An invoice is issued when the order becomes **paid in full** (cash on delivery: when the cash is recorded as collected), never at placement, so unpaid orders never consume numbers. At most one invoice per order.
   - Numbers are **gap-free and sequential per store**, separate for invoices and credit notes, taken under a row lock in the same transaction that saves the document (never a database sequence, which skips numbers on rollback). Test orders never consume numbers.
