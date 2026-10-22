@@ -29,6 +29,28 @@ final readonly class AddressSnapshot
     ) {}
 
     /**
+     * An address as toArray() gave it, such as kept on a checkout.
+     *
+     * @param  array<array-key, mixed>  $address
+     */
+    public static function fromArray(array $address): self
+    {
+        $text = static fn (string $key): ?string => isset($address[$key]) && is_string($address[$key]) ? $address[$key] : null;
+
+        return new self(
+            (string) $text('recipient_name'),
+            $text('company'),
+            (string) $text('line1'),
+            $text('line2'),
+            $text('city'),
+            $text('state_code'),
+            $text('postal_code'),
+            (string) $text('country_code'),
+            $text('phone'),
+        );
+    }
+
+    /**
      * The parts of the address tax depends on.
      */
     public function toTaxAddress(): TaxAddress

@@ -62,6 +62,9 @@ return [
         'cart' => (int) env('RATE_LIMIT_CART', 60),
         'cart_ip_ceiling' => (int) env('RATE_LIMIT_CART_IP_CEILING', 600),
         'cart_creation_ip_ceiling' => (int) env('RATE_LIMIT_CART_CREATION_IP_CEILING', 100),
+        // Checking out, per cart or customer, under a ceiling per IP address: each request prices the cart, and may quote carriers live.
+        'checkout' => (int) env('RATE_LIMIT_CHECKOUT', 30),
+        'checkout_ip_ceiling' => (int) env('RATE_LIMIT_CHECKOUT_IP_CEILING', 300),
         'tenant_webhooks' => (int) env('RATE_LIMIT_TENANT_WEBHOOKS', 300),
         // Webhooks to endpoint IDs that lead nowhere, per IP address: guessing them is pointless, and this keeps it slow.
         'unknown_webhook_endpoints' => (int) env('RATE_LIMIT_UNKNOWN_WEBHOOK_ENDPOINTS', 30),

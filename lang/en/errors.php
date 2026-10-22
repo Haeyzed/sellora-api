@@ -215,6 +215,9 @@ return [
     'erasure_confirmation_invalid' => 'This erasure confirmation has expired, was already used, or isn\'t yours. Ask for a new one.',
     'erasure_confirmed_by_password' => 'Your account has a password: confirm erasing it with your password.',
     'social_identity_not_connected' => 'This sign-in account isn\'t connected to yours. Sign in with one of your connected providers.',
+    'checkout_not_found' => 'You haven\'t started checking out this cart. Start checking out first.',
+    'checkout_cannot_start' => 'Your cart is empty. Add something to it before checking out.',
+    'guest_checkout_not_allowed' => 'This store needs you to sign in or create an account to check out.',
     'tax_document_pdf_not_ready' => 'This document\'s PDF is still being prepared. Try again in a few minutes.',
 
 ];

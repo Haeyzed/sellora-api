@@ -17,6 +17,7 @@ final readonly class PricingRequest
      * @param  TaxAddress|null  $destination  The shipping address; null before one is known, which prices to the store's own country.
      * @param  Money|null  $shipping  The delivery charge in the quote's currency, after shipping discounts, taxed at the store's shipping tax class.
      * @param  TaxCustomer|null  $customer  The signed-in customer buying (Customer::taxCustomer()); null for a guest.
+     * @param  AppliedExchangeRate|null  $rate  A rate already shown for the currency, such as the one a checkout quote keeps for its lifetime; null for today's.
      */
     public function __construct(
         public string $currency,
@@ -24,5 +25,6 @@ final readonly class PricingRequest
         public ?TaxAddress $destination = null,
         public ?Money $shipping = null,
         public ?TaxCustomer $customer = null,
+        public ?AppliedExchangeRate $rate = null,
     ) {}
 }

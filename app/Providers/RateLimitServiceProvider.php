@@ -55,6 +55,10 @@ final class RateLimitServiceProvider extends ServiceProvider
             $this->perMinute('cart')->by($this->shopperKey('cart', $request)),
             $this->perMinute('cart_ip_ceiling')->by($this->ipKey('cart-ip-ceiling', $request)),
         ]);
+        RateLimiter::for('checkout', fn (Request $request): array => [
+            $this->perMinute('checkout')->by($this->shopperKey('checkout', $request)),
+            $this->perMinute('checkout_ip_ceiling')->by($this->ipKey('checkout-ip-ceiling', $request)),
+        ]);
         RateLimiter::for('cart-creation', fn (Request $request): Limit => $this->perMinute('cart_creation_ip_ceiling')->by($this->ipKey('cart-creation', $request)));
         // The ceiling for promotion codes entered from one address; each cart or customer's own limit is counted where the code is checked (FindPromotionCode).
         RateLimiter::for('coupon-redemption', fn (Request $request): Limit => $this->perMinute('coupon_redemption_ip_ceiling')->by($this->ipKey('coupon-redemption-ip-ceiling', $request)));

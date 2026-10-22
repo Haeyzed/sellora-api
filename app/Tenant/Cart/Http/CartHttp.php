@@ -6,7 +6,6 @@ namespace App\Tenant\Cart\Http;
 
 use App\Tenant\Cart\CartToken;
 use App\Tenant\Cart\Data\Shopper;
-use App\Tenant\Customers\Models\Customer;
 use Illuminate\Http\Request;
 
 /**
@@ -19,13 +18,7 @@ final class CartHttp
 
     public static function shopper(Request $request): Shopper
     {
-        $customer = $request->user();
-
-        if ($customer instanceof Customer) {
-            return Shopper::customer($customer);
-        }
-
-        return Shopper::guest(self::guestToken($request));
+        return Shopper::fromRequest($request);
     }
 
     /**

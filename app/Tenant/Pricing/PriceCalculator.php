@@ -49,12 +49,17 @@ final readonly class PriceCalculator
      * @throws CurrencyNotOfferedException When the store doesn't offer the currency now.
      * @throws VariantNotPricedException When a line's variant has no price.
      * @throws DiscountExceedsLineException When a line's discount is more than the line.
-     * @throws InvalidArgumentException When a line uses the shipping key, two lines share a key, or a discount is in another currency.
+     * @throws InvalidArgumentException When a line uses the shipping key, two lines share a key, a discount is in another currency, or the rate given is for another currency.
      */
     public function quote(PricingRequest $request): PricedBasket
     {
         $settings = $this->findStoreSettings->handle();
-        $rate = $this->findExchangeRates->handle([$request->currency])[$request->currency] ?? throw new CurrencyNotOfferedException($request->currency);
+
+        if ($request->rate !== null && $request->rate->currency !== $request->currency) {
+            throw new InvalidArgumentException("The rate given is for {$request->rate->currency}, not {$request->currency}.");
+        }
+
+        $rate = $request->rate ?? $this->findExchangeRates->handle([$request->currency])[$request->currency] ?? throw new CurrencyNotOfferedException($request->currency);
         $variants = array_map(static fn ($line) => $line->variant, $request->lines);
         $prices = $this->variantPricer->priceAt($variants, $rate);
         $taxClasses = $this->findVariantTaxClasses->handle(array_values(array_unique(array_map(static fn ($variant): int => $variant->id, $variants))));

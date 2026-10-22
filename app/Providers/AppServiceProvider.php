@@ -84,6 +84,8 @@ use App\Tenant\Checkout\CheckoutExtensions;
 use App\Tenant\Checkout\CheckoutRetention;
 use App\Tenant\Checkout\CheckoutStoreTables;
 use App\Tenant\Checkout\Models\Checkout;
+use App\Tenant\Checkout\PaymentMethods\GatewayPaymentMethods;
+use App\Tenant\Checkout\PaymentMethods\ManualPaymentMethods;
 use App\Tenant\Checkout\Privacy\CheckoutData;
 use App\Tenant\Customers\CustomerDataExportRetention;
 use App\Tenant\Customers\CustomerEmailTokenRetention;
@@ -312,7 +314,14 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(PaymentCheckBeforeExpiry::class, GatewayCheckBeforeExpiry::class);
         // A guest's Idempotency-Keys are theirs by their cart token.
         $this->app->bind(GuestRequester::class, CartGuestRequester::class);
-        $this->app->singleton(CheckoutExtensions::class);
+        // Core's own ways to pay come first; modules add theirs from their service providers.
+        $this->app->singleton(CheckoutExtensions::class, static function (Application $app): CheckoutExtensions {
+            $extensions = new CheckoutExtensions($app);
+            $extensions->addPaymentMethod(GatewayPaymentMethods::class);
+            $extensions->addPaymentMethod(ManualPaymentMethods::class);
+
+            return $extensions;
+        });
     }
 
     /**
