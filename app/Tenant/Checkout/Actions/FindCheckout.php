@@ -41,6 +41,25 @@ final readonly class FindCheckout
     }
 
     /**
+     * One of the shopper's checkouts by its ID, open or already placed: what placing an order names, so pressing twice finds the order the first press made.
+     *
+     * @throws CheckoutNotFoundException When it isn't for the shopper's cart.
+     * @throws GuestCheckoutNotAllowedException
+     */
+    public function byId(Shopper $shopper, string $publicId): Checkout
+    {
+        $this->ensureAllowed($shopper);
+
+        try {
+            $cart = $this->findCart->handle($shopper);
+        } catch (CartNotFoundException) {
+            throw new CheckoutNotFoundException;
+        }
+
+        return Checkout::query()->where('cart_id', $cart->id)->where('public_id', $publicId)->first() ?? throw new CheckoutNotFoundException;
+    }
+
+    /**
      * @throws GuestCheckoutNotAllowedException
      */
     public function ensureAllowed(Shopper $shopper): void

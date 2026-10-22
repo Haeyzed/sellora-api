@@ -56,6 +56,13 @@ final class FakeGatewayScript
     public array $calls = [];
 
     /**
+     * How deep in database transactions each payment was started: a gateway must never be called inside one.
+     *
+     * @var list<int>
+     */
+    public array $startedInTransactionLevels = [];
+
+    /**
      * How often an operation was called, for one reference or any.
      */
     public function timesCalled(string $operation, ?string $reference = null): int

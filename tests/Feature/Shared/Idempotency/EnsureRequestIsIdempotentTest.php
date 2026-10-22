@@ -25,9 +25,9 @@ beforeEach(function (): void {
     })->middleware('idempotent')->name('sample-charges.store');
 });
 
-it('rejects a money request without an Idempotency-Key header', function (): void {
+it('rejects a money request without an Idempotency-Key header as a bad request', function (): void {
     $this->postJson('/api/v1/sample-charges', ['amount' => 1000])
-        ->assertUnprocessable()
+        ->assertBadRequest()
         ->assertJsonPath('code', 'idempotency_key_missing')
         ->assertJsonValidationErrors('Idempotency-Key');
 
@@ -35,7 +35,7 @@ it('rejects a money request without an Idempotency-Key header', function (): voi
 });
 
 it('rejects a malformed Idempotency-Key header', function (): void {
-    chargeWithKey('short')->assertUnprocessable()->assertJsonPath('code', 'idempotency_key_missing');
+    chargeWithKey('short')->assertBadRequest()->assertJsonPath('code', 'idempotency_key_missing');
 });
 
 it('processes a retried request once and replays the first response', function (): void {

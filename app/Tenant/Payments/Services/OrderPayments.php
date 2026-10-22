@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tenant\Payments\Services;
 
 use App\Shared\Money\Money;
+use App\Tenant\Orders\Contracts\OrderAmountHolds;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Payments\Data\OrderPaymentTotals;
 use App\Tenant\Payments\Enums\PaymentMethod;
@@ -19,6 +20,8 @@ use Illuminate\Database\Eloquent\Builder;
  */
 final readonly class OrderPayments
 {
+    public function __construct(private OrderAmountHolds $orderAmountHolds) {}
+
     public function totals(Order $order): OrderPaymentTotals
     {
         $paid = Payment::query()->where('order_id', $order->id)->where('status', PaymentStatus::Succeeded->value)->sum('received_amount');
@@ -31,11 +34,11 @@ final readonly class OrderPayments
     }
 
     /**
-     * What is left to pay: the total less what was paid, never below zero.
+     * What is left to pay: the total less what was paid and what methods chosen at checkout hold for it (such as a gift card), never below zero.
      */
     public function balance(Order $order): Money
     {
-        $left = $order->total->subtract($this->totals($order)->paid);
+        $left = $order->total->subtract($this->totals($order)->paid)->subtract($this->orderAmountHolds->heldFor($order));
 
         return $left->isNegative() ? Money::zero($order->currency) : $left;
     }

@@ -94,7 +94,7 @@ it('never ships more of a line than was bought, a line that doesn\'t ship, or an
     staffOrderRequest('POST', "/orders/{$paid}/shipments", ['lines' => [['line' => $line, 'quantity' => 1]]], headers: ['Idempotency-Key' => 'shipment-key-e'])->assertUnprocessable()->assertJsonPath('code', 'shipment_quantity_too_high');
 
     // Without an Idempotency-Key, nothing is created.
-    staffOrderRequest('POST', "/orders/{$paid}/shipments", ['lines' => [['line' => $line, 'quantity' => 1]]])->assertUnprocessable()->assertJsonPath('code', 'idempotency_key_missing');
+    staffOrderRequest('POST', "/orders/{$paid}/shipments", ['lines' => [['line' => $line, 'quantity' => 1]]])->assertBadRequest()->assertJsonPath('code', 'idempotency_key_missing');
 });
 
 it('lets a cancelled shipment\'s lines ship again, and only a shipment that hasn\'t left be cancelled', function (): void {

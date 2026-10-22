@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tenant\Orders\Actions;
 
 use App\Shared\Money\Money;
+use App\Tenant\Orders\Contracts\OrderAmountHolds;
 use App\Tenant\Orders\Enums\OrderEventType;
 use App\Tenant\Orders\Enums\OrderPaymentStatus;
 use App\Tenant\Orders\Enums\OrderStatus;
@@ -32,6 +33,7 @@ final readonly class RecordOrderPayments
         private OrderProgress $orderProgress,
         private OrderEventLog $orderEventLog,
         private MarkOrderAsPaid $markOrderAsPaid,
+        private OrderAmountHolds $orderAmountHolds,
     ) {}
 
     public function handle(Order $order, Money $paid, Money $refunded): Order
@@ -39,7 +41,8 @@ final readonly class RecordOrderPayments
         return DB::transaction(function () use ($order, $paid, $refunded): Order {
             $locked = $this->orderProgress->lock($order);
             $this->flagIfRefundedBeyondPaid($locked, $paid, $refunded);
-            $status = OrderPaymentStatus::forAmounts($locked->total, $paid, $refunded);
+            // What methods chosen at checkout hold for it (such as a gift card) counts as paid.
+            $status = OrderPaymentStatus::forAmounts($locked->total, $paid->add($this->orderAmountHolds->heldFor($locked)), $refunded);
 
             if ($status === $locked->payment_status) {
                 return $locked;

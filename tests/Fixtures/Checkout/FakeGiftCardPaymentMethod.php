@@ -26,10 +26,14 @@ final class FakeGiftCardPaymentMethod implements CheckoutPaymentMethod
     /** @var list<string> Each step, as "hold:{amount}", "commit:{reference}" or "release:{reference}". */
     public static array $steps = [];
 
+    /** How much less than asked it manages to hold, as when the card was spent elsewhere meanwhile. */
+    public static int $holdsShortBy = 0;
+
     public static function reset(int $balance = 2000): void
     {
         self::$balance = $balance;
         self::$steps = [];
+        self::$holdsShortBy = 0;
     }
 
     public function offers(CheckoutContext $context): array
@@ -39,7 +43,7 @@ final class FakeGiftCardPaymentMethod implements CheckoutPaymentMethod
 
     public function hold(OfferedPaymentMethod $method, Order $order, Money $upTo): HeldPayment
     {
-        $amount = Money::ofMinor(min(self::$balance, $upTo->minorAmount()), $upTo->currency());
+        $amount = Money::ofMinor(min(self::$balance, $upTo->minorAmount()) - self::$holdsShortBy, $upTo->currency());
         self::$steps[] = 'hold:'.$amount->minorAmount();
 
         return new HeldPayment($amount, 'gc_'.$order->public_id);

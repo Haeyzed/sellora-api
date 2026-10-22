@@ -132,7 +132,7 @@ it('refunds an order by amount or by lines, once per Idempotency-Key', function 
     $line = $this->store->run(static fn (): string => $order->lines()->sole()->public_id);
     $refund = static fn (array $data, ?string $key) => staffOrderRequest('POST', "/orders/{$order->public_id}/refunds", $data, headers: $key === null ? [] : ['Idempotency-Key' => $key]);
 
-    $refund(['amount' => 1500], null)->assertUnprocessable()->assertJsonPath('code', 'idempotency_key_missing');
+    $refund(['amount' => 1500], null)->assertBadRequest()->assertJsonPath('code', 'idempotency_key_missing');
 
     $first = $refund(['amount' => 1500, 'reason' => 'Late delivery'], 'refund-key-1')->assertCreated()
         ->assertJsonPath('data.status', 'succeeded')

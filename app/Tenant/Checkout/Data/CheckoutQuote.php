@@ -6,6 +6,7 @@ namespace App\Tenant\Checkout\Data;
 
 use App\Shared\Money\Money;
 use App\Tenant\Cart\Data\PricedCart;
+use App\Tenant\Checkout\Contracts\CheckoutPaymentMethod;
 use App\Tenant\Checkout\Models\Checkout;
 use LogicException;
 
@@ -24,6 +25,7 @@ final readonly class CheckoutQuote
      * @param  list<CheckoutIssue>  $issues  What stops it becoming an order; none when it can.
      * @param  bool  $taxIdRequired  Whether the store requires the buyer's tax ID.
      * @param  array{email: string, sms: string}  $consentWording  The marketing consent wording to show, in the shopper's language, never pre-ticked.
+     * @param  array<string, CheckoutPaymentMethod>  $offeredBy  The extension that offered each payment method, by key: what holds, commits and releases its money.
      */
     public function __construct(
         public Checkout $checkout,
@@ -35,7 +37,26 @@ final readonly class CheckoutQuote
         public bool $taxIdRequired,
         public array $consentWording,
         public string $hash,
+        public array $offeredBy = [],
     ) {}
+
+    /**
+     * The offer a key names, and the extension that made it.
+     *
+     * @return array{OfferedPaymentMethod, CheckoutPaymentMethod}
+     *
+     * @throws LogicException When the key wasn't offered, which a quote with no issues never has.
+     */
+    public function offer(string $key): array
+    {
+        foreach ($this->paymentMethods as $offer) {
+            if ($offer->key === $key && isset($this->offeredBy[$key])) {
+                return [$offer, $this->offeredBy[$key]];
+            }
+        }
+
+        throw new LogicException("The payment method \"{$key}\" wasn't offered.");
+    }
 
     /**
      * What the order would come to.

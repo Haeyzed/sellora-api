@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Tenant\Cart\Http\Middleware\AuthenticateCustomerIfSignedIn;
 use App\Tenant\Checkout\Http\Controllers\CheckoutController;
+use App\Tenant\Checkout\Http\Controllers\CheckoutOrderController;
 use App\Tenant\Settings\Http\Middleware\UseStoreLanguage;
 use Illuminate\Support\Facades\Route;
 
@@ -21,4 +22,5 @@ Route::prefix('checkout')
         Route::post('/', [CheckoutController::class, 'store'])->name('store');
         Route::get('/', [CheckoutController::class, 'show'])->name('show');
         Route::patch('/', [CheckoutController::class, 'update'])->name('update');
+        Route::post('orders', [CheckoutOrderController::class, 'store'])->middleware('idempotent')->name('orders.store');
     });

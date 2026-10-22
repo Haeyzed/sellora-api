@@ -22,6 +22,7 @@ use App\Tenant\Payments\Enums\GatewayRefundState;
 use App\Tenant\Payments\Enums\GatewayWebhookKind;
 use App\Tenant\Payments\Exceptions\GatewayRejectedException;
 use App\Tenant\Payments\Exceptions\GatewayUnavailableException;
+use Illuminate\Support\Facades\DB;
 
 /**
  * A payment gateway for tests that answers as the test's script says. Keys starting "sk_test_" are test keys and "sk_live_" live ones; anything else is refused. Webhooks are signed with HMAC-SHA256 of the body with the secret key, in "X-Fake-Signature".
@@ -60,6 +61,7 @@ final readonly class FakePaymentGateway implements PaymentGateway
     public function startPayment(GatewayCredentials $credentials, GatewayPaymentRequest $request): StartedPayment
     {
         $this->call('startPayment', $request->reference);
+        $this->script->startedInTransactionLevels[] = DB::transactionLevel();
 
         if ($this->script->rejectsPayments) {
             throw new GatewayRejectedException(self::KEY, 'startPayment', 'invalid_request');

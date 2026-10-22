@@ -11,6 +11,7 @@ use App\Tenant\Cart\Data\CheckoutPricing;
 use App\Tenant\Cart\Data\PricedCart;
 use App\Tenant\Cart\Data\PricedCartLine;
 use App\Tenant\Checkout\CheckoutExtensions;
+use App\Tenant\Checkout\Contracts\CheckoutPaymentMethod;
 use App\Tenant\Checkout\Data\CheckoutContext;
 use App\Tenant\Checkout\Data\CheckoutIssue;
 use App\Tenant\Checkout\Data\CheckoutQuote;
@@ -129,12 +130,13 @@ final readonly class CheckoutQuotes
 
         $issues = $this->cartIssues($priced);
         $paymentMethods = [];
+        $offeredBy = [];
         $chosen = null;
         $moduleCovers = [];
 
         if ($priced->basket !== null) {
             $context = new CheckoutContext($checkout, $checkout->customer, $priced->basket->priced->total(), $billingAddress?->countryCode, $checkout->contact_email);
-            $paymentMethods = $this->offers($context);
+            [$paymentMethods, $offeredBy] = $this->offers($context);
             [$chosen, $moduleCovers, $paymentIssues] = $this->chosenMethods($checkout, $paymentMethods, $context->total);
             $issues = [...$issues, ...$this->buyerIssues($checkout, $priced, $method, $shippingAddress, $billingAddress, $settings->buyer_tax_id_requirement), ...$paymentIssues];
 
@@ -156,6 +158,7 @@ final readonly class CheckoutQuotes
                 'sms' => $this->recordMarketingConsent->wording(MarketingChannel::Sms, $checkout->locale)['text'],
             ],
             $this->hash($priced, $chosen, $moduleCovers),
+            $offeredBy,
         );
     }
 
@@ -231,19 +234,27 @@ final readonly class CheckoutQuotes
     }
 
     /**
-     * @return list<OfferedPaymentMethod>
+     * Every offer, in the order the extensions were registered, and the extension behind each key (the first to offer it).
+     *
+     * @return array{list<OfferedPaymentMethod>, array<string, CheckoutPaymentMethod>}
      */
     private function offers(CheckoutContext $context): array
     {
         $offers = [];
+        $offeredBy = [];
 
         foreach ($this->checkoutExtensions->paymentMethods() as $method) {
             foreach ($method->offers($context) as $offer) {
+                if (isset($offeredBy[$offer->key])) {
+                    continue;
+                }
+
                 $offers[] = $offer;
+                $offeredBy[$offer->key] = $method;
             }
         }
 
-        return $offers;
+        return [$offers, $offeredBy];
     }
 
     /**

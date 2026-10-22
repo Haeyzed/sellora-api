@@ -102,7 +102,7 @@ it('generates codes from an alphabet without look-alikes, with a prefix and a li
 });
 
 it('needs an idempotency key to generate codes, so a retry never makes a second batch', function (): void {
-    promotionRequest('POST', "/{$this->promotion->public_id}/codes/generate", ['count' => 5])->assertUnprocessable()->assertJsonPath('code', 'idempotency_key_missing');
+    promotionRequest('POST', "/{$this->promotion->public_id}/codes/generate", ['count' => 5])->assertBadRequest()->assertJsonPath('code', 'idempotency_key_missing');
 
     $this->withHeader('Idempotency-Key', 'generate-once-only');
     promotionRequest('POST', "/{$this->promotion->public_id}/codes/generate", ['count' => 5])->assertOk();

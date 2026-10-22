@@ -217,6 +217,9 @@ return [
     'social_identity_not_connected' => 'This sign-in account isn\'t connected to yours. Sign in with one of your connected providers.',
     'checkout_not_found' => 'You haven\'t started checking out this cart. Start checking out first.',
     'checkout_cannot_start' => 'Your cart is empty. Add something to it before checking out.',
+    'checkout_quote_changed' => 'Something in your order changed since you saw it. Check the updated order and confirm it again.',
+    'checkout_not_ready' => 'Your order isn\'t ready to place yet. Sort out what is listed first.',
+    'return_url_required' => 'Give the page the payment provider should send you back to.',
     'guest_checkout_not_allowed' => 'This store needs you to sign in or create an account to check out.',
     'tax_document_pdf_not_ready' => 'This document\'s PDF is still being prepared. Try again in a few minutes.',
 

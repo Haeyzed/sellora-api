@@ -81,6 +81,7 @@ use App\Tenant\Catalog\Models\Category;
 use App\Tenant\Catalog\Models\Product;
 use App\Tenant\Catalog\Models\ProductVariant;
 use App\Tenant\Checkout\CheckoutExtensions;
+use App\Tenant\Checkout\CheckoutOrderAmountHolds;
 use App\Tenant\Checkout\CheckoutRetention;
 use App\Tenant\Checkout\CheckoutStoreTables;
 use App\Tenant\Checkout\Models\Checkout;
@@ -133,6 +134,7 @@ use App\Tenant\Inventory\Models\StockMovement;
 use App\Tenant\Inventory\Models\StockReservation;
 use App\Tenant\Inventory\SettledReservationRetention;
 use App\Tenant\Inventory\StockLedgerReconciliation;
+use App\Tenant\Orders\Contracts\OrderAmountHolds;
 use App\Tenant\Orders\Contracts\PaymentCheckBeforeExpiry;
 use App\Tenant\Orders\Contracts\RefundsAwaitingCreditNotes;
 use App\Tenant\Orders\Enums\OrderPermission;
@@ -274,6 +276,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(StoreTaxDocuments::class, MissingTaxDocumentSweep::class);
         $this->app->bind(StoreSocialSignInRoutes::class, SocialSignInRoutes::class);
         $this->app->bind(RefundsAwaitingCreditNotes::class, RefundCredits::class);
+        $this->app->bind(OrderAmountHolds::class, CheckoutOrderAmountHolds::class);
         $this->app->bind(StockLocationSelector::class, DefaultStockLocationSelector::class);
         // One list of country tax plug-ins, filled in by modules' and integrations' service providers.
         $this->app->singleton(TaxCalculatorRegistry::class);
