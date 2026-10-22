@@ -43,6 +43,7 @@ use App\Tenant\Orders\Data\BuyerTaxId;
 use App\Tenant\Orders\Data\OrderBuyer;
 use App\Tenant\Orders\Data\OrderDraft;
 use App\Tenant\Orders\Models\Order;
+use App\Tenant\Payments\Actions\RecalculateOrderPayments;
 use App\Tenant\Payments\Actions\StartManualPayment;
 use App\Tenant\Payments\Actions\StartPayment;
 use App\Tenant\Payments\Models\Payment;
@@ -83,6 +84,7 @@ final readonly class PlaceCheckoutOrder
         private RecordMarketingConsent $recordMarketingConsent,
         private IssueOrderAccessToken $issueOrderAccessToken,
         private ClearOrderedCart $clearOrderedCart,
+        private RecalculateOrderPayments $recalculateOrderPayments,
     ) {}
 
     /**
@@ -163,6 +165,11 @@ final readonly class PlaceCheckoutOrder
 
         // 7. Each chosen payment method holds its part: modules' first, then core's for what is left.
         $this->hold($quote, $order);
+
+        // Modules' methods covered it all: nothing is left to wait for, so it is paid now.
+        if ($chosen === null) {
+            $order = $this->recalculateOrderPayments->handle($order);
+        }
 
         if ($chosen?->kind === PaymentMethodKind::Manual) {
             $this->startManualPayment->handle($order, ManualPaymentMethods::methodOf($chosen->key) ?? throw new LogicException("\"{$chosen->key}\" isn't paid by hand."));

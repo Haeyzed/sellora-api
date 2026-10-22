@@ -53,7 +53,6 @@ return [
         'one_time_password' => (int) env('RATE_LIMIT_ONE_TIME_PASSWORD', 5),
         'account_emails' => (int) env('RATE_LIMIT_ACCOUNT_EMAILS', 3),
         'registration' => (int) env('RATE_LIMIT_REGISTRATION', 3),
-        'checkout' => (int) env('RATE_LIMIT_CHECKOUT', 10),
         // Codes entered per cart (or per signed-in customer), under a much higher ceiling per IP address.
         'coupon_redemption' => (int) env('RATE_LIMIT_COUPON_REDEMPTION', 10),
         'coupon_redemption_ip_ceiling' => (int) env('RATE_LIMIT_COUPON_REDEMPTION_IP_CEILING', 100),
@@ -65,6 +64,9 @@ return [
         // Checking out, per cart or customer, under a ceiling per IP address: each request prices the cart, and may quote carriers live.
         'checkout' => (int) env('RATE_LIMIT_CHECKOUT', 30),
         'checkout_ip_ceiling' => (int) env('RATE_LIMIT_CHECKOUT_IP_CEILING', 300),
+        // A buyer back from a gateway: each check asks the gateway, so few per payment, under a ceiling per IP address.
+        'payment_return' => (int) env('RATE_LIMIT_PAYMENT_RETURN', 10),
+        'payment_return_ip_ceiling' => (int) env('RATE_LIMIT_PAYMENT_RETURN_IP_CEILING', 60),
         'tenant_webhooks' => (int) env('RATE_LIMIT_TENANT_WEBHOOKS', 300),
         // Webhooks to endpoint IDs that lead nowhere, per IP address: guessing them is pointless, and this keeps it slow.
         'unknown_webhook_endpoints' => (int) env('RATE_LIMIT_UNKNOWN_WEBHOOK_ENDPOINTS', 30),

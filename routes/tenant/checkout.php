@@ -5,6 +5,9 @@ declare(strict_types=1);
 use App\Tenant\Cart\Http\Middleware\AuthenticateCustomerIfSignedIn;
 use App\Tenant\Checkout\Http\Controllers\CheckoutController;
 use App\Tenant\Checkout\Http\Controllers\CheckoutOrderController;
+use App\Tenant\Checkout\Http\Controllers\CustomerOrderPaymentController;
+use App\Tenant\Checkout\Http\Controllers\PaymentReturnController;
+use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Settings\Http\Middleware\UseStoreLanguage;
 use Illuminate\Support\Facades\Route;
 
@@ -24,3 +27,23 @@ Route::prefix('checkout')
         Route::patch('/', [CheckoutController::class, 'update'])->name('update');
         Route::post('orders', [CheckoutOrderController::class, 'store'])->middleware('idempotent')->name('orders.store');
     });
+
+/*
+| A buyer back from a gateway's page, under
+| /api/v1/checkout/payments/{reference}: no sign-in, only the payment's
+| status. Limited per payment, under a ceiling per IP address.
+*/
+
+Route::get('checkout/payments/{reference}', [PaymentReturnController::class, 'show'])
+    ->where('reference', 'pay_[0-9a-z]{26}')
+    ->middleware([UseStoreLanguage::class, 'throttle:payment-return'])
+    ->name('checkout.payments.show');
+
+/*
+| A signed-in customer paying again for their order, under
+| /api/v1/customer/orders/{order}/payments.
+*/
+
+Route::post('customer/orders/{order}/payments', [CustomerOrderPaymentController::class, 'store'])
+    ->middleware(['auth:'.Customer::GUARD, UseStoreLanguage::class, 'throttle:checkout', 'idempotent'])
+    ->name('customer.orders.payments.store');

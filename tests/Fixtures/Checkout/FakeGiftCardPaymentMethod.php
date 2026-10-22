@@ -41,6 +41,11 @@ final class FakeGiftCardPaymentMethod implements CheckoutPaymentMethod
         return [new OfferedPaymentMethod(self::KEY, PaymentMethodKind::Module, covers: Money::ofMinor(self::$balance, $context->currency()))];
     }
 
+    public function handles(string $key): bool
+    {
+        return $key === self::KEY;
+    }
+
     public function hold(OfferedPaymentMethod $method, Order $order, Money $upTo): HeldPayment
     {
         $amount = Money::ofMinor(min(self::$balance, $upTo->minorAmount()) - self::$holdsShortBy, $upTo->currency());

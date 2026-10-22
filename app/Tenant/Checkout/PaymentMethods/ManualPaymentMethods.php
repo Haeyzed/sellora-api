@@ -43,6 +43,11 @@ final readonly class ManualPaymentMethods implements CheckoutPaymentMethod
         return $offers;
     }
 
+    public function handles(string $key): bool
+    {
+        return self::methodOf($key) !== null;
+    }
+
     public function hold(OfferedPaymentMethod $method, Order $order, Money $upTo): HeldPayment
     {
         return new HeldPayment(Money::zero($upTo->currency()));

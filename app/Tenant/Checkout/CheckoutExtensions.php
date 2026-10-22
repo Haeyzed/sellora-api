@@ -64,6 +64,22 @@ final class CheckoutExtensions
     }
 
     /**
+     * The registered payment method a key belongs to, whether or not its module is enabled now: a hold made while it was must still be committed or released.
+     */
+    public function paymentMethodFor(string $key): ?CheckoutPaymentMethod
+    {
+        foreach ($this->paymentMethods as [$class]) {
+            $method = $this->container->make($class);
+
+            if ($method instanceof CheckoutPaymentMethod && $method->handles($key)) {
+                return $method;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * The checkout validators the current store must meet.
      *
      * @return list<CheckoutValidator>

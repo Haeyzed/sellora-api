@@ -84,6 +84,8 @@ use App\Tenant\Checkout\CheckoutExtensions;
 use App\Tenant\Checkout\CheckoutOrderAmountHolds;
 use App\Tenant\Checkout\CheckoutRetention;
 use App\Tenant\Checkout\CheckoutStoreTables;
+use App\Tenant\Checkout\Listeners\CommitPaymentHoldsWhenOrderPaid;
+use App\Tenant\Checkout\Listeners\ReleasePaymentHoldsWhenOrderCancelled;
 use App\Tenant\Checkout\Models\Checkout;
 use App\Tenant\Checkout\PaymentMethods\GatewayPaymentMethods;
 use App\Tenant\Checkout\PaymentMethods\ManualPaymentMethods;
@@ -686,6 +688,8 @@ final class AppServiceProvider extends ServiceProvider
         Event::listen(RefundSucceeded::class, IssueCreditNoteWhenRefundSucceeds::class);
         Event::listen(OrderCancelled::class, CancelManualPaymentsWhenOrderCancelled::class);
         Event::listen(OrderPaid::class, IssueInvoiceWhenOrderPaid::class);
+        Event::listen(OrderPaid::class, CommitPaymentHoldsWhenOrderPaid::class);
+        Event::listen(OrderCancelled::class, ReleasePaymentHoldsWhenOrderCancelled::class);
         Event::listen([InvoiceIssued::class, CreditNoteIssued::class], RenderPdfWhenTaxDocumentIssued::class);
         Event::listen(OrderAnonymised::class, ForgetCardDetailsWhenOrderAnonymised::class);
     }

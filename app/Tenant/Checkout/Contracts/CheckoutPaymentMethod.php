@@ -30,6 +30,11 @@ interface CheckoutPaymentMethod
     public function offers(CheckoutContext $context): array;
 
     /**
+     * Whether a payment method key is one of its own, as it offers them: what commits and releases a hold saved under that key, even once the module is turned off (money already held is always looked after).
+     */
+    public function handles(string $key): bool;
+
+    /**
      * Holds what the method covers of the order, up to the amount given, inside the placement transaction: anything it saves rolls back with it. Never calls out to another service.
      *
      * @param  OfferedPaymentMethod  $method  One of its own offers, as the quote showed it.
