@@ -7,10 +7,11 @@ declare(strict_types=1);
  * placing orders at the same moment (CheckoutContentionTest): each process
  * has its own database connection, as two real requests would.
  *
- * Reads a JSON file naming the request (url, headers, body) and when to send
- * it (start_at, a Unix time with microseconds, so every process sends at
- * once), handles it through the app's HTTP kernel, and prints the response's
- * status and JSON body as JSON. Runs with the test run's environment.
+ * Reads a JSON file naming the request (url, headers, body), when to send it
+ * (start_at, a Unix time with microseconds, so every process sends at once)
+ * and the test's databases (config), handles it through the app's HTTP
+ * kernel, and prints the response's status and JSON body as JSON. Runs with
+ * the test run's environment.
  */
 
 use Illuminate\Contracts\Http\Kernel;
@@ -23,6 +24,13 @@ $app = require __DIR__.'/../../../bootstrap/app.php';
 $kernel = $app->make(Kernel::class);
 // Booted before the wait, so the requests really start together.
 $kernel->bootstrap();
+
+// The test's own databases (each parallel test process has its own), before anything connects.
+foreach ($spec['config'] as $key => $value) {
+    config([$key => $value]);
+}
+
+$app->make('db')->purge(config()->string('database.default'));
 
 $server = ['REMOTE_ADDR' => '203.0.113.10', 'CONTENT_TYPE' => 'application/json', 'HTTP_ACCEPT' => 'application/json'];
 

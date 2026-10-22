@@ -140,6 +140,12 @@ function placeAtOnce(array $placements, string $subdomain = 'cart-store'): array
 {
     $startAt = microtime(true) + 4;
     $processes = [];
+    $connection = config()->string('database.default');
+    // A parallel test process works in databases of its own (TestCase): the placing processes must use the same ones.
+    $databases = [
+        "database.connections.{$connection}.database" => config()->string("database.connections.{$connection}.database"),
+        'tenancy.database.prefix' => config()->string('tenancy.database.prefix'),
+    ];
 
     foreach ($placements as $index => $placement) {
         $specPath = storage_path("framework/testing/place-order-{$index}.json");
@@ -149,6 +155,7 @@ function placeAtOnce(array $placements, string $subdomain = 'cart-store'): array
             'headers' => [CartToken::HEADER => $placement['token'], 'Idempotency-Key' => $placement['key']],
             'body' => ['checkout' => $placement['checkout'], 'version' => $placement['version']],
             'start_at' => $startAt,
+            'config' => $databases,
         ]));
 
         $process = new Process([PHP_BINARY, base_path('tests/Fixtures/Checkout/place-order-process.php'), $specPath], base_path(), timeout: 60);
