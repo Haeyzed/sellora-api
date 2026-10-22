@@ -212,6 +212,9 @@ return [
     'social_identity_in_use' => 'This sign-in account is already connected to another customer at this store.',
     'social_provider_already_linked' => 'Another account of this sign-in provider is already connected. Disconnect it first.',
     'last_sign_in_method' => 'This is your only way to sign in. Set a password (with a password reset) or connect another provider first.',
+    'erasure_confirmation_invalid' => 'This erasure confirmation has expired, was already used, or isn\'t yours. Ask for a new one.',
+    'erasure_confirmed_by_password' => 'Your account has a password: confirm erasing it with your password.',
+    'social_identity_not_connected' => 'This sign-in account isn\'t connected to yours. Sign in with one of your connected providers.',
     'tax_document_pdf_not_ready' => 'This document\'s PDF is still being prepared. Try again in a few minutes.',
 
 ];
