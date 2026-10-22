@@ -7,6 +7,7 @@ namespace App\Providers;
 use App\Shared\Tenancy\TenantScopedKey;
 use App\Tenant\Cart\CartToken;
 use App\Tenant\Customers\Models\Customer;
+use App\Tenant\Orders\Models\OrderAccessToken;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -62,6 +63,11 @@ final class RateLimitServiceProvider extends ServiceProvider
             $this->perMinute('payment_return')->by(TenantScopedKey::forIdentifier('payment-return', (string) $request->route('reference'))),
             $this->perMinute('payment_return_ip_ceiling')->by($this->ipKey('payment-return-ip-ceiling', $request)),
         ]);
+        // A guest's order by its access token (hashed: it is a secret), or the IP address without one.
+        RateLimiter::for('guest-order', fn (Request $request): array => [
+            $this->perMinute('guest_order')->by($this->orderTokenKey('guest-order', $request)),
+            $this->perMinute('guest_order_ip_ceiling')->by($this->ipKey('guest-order-ip-ceiling', $request)),
+        ]);
         RateLimiter::for('cart-creation', fn (Request $request): Limit => $this->perMinute('cart_creation_ip_ceiling')->by($this->ipKey('cart-creation', $request)));
         // The ceiling for promotion codes entered from one address; each cart or customer's own limit is counted where the code is checked (FindPromotionCode).
         RateLimiter::for('coupon-redemption', fn (Request $request): Limit => $this->perMinute('coupon_redemption_ip_ceiling')->by($this->ipKey('coupon-redemption-ip-ceiling', $request)));
@@ -79,6 +85,13 @@ final class RateLimitServiceProvider extends ServiceProvider
         }
 
         $token = (string) $request->headers->get(CartToken::HEADER, '');
+
+        return $token === '' ? $this->ipKey($limitName, $request) : TenantScopedKey::forIdentifier($limitName, $token);
+    }
+
+    private function orderTokenKey(string $limitName, Request $request): string
+    {
+        $token = (string) $request->headers->get(OrderAccessToken::HEADER, '');
 
         return $token === '' ? $this->ipKey($limitName, $request) : TenantScopedKey::forIdentifier($limitName, $token);
     }

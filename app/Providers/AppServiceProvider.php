@@ -35,6 +35,7 @@ use App\Shared\Features\FeatureRegistry;
 use App\Shared\Geography\AddressFormats;
 use App\Shared\Http\PaginationDocumentation;
 use App\Shared\Idempotency\GuestRequester;
+use App\Shared\Idempotency\GuestRequesters;
 use App\Shared\Idempotency\IdempotencyKeyRetention;
 use App\Shared\Integrations\Contracts\PaymentWebhooks;
 use App\Shared\Integrations\Contracts\WebhookEndpoints;
@@ -146,6 +147,8 @@ use App\Tenant\Orders\Events\OrderAnonymised;
 use App\Tenant\Orders\Events\OrderCancelled;
 use App\Tenant\Orders\Events\OrderPaid;
 use App\Tenant\Orders\ExpiredOrderSweep;
+use App\Tenant\Orders\Http\OrderGuestRequester;
+use App\Tenant\Orders\Http\OrderTokenDocumentation;
 use App\Tenant\Orders\Listeners\IssueInvoiceWhenOrderPaid;
 use App\Tenant\Orders\Listeners\LinkGuestOrdersWhenEmailVerified;
 use App\Tenant\Orders\Listeners\MarkOrderAsPaidWhenPaymentSucceeds;
@@ -317,8 +320,8 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(StorePaymentChecks::class, PendingPaymentSweep::class);
         // Orders asks Payments for one last check before an order expires.
         $this->app->bind(PaymentCheckBeforeExpiry::class, GatewayCheckBeforeExpiry::class);
-        // A guest's Idempotency-Keys are theirs by their cart token.
-        $this->app->bind(GuestRequester::class, CartGuestRequester::class);
+        // A guest's Idempotency-Keys are theirs by their order's access token, or else their cart token.
+        $this->app->bind(GuestRequester::class, static fn (): GuestRequesters => new GuestRequesters(new OrderGuestRequester, new CartGuestRequester));
         // Core's own ways to pay come first; modules add theirs from their service providers.
         $this->app->singleton(CheckoutExtensions::class, static function (Application $app): CheckoutExtensions {
             $extensions = new CheckoutExtensions($app);
@@ -425,9 +428,11 @@ final class AppServiceProvider extends ServiceProvider
         $storeApi = Scramble::configure()
             ->useConfig([...config()->array('scramble'), 'servers' => ['Store' => $scheme.'://{store}.'.config()->string('platform.domain').'/api/v1']])
             ->withServerVariables(['store' => ServerVariable::make('your-store', description: "The store's subdomain, such as \"ada-fabrics\" for ada-fabrics.".config()->string('platform.domain').'.')])
-            // Guests reach their cart with its token, not a sign-in.
-            ->withDocumentTransformers(static fn (OpenApi $openApi): Components => $openApi->components->addSecurityScheme(CartTokenDocumentation::SCHEME, CartTokenDocumentation::scheme()))
-            ->withOperationTransformers(CartTokenDocumentation::class);
+            // Guests reach their cart and their orders with tokens, not a sign-in.
+            ->withDocumentTransformers(static fn (OpenApi $openApi): Components => $openApi->components
+                ->addSecurityScheme(CartTokenDocumentation::SCHEME, CartTokenDocumentation::scheme())
+                ->addSecurityScheme(OrderTokenDocumentation::SCHEME, OrderTokenDocumentation::scheme()))
+            ->withOperationTransformers([CartTokenDocumentation::class, OrderTokenDocumentation::class]);
         $storeApi->routes(static fn (Route $route): bool => $storeApi->apiPath()->matches($route->uri)
             && ! str_starts_with((string) $route->getName(), 'registration.'));
     }

@@ -7,7 +7,9 @@ use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Orders\Http\Controllers\CustomerOrderController;
 use App\Tenant\Orders\Http\Controllers\CustomerTaxDocumentController;
+use App\Tenant\Orders\Http\Controllers\GuestOrderController;
 use App\Tenant\Orders\Http\Controllers\GuestPrivacyController;
+use App\Tenant\Orders\Http\Controllers\GuestTaxDocumentController;
 use App\Tenant\Orders\Http\Controllers\OrderNoteController;
 use App\Tenant\Orders\Http\Controllers\ShipmentController;
 use App\Tenant\Orders\Http\Controllers\StaffOrderController;
@@ -85,4 +87,19 @@ Route::prefix('customer/orders')->name('customer.orders.')->middleware(['auth:'.
     Route::get('{order}/invoice/pdf', [CustomerTaxDocumentController::class, 'invoicePdf'])->name('invoice.pdf');
     Route::get('{order}/credit-notes/{creditNote}', [CustomerTaxDocumentController::class, 'creditNote'])->name('credit-notes.show');
     Route::get('{order}/credit-notes/{creditNote}/pdf', [CustomerTaxDocumentController::class, 'creditNotePdf'])->name('credit-notes.pdf');
+});
+
+/*
+| A guest's order, under /api/v1/guest/orders, with the access token given
+| when it was placed, in the X-Order-Token header only (never the URL).
+| Limited per token, under a ceiling per IP address.
+*/
+
+Route::prefix('guest/orders')->name('guest.orders.')->middleware([UseStoreLanguage::class, 'throttle:guest-order'])->group(static function (): void {
+    Route::get('{order}', [GuestOrderController::class, 'show'])->name('show');
+    Route::post('{order}/cancel', [GuestOrderController::class, 'cancel'])->name('cancel');
+    Route::get('{order}/invoice', [GuestTaxDocumentController::class, 'invoice'])->name('invoice.show');
+    Route::get('{order}/invoice/pdf', [GuestTaxDocumentController::class, 'invoicePdf'])->name('invoice.pdf');
+    Route::get('{order}/credit-notes/{creditNote}', [GuestTaxDocumentController::class, 'creditNote'])->name('credit-notes.show');
+    Route::get('{order}/credit-notes/{creditNote}/pdf', [GuestTaxDocumentController::class, 'creditNotePdf'])->name('credit-notes.pdf');
 });

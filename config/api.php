@@ -67,6 +67,9 @@ return [
         // A buyer back from a gateway: each check asks the gateway, so few per payment, under a ceiling per IP address.
         'payment_return' => (int) env('RATE_LIMIT_PAYMENT_RETURN', 10),
         'payment_return_ip_ceiling' => (int) env('RATE_LIMIT_PAYMENT_RETURN_IP_CEILING', 60),
+        // A guest's order, per access token, under a ceiling per IP address.
+        'guest_order' => (int) env('RATE_LIMIT_GUEST_ORDER', 60),
+        'guest_order_ip_ceiling' => (int) env('RATE_LIMIT_GUEST_ORDER_IP_CEILING', 300),
         'tenant_webhooks' => (int) env('RATE_LIMIT_TENANT_WEBHOOKS', 300),
         // Webhooks to endpoint IDs that lead nowhere, per IP address: guessing them is pointless, and this keeps it slow.
         'unknown_webhook_endpoints' => (int) env('RATE_LIMIT_UNKNOWN_WEBHOOK_ENDPOINTS', 30),

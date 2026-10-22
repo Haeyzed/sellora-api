@@ -71,6 +71,17 @@ final readonly class CancelOrder
     }
 
     /**
+     * The guest who placed it cancelling it with its access token (Step 16), only before paying. No account did it, so none is recorded.
+     *
+     * @throws OrderCannotBeCancelledException When it is completed, cancelled, or has started to ship.
+     * @throws OrderAlreadyPaidException When it is paid for: only the store can cancel it then.
+     */
+    public function byGuest(Order $order): Order
+    {
+        return $this->handle($order, CancellationReason::Customer, null);
+    }
+
+    /**
      * Cancels an order still waiting for payment because its buyer's personal data is being erased, inside the erasure's transaction. An order no longer waiting for payment once locked is left as it is.
      */
     public function forErasure(Order $order, ?AccountReference $person): Order
@@ -83,12 +94,14 @@ final readonly class CancelOrder
     }
 
     /**
-     * Staff, or the order's customer, cancelling it.
+     * Staff, or the order's customer or guest, cancelling it.
+     *
+     * @param  AccountReference|null  $actor  Null for a guest, who has no account.
      *
      * @throws OrderCannotBeCancelledException When it is completed, cancelled, or has started to ship.
      * @throws OrderAlreadyPaidException When its customer cancels it after paying.
      */
-    public function handle(Order $order, CancellationReason $reason, AccountReference $actor): Order
+    public function handle(Order $order, CancellationReason $reason, ?AccountReference $actor): Order
     {
         return DB::transaction(function () use ($order, $reason, $actor): Order {
             $locked = $this->orderProgress->lock($order);

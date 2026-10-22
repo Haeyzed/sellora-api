@@ -15,12 +15,14 @@ use App\Tenant\Inventory\Actions\ReserveStock;
 use App\Tenant\Inventory\Data\StockHolder;
 use App\Tenant\Inventory\Data\StockLine;
 use App\Tenant\Inventory\Models\StockLocation;
+use App\Tenant\Orders\Actions\IssueOrderAccessToken;
 use App\Tenant\Orders\Actions\MarkOrderAsPaid;
 use App\Tenant\Orders\Actions\PlaceOrder;
 use App\Tenant\Orders\Data\OrderBuyer;
 use App\Tenant\Orders\Data\OrderDraft;
 use App\Tenant\Orders\Enums\OrderPermission;
 use App\Tenant\Orders\Models\Order;
+use App\Tenant\Orders\Models\OrderAccessToken;
 use App\Tenant\Pricing\Data\TaxAddress;
 use App\Tenant\Promotions\Actions\ReservePromotionUses;
 use App\Tenant\Promotions\Data\DiscountBuyer;
@@ -202,6 +204,39 @@ function staffOrderRequest(string $method, string $path, array $data = [], ?Staf
     forgetSignIns();
 
     return $response;
+}
+
+/**
+ * Sends a request to a store's guest order API, under /api/v1/guest/orders, with an order access token in the X-Order-Token header when one is given.
+ *
+ * @param  array<string, mixed>  $data
+ * @param  array<string, string>  $headers
+ */
+function guestOrderRequest(string $method, string $path, ?string $token, array $data = [], array $headers = [], string $ip = '203.0.113.10', string $subdomain = 'orders-store'): TestResponse
+{
+    forgetSignIns();
+    test()->flushHeaders();
+    $request = test()->withServerVariables(['REMOTE_ADDR' => $ip])->withHeaders($headers);
+
+    if ($token !== null) {
+        $request = $request->withHeader(OrderAccessToken::HEADER, $token);
+    }
+
+    $response = $request->json($method, storeUrl($subdomain, '/api/v1/guest/orders/'.$path), $data);
+    test()->flushHeaders();
+    test()->withServerVariables([]);
+    tenancy()->end();
+    forgetSignIns();
+
+    return $response;
+}
+
+/**
+ * Gives a guest's order in the test store its access token, as placing it at checkout does, and returns the token.
+ */
+function guestOrderToken(Order $order): string
+{
+    return test()->store->run(static fn (): string => app(IssueOrderAccessToken::class)->handle($order));
 }
 
 /**

@@ -6,6 +6,7 @@ use App\Tenant\Cart\Http\Middleware\AuthenticateCustomerIfSignedIn;
 use App\Tenant\Checkout\Http\Controllers\CheckoutController;
 use App\Tenant\Checkout\Http\Controllers\CheckoutOrderController;
 use App\Tenant\Checkout\Http\Controllers\CustomerOrderPaymentController;
+use App\Tenant\Checkout\Http\Controllers\GuestOrderPaymentController;
 use App\Tenant\Checkout\Http\Controllers\PaymentReturnController;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Settings\Http\Middleware\UseStoreLanguage;
@@ -47,3 +48,13 @@ Route::get('checkout/payments/{reference}', [PaymentReturnController::class, 'sh
 Route::post('customer/orders/{order}/payments', [CustomerOrderPaymentController::class, 'store'])
     ->middleware(['auth:'.Customer::GUARD, UseStoreLanguage::class, 'throttle:checkout', 'idempotent'])
     ->name('customer.orders.payments.store');
+
+/*
+| A guest paying again for their order, under
+| /api/v1/guest/orders/{order}/payments, with its access token in the
+| X-Order-Token header.
+*/
+
+Route::post('guest/orders/{order}/payments', [GuestOrderPaymentController::class, 'store'])
+    ->middleware([UseStoreLanguage::class, 'throttle:guest-order', 'idempotent'])
+    ->name('guest.orders.payments.store');
