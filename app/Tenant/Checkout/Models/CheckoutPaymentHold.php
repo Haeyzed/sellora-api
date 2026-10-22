@@ -1,0 +1,62 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Tenant\Checkout\Models;
+
+use App\Shared\Concerns\HasPublicId;
+use App\Shared\Money\Money;
+use App\Shared\Money\MoneyCast;
+use App\Tenant\Checkout\Enums\PaymentHoldStatus;
+use App\Tenant\Orders\Models\Order;
+use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+/**
+ * What a payment method held for an order when it was placed (section 13): a module's amount (such as a gift card's balance), or nothing for core's own methods, which go through the same steps. Committed once the order is paid; released if it expires or is cancelled.
+ *
+ * @property int $id
+ * @property string $public_id
+ * @property int $order_id
+ * @property string $method The payment method's key.
+ * @property string|null $reference What the method calls its hold, if anything.
+ * @property string $currency
+ * @property Money $amount What it covers of the order; zero for a method that holds nothing of its own.
+ * @property PaymentHoldStatus $status
+ * @property CarbonImmutable|null $committed_at
+ * @property CarbonImmutable|null $released_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
+ * @property-read Order $order
+ */
+final class CheckoutPaymentHold extends Model
+{
+    use HasPublicId;
+
+    protected $fillable = [];
+
+    /**
+     * @return BelongsTo<Order, $this>
+     */
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(Order::class);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'order_id' => 'integer',
+            'amount' => MoneyCast::class.':currency',
+            'status' => PaymentHoldStatus::class,
+            'committed_at' => 'immutable_datetime',
+            'released_at' => 'immutable_datetime',
+            'created_at' => 'immutable_datetime',
+            'updated_at' => 'immutable_datetime',
+        ];
+    }
+}

@@ -43,7 +43,13 @@ final readonly class TaxDocumentContent
             'isTest' => $document->is_test,
             'details' => $this->details($document, $label),
             'seller' => $this->seller($document),
-            'buyer' => array_values(array_filter([$document->buyer_name, ...$this->address($document->billing_address), $document->buyer_email, $document->buyer_phone])),
+            'buyer' => array_values(array_filter([
+                $document->buyer_name,
+                ...$this->address($document->billing_address),
+                $document->buyer_tax_id === null ? null : $label('buyer_tax_id', ['country' => (string) $document->buyer_tax_id_country]).': '.$document->buyer_tax_id,
+                $document->buyer_email,
+                $document->buyer_phone,
+            ])),
             'shipping' => $this->address($document->shipping_address, withRecipient: true),
             'columns' => $document instanceof Invoice
                 ? [$label('description'), $label('quantity'), $label('unit_price'), $label('discount'), $label('net'), $label('tax'), $label('total')]

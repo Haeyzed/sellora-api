@@ -52,6 +52,8 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property string|null $contact_email In lower case, as given at checkout; null once anonymised.
  * @property string|null $contact_name
  * @property string|null $contact_phone
+ * @property string|null $buyer_tax_id The tax ID the buyer gave at checkout; null once anonymised.
+ * @property string|null $buyer_tax_id_country The country that issued it.
  * @property string $locale The language its names were copied in.
  * @property string $currency
  * @property string $base_currency The store's base currency when it was placed.
@@ -112,7 +114,7 @@ final class Order extends Model implements AuditableContract
      *
      * @var list<string>
      */
-    protected $auditExclude = ['id', 'public_id', 'contact_email', 'contact_name', 'contact_phone', 'customer_note', 'updated_at'];
+    protected $auditExclude = ['id', 'public_id', 'contact_email', 'contact_name', 'contact_phone', 'buyer_tax_id', 'buyer_tax_id_country', 'customer_note', 'updated_at'];
 
     /**
      * The order's number as people see it, such as "#1042".

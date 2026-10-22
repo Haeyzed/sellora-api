@@ -15,6 +15,7 @@ final readonly class OrderBuyer
     /**
      * @param  string  $email  Kept in lower case.
      * @param  string|null  $phone  In E.164 format.
+     * @param  BuyerTaxId|null  $taxId  The tax ID given at checkout, if any.
      *
      * @throws InvalidArgumentException When the email is empty.
      */
@@ -23,22 +24,23 @@ final readonly class OrderBuyer
         public string $email,
         public ?string $name,
         public ?string $phone,
+        public ?BuyerTaxId $taxId = null,
     ) {
         if (trim($email) === '') {
             throw new InvalidArgumentException('An order needs the buyer\'s email.');
         }
     }
 
-    public static function guest(string $email, ?string $name = null, ?string $phone = null): self
+    public static function guest(string $email, ?string $name = null, ?string $phone = null, ?BuyerTaxId $taxId = null): self
     {
-        return new self(null, mb_strtolower(trim($email)), $name, $phone);
+        return new self(null, mb_strtolower(trim($email)), $name, $phone, $taxId);
     }
 
     /**
      * A signed-in customer, with the details they gave at checkout (their account's unless they changed them).
      */
-    public static function customer(Customer $customer, ?string $email = null, ?string $name = null, ?string $phone = null): self
+    public static function customer(Customer $customer, ?string $email = null, ?string $name = null, ?string $phone = null, ?BuyerTaxId $taxId = null): self
     {
-        return new self($customer, mb_strtolower(trim($email ?? (string) $customer->email)), $name ?? $customer->name, $phone ?? $customer->phone);
+        return new self($customer, mb_strtolower(trim($email ?? (string) $customer->email)), $name ?? $customer->name, $phone ?? $customer->phone, $taxId);
     }
 }

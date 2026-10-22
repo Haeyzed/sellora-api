@@ -53,6 +53,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $buyer_name Null once erased.
  * @property string|null $buyer_email
  * @property string|null $buyer_phone
+ * @property string|null $buyer_tax_id
+ * @property string|null $buyer_tax_id_country
  * @property array<string, string|null>|null $billing_address
  * @property array<string, string|null>|null $shipping_address
  * @property CarbonImmutable|null $buyer_erased_at

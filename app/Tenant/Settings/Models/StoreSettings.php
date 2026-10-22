@@ -9,6 +9,7 @@ use App\Shared\Media\StorefrontImage;
 use App\Shared\Money\TaxMode;
 use App\Shared\Tenancy\StoreProfileDetails;
 use App\Tenant\Settings\Concerns\HasStoreTranslations;
+use App\Tenant\Settings\Enums\BuyerTaxIdRequirement;
 use App\Tenant\Settings\Enums\DimensionUnit;
 use App\Tenant\Settings\Enums\InvoiceNumbering;
 use App\Tenant\Settings\Enums\WeightUnit;
@@ -55,6 +56,8 @@ use Spatie\MediaLibrary\HasMedia;
  * @property string $credit_note_prefix Letters and - / _ only, such as "CN-".
  * @property InvoiceNumbering $invoice_numbering
  * @property list<string> $social_sign_in_providers The social sign-in providers offered to customers, such as ["google", "apple"].
+ * @property bool $guest_checkout Whether guests may buy without an account (Step 16).
+ * @property BuyerTaxIdRequirement $buyer_tax_id_requirement Whether buyers must give a tax ID at checkout.
  * @property string|null $invoice_footer Printed at the foot of invoices and credit notes, in the current language (getTranslations() for all of them).
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
@@ -106,6 +109,8 @@ final class StoreSettings extends Model implements AuditableContract, HasMedia
         'credit_note_prefix',
         'invoice_numbering',
         'social_sign_in_providers',
+        'guest_checkout',
+        'buyer_tax_id_requirement',
     ];
 
     /**
@@ -194,6 +199,8 @@ final class StoreSettings extends Model implements AuditableContract, HasMedia
             'invoice_numbering' => InvoiceNumbering::class,
             'working_days' => 'array',
             'social_sign_in_providers' => 'array',
+            'guest_checkout' => 'boolean',
+            'buyer_tax_id_requirement' => BuyerTaxIdRequirement::class,
             'tax_mode' => TaxMode::class,
             'weight_unit' => WeightUnit::class,
             'dimension_unit' => DimensionUnit::class,

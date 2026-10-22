@@ -15,6 +15,7 @@ use App\Tenant\Customers\Enums\SocialProvider;
 use App\Tenant\Identity\Concerns\ActsAsStaffMember;
 use App\Tenant\Settings\Actions\FindStoreSettings;
 use App\Tenant\Settings\Concerns\ValidatesStoreTranslations;
+use App\Tenant\Settings\Enums\BuyerTaxIdRequirement;
 use App\Tenant\Settings\Enums\DimensionUnit;
 use App\Tenant\Settings\Enums\InvoiceNumbering;
 use App\Tenant\Settings\Enums\WeightUnit;
@@ -106,6 +107,10 @@ final class UpdateStoreSettingsRequest extends FormRequest
             /** The social sign-in providers to offer customers, replacing the list, such as ["google", "apple"]; [] offers none. Only providers the platform has set up can be chosen. */
             'social_sign_in_providers' => ['sometimes', 'array', 'max:'.count(SocialProvider::cases())],
             'social_sign_in_providers.*' => ['required', 'string', 'distinct', Rule::in(array_map(static fn (SocialProvider $provider): string => $provider->value, SocialProvider::available()))],
+            /** Whether guests may buy without an account. */
+            'guest_checkout' => ['sometimes', 'boolean'],
+            /** "optional": buyers may give a tax ID at checkout; "required": they must. Either way it is copied onto the order and its invoice. */
+            'buyer_tax_id_requirement' => ['sometimes', Rule::enum(BuyerTaxIdRequirement::class)],
         ];
     }
 
@@ -146,6 +151,7 @@ final class UpdateStoreSettingsRequest extends FormRequest
             'order_retention_years' => 'order_retention_years',
             'legal_name' => 'legal_name', 'tax_registration_label' => 'tax_registration_label', 'tax_registration_number' => 'tax_registration_number',
             'invoice_prefix' => 'invoice_prefix', 'credit_note_prefix' => 'credit_note_prefix', 'invoice_numbering' => 'invoice_numbering',
+            'buyer_tax_id_requirement' => 'buyer_tax_id_requirement',
         ];
 
         foreach ($fields as $field => $column) {
@@ -162,6 +168,10 @@ final class UpdateStoreSettingsRequest extends FormRequest
 
         if ($this->has('enabled_locales')) {
             $changes['enabled_locales'] = array_values($this->array('enabled_locales'));
+        }
+
+        if ($this->has('guest_checkout')) {
+            $changes['guest_checkout'] = $this->boolean('guest_checkout');
         }
 
         if ($this->has('social_sign_in_providers')) {

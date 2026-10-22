@@ -213,6 +213,8 @@ final readonly class PlaceOrder
             'contact_email' => $draft->buyer->email,
             'contact_name' => $draft->buyer->name,
             'contact_phone' => $draft->buyer->phone,
+            'buyer_tax_id' => $draft->buyer->taxId?->id,
+            'buyer_tax_id_country' => $draft->buyer->taxId?->countryCode,
             'locale' => $draft->locale,
             'currency' => $currency,
             'base_currency' => $rate->baseCurrency,

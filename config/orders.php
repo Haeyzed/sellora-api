@@ -40,6 +40,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Guests' Access To Their Orders
+    |--------------------------------------------------------------------------
+    |
+    | A guest's order comes with a token, shown once when it is placed and sent
+    | in the X-Order-Token header (never a URL), that lets them see it, pay
+    | again, download its invoice and credit notes, and cancel it while unpaid,
+    | for this many days.
+    |
+    */
+
+    'access_token_days' => (int) env('ORDERS_ACCESS_TOKEN_DAYS', 90),
+
+    /*
+    |--------------------------------------------------------------------------
     | Missing Tax Documents
     |--------------------------------------------------------------------------
     |

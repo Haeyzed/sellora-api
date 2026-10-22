@@ -8,6 +8,7 @@ use App\Shared\Auth\AccountReference;
 use App\Tenant\Orders\Actions\CancelOrder;
 use App\Tenant\Orders\Enums\OrderAddressKind;
 use App\Tenant\Orders\Models\Order;
+use App\Tenant\Orders\Models\OrderAccessToken;
 use App\Tenant\Orders\Models\OrderLine;
 use App\Tenant\Orders\Services\OrderAnonymisation;
 use Illuminate\Database\Eloquent\Builder;
@@ -44,6 +45,7 @@ final readonly class OrderPrivacy
                 'payment_status' => $order->payment_status->value,
                 'fulfilment_status' => $order->fulfilment_status->value,
                 'contact' => ['email' => $contact->email, 'name' => $contact->name, 'phone' => $contact->phone],
+                'tax_id' => $order->buyer_tax_id === null ? null : ['id' => $order->buyer_tax_id, 'country' => $order->buyer_tax_id_country],
                 'shipping_address' => $order->currentAddress(OrderAddressKind::Shipping)?->details(),
                 'billing_address' => $order->currentAddress(OrderAddressKind::Billing)?->details(),
                 'note' => $order->customer_note,
@@ -66,6 +68,9 @@ final readonly class OrderPrivacy
     public function erase(Builder $orders, ?AccountReference $person): void
     {
         foreach ($orders->whereNull('anonymised_at')->orderBy('id')->get() as $order) {
+            // A guest's way back to the order goes at once, even when the order keeps its details until it settles.
+            OrderAccessToken::query()->where('order_id', $order->id)->delete();
+
             if ($order->awaitsPayment()) {
                 $order = $this->cancelOrder->forErasure($order, $person);
             }

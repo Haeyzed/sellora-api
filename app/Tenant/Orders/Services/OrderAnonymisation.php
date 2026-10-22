@@ -9,12 +9,13 @@ use App\Tenant\Orders\Enums\OrderStatus;
 use App\Tenant\Orders\Enums\ShipmentStatus;
 use App\Tenant\Orders\Events\OrderAnonymised;
 use App\Tenant\Orders\Models\Order;
+use App\Tenant\Orders\Models\OrderAccessToken;
 use App\Tenant\Orders\Models\OrderNote;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Anonymises orders, which are financial records and so are never deleted (section 3.3): the buyer's contact details, note, addresses (all but the country and state) and corrections go, and staff notes, which may name them; the amounts, tax and country stay.
+ * Anonymises orders, which are financial records and so are never deleted (section 3.3): the buyer's contact details, tax ID, note, addresses (all but the country and state) and corrections go, and staff notes, which may name them; the amounts, tax and country stay.
  *
  * Only inside a PersonalDataErasure run: the database refuses it otherwise.
  * Other domains remove theirs through OrderAnonymised, in the same run.
@@ -42,6 +43,8 @@ final readonly class OrderAnonymisation
             'contact_email' => null,
             'contact_name' => null,
             'contact_phone' => null,
+            'buyer_tax_id' => null,
+            'buyer_tax_id_country' => null,
             'customer_note' => null,
             'anonymise_when_settled' => false,
             'anonymised_at' => CarbonImmutable::now(),
@@ -52,6 +55,7 @@ final readonly class OrderAnonymisation
         ]);
         DB::table('order_contact_corrections')->where('order_id', $order->id)->update(['email' => null, 'name' => null, 'phone' => null]);
         OrderNote::query()->where('order_id', $order->id)->delete();
+        OrderAccessToken::query()->where('order_id', $order->id)->delete();
 
         $this->orderEventLog->record($order, OrderEventType::Anonymised);
         OrderAnonymised::dispatch($order);

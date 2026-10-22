@@ -92,6 +92,10 @@ final class StoreSettingsResource extends JsonResource
             'invoice_footer' => $settings->getTranslations('invoice_footer'),
             /** The social sign-in providers offered to customers, such as ["google", "apple"]. */
             'social_sign_in_providers' => $settings->social_sign_in_providers,
+            /** Whether guests may buy without an account. */
+            'guest_checkout' => $settings->guest_checkout,
+            /** "optional" or "required": whether buyers must give a tax ID at checkout. */
+            'buyer_tax_id_requirement' => $settings->buyer_tax_id_requirement->value,
             'updated_at' => $settings->updated_at?->toIso8601String(),
         ];
     }

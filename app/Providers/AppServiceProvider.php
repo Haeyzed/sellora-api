@@ -80,6 +80,11 @@ use App\Tenant\Catalog\Models\Brand;
 use App\Tenant\Catalog\Models\Category;
 use App\Tenant\Catalog\Models\Product;
 use App\Tenant\Catalog\Models\ProductVariant;
+use App\Tenant\Checkout\CheckoutExtensions;
+use App\Tenant\Checkout\CheckoutRetention;
+use App\Tenant\Checkout\CheckoutStoreTables;
+use App\Tenant\Checkout\Models\Checkout;
+use App\Tenant\Checkout\Privacy\CheckoutData;
 use App\Tenant\Customers\CustomerDataExportRetention;
 use App\Tenant\Customers\CustomerEmailTokenRetention;
 use App\Tenant\Customers\CustomerStoreTables;
@@ -144,6 +149,7 @@ use App\Tenant\Orders\MissingTaxDocumentSweep;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Orders\Models\OrderNote;
 use App\Tenant\Orders\Models\Shipment;
+use App\Tenant\Orders\OrderAccessTokenRetention;
 use App\Tenant\Orders\OrderPricedRecords;
 use App\Tenant\Orders\OrderRetention;
 use App\Tenant\Orders\OrderStoreTables;
@@ -306,6 +312,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(PaymentCheckBeforeExpiry::class, GatewayCheckBeforeExpiry::class);
         // A guest's Idempotency-Keys are theirs by their cart token.
         $this->app->bind(GuestRequester::class, CartGuestRequester::class);
+        $this->app->singleton(CheckoutExtensions::class);
     }
 
     /**
@@ -432,13 +439,15 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(CustomerDataSubject::TYPE, 'data_exports', CustomerDataExportData::class);
             $registry->register(CustomerDataSubject::TYPE, 'promotion_uses', PromotionUseData::class);
             $registry->register(CustomerDataSubject::TYPE, 'cart', CustomerCartData::class);
+            $registry->register(CustomerDataSubject::TYPE, 'checkouts', CheckoutData::class);
             $registry->register(CustomerDataSubject::TYPE, 'orders', CustomerOrderData::class);
             $registry->register(CustomerDataSubject::TYPE, 'tax_documents', TaxDocumentData::class);
             $registry->register(CustomerDataSubject::TYPE, 'social_identities', SocialIdentityData::class);
             $registry->register(CustomerDataSubject::TYPE, 'account', CustomerAccountData::class);
-            // A guest has only their orders, found by the email they were placed with, and those orders' tax documents.
+            // A guest has only their orders, found by the email they were placed with, those orders' tax documents, and their checkouts.
             $registry->register(GuestDataSubject::TYPE, 'orders', GuestOrderData::class);
             $registry->register(GuestDataSubject::TYPE, 'tax_documents', TaxDocumentData::class);
+            $registry->register(GuestDataSubject::TYPE, 'checkouts', CheckoutData::class);
 
             return $registry;
         });
@@ -474,6 +483,8 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(ReleasedPromotionUseRetention::class);
             $registry->register(GuestCartRetention::class);
             $registry->register(CustomerCartRetention::class);
+            $registry->register(CheckoutRetention::class);
+            $registry->register(OrderAccessTokenRetention::class);
             $registry->register(StoreRegistrationRetention::class);
             $registry->register(StoreExportRetention::class);
             $registry->register(ExchangeRateRetention::class);
@@ -489,7 +500,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->singleton(StoreExportRegistry::class, static function (Application $app): StoreExportRegistry {
             $registry = new StoreExportRegistry;
 
-            foreach ([SharedStoreTables::class, IdentityStoreTables::class, SettingsStoreTables::class, CustomerStoreTables::class, DeliveryStoreTables::class, CatalogStoreTables::class, InventoryStoreTables::class, PricingStoreTables::class, PromotionStoreTables::class, CartStoreTables::class, ShippingStoreTables::class, OrderStoreTables::class, PaymentStoreTables::class] as $storeTables) {
+            foreach ([SharedStoreTables::class, IdentityStoreTables::class, SettingsStoreTables::class, CustomerStoreTables::class, DeliveryStoreTables::class, CatalogStoreTables::class, InventoryStoreTables::class, PricingStoreTables::class, PromotionStoreTables::class, CartStoreTables::class, CheckoutStoreTables::class, ShippingStoreTables::class, OrderStoreTables::class, PaymentStoreTables::class] as $storeTables) {
                 $app->make($storeTables)->classify($registry);
             }
 
@@ -556,6 +567,7 @@ final class AppServiceProvider extends ServiceProvider
             'refund' => Refund::class,
             'payment_refund' => PaymentRefund::class,
             'shipment' => Shipment::class,
+            'checkout' => Checkout::class,
         ]);
     }
 

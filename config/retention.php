@@ -44,6 +44,10 @@ return [
         'social_sign_in_states' => (int) env('RETENTION_SOCIAL_SIGN_IN_STATES_DAYS', 1),
         'social_sign_in_attempts' => (int) env('RETENTION_SOCIAL_SIGN_IN_ATTEMPTS_DAYS', 1),
         'social_sign_in_tickets' => (int) env('RETENTION_SOCIAL_SIGN_IN_TICKETS_DAYS', 1),
+        // Checkouts nobody has touched for this long: abandoned ones, and placed ones, whose order keeps its own copy.
+        'checkouts' => (int) env('RETENTION_CHECKOUTS_DAYS', 30),
+        // Guests' order access tokens, after they expire.
+        'order_access_tokens' => (int) env('RETENTION_ORDER_ACCESS_TOKENS_DAYS', 1),
         // Settled orders keep their buyer's personal data for the store's own period (its setting, or its
         // country's default in config/geography.php); this only sets a minimum, so 0 leaves it to the store.
         'settled_orders' => (int) env('RETENTION_SETTLED_ORDERS_MIN_DAYS', 0),

@@ -24,6 +24,7 @@ return [
     'credits_invoice' => 'Credits invoice',
     'seller' => 'From',
     'buyer' => 'Billed to',
+    'buyer_tax_id' => 'Tax ID (:country)',
     'shipping_address' => 'Shipped to',
     'description' => 'Description',
     'sku' => 'SKU',

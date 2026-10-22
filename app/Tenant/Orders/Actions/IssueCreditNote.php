@@ -210,7 +210,7 @@ final readonly class IssueCreditNote
             ...$invoice->only([
                 'locale', 'currency', 'base_currency', 'exchange_rate', 'tax_mode', 'seller_name', 'seller_trading_name', 'seller_tax_registration_label',
                 'seller_tax_registration_number', 'seller_address', 'seller_email', 'seller_phone', 'buyer_name', 'buyer_email', 'buyer_phone',
-                'billing_address', 'shipping_address', 'buyer_erased_at', 'footer',
+                'buyer_tax_id', 'buyer_tax_id_country', 'billing_address', 'shipping_address', 'buyer_erased_at', 'footer',
             ]),
             'net' => $request->amount->subtract($tax),
             'tax' => $tax,

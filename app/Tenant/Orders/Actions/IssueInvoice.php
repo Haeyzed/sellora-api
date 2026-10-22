@@ -109,6 +109,8 @@ final readonly class IssueInvoice
             'buyer_name' => $billing->recipient_name ?? $contact->name,
             'buyer_email' => $contact->email,
             'buyer_phone' => $contact->phone,
+            'buyer_tax_id' => $order->buyer_tax_id,
+            'buyer_tax_id_country' => $order->buyer_tax_id_country,
             'billing_address' => $billing?->details(),
             'shipping_address' => $shipping?->details(),
             'footer' => $footer === '' ? null : $footer,

@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Builder;
  */
 final readonly class TaxDocumentBuyerErasure
 {
-    private const array BUYER = ['buyer_name' => null, 'buyer_email' => null, 'buyer_phone' => null, 'billing_address' => null, 'shipping_address' => null];
+    private const array BUYER = ['buyer_name' => null, 'buyer_email' => null, 'buyer_phone' => null, 'buyer_tax_id' => null, 'buyer_tax_id_country' => null, 'billing_address' => null, 'shipping_address' => null];
 
     public function __construct(private TaxRecordRetention $taxRecordRetention) {}
 

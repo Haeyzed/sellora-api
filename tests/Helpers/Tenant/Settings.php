@@ -80,12 +80,12 @@ function sampleLanguage(string $subdomain, ?string $acceptLanguage = null): Test
  *
  * @param  array<string, mixed>  $data
  */
-function storeSettingsRequest(string $method, array $data = [], ?StaffMember $as = null): TestResponse
+function storeSettingsRequest(string $method, array $data = [], ?StaffMember $as = null, string $subdomain = 'settings-store'): TestResponse
 {
     forgetSignIns();
     $token = test()->store->run(static fn (): string => app(AccessTokenIssuer::class)->issue($as ?? test()->owner, StaffMember::GUARD, 'test')->plainTextToken);
 
-    $response = test()->withToken($token)->json($method, storeUrl('settings-store', '/api/v1/staff/store/settings'), $data);
+    $response = test()->withToken($token)->json($method, storeUrl($subdomain, '/api/v1/staff/store/settings'), $data);
     tenancy()->end();
     forgetSignIns();
 

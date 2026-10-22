@@ -100,6 +100,7 @@ final readonly class TaxDocumentData implements KeepsPersonalDataByLaw, Personal
             'name' => $document->buyer_name,
             'email' => $document->buyer_email,
             'phone' => $document->buyer_phone,
+            'tax_id' => $document->buyer_tax_id === null ? null : ['id' => $document->buyer_tax_id, 'country' => $document->buyer_tax_id_country],
             'billing_address' => $document->billing_address,
             'shipping_address' => $document->shipping_address,
         ]];
