@@ -950,6 +950,7 @@ There are four guards, all on Sanctum. Each guard has its own model, provider, l
 - **Direct permissions:** besides roles, a staff member or platform admin may be given extra permissions individually (for example one Cashier who may also issue refunds). The same rules as roles apply: nobody grants a permission they don't hold, nobody changes their own permissions, the owner and super admins are protected, and every change is audited and goes in the activity log. The API shows each person's effective permissions and where each comes from (which role, or direct), so "why can Ada do this?" is always answerable.
 - **Customers** can only access their own data (orders, addresses, profile). This is enforced with Policies and scoped queries, not roles.
 - **Guest checkout** is a store setting, on by default. The `customers` table holds accounts only; a guest order keeps its own copy of the contact details. Guest orders are linked to an account only when the account's **verified** email matches the order's email, never on an unverified one, or anyone could claim another person's orders by signing up with their email.
+- **Wishlists** (core, built in Step 19) are separate from carts: no quantities, no prices held, no stock reserved, out-of-stock items allowed, kept until the customer removes them, with "move to cart". They belong to signed-in customers only; the storefront keeps a guest's list in the browser and sends it when they sign in. Wishlists are personal data: in the customer's export, deleted by erasure. Product comparison is a storefront feature; the API only offers a fetch-several-products endpoint and stores nothing.
 - **Unverified customers** can sign in and shop, but can't link guest orders or download a data export.
 - **Social sign-in** (`laravel/socialite`) is for **customers only**, never staff, drivers or platform admins (it would bypass their 2FA). A store chooses which providers to offer (a store setting).
   - The account is identified by the provider's own user ID, unique per provider and store, never by email.
@@ -1135,7 +1136,7 @@ Names must say exactly what a thing is or does, so the code reads without explan
 - **Financial records are never deleted or rewritten.** Orders, order lines, payments, refunds, invoices and tax records keep the values they had at the time (prices, tax, exchange rates, product names). Corrections are made with new records (refunds, adjustments, credit notes), never by editing history.
 - Use soft deletes for things merchants may want back (products, variants, categories, brands, customers), and make sure soft-deleted records still show correctly on old orders.
 - **Uniqueness that merchants see (SKUs, slugs, combinations) applies to records not in the trash**, enforced by partial unique indexes; restoring from the trash re-checks for conflicts.
-- **Every variant carries `requires_shipping` and a weight in grams** (plus optional dimensions in millimetres), so Shipping can price parcels and services or digital goods can skip shipping. Digital delivery, bundles and services as product types come later as modules.
+- **Every variant carries `requires_shipping` and a weight in grams** (plus optional dimensions in millimetres), so Shipping can price parcels and services or digital goods can skip shipping. Digital delivery, bundles and services as product types come later as modules (`DigitalProducts`, `Bundles`, `Booking`). **Core has no product "type" column:** each module attaches its own data to products or variants in its own tables, so core never needs to know about module product kinds and a new kind never needs a core migration.
 - Use database constraints (foreign keys, unique indexes, not-null) as the last line of defence, not just validation.
 - **A Postgres check constraint passes when its condition is NULL.** Any check involving nullable columns spells out `IS NULL` / `IS NOT NULL` explicitly, and has a test with the nulls in place.
 - **Locks are tested under real contention**, not just by checking they're taken: a test holds the lock from a second database connection and proves the protected action waits or fails. This matters most for stock (Step 8), limits and anything involving money.
@@ -1301,11 +1302,11 @@ Build in this order, one step at a time. Each step ends with Pint, Larastan, the
 
 **Phase B: core commerce**
 
-6. Settings + Geography → 7. Catalog → 8. Inventory → 9. Pricing and tax → 10. Customers → 11. Promotions → 12. Cart → 13. Shipping → 14. Orders → 15. Payments (fixes F1) → 15b. Invoices and credit notes → 10b. Customer social sign-in → 16. Checkout → 17. Delivery → 18. Returns → 19. Storefront → 20. Messaging (email channel first).
+6. Settings + Geography → 7. Catalog → 8. Inventory → 9. Pricing and tax → 10. Customers → 11. Promotions → 12. Cart → 13. Shipping → 14. Orders → 15. Payments (fixes F1) → 15b. Invoices and credit notes → 10b. Customer social sign-in → 16. Checkout → 16b. Paystack (the first real gateway, proving the `PaymentGateway` contract end to end) → 17. Delivery → 18. Returns → 19. Storefront (content pages, menus, banners, SEO, plus the basic wishlist and a fetch-several-products endpoint for product comparison) → 20. Messaging (email channel first).
 
 **Phase C: after the core shopping flow works**
 
-Custom domains, merchant billing, the first real payment gateways, Reverb broadcasting (once compatible), `Tenant\Metafields`, then modules from section 18 in the order I choose.
+Custom domains, merchant billing, the remaining payment gateways (Stripe, then Flutterwave and PayPal when merchants need them), Reverb broadcasting (once compatible), `Tenant\Metafields`, then modules from section 18 in the order I choose.
 
 ## 18. Roadmap and decided scope
 
@@ -1331,7 +1332,9 @@ These decisions came out of the legacy review. Follow them, and don't build anyt
 | `RecurringOrders` (ProductSubscriptions) | roadmap | renamed to avoid confusion with platform subscriptions |
 | `MultiLocation` | roadmap | multiple warehouses, transfers, per-location stock; a single location is core |
 | `Purchasing`, `B2B` (SalesQuotations), `SalesCommissions` (SalesAgents) | roadmap | back-office add-ons |
-| `Booking`, `ApprovalWorkflows`, `Engagement` (BackInStock), `ContentMarketing` (blog, FAQ), `Helpdesk` (customer Support) | roadmap | optional add-ons |
+| `Booking`, `ApprovalWorkflows`, `Engagement` (BackInStock; also back-in-stock and price-drop alerts for wishlist items), `ContentMarketing` (blog, FAQ), `Helpdesk` (customer Support) | roadmap | optional add-ons |
+| `DigitalProducts` | roadmap | downloadable files and licence keys; secure, expiring download links; files linked to variants in the module's own tables |
+| `Bundles` | roadmap | one item sold, stock taken from several variants (kits, gift sets) |
 | `Marketplace` | later | multi-vendor; adds a `seller` guard only when built |
 | `Repair` | later | postponed until there's demand |
 | `Projects` | **dropped** | not commerce; don't port |
