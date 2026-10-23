@@ -17,6 +17,7 @@ return [
     'http_error' => 'La solicitud no se pudo completar.',
     'idempotency_key_missing' => 'Se requiere un encabezado Idempotency-Key válido para esta solicitud.',
     'idempotency_key_reused' => 'Esta clave de idempotencia ya se utilizó para una solicitud diferente.',
+    'secret_in_url' => 'No se aceptan tokens, contraseñas ni códigos en la URL. Envíalos en un encabezado o en el cuerpo de la solicitud.',
     'idempotency_requester_unknown' => 'Inicie sesión o envíe su token de carrito para realizar esta solicitud con una clave de idempotencia.',
     'idempotent_request_in_progress' => 'Aún se está procesando una solicitud con esta clave de idempotencia. Vuelve a intentarlo en breve.',
     'invalid_credentials' => 'Estos datos de inicio de sesión son incorrectos.',

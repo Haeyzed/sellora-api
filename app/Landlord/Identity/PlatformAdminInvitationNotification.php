@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Landlord\Identity;
 
+use App\Shared\Http\EmailedLink;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -25,11 +26,11 @@ final class PlatformAdminInvitationNotification extends Notification implements 
     }
 
     /**
-     * Builds the link from the URL template in config/auth.php, filling in {token}.
+     * Builds the link from the URL template in config/auth.php, filling in {token}, in the URL fragment.
      */
     public static function forToken(string $token, string $inviterName): self
     {
-        $acceptUrl = strtr(config()->string('auth.platform_admin_invitations.accept_url'), ['{token}' => rawurlencode($token)]);
+        $acceptUrl = EmailedLink::build(config()->string('auth.platform_admin_invitations.accept_url'), ['{token}' => $token]);
 
         return new self($acceptUrl, $inviterName, config()->integer('auth.platform_admin_invitations.expire_days'));
     }

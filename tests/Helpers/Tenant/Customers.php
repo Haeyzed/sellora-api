@@ -85,9 +85,7 @@ function emailedCustomerToken(CustomerEmailTokenPurpose $purpose, string $email)
         return true;
     });
 
-    parse_str((string) parse_url((string) $url, PHP_URL_QUERY), $query);
-
-    return is_string($query['token'] ?? null) ? $query['token'] : throw new LogicException('The emailed link has no token.');
+    return emailedLinkFragment((string) $url)['token'] ?? throw new LogicException('The emailed link has no token.');
 }
 
 /*

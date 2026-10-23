@@ -17,6 +17,7 @@ return [
     'http_error' => 'अनुरोध पूरा नहीं किया जा सका.',
     'idempotency_key_missing' => 'इस अनुरोध के लिए एक वैध Idempotency-Key हेडर आवश्यक है।',
     'idempotency_key_reused' => 'इस Idempotency-Key का उपयोग पहले से ही एक अलग अनुरोध के लिए किया गया था।',
+    'secret_in_url' => 'URL में टोकन, पासवर्ड और कोड स्वीकार नहीं किए जाते। उन्हें हेडर या अनुरोध के मुख्य भाग में भेजें।',
     'idempotency_requester_unknown' => 'Idempotency-Key के साथ यह अनुरोध करने के लिए साइन इन करें या अपना कार्ट टोकन भेजें।',
     'idempotent_request_in_progress' => 'इस Idempotency-Key के साथ एक अनुरोध अभी भी संसाधित किया जा रहा है। शीघ्र ही पुनः प्रयास करें.',
     'invalid_credentials' => 'ये साइन-इन विवरण ग़लत हैं.',

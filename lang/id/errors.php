@@ -17,6 +17,7 @@ return [
     'http_error' => 'Permintaan tersebut tidak dapat diselesaikan.',
     'idempotency_key_missing' => 'Header Idempotensi-Key yang valid diperlukan untuk permintaan ini.',
     'idempotency_key_reused' => 'Kunci Idempotensi ini telah digunakan untuk permintaan yang berbeda.',
+    'secret_in_url' => 'Token, kata sandi, dan kode tidak diterima di URL. Kirimkan di header atau isi permintaan.',
     'idempotency_requester_unknown' => 'Masuk, atau kirim token keranjang Anda, untuk membuat permintaan ini dengan Kunci Idempotensi.',
     'idempotent_request_in_progress' => 'Permintaan dengan Kunci Idempotensi ini masih diproses. Coba lagi sebentar lagi.',
     'invalid_credentials' => 'Detail masuk ini salah.',

@@ -17,6 +17,7 @@ return [
     'http_error' => 'リクエストを完了できませんでした。',
     'idempotency_key_missing' => 'このリクエストには有効な Idempotency-Key ヘッダーが必要です。',
     'idempotency_key_reused' => 'この冪等性キーは別のリクエストにすでに使用されています。',
+    'secret_in_url' => 'トークン、パスワード、コードは URL では受け付けません。ヘッダーまたはリクエスト本文で送信してください。',
     'idempotency_requester_unknown' => 'サインインするか、カート トークンを送信して、冪等性キーを使用してこのリクエストを実行します。',
     'idempotent_request_in_progress' => 'この冪等性キーを含むリクエストはまだ処理中です。しばらくしてからもう一度お試しください。',
     'invalid_credentials' => 'これらのサインインの詳細は正しくありません。',

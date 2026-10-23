@@ -30,6 +30,7 @@ return [
 
     'idempotency_key_missing' => 'A valid Idempotency-Key header is required for this request.',
     'idempotency_key_reused' => 'This Idempotency-Key was already used for a different request.',
+    'secret_in_url' => 'Tokens, passwords and codes are not accepted in the URL. Send them in a header or the request body.',
     'idempotency_requester_unknown' => 'Sign in, or send your cart token, to make this request with an Idempotency-Key.',
     'idempotent_request_in_progress' => 'A request with this Idempotency-Key is still being processed. Try again shortly.',
 

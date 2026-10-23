@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tenant\Customers;
 
+use App\Shared\Http\EmailedLink;
 use App\Tenant\Customers\Enums\CustomerEmailTokenPurpose;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -25,16 +26,11 @@ final class CustomerEmailLinkNotification extends Notification implements Should
     }
 
     /**
-     * Builds the link from the URL template in config/customers.php: {token} is filled in, and {domain} becomes the store domain the request came from.
+     * Builds the link from the URL template in config/customers.php: {token} is filled in, in the URL fragment, and {domain} becomes the store domain the request came from.
      */
     public static function forToken(CustomerEmailTokenPurpose $purpose, string $token): self
     {
-        $template = config()->string('customers.'.$purpose->key().'.url');
-
-        return new self($purpose, strtr($template, [
-            '{token}' => rawurlencode($token),
-            '{domain}' => request()->getHost(),
-        ]));
+        return new self($purpose, EmailedLink::build(config()->string('customers.'.$purpose->key().'.url'), ['{token}' => $token], ['{domain}' => request()->getHost()]));
     }
 
     /**

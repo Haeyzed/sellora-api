@@ -17,6 +17,7 @@ return [
     'http_error' => 'La demande n\'a pas pu être complétée.',
     'idempotency_key_missing' => 'Un en-tête Idempotency-Key valide est requis pour cette demande.',
     'idempotency_key_reused' => 'Cette clé d\'idempotence a déjà été utilisée pour une autre demande.',
+    'secret_in_url' => 'Les jetons, mots de passe et codes ne sont pas acceptés dans l\'URL. Envoyez-les dans un en-tête ou dans le corps de la requête.',
     'idempotency_requester_unknown' => 'Connectez-vous ou envoyez votre jeton de panier pour faire cette demande avec une clé d\'idempotence.',
     'idempotent_request_in_progress' => 'Une demande avec cette clé d\'idempotence est toujours en cours de traitement. Réessayez sous peu.',
     'invalid_credentials' => 'Ces informations de connexion sont incorrectes.',

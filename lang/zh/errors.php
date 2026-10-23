@@ -17,6 +17,7 @@ return [
     'http_error' => '请求无法完成。',
     'idempotency_key_missing' => '此请求需要有效的 Idempotency-Key 标头。',
     'idempotency_key_reused' => '该幂等密钥已用于不同的请求。',
+    'secret_in_url' => 'URL 中不接受令牌、密码和验证码。请通过请求头或请求正文发送。',
     'idempotency_requester_unknown' => '登录或发送您的购物车令牌，以使用幂等密钥发出此请求。',
     'idempotent_request_in_progress' => '具有此幂等性密钥的请求仍在处理中。稍后再试。',
     'invalid_credentials' => '这些登录详细信息不正确。',

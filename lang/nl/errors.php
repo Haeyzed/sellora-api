@@ -17,6 +17,7 @@ return [
     'http_error' => 'Het verzoek kon niet worden voltooid.',
     'idempotency_key_missing' => 'Voor dit verzoek is een geldige Idempotency-Key-header vereist.',
     'idempotency_key_reused' => 'Deze Idempotency-Key werd al gebruikt voor een ander verzoek.',
+    'secret_in_url' => 'Tokens, wachtwoorden en codes worden niet geaccepteerd in de URL. Stuur ze in een header of in de body van het verzoek.',
     'idempotency_requester_unknown' => 'Log in of stuur uw winkelwagentoken om dit verzoek in te dienen met een Idempotency-Key.',
     'idempotent_request_in_progress' => 'Een aanvraag met deze Idempotency-Key wordt nog verwerkt. Probeer het binnenkort opnieuw.',
     'invalid_credentials' => 'Deze inloggegevens zijn onjuist.',

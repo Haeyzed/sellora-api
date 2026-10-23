@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tenant\Identity;
 
+use App\Shared\Http\EmailedLink;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -25,14 +26,11 @@ final class StaffInvitationNotification extends Notification implements ShouldQu
     }
 
     /**
-     * Builds the link from the URL template in config/auth.php: {token} is filled in, and {domain} becomes the store domain the request came from.
+     * Builds the link from the URL template in config/auth.php: {token} is filled in, in the URL fragment, and {domain} becomes the store domain the request came from.
      */
     public static function forToken(string $token, string $inviterName): self
     {
-        $acceptUrl = strtr(config()->string('auth.staff_invitations.accept_url'), [
-            '{token}' => rawurlencode($token),
-            '{domain}' => request()->getHost(),
-        ]);
+        $acceptUrl = EmailedLink::build(config()->string('auth.staff_invitations.accept_url'), ['{token}' => $token], ['{domain}' => request()->getHost()]);
 
         return new self($acceptUrl, $inviterName, config()->integer('auth.staff_invitations.expire_days'));
     }

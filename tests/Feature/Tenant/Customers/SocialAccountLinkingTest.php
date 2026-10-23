@@ -67,8 +67,7 @@ it('emails the account a link to confirm, saying plainly what is happening, when
     $token = null;
     Notification::assertSentOnDemand(SocialLinkNotification::class, static function (SocialLinkNotification $notification, array $channels, AnonymousNotifiable $notifiable) use (&$token): bool {
         $mail = $notification->toMail($notifiable);
-        parse_str((string) parse_url($notification->url(), PHP_URL_QUERY), $query);
-        $token = $query['token'] ?? null;
+        $token = emailedLinkFragment($notification->url())['token'] ?? null;
 
         return $notifiable->routeNotificationFor('mail') === 'ada@example.com'
             && str_contains((string) $mail->subject, 'connecting a sign-in')
@@ -102,8 +101,7 @@ it('stops an emailed link once the account\'s email changed', function (): void 
     customerRequest('POST', 'auth/social/link-emails', ['ticket' => $ticket], subdomain: 'social-store')->assertAccepted();
     $token = null;
     Notification::assertSentOnDemand(SocialLinkNotification::class, static function (SocialLinkNotification $notification) use (&$token): bool {
-        parse_str((string) parse_url($notification->url(), PHP_URL_QUERY), $query);
-        $token = $query['token'] ?? null;
+        $token = emailedLinkFragment($notification->url())['token'] ?? null;
 
         return true;
     });

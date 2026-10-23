@@ -17,6 +17,7 @@ return [
     'http_error' => 'Enweghị ike imecha arịrịọ ahụ.',
     'idempotency_key_missing' => 'Achọrọ nkụnye eji isi mee Idempotency-Igodo maka arịrịọ a.',
     'idempotency_key_reused' => 'Ejila igodo enweghị ike a maka arịrịọ dị iche.',
+    'secret_in_url' => 'Anaghị anabata tokens, okwuntughe na koodu n\'ime URL. Ziga ha n\'isi ma ọ bụ n\'ahụ arịrịọ.',
     'idempotency_requester_unknown' => 'Banye, ma ọ bụ zipu ihe nrịbama ụgbọ ibu gị, ka iji igodo Idempotency mee arịrịọ a.',
     'idempotent_request_in_progress' => 'A ka na-ahazi arịrịọ nwere igodo Idempotency-a. Gbalịa ọzọ obere oge.',
     'invalid_credentials' => 'Nkọwa nbanye ndị a ezighi ezi.',

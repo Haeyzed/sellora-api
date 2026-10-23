@@ -17,6 +17,7 @@ return [
     'http_error' => 'A ko le pari ibeere naa.',
     'idempotency_key_missing' => 'Akọsori Idempotency-Kọtini to wulo ni a nilo fun ibeere yii.',
     'idempotency_key_reused' => 'Bọtini Idempotency yii ti lo tẹlẹ fun ibeere ti o yatọ.',
+    'secret_in_url' => 'A kì í gba àmì, ọ̀rọ̀ aṣínà àti kóòdù nínú URL. Fi wọ́n ránṣẹ́ nínú àkọlé tàbí ara ìbéèrè.',
     'idempotency_requester_unknown' => 'Wọle, tabi fi ami-ami fun rira rẹ ranṣẹ, lati ṣe ibeere yii pẹlu bọtini Idempotency.',
     'idempotent_request_in_progress' => 'Ibere ​​pẹlu bọtini Idempotency-yi ti wa ni ṣiṣiṣẹ. Gbiyanju lẹẹkansi laipẹ.',
     'invalid_credentials' => 'Awọn alaye iwọle wọnyi ko tọ.',

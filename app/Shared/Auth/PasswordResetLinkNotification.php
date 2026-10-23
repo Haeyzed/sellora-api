@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Shared\Auth;
 
+use App\Shared\Http\EmailedLink;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -27,16 +28,15 @@ final class PasswordResetLinkNotification extends Notification implements Should
     }
 
     /**
-     * Builds the reset link from a broker's URL template: {token} and {email} are filled in, and {domain} becomes the store domain the request came from.
+     * Builds the reset link from a broker's URL template: {token} and {email} are filled in, in the URL fragment, and {domain} becomes the store domain the request came from.
      */
     public static function forBroker(string $broker, string $token, string $email): self
     {
-        $template = config()->string("auth.passwords.{$broker}.reset_url");
-        $resetUrl = strtr($template, [
-            '{token}' => rawurlencode($token),
-            '{email}' => rawurlencode($email),
-            '{domain}' => request()->getHost(),
-        ]);
+        $resetUrl = EmailedLink::build(
+            config()->string("auth.passwords.{$broker}.reset_url"),
+            ['{token}' => $token, '{email}' => $email],
+            ['{domain}' => request()->getHost()],
+        );
 
         return new self($resetUrl, config()->integer("auth.passwords.{$broker}.expire"));
     }

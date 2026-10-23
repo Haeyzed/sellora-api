@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tenant\Customers;
 
+use App\Shared\Http\EmailedLink;
 use App\Tenant\Customers\Enums\CustomerEmailTokenPurpose;
 use App\Tenant\Customers\Enums\SocialProvider;
 use Illuminate\Bus\Queueable;
@@ -26,14 +27,11 @@ final class SocialLinkNotification extends Notification implements ShouldQueue
     }
 
     /**
-     * Builds the link from the URL template in config/customers.php: {token} is filled in, and {domain} becomes the store domain the request came from.
+     * Builds the link from the URL template in config/customers.php: {token} is filled in, in the URL fragment, and {domain} becomes the store domain the request came from.
      */
     public static function forToken(SocialProvider $provider, string $token): self
     {
-        return new self($provider, strtr(config()->string('customers.social_link.url'), [
-            '{token}' => rawurlencode($token),
-            '{domain}' => request()->getHost(),
-        ]));
+        return new self($provider, EmailedLink::build(config()->string('customers.social_link.url'), ['{token}' => $token], ['{domain}' => request()->getHost()]));
     }
 
     /**

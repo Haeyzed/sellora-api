@@ -119,8 +119,7 @@ function lastPlatformInvitationToken(string $email): string
 
     Notification::assertSentOnDemand(PlatformAdminInvitationNotification::class, static function (PlatformAdminInvitationNotification $notification, array $channels, AnonymousNotifiable $notifiable) use ($email, &$tokens): bool {
         if ($notifiable->routes['mail'] === $email) {
-            parse_str((string) parse_url($notification->acceptUrl(), PHP_URL_QUERY), $query);
-            $tokens[] = is_string($query['token'] ?? null) ? $query['token'] : '';
+            $tokens[] = emailedLinkFragment($notification->acceptUrl())['token'] ?? '';
         }
 
         return true;

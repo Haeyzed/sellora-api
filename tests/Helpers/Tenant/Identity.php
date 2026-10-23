@@ -199,8 +199,7 @@ function inviteAndCaptureToken(string $email, array $roleIds = []): string
             return false;
         }
 
-        parse_str((string) parse_url($notification->acceptUrl(), PHP_URL_QUERY), $query);
-        $token = is_string($query['token'] ?? null) ? $query['token'] : null;
+        $token = emailedLinkFragment($notification->acceptUrl())['token'] ?? null;
 
         return true;
     });

@@ -17,6 +17,7 @@ return [
     'http_error' => 'Impossibile completare la richiesta.',
     'idempotency_key_missing' => 'Per questa richiesta è richiesta un\'intestazione Idempotency-Key valida.',
     'idempotency_key_reused' => 'Questa chiave di idempotenza è stata già utilizzata per una richiesta diversa.',
+    'secret_in_url' => 'Token, password e codici non sono accettati nell\'URL. Inviali in un\'intestazione o nel corpo della richiesta.',
     'idempotency_requester_unknown' => 'Accedi o invia il token del tuo carrello per effettuare questa richiesta con una chiave di idempotenza.',
     'idempotent_request_in_progress' => 'Una richiesta con questa chiave di idempotenza è ancora in fase di elaborazione. Riprova a breve.',
     'invalid_credentials' => 'Questi dettagli di accesso non sono corretti.',

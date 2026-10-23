@@ -101,8 +101,10 @@ return [
     | each store's database. Drivers have no broker: staff reset their PINs.
     |
     | "reset_url" is the link emailed to the person, into the frontend app
-    | they use. {token} and {email} are filled in; {domain} becomes the store
-    | domain the request came from, so each store's links point to itself.
+    | they use. {token} and {email} are filled in, and must sit in the URL
+    | fragment (after "#"), which browsers never send to a server; {domain}
+    | becomes the store domain the request came from, so each store's links
+    | point to itself. The platform admin app's address is FRONTEND_URL.
     |
     | A broker with a "connection" lives in the central database; one without
     | uses the current store's database. The daily retention purge relies on
@@ -117,7 +119,7 @@ return [
             'connection' => env('DB_CONNECTION', 'central'),
             'expire' => 60,
             'throttle' => 60,
-            'reset_url' => env('PLATFORM_ADMIN_PASSWORD_RESET_URL', 'http://localhost:3000/reset-password?token={token}&email={email}'),
+            'reset_url' => env('PLATFORM_ADMIN_PASSWORD_RESET_URL', rtrim((string) env('FRONTEND_URL', 'http://localhost:3000'), '/').'/reset-password#token={token}&email={email}'),
         ],
 
         'staff_members' => [
@@ -125,7 +127,7 @@ return [
             'table' => 'staff_member_password_reset_tokens',
             'expire' => 60,
             'throttle' => 60,
-            'reset_url' => env('STAFF_PASSWORD_RESET_URL', 'https://{domain}/admin/reset-password?token={token}&email={email}'),
+            'reset_url' => env('STAFF_PASSWORD_RESET_URL', 'https://{domain}/admin/reset-password#token={token}&email={email}'),
         ],
 
         'customers' => [
@@ -133,7 +135,7 @@ return [
             'table' => 'customer_password_reset_tokens',
             'expire' => 60,
             'throttle' => 60,
-            'reset_url' => env('CUSTOMER_PASSWORD_RESET_URL', 'https://{domain}/reset-password?token={token}&email={email}'),
+            'reset_url' => env('CUSTOMER_PASSWORD_RESET_URL', 'https://{domain}/reset-password#token={token}&email={email}'),
         ],
     ],
 
@@ -143,13 +145,14 @@ return [
     |--------------------------------------------------------------------------
     |
     | The emailed link to join a store's team, into the store dashboard.
-    | {token} is filled in and {domain} becomes the store domain the invite
-    | was sent from. Links work once and expire after this many days.
+    | {token} is filled in, in the URL fragment, and {domain} becomes the
+    | store domain the invite was sent from. Links work once and expire after
+    | this many days.
     |
     */
 
     'staff_invitations' => [
-        'accept_url' => env('STAFF_INVITATION_URL', 'https://{domain}/admin/accept-invitation?token={token}'),
+        'accept_url' => env('STAFF_INVITATION_URL', 'https://{domain}/admin/accept-invitation#token={token}'),
         'expire_days' => (int) env('STAFF_INVITATION_EXPIRE_DAYS', 7),
     ],
 
@@ -176,14 +179,15 @@ return [
     |--------------------------------------------------------------------------
     |
     | The emailed link for a super admin's invitation to join Sellora's team,
-    | into the platform admin app. {token} is filled in. Links work once and
+    | into the platform admin app (FRONTEND_URL). {token} is filled in, in
+    | the URL fragment. Links work once and
     | expire after this many days; shorter than staff links, because platform
     | accounts can reach every store.
     |
     */
 
     'platform_admin_invitations' => [
-        'accept_url' => env('PLATFORM_ADMIN_INVITATION_URL', 'http://localhost:3000/accept-invitation?token={token}'),
+        'accept_url' => env('PLATFORM_ADMIN_INVITATION_URL', rtrim((string) env('FRONTEND_URL', 'http://localhost:3000'), '/').'/accept-invitation#token={token}'),
         'expire_days' => (int) env('PLATFORM_ADMIN_INVITATION_EXPIRE_DAYS', 3),
     ],
 

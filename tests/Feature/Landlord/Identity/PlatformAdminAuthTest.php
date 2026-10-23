@@ -147,7 +147,7 @@ it('refuses a password change with the wrong current password or a short new one
 
 it('answers 202 to every reset request but only emails active accounts, with a link into the admin app', function (): void {
     Notification::fake();
-    config(['auth.passwords.platform_admins.reset_url' => 'https://admin.sellora.test/reset?token={token}&email={email}']);
+    config(['auth.passwords.platform_admins.reset_url' => 'https://admin.sellora.test/reset#token={token}&email={email}']);
     PlatformAdmin::factory()->deactivated()->create(['email' => 'former@sellora.test']);
 
     foreach (['ada@sellora.test', 'nobody@sellora.test', 'former@sellora.test'] as $email) {
@@ -155,8 +155,9 @@ it('answers 202 to every reset request but only emails active accounts, with a l
     }
 
     Notification::assertSentTimes(PasswordResetLinkNotification::class, 1);
-    Notification::assertSentTo($this->admin, PasswordResetLinkNotification::class, static fn (PasswordResetLinkNotification $notification): bool => str_starts_with($notification->resetUrl(), 'https://admin.sellora.test/reset?token=')
-        && str_ends_with($notification->resetUrl(), '&email=ada%40sellora.test'));
+    Notification::assertSentTo($this->admin, PasswordResetLinkNotification::class, static fn (PasswordResetLinkNotification $notification): bool => str_starts_with($notification->resetUrl(), 'https://admin.sellora.test/reset#token=')
+        && str_ends_with($notification->resetUrl(), '&email=ada%40sellora.test')
+        && emailedLinkFragment($notification->resetUrl())['email'] === 'ada@sellora.test');
 });
 
 it('resets the password from a valid link and signs the account out everywhere', function (): void {

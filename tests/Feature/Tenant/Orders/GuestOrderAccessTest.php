@@ -51,9 +51,9 @@ it('shows a guest their order with its token, in the header only, until it expir
     guestOrderRequest('GET', $order->public_id, $otherToken)->assertNotFound();
     guestOrderRequest('GET', $other->public_id, $token)->assertNotFound();
 
-    // In the URL it is never looked at: URLs end up in logs and browser history.
+    // In the URL it is refused before it is looked at: URLs end up in logs and browser history.
     foreach (['token', 'order_token', 'X-Order-Token'] as $name) {
-        guestOrderRequest('GET', $order->public_id.'?'.http_build_query([$name => $token]), null)->assertNotFound();
+        guestOrderRequest('GET', $order->public_id.'?'.http_build_query([$name => $token]), null)->assertBadRequest()->assertJsonPath('code', 'secret_in_url');
     }
 
     // Until it expires, 90 days on.
@@ -94,7 +94,7 @@ it('gives a guest their order\'s invoice and credit notes with its token', funct
     foreach (["{$order->public_id}/invoice", "{$order->public_id}/invoice/pdf", "{$order->public_id}/credit-notes/{$creditNote->public_id}", "{$order->public_id}/credit-notes/{$creditNote->public_id}/pdf"] as $path) {
         guestOrderRequest('GET', $path, null)->assertNotFound();
         guestOrderRequest('GET', $path, $otherToken)->assertNotFound();
-        guestOrderRequest('GET', $path.'?'.http_build_query(['token' => $token]), null)->assertNotFound();
+        guestOrderRequest('GET', $path.'?'.http_build_query(['token' => $token]), null)->assertBadRequest()->assertJsonPath('code', 'secret_in_url');
     }
 
     // Another order's credit note through this order: not found.

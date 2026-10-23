@@ -17,6 +17,7 @@ return [
     'http_error' => 'İstek tamamlanamadı.',
     'idempotency_key_missing' => 'Bu istek için geçerli bir Idempotency-Key başlığı gereklidir.',
     'idempotency_key_reused' => 'Bu Kimlik Anahtarı zaten farklı bir istek için kullanılmıştı.',
+    'secret_in_url' => 'Belirteçler, parolalar ve kodlar URL içinde kabul edilmez. Bunları bir başlıkta veya istek gövdesinde gönderin.',
     'idempotency_requester_unknown' => 'Bu isteği bir Idempotency-Key ile yapmak için oturum açın veya sepet jetonunuzu gönderin.',
     'idempotent_request_in_progress' => 'Bu Idempotency-Anahtarına sahip bir istek hala işleniyor. Kısa süre sonra tekrar deneyin.',
     'invalid_credentials' => 'Bu oturum açma ayrıntıları yanlış.',

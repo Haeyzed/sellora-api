@@ -8,9 +8,11 @@ declare(strict_types=1);
 |--------------------------------------------------------------------------
 |
 | The emailed one-time links of a store's customer accounts, into the
-| storefront. {token} is filled in and {domain} becomes the store domain the
-| request came from, so each store's links point to itself. Only a link's
-| hash is stored; sending a new link for the same purpose replaces the old.
+| storefront. {token} is filled in, and must sit in the URL fragment (after
+| "#"), which browsers never send to a server; {domain} becomes the store
+| domain the request came from, so each store's links point to itself. Only
+| a link's hash is stored; sending a new link for the same purpose replaces
+| the old.
 |
 */
 
@@ -31,13 +33,13 @@ return [
 
     /* Proves the customer receives mail at their account's email. Sent at sign-up and on request. */
     'email_verification' => [
-        'url' => env('CUSTOMER_EMAIL_VERIFICATION_URL', 'https://{domain}/verify-email?token={token}'),
+        'url' => env('CUSTOMER_EMAIL_VERIFICATION_URL', 'https://{domain}/verify-email#token={token}'),
         'expire_minutes' => (int) env('CUSTOMER_EMAIL_VERIFICATION_EXPIRE_MINUTES', 1440),
     ],
 
     /* Sent to the new address; the change happens only when the customer, signed in, uses it. */
     'email_change' => [
-        'url' => env('CUSTOMER_EMAIL_CHANGE_URL', 'https://{domain}/account/confirm-email?token={token}'),
+        'url' => env('CUSTOMER_EMAIL_CHANGE_URL', 'https://{domain}/account/confirm-email#token={token}'),
         'expire_minutes' => (int) env('CUSTOMER_EMAIL_CHANGE_EXPIRE_MINUTES', 60),
     ],
 
@@ -47,7 +49,7 @@ return [
      * connecting the provider. Only for trusted providers (below).
      */
     'social_link' => [
-        'url' => env('CUSTOMER_SOCIAL_LINK_URL', 'https://{domain}/account/confirm-sign-in-link?token={token}'),
+        'url' => env('CUSTOMER_SOCIAL_LINK_URL', 'https://{domain}/account/confirm-sign-in-link#token={token}'),
         'expire_minutes' => (int) env('CUSTOMER_SOCIAL_LINK_EXPIRE_MINUTES', 30),
     ],
 
@@ -58,7 +60,7 @@ return [
      * must be used within minutes.
      */
     'erasure' => [
-        'url' => env('CUSTOMER_ERASURE_URL', 'https://{domain}/account/confirm-erasure?token={token}'),
+        'url' => env('CUSTOMER_ERASURE_URL', 'https://{domain}/account/confirm-erasure#token={token}'),
         'expire_minutes' => (int) env('CUSTOMER_ERASURE_EXPIRE_MINUTES', 15),
         'reauthentication_expire_minutes' => (int) env('CUSTOMER_ERASURE_REAUTHENTICATION_EXPIRE_MINUTES', 5),
     ],

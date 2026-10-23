@@ -17,6 +17,7 @@ return [
     'http_error' => 'A solicitação não pôde ser concluída.',
     'idempotency_key_missing' => 'Um cabeçalho Idempotency-Key válido é necessário para esta solicitação.',
     'idempotency_key_reused' => 'Esta Idempotency-Key já foi utilizada para uma solicitação diferente.',
+    'secret_in_url' => 'Tokens, senhas e códigos não são aceitos na URL. Envie-os em um cabeçalho ou no corpo da solicitação.',
     'idempotency_requester_unknown' => 'Faça login, ou envie seu token de carrinho, para fazer esta solicitação com uma Chave de Idempotência.',
     'idempotent_request_in_progress' => 'Uma solicitação com esta Chave de Idempotência ainda está sendo processada. Tente novamente em breve.',
     'invalid_credentials' => 'Esses detalhes de login estão incorretos.',

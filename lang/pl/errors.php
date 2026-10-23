@@ -17,6 +17,7 @@ return [
     'http_error' => 'Nie można zrealizować żądania.',
     'idempotency_key_missing' => 'Dla tego żądania wymagany jest prawidłowy nagłówek Idempotency-Key.',
     'idempotency_key_reused' => 'Ten klucz Idempotencji został już użyty w innym żądaniu.',
+    'secret_in_url' => 'Tokeny, hasła i kody nie są akceptowane w adresie URL. Wyślij je w nagłówku lub w treści żądania.',
     'idempotency_requester_unknown' => 'Zaloguj się lub wyślij token koszyka, aby złożyć to żądanie za pomocą klucza Idempotency.',
     'idempotent_request_in_progress' => 'Żądanie z tym kluczem Idempotencji jest nadal przetwarzane. Spróbuj ponownie wkrótce.',
     'invalid_credentials' => 'Te dane logowania są nieprawidłowe.',

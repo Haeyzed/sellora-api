@@ -79,7 +79,7 @@ it('emails a reset link that points to the store domain the request came from', 
     $this->postJson(storeUrl('first-store', '/api/v1/staff/auth/password-reset-links'), ['email' => 'owner@first-store.test'])->assertAccepted();
 
     $this->store->run(function (): void {
-        Notification::assertSentTo($this->owner, PasswordResetLinkNotification::class, static fn (PasswordResetLinkNotification $notification): bool => str_starts_with($notification->resetUrl(), 'https://first-store.'.config('platform.domain').'/admin/reset-password?token='));
+        Notification::assertSentTo($this->owner, PasswordResetLinkNotification::class, static fn (PasswordResetLinkNotification $notification): bool => str_starts_with($notification->resetUrl(), 'https://first-store.'.config('platform.domain').'/admin/reset-password#token=') && emailedLinkFragment($notification->resetUrl())['email'] === 'owner@first-store.test');
     });
 });
 

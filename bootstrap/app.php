@@ -18,6 +18,7 @@ use App\Shared\Features\Http\Middleware\EnsureModuleIsEnabled;
 use App\Shared\Geography\ListSubdivisionChangesCommand;
 use App\Shared\Http\Middleware\AddSecurityHeaders;
 use App\Shared\Http\Middleware\ForceJsonResponse;
+use App\Shared\Http\Middleware\RejectSecretsInUrl;
 use App\Shared\Idempotency\EnsureRequestIsIdempotent;
 use App\Shared\Money\ExchangeRates\RefreshExchangeRatesCommand;
 use App\Shared\Retention\PurgeExpiredRecordsCommand;
@@ -86,6 +87,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(static function (Middleware $middleware): void {
         $middleware->prepend(ForceJsonResponse::class);
         $middleware->append(AddSecurityHeaders::class);
+        $middleware->append(RejectSecretsInUrl::class);
 
         $middleware->alias([
             'idempotent' => EnsureRequestIsIdempotent::class,

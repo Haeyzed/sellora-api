@@ -63,10 +63,9 @@ it('invites by email without creating an account, and the person joins with thei
 
     $token = '';
     Notification::assertSentOnDemand(StaffInvitationNotification::class, static function (StaffInvitationNotification $notification) use (&$token): bool {
-        parse_str((string) parse_url($notification->acceptUrl(), PHP_URL_QUERY), $query);
-        $token = (string) $query['token'];
+        $token = emailedLinkFragment($notification->acceptUrl())['token'] ?? '';
 
-        return str_starts_with($notification->acceptUrl(), 'https://first-store.'.config('platform.domain').'/admin/accept-invitation?token=');
+        return str_starts_with($notification->acceptUrl(), 'https://first-store.'.config('platform.domain').'/admin/accept-invitation#token=');
     });
     expect($this->store->run(static fn (): string => StaffInvitation::query()->sole()->token_hash))->toBe(hash('sha256', $token));
 

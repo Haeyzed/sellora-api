@@ -104,7 +104,7 @@ it('never logs a token, the buyer\'s contact details or their address, from the 
     gatewayAnswers($payment, GatewayPaymentState::Succeeded, $payment->amount);
     $this->getJson(storeUrl('cart-store', "/api/v1/checkout/payments/{$reference}"))->assertOk()->assertJsonPath('data.status', 'succeeded');
     guestOrderRequest('GET', (string) $placed->json('data.order.id'), $orderToken, subdomain: 'cart-store')->assertOk()->assertJsonPath('data.status', 'cancelled');
-    guestOrderRequest('GET', (string) $placed->json('data.order.id').'?token='.$orderToken, null, subdomain: 'cart-store')->assertNotFound();
+    guestOrderRequest('GET', (string) $placed->json('data.order.id').'?token='.$orderToken, null, subdomain: 'cart-store')->assertBadRequest()->assertJsonPath('code', 'secret_in_url');
 
     $secrets = [$token, $orderToken, 'ada.private@example.com', 'Ada Private', '+2348031112222', '2348031112222', '77 Hidden Close', '98765432'];
     expect($orderToken)->toHaveLength(64)

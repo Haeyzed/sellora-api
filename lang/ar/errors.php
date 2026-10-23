@@ -17,6 +17,7 @@ return [
     'http_error' => 'لا يمكن إكمال الطلب.',
     'idempotency_key_missing' => 'مطلوب رأس Idempotency-Key صالح لهذا الطلب.',
     'idempotency_key_reused' => 'تم استخدام مفتاح Idempotency هذا بالفعل لطلب مختلف.',
+    'secret_in_url' => 'لا تُقبل الرموز وكلمات المرور والرموز السرية في عنوان URL. أرسلها في ترويسة أو في نص الطلب.',
     'idempotency_requester_unknown' => 'قم بتسجيل الدخول، أو أرسل رمز سلة التسوق الخاص بك، لتقديم هذا الطلب باستخدام مفتاح Idempotency-Key.',
     'idempotent_request_in_progress' => 'لا يزال الطلب باستخدام مفتاح Idempotency-Key هذا قيد المعالجة. حاول مرة أخرى قريبا.',
     'invalid_credentials' => 'تفاصيل تسجيل الدخول هذه غير صحيحة.',

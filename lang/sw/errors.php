@@ -17,6 +17,7 @@ return [
     'http_error' => 'Ombi halijakamilika.',
     'idempotency_key_missing' => 'Kijajuu halali cha Idempotency-Key kinahitajika kwa ombi hili.',
     'idempotency_key_reused' => 'Ufunguo huu wa Idempotency ulikuwa tayari umetumika kwa ombi tofauti.',
+    'secret_in_url' => 'Tokeni, nywila na misimbo hazikubaliwi kwenye URL. Zitume kwenye kichwa au mwili wa ombi.',
     'idempotency_requester_unknown' => 'Ingia, au tuma tokeni ya rukwama yako, ili kutuma ombi hili kwa Ufunguo wa Idempotency.',
     'idempotent_request_in_progress' => 'Ombi lenye Idempotency-Key bado linachakatwa. Jaribu tena baada ya muda mfupi.',
     'invalid_credentials' => 'Maelezo haya ya kuingia si sahihi.',

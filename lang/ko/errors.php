@@ -17,6 +17,7 @@ return [
     'http_error' => '요청을 완료할 수 없습니다.',
     'idempotency_key_missing' => '이 요청에는 유효한 Idempotency-Key 헤더가 필요합니다.',
     'idempotency_key_reused' => '이 멱등성 키는 이미 다른 요청에 사용되었습니다.',
+    'secret_in_url' => '토큰, 비밀번호, 코드는 URL로 받지 않습니다. 헤더나 요청 본문으로 보내세요.',
     'idempotency_requester_unknown' => '멱등성 키로 요청하려면 로그인하거나 장바구니 토큰을 보내세요.',
     'idempotent_request_in_progress' => '이 멱등성 키가 포함된 요청이 아직 처리 중입니다. 잠시 후 다시 시도하세요.',
     'invalid_credentials' => '이 로그인 세부정보가 올바르지 않습니다.',

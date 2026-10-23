@@ -17,6 +17,7 @@ return [
     'http_error' => 'Die Anfrage konnte nicht abgeschlossen werden.',
     'idempotency_key_missing' => 'Für diese Anfrage ist ein gültiger Idempotency-Key-Header erforderlich.',
     'idempotency_key_reused' => 'Dieser Idempotenzschlüssel wurde bereits für eine andere Anfrage verwendet.',
+    'secret_in_url' => 'Tokens, Passwörter und Codes werden nicht in der URL akzeptiert. Senden Sie sie in einem Header oder im Anfragetext.',
     'idempotency_requester_unknown' => 'Melden Sie sich an oder senden Sie Ihr Warenkorb-Token, um diese Anfrage mit einem Idempotency-Key zu stellen.',
     'idempotent_request_in_progress' => 'Eine Anfrage mit diesem Idempotency-Key wird noch bearbeitet. Versuchen Sie es in Kürze noch einmal.',
     'invalid_credentials' => 'Diese Anmeldedaten sind falsch.',

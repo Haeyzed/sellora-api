@@ -17,6 +17,7 @@ return [
     'http_error' => 'Ba a iya kammala buƙatar ba.',
     'idempotency_key_missing' => 'Ana buƙatar ingantaccen maɓalli na maɓalli don wannan buƙatar.',
     'idempotency_key_reused' => 'An riga an yi amfani da wannan Maɓalli na Idempotency don wata buƙata ta daban.',
+    'secret_in_url' => 'Ba a karɓar alamomi, kalmomin sirri da lambobi a cikin URL. Aika su a cikin kai ko jikin buƙatar.',
     'idempotency_requester_unknown' => 'Shiga, ko aika alamar kati, don yin wannan buƙatar tare da Maɓallin Idempotency.',
     'idempotent_request_in_progress' => 'Ana ci gaba da aiwatar da buƙatu tare da wannan Maɓalli na Idempotency. A sake gwadawa ba da jimawa ba.',
     'invalid_credentials' => 'Waɗannan bayanan shiga ba daidai ba ne.',
