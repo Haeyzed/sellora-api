@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 use App\Tenant\Cart\CartToken;
 use App\Tenant\Cart\Models\Cart;
+use App\Tenant\Catalog\Models\ProductVariant;
 use App\Tenant\Checkout\Models\Checkout;
 use App\Tenant\Customers\Models\Customer;
+use App\Tenant\Inventory\Models\StockReservation;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
@@ -128,6 +130,42 @@ function readyCheckout(?string $token = null, ?Customer $as = null, array $chang
 function placeCheckout(string $checkoutId, int $version, ?string $token = null, ?Customer $as = null, ?string $key = 'place-order-0001', ?string $returnUrl = null): TestResponse
 {
     return checkoutRequest('POST', '/orders', array_filter(['checkout' => $checkoutId, 'version' => $version, 'return_url' => $returnUrl], static fn (mixed $value): bool => $value !== null), token: $token, as: $as, headers: $key === null ? [] : ['Idempotency-Key' => $key]);
+}
+
+/**
+ * Two guests' checkouts, ready to place, for one of each of two variants: the first guest's cart lists them in the order given, the second's the other way round.
+ *
+ * @return list<array{token: string, checkout: string, version: int, key: string}>
+ */
+function oppositeOrderCheckouts(string $firstVariant, string $secondVariant): array
+{
+    $checkouts = [];
+
+    foreach ([['ada@example.com', [$firstVariant, $secondVariant]], ['grace@example.com', [$secondVariant, $firstVariant]]] as $index => [$email, $variants]) {
+        $token = newGuestCart();
+
+        foreach ($variants as $variant) {
+            cartRequest('POST', '/lines', ['variant' => $variant, 'quantity' => 1], token: $token)->assertOk();
+        }
+
+        $ready = readyCheckout($token, changes: ['contact' => ['email' => $email]]);
+        $checkouts[] = ['token' => $token, 'checkout' => $ready['id'], 'version' => $ready['version'], 'key' => "opposite-order-000{$index}"];
+    }
+
+    return $checkouts;
+}
+
+/**
+ * The stock reserved in the test store for each variant given, by public ID.
+ *
+ * @param  list<string>  $variants
+ * @return array<string, int>
+ */
+function reservedStock(array $variants): array
+{
+    return test()->store->run(static fn (): array => collect($variants)->mapWithKeys(static fn (string $variant): array => [
+        $variant => (int) StockReservation::query()->where('product_variant_id', ProductVariant::query()->where('public_id', $variant)->value('id'))->sum('quantity'),
+    ])->all());
 }
 
 /**
