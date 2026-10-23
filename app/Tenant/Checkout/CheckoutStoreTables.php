@@ -21,7 +21,8 @@ final class CheckoutStoreTables implements ClassifiesStoreTables
             'order_id', 'placed_at', 'last_activity_at', 'created_at', 'updated_at',
         ]);
         $registry->table('checkout_payment_holds', include: [
-            'id', 'public_id', 'order_id', 'method', 'reference', 'currency', 'amount_amount', 'status', 'committed_at', 'released_at', 'created_at', 'updated_at',
+            'id', 'public_id', 'order_id', 'method', 'reference', 'currency', 'amount_amount', 'status', 'committed_at', 'released_at', 'refunded_at',
+            'refund_failed_at', 'refund_failure', 'created_at', 'updated_at',
         ]);
     }
 }

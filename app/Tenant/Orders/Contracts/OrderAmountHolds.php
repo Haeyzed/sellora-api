@@ -8,12 +8,17 @@ use App\Shared\Money\Money;
 use App\Tenant\Orders\Models\Order;
 
 /**
- * What payment methods outside Payments hold or took for an order, such as a module's gift card applied at checkout: it counts as paid, and isn't asked for again. Implemented by Tenant\Checkout.
+ * What payment methods outside Payments hold or took for an order, such as a module's gift card applied at checkout: it counts as paid, and isn't asked for again; what they gave back since counts as refunded. Implemented by Tenant\Checkout.
  */
 interface OrderAmountHolds
 {
     /**
-     * In the order's currency; zero when nothing is held.
+     * What they hold or took, given back since or not; in the order's currency, zero when nothing is held.
      */
     public function heldFor(Order $order): Money;
+
+    /**
+     * What of that they gave back once the order was cancelled; in the order's currency.
+     */
+    public function refundedFor(Order $order): Money;
 }

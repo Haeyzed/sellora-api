@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * What a payment method held for an order when it was placed (section 13): a module's amount (such as a gift card's balance), or nothing for core's own methods, which go through the same steps. Committed once the order is paid; released if it expires or is cancelled.
+ * What a payment method held for an order when it was placed (section 13): a module's amount (such as a gift card's balance), or nothing for core's own methods, which go through the same steps. Committed once the order is paid; released if it expires or is cancelled unpaid; refunded, once its method gave it back, if it is cancelled after it was paid.
  *
  * @property int $id
  * @property string $public_id
@@ -26,6 +26,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property PaymentHoldStatus $status
  * @property CarbonImmutable|null $committed_at
  * @property CarbonImmutable|null $released_at
+ * @property CarbonImmutable|null $refunded_at
+ * @property CarbonImmutable|null $refund_failed_at When giving it back last failed; cleared once it is given back.
+ * @property string|null $refund_failure Why giving it back last failed, as a code.
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property-read Order $order
@@ -55,6 +58,8 @@ final class CheckoutPaymentHold extends Model
             'status' => PaymentHoldStatus::class,
             'committed_at' => 'immutable_datetime',
             'released_at' => 'immutable_datetime',
+            'refunded_at' => 'immutable_datetime',
+            'refund_failed_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];

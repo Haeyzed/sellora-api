@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Tenant\Checkout;
 
 use App\Shared\Features\Features;
+use App\Shared\Features\FeatureState;
 use App\Tenant\Checkout\Contracts\CheckoutPaymentMethod;
+use App\Tenant\Checkout\Contracts\CheckoutPaymentRefunds;
 use App\Tenant\Checkout\Contracts\CheckoutValidator;
 use Illuminate\Contracts\Container\Container;
 use LogicException;
@@ -74,6 +76,26 @@ final class CheckoutExtensions
             if ($method instanceof CheckoutPaymentMethod && $method->handles($key)) {
                 return $method;
             }
+        }
+
+        return null;
+    }
+
+    /**
+     * What gives back a hold saved under a payment method key: its registered method, when it can give back (CheckoutPaymentRefunds) and its module isn't Unavailable to the store. Locked, Disabled and Suspended modules still give back (section 3.3).
+     */
+    public function refundsFor(string $key): ?CheckoutPaymentRefunds
+    {
+        foreach ($this->paymentMethods as [$class, $featureKey]) {
+            $method = $this->container->make($class);
+
+            if (! $method instanceof CheckoutPaymentMethod || ! $method->handles($key)) {
+                continue;
+            }
+
+            $isReachable = $featureKey === null || $this->features()->state($featureKey) !== FeatureState::Unavailable;
+
+            return $isReachable && $method instanceof CheckoutPaymentRefunds ? $method : null;
         }
 
         return null;

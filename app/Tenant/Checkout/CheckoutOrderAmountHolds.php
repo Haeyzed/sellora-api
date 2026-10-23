@@ -11,17 +11,30 @@ use App\Tenant\Orders\Contracts\OrderAmountHolds;
 use App\Tenant\Orders\Models\Order;
 
 /**
- * What the payment methods chosen at checkout hold or took for an order: every hold not released.
+ * What the payment methods chosen at checkout hold or took for an order (every hold not released), and what of it they gave back (refunded holds).
  */
 final readonly class CheckoutOrderAmountHolds implements OrderAmountHolds
 {
     public function heldFor(Order $order): Money
     {
-        $held = CheckoutPaymentHold::query()
+        return $this->sum($order, array_values(array_filter(PaymentHoldStatus::cases(), static fn (PaymentHoldStatus $status): bool => $status->covers())));
+    }
+
+    public function refundedFor(Order $order): Money
+    {
+        return $this->sum($order, [PaymentHoldStatus::Refunded]);
+    }
+
+    /**
+     * @param  list<PaymentHoldStatus>  $statuses
+     */
+    private function sum(Order $order, array $statuses): Money
+    {
+        $amount = CheckoutPaymentHold::query()
             ->where('order_id', $order->id)
-            ->whereIn('status', array_map(static fn (PaymentHoldStatus $status): string => $status->value, array_filter(PaymentHoldStatus::cases(), static fn (PaymentHoldStatus $status): bool => $status->covers())))
+            ->whereIn('status', array_map(static fn (PaymentHoldStatus $status): string => $status->value, $statuses))
             ->sum('amount_amount');
 
-        return Money::ofMinor((int) $held, $order->currency);
+        return Money::ofMinor((int) $amount, $order->currency);
     }
 }

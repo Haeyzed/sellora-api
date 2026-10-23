@@ -7,13 +7,14 @@ namespace App\Landlord\Integrations\Console;
 use App\Landlord\Integrations\CentralWebhookEndpoints;
 use App\Landlord\Tenancy\Enums\TenantStatus;
 use App\Landlord\Tenancy\Models\Tenant;
+use App\Shared\Tenancy\Contracts\StoreCommittedPaymentRefunds;
 use App\Shared\Tenancy\Contracts\StorePaymentChecks;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
 use Throwable;
 
 /**
- * The hourly payments sweep in every store with a database: queues a check with the gateway for payments still waiting on it that haven't been asked about for a while, alerts staff about cash on delivery not recorded after delivery and about refunds pending at the gateway for days, and deletes webhook endpoints the store's connections no longer use.
+ * The hourly payments sweep in every store with a database: queues a check with the gateway for payments still waiting on it that haven't been asked about for a while, alerts staff about cash on delivery not recorded after delivery and about refunds pending at the gateway for days, asks payment methods again to give back what they took for cancelled orders when that failed, and deletes webhook endpoints the store's connections no longer use.
  *
  * The safety net behind each payment's own schedule of checks. Suspended and
  * closed stores are swept too: payments already under way are always looked
@@ -25,14 +26,14 @@ final class CheckPendingPaymentsCommand extends Command
 
     protected $description = 'Queue checks with the gateway for payments still pending in every store, and prune unused webhook endpoints';
 
-    public function handle(StorePaymentChecks $storePaymentChecks, CentralWebhookEndpoints $webhookEndpoints): int
+    public function handle(StorePaymentChecks $storePaymentChecks, StoreCommittedPaymentRefunds $storeCommittedPaymentRefunds, CentralWebhookEndpoints $webhookEndpoints): int
     {
         $failures = 0;
         $orphanCutoff = CarbonImmutable::now()->subMinutes(config()->integer('payments.orphaned_endpoints_after_minutes'));
 
         foreach (Tenant::query()->whereNotIn('status', TenantStatus::withoutDatabase())->lazyById(100) as $tenant) {
             try {
-                [$queued, $alerted, $slowRefunds, $inUse] = $tenant->run(static fn (): array => [$storePaymentChecks->queueOverdueChecks(), $storePaymentChecks->alertOverdueCollections(), $storePaymentChecks->alertSlowRefunds(), $storePaymentChecks->webhookEndpointsInUse()]);
+                [$queued, $alerted, $slowRefunds, $inUse, $givenBack] = $tenant->run(static fn (): array => [$storePaymentChecks->queueOverdueChecks(), $storePaymentChecks->alertOverdueCollections(), $storePaymentChecks->alertSlowRefunds(), $storePaymentChecks->webhookEndpointsInUse(), $storeCommittedPaymentRefunds->retryFailedRefunds()]);
                 $pruned = $webhookEndpoints->pruneUnused((string) $tenant->getTenantKey(), $inUse, $orphanCutoff);
             } catch (Throwable $exception) {
                 report($exception);
@@ -42,8 +43,8 @@ final class CheckPendingPaymentsCommand extends Command
                 continue;
             }
 
-            if ($queued + $alerted + $slowRefunds + $pruned > 0) {
-                $this->components->twoColumnDetail("Store {$tenant->id}", "{$queued} checks queued, {$alerted} cash collections overdue, {$slowRefunds} refunds still pending, {$pruned} unused webhook endpoints deleted");
+            if ($queued + $alerted + $slowRefunds + $pruned + $givenBack > 0) {
+                $this->components->twoColumnDetail("Store {$tenant->id}", "{$queued} checks queued, {$alerted} cash collections overdue, {$slowRefunds} refunds still pending, {$givenBack} checkout payments given back, {$pruned} unused webhook endpoints deleted");
             }
         }
 

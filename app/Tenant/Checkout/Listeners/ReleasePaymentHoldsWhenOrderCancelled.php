@@ -8,7 +8,7 @@ use App\Tenant\Checkout\Services\PaymentHolds;
 use App\Tenant\Orders\Events\OrderCancelled;
 
 /**
- * Once an order is cancelled, or expires unpaid, what payment methods still hold for it is given back. What was committed for a paid order stays: it goes back only through a refund.
+ * Once an order is cancelled, or expires unpaid, what payment methods still hold for it is given back. What was committed for a paid order is refunded instead (RefundCommittedPaymentHoldsWhenOrderCancelled).
  */
 final readonly class ReleasePaymentHoldsWhenOrderCancelled
 {

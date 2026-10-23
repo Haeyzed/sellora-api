@@ -19,4 +19,18 @@ return [
 
     'quote_expire_minutes' => (int) env('CHECKOUT_QUOTE_EXPIRE_MINUTES', 15),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Giving Back What Payment Methods Took
+    |--------------------------------------------------------------------------
+    |
+    | When a paid order is cancelled, each payment method that took money for
+    | it at checkout (such as a gift card) is asked to give it back. When that
+    | fails, the hourly payments sweep asks again, for this many cancelled
+    | orders per store each run.
+    |
+    */
+
+    'refund_retries_per_run' => (int) env('CHECKOUT_REFUND_RETRIES_PER_RUN', 100),
+
 ];

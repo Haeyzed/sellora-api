@@ -52,6 +52,7 @@ use App\Shared\Retention\Policies\ExpiredAccessTokenRetention;
 use App\Shared\Retention\RetentionRegistry;
 use App\Shared\Tenancy\Contracts\StoreAccountNotifications;
 use App\Shared\Tenancy\Contracts\StoreClosure;
+use App\Shared\Tenancy\Contracts\StoreCommittedPaymentRefunds;
 use App\Shared\Tenancy\Contracts\StoreExports;
 use App\Shared\Tenancy\Contracts\StoreOwnerAccounts;
 use App\Shared\Tenancy\Contracts\StoreOwnerContact;
@@ -86,8 +87,10 @@ use App\Tenant\Checkout\CheckoutExtensions;
 use App\Tenant\Checkout\CheckoutOrderAmountHolds;
 use App\Tenant\Checkout\CheckoutRetention;
 use App\Tenant\Checkout\CheckoutStoreTables;
+use App\Tenant\Checkout\CommittedPaymentRefundSweep;
 use App\Tenant\Checkout\Http\IssueOrderTokenOnReplay;
 use App\Tenant\Checkout\Listeners\CommitPaymentHoldsWhenOrderPaid;
+use App\Tenant\Checkout\Listeners\RefundCommittedPaymentHoldsWhenOrderCancelled;
 use App\Tenant\Checkout\Listeners\ReleasePaymentHoldsWhenOrderCancelled;
 use App\Tenant\Checkout\Models\Checkout;
 use App\Tenant\Checkout\PaymentMethods\GatewayPaymentMethods;
@@ -320,6 +323,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(WebhookEndpoints::class, CentralWebhookEndpoints::class);
         $this->app->bind(PaymentWebhooks::class, PaymentWebhookReceiver::class);
         $this->app->bind(StorePaymentChecks::class, PendingPaymentSweep::class);
+        $this->app->bind(StoreCommittedPaymentRefunds::class, CommittedPaymentRefundSweep::class);
         // Orders asks Payments for one last check before an order expires.
         $this->app->bind(PaymentCheckBeforeExpiry::class, GatewayCheckBeforeExpiry::class);
         // A guest's Idempotency-Keys are theirs by their order's access token, or else their cart token.
@@ -704,6 +708,7 @@ final class AppServiceProvider extends ServiceProvider
         Event::listen(OrderPaid::class, IssueInvoiceWhenOrderPaid::class);
         Event::listen(OrderPaid::class, CommitPaymentHoldsWhenOrderPaid::class);
         Event::listen(OrderCancelled::class, ReleasePaymentHoldsWhenOrderCancelled::class);
+        Event::listen(OrderCancelled::class, RefundCommittedPaymentHoldsWhenOrderCancelled::class);
         Event::listen([InvoiceIssued::class, CreditNoteIssued::class], RenderPdfWhenTaxDocumentIssued::class);
         Event::listen(OrderAnonymised::class, ForgetCardDetailsWhenOrderAnonymised::class);
     }

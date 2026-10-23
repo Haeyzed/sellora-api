@@ -6,13 +6,17 @@ use App\Tenant\Cart\CartToken;
 use App\Tenant\Cart\Models\Cart;
 use App\Tenant\Catalog\Models\ProductVariant;
 use App\Tenant\Checkout\Models\Checkout;
+use App\Tenant\Checkout\Models\CheckoutPaymentHold;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Inventory\Models\StockReservation;
+use App\Tenant\Orders\Actions\CancelOrder;
+use App\Tenant\Orders\Models\Order;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Symfony\Component\Process\Process;
+use Tests\Fixtures\Checkout\FakeGiftCardPaymentMethod;
 
 /*
 |--------------------------------------------------------------------------
@@ -131,6 +135,58 @@ function placeCheckout(string $checkoutId, int $version, ?string $token = null, 
 {
     return checkoutRequest('POST', '/orders', array_filter(['checkout' => $checkoutId, 'version' => $version, 'return_url' => $returnUrl], static fn (mixed $value): bool => $value !== null), token: $token, as: $as, headers: $key === null ? [] : ['Idempotency-Key' => $key]);
 }
+
+/*
+|--------------------------------------------------------------------------
+| For CheckoutPaymentRefundsTest.php
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * A guest's order paid in full with the fake gift card, placed through checkout in the cart store.
+ */
+function giftCardPaidOrder(): Order
+{
+    FakeGiftCardPaymentMethod::$balance = 10_000_000;
+    $token = checkoutCart();
+    $checkout = readyCheckout($token, changes: ['module_payment_methods' => [FakeGiftCardPaymentMethod::KEY], 'payment_method' => null]);
+    placeCheckout($checkout['id'], $checkout['version'], token: $token)->assertCreated()->assertJsonPath('data.order.payment_status', 'paid');
+
+    return test()->store->run(static fn (): Order => Order::query()->sole());
+}
+
+/**
+ * The test store's only order and its payment holds as they stand, for comparing.
+ *
+ * @return array{status: string, payment_status: string, refund_due: bool, holds: array<string, array{status: string, refund_failure: string|null}>}
+ */
+function refundState(): array
+{
+    return test()->store->run(static function (): array {
+        $order = Order::query()->sole();
+
+        return [
+            'status' => $order->status->value,
+            'payment_status' => $order->payment_status->value,
+            'refund_due' => $order->refund_due,
+            'holds' => CheckoutPaymentHold::query()->orderBy('id')->get()->mapWithKeys(static fn (CheckoutPaymentHold $hold): array => [$hold->method => ['status' => $hold->status->value, 'refund_failure' => $hold->refund_failure]])->all(),
+        ];
+    });
+}
+
+/**
+ * The test's owner cancelling the test store's only order.
+ */
+function cancelAsStaff(): void
+{
+    test()->store->run(static fn () => app(CancelOrder::class)->byStaff(test()->owner, Order::query()->sole()));
+}
+
+/*
+|--------------------------------------------------------------------------
+| For CheckoutContentionTest.php
+|--------------------------------------------------------------------------
+*/
 
 /**
  * Two guests' checkouts, ready to place, for one of each of two variants: the first guest's cart lists them in the order given, the second's the other way round.

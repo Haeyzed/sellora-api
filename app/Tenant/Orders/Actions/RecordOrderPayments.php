@@ -41,8 +41,8 @@ final readonly class RecordOrderPayments
         return DB::transaction(function () use ($order, $paid, $refunded): Order {
             $locked = $this->orderProgress->lock($order);
             $this->flagIfRefundedBeyondPaid($locked, $paid, $refunded);
-            // What methods chosen at checkout hold for it (such as a gift card) counts as paid.
-            $status = OrderPaymentStatus::forAmounts($locked->total, $paid->add($this->orderAmountHolds->heldFor($locked)), $refunded);
+            // What methods chosen at checkout hold for it (such as a gift card) counts as paid, and what they gave back as refunded.
+            $status = OrderPaymentStatus::forAmounts($locked->total, $paid->add($this->orderAmountHolds->heldFor($locked)), $refunded->add($this->orderAmountHolds->refundedFor($locked)));
 
             if ($status === $locked->payment_status) {
                 return $locked;
