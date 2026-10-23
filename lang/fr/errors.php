@@ -168,7 +168,6 @@ return [
     'payment_gateway_credentials_invalid' => 'La passerelle de paiement n\'a pas accepté ces informations d\'identification. Vérifiez-les dans votre compte passerelle et réessayez.',
     'payment_gateway_account_changed' => 'Ces clés appartiennent à un autre compte passerelle. Les paiements ou remboursements sur le compte courant sont toujours en cours ; attendez qu\'ils aient fini, puis remplacez les clés.',
     'payment_gateway_mode_changed' => 'Ces clés font basculer la passerelle entre test et live pendant que les paiements ou les remboursements sont toujours en cours. Attendez qu\'ils aient fini en premier.',
-    'payment_gateway_in_use' => 'Cette passerelle a encore des paiements ou des remboursements en cours, elle ne peut donc pas encore être déconnectée. Désactivez-le plutôt pour les nouveaux paiements ; il peut être déconnecté une fois qu\'ils ont terminé.',
     'payment_method_not_available' => 'Ce mode de paiement n\'est pas proposé pour cette commande.',
     'payment_not_awaiting_receipt' => 'Ce paiement n\'attend pas que l\'argent soit enregistré : il n\'est pas payé en main propre, ou a déjà été reçu, a échoué ou est en cours de révision.',
     'payment_receipt_invalid' => 'Enregistrez un montant positif, dans la devise du paiement.',

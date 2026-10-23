@@ -168,7 +168,6 @@ return [
     'payment_gateway_credentials_invalid' => 'Lango la malipo halikukubali stakabadhi hizi. Ziangalie katika akaunti yako ya lango na ujaribu tena.',
     'payment_gateway_account_changed' => 'Funguo hizi ni za akaunti nyingine ya lango. Malipo au marejesho kwenye akaunti ya sasa bado yanaendelea; subiri wamalize, kisha ubadilishe funguo.',
     'payment_gateway_mode_changed' => 'Vifunguo hivi hubadilisha lango kati ya jaribio na moja kwa moja wakati malipo au kurejesha pesa bado kunaendelea. Wasubiri wamalize kwanza.',
-    'payment_gateway_in_use' => 'Lango hili bado lina malipo au urejeshaji wa pesa unaoendelea, kwa hivyo hauwezi kukatwa bado. Kizime kwa malipo mapya badala yake; inaweza kukatwa mara tu wanapomaliza.',
     'payment_method_not_available' => 'Njia hii ya kulipa haitolewa kwa agizo hili.',
     'payment_not_awaiting_receipt' => 'Malipo haya hayangoji pesa kurekodiwa: hayalipwi kwa mkono, au tayari yamepokelewa, yameshindwa au yanakaguliwa.',
     'payment_receipt_invalid' => 'Rekodi kiasi chanya, katika sarafu ya malipo.',

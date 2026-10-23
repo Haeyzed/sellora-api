@@ -20,6 +20,7 @@ use App\Tenant\Payments\Models\Payment;
 use App\Tenant\Payments\Models\PaymentGatewayConnection;
 use App\Tenant\Payments\Models\PaymentRefund;
 use App\Tenant\Payments\Models\PaymentWebhookEvent;
+use App\Tenant\Payments\Services\GatewayCredentialsKeeper;
 use App\Tenant\Payments\Services\PaymentEventLog;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
@@ -35,13 +36,15 @@ use Illuminate\Support\Facades\Log;
  * gateway refund still pending that long (once a day, and staff alerted once,
  * after refund_daily_after_days). Never gated by the plan or the store's
  * status. Also alerts staff about cash on delivery not recorded as collected
- * a while after delivery.
+ * a while after delivery, and forgets the keys gateways kept only for money
+ * in motion once it has settled.
  */
 final readonly class PendingPaymentSweep implements StorePaymentChecks
 {
     public function __construct(
         private FindManualPaymentMethods $findManualPaymentMethods,
         private PaymentEventLog $paymentEventLog,
+        private GatewayCredentialsKeeper $gatewayCredentialsKeeper,
     ) {}
 
     public function queueOverdueChecks(): int
@@ -111,9 +114,14 @@ final readonly class PendingPaymentSweep implements StorePaymentChecks
         return $alerted;
     }
 
+    public function forgetSettledCredentials(): int
+    {
+        return $this->gatewayCredentialsKeeper->forgetSettled();
+    }
+
     public function webhookEndpointsInUse(): array
     {
-        return array_values(PaymentGatewayConnection::query()->whereNotNull('endpoint_id')->orderBy('id')->pluck('endpoint_id')->all());
+        return array_values(PaymentGatewayConnection::query()->orderBy('id')->get()->flatMap(static fn (PaymentGatewayConnection $connection): array => $connection->endpointIds())->all());
     }
 
     /**

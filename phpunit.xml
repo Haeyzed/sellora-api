@@ -16,6 +16,7 @@
         </testsuite>
         <testsuite name="Integrations">
             <directory>integrations/OpenExchangeRates/tests</directory>
+            <directory>integrations/Paystack/tests</directory>
         </testsuite>
     </testsuites>
     <source>

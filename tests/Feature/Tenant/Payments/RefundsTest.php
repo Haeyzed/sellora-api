@@ -24,7 +24,6 @@ use App\Tenant\Payments\Events\RefundSucceeded;
 use App\Tenant\Payments\Events\RefundSucceededAfterFailing;
 use App\Tenant\Payments\Exceptions\OrderNotRefundableException;
 use App\Tenant\Payments\Exceptions\PartialRefundNotSupportedException;
-use App\Tenant\Payments\Exceptions\PaymentGatewayInUseException;
 use App\Tenant\Payments\Exceptions\PaymentGatewayNotConnectedException;
 use App\Tenant\Payments\Exceptions\RefundExceedsOverpaymentException;
 use App\Tenant\Payments\Exceptions\RefundExceedsRefundableException;
@@ -576,18 +575,16 @@ it('keeps refunding money already taken whatever the plan, and while the store i
     expect(refundOrder($order, 4000)->paymentRefunds->sole()->status->value)->toBe('succeeded');
 })->with(['locked', 'disabled', 'suspended', 'store suspended']);
 
-it('keeps the gateway connected while a refund is on its way back, and refunds only through a connected gateway', function (): void {
+it('still settles a refund on its way back through a gateway disconnected meanwhile, but starts new refunds only through a connected one', function (): void {
     [$order] = gatewayPaidOrder();
     $this->script->refundAnswer = new GatewayRefundResult(GatewayRefundState::Pending);
     $part = refundOrder($order, 4000)->paymentRefunds->sole();
 
-    expect(fn () => $this->store->run(fn () => app(DisconnectPaymentGateway::class)->handle($this->owner, 'fake_gateway')))->toThrow(PaymentGatewayInUseException::class);
-
-    $this->script->refundAnswer = new GatewayRefundResult(GatewayRefundState::Succeeded, 'fake_r', Money::ofMinor(4000, 'NGN'));
-    $this->store->run(static fn () => app(CheckPendingRefund::class)->handle($part->refresh()));
     $this->store->run(fn () => app(DisconnectPaymentGateway::class)->handle($this->owner, 'fake_gateway'));
 
-    expect(fn () => refundOrder($order, 1000))->toThrow(PaymentGatewayNotConnectedException::class);
+    $this->script->refundAnswer = new GatewayRefundResult(GatewayRefundState::Succeeded, 'fake_r', Money::ofMinor(4000, 'NGN'));
+    expect($this->store->run(static fn (): string => app(CheckPendingRefund::class)->handle($part->refresh())->status->value))->toBe('succeeded')
+        ->and(fn () => refundOrder($order, 1000))->toThrow(PaymentGatewayNotConnectedException::class);
 });
 
 it('gives back part of a payment only through a gateway that refunds part of one', function (): void {

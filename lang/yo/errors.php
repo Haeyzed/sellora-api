@@ -168,7 +168,6 @@ return [
     'payment_gateway_credentials_invalid' => 'Ẹnu-ọna isanwo ko gba awọn iwe-ẹri wọnyi. Ṣayẹwo wọn ninu akọọlẹ ẹnu-ọna rẹ ki o tun gbiyanju lẹẹkansi.',
     'payment_gateway_account_changed' => 'Awọn bọtini wọnyi jẹ ti akọọlẹ ẹnu-ọna miiran. Awọn sisanwo tabi awọn agbapada lori akọọlẹ lọwọlọwọ ṣi wa ni ilọsiwaju; duro fun wọn lati pari, lẹhinna rọpo awọn bọtini.',
     'payment_gateway_mode_changed' => 'Awọn bọtini wọnyi yipada ẹnu-ọna laarin idanwo ati laaye lakoko ti awọn sisanwo tabi awọn agbapada tun wa ni ilọsiwaju. Duro fun wọn lati pari akọkọ.',
-    'payment_gateway_in_use' => 'Ẹnu-ọna ẹnu-ọna ṣi ni awọn sisanwo tabi awọn agbapada ti nlọ lọwọ, nitorina ko le ge asopọ sibẹsibẹ. Pa a fun awọn sisanwo titun dipo; o le ge asopọ ni kete ti wọn ba pari.',
     'payment_method_not_available' => 'Ọna isanwo yii ko funni fun aṣẹ yii.',
     'payment_not_awaiting_receipt' => 'Isanwo yii ko duro de owo lati gbasilẹ: ko san pẹlu ọwọ, tabi ti gba tẹlẹ, kuna tabi o wa ni atunyẹwo.',
     'payment_receipt_invalid' => 'Ṣe igbasilẹ iye to dara, ni owo sisanwo.',

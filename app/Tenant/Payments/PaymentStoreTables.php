@@ -19,7 +19,9 @@ final class PaymentStoreTables implements ClassifiesStoreTables
             'connected_at', 'checked_at', 'disconnected_at', 'created_at', 'updated_at',
         ], exclude: [
             'credentials' => 'The gateway keys of the store: secrets, never exported.',
-            'endpoint_id' => 'Its webhook endpoint ID: lets anyone holding it send webhooks to the store.',
+            'retired_credentials' => 'Earlier gateway keys of the store, kept while money they took settles: secrets, never exported.',
+            'test_endpoint_id' => 'Its test-mode webhook endpoint ID: lets anyone holding it send webhooks to the store.',
+            'live_endpoint_id' => 'Its live-mode webhook endpoint ID: lets anyone holding it send webhooks to the store.',
         ]);
         $registry->table('payments', include: [
             'id', 'public_id', 'order_id', 'method', 'gateway', 'connection_id', 'is_test', 'status', 'currency', 'amount_amount', 'received_currency',

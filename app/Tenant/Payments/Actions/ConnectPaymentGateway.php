@@ -31,12 +31,13 @@ use SensitiveParameter;
  * Connecting a gateway the store isn't connected to needs it on the plan.
  * Replacing the credentials of one already connected is always allowed,
  * whatever the plan, so money already in motion can still be looked after,
- * but while it is, only with keys of the same account and mode.
+ * but while it is, only with keys of the same account and mode, and the keys
+ * they replace are kept as retired ones until it settles (section 3.3).
  *
- * Its webhook endpoint is created on the central database first, then the
- * store saves the connection naming it: an endpoint left behind by a save
- * that failed leads to no connection, so a webhook to it is an ordinary 404,
- * and it is pruned.
+ * Its webhook endpoints, one per mode, are created on the central database
+ * first, then the store saves the connection naming them: an endpoint left
+ * behind by a save that failed leads to no connection, so a webhook to it is
+ * an ordinary 404, and it is pruned.
  */
 final readonly class ConnectPaymentGateway
 {
@@ -62,13 +63,18 @@ final readonly class ConnectPaymentGateway
         }
 
         $check = $this->checkWithGateway($gateway, $credentials);
+        // A gateway disconnected while money was in motion still holds its keys: reconnecting it is held to the same.
+        $hasMoneyInMotion = $existing !== null && $existing->holdsCredentials() && $this->moneyInMotion->on($existing);
 
-        if ($isReplacing) {
+        if ($hasMoneyInMotion) {
             $this->ensureMoneyInMotionStaysPut($existing, $check);
         }
-        $endpointId = $existing->endpoint_id ?? $this->webhookEndpoints->create((string) tenant()?->getTenantKey(), $gatewayKey);
 
-        $connection = DB::transaction(function () use ($existing, $gatewayKey, $credentials, $check, $endpointId, $isReplacing): PaymentGatewayConnection {
+        $tenantId = (string) tenant()?->getTenantKey();
+        $testEndpointId = $existing->test_endpoint_id ?? $this->webhookEndpoints->create($tenantId, $gatewayKey);
+        $liveEndpointId = $existing->live_endpoint_id ?? $this->webhookEndpoints->create($tenantId, $gatewayKey);
+
+        $connection = DB::transaction(function () use ($existing, $gatewayKey, $credentials, $check, $testEndpointId, $liveEndpointId, $isReplacing): PaymentGatewayConnection {
             $connection = $existing === null ? new PaymentGatewayConnection : PaymentGatewayConnection::query()->whereKey($existing->id)->lockForUpdate()->firstOrFail();
             $now = CarbonImmutable::now();
 
@@ -76,10 +82,12 @@ final readonly class ConnectPaymentGateway
                 'gateway' => $gatewayKey,
                 'status' => ConnectionStatus::Connected,
                 'mode' => $check->mode,
+                'retired_credentials' => $this->retiredAfterReplacing($connection, $credentials),
                 'credentials' => $credentials,
                 'credentials_hint' => $check->hint,
                 'account_id' => $check->accountId,
-                'endpoint_id' => $endpointId,
+                'test_endpoint_id' => $testEndpointId,
+                'live_endpoint_id' => $liveEndpointId,
                 'connected_at' => $isReplacing ? $connection->connected_at : $now,
                 'checked_at' => $now,
                 'disconnected_at' => null,
@@ -101,6 +109,29 @@ final readonly class ConnectPaymentGateway
     }
 
     /**
+     * The keys to keep beside the new ones: those being replaced, and any retired before, while money they took is in motion; none once it has all settled.
+     *
+     * Read under the connection's lock, so a payment or refund settling at the same moment is seen either way.
+     *
+     * @param  array<string, string>  $credentials
+     * @return list<array<string, string>>|null
+     */
+    private function retiredAfterReplacing(PaymentGatewayConnection $connection, #[SensitiveParameter] array $credentials): ?array
+    {
+        if (! $connection->exists || ! $connection->holdsCredentials() || ! $this->moneyInMotion->on($connection)) {
+            return null;
+        }
+
+        $retired = $connection->retired_credentials ?? [];
+
+        if ($connection->credentials !== null && $connection->credentials !== $credentials) {
+            $retired[] = $connection->credentials;
+        }
+
+        return $retired === [] ? null : $retired;
+    }
+
+    /**
      * Payments and refunds still in motion must finish with the account and mode that took them: replacement keys may rotate them, never move them.
      *
      * @throws PaymentGatewayAccountChangedException
@@ -108,10 +139,6 @@ final readonly class ConnectPaymentGateway
      */
     private function ensureMoneyInMotionStaysPut(PaymentGatewayConnection $existing, CredentialCheck $check): void
     {
-        if (! $this->moneyInMotion->on($existing)) {
-            return;
-        }
-
         if ($check->mode !== $existing->mode) {
             throw new PaymentGatewayModeChangedException;
         }

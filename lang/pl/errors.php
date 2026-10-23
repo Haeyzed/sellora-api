@@ -168,7 +168,6 @@ return [
     'payment_gateway_credentials_invalid' => 'Bramka płatnicza nie zaakceptowała tych danych uwierzytelniających. Sprawdź je na swoim koncie bramy i spróbuj ponownie.',
     'payment_gateway_account_changed' => 'Te klucze należą do innego konta bramy. Płatności lub zwroty środków na rachunek bieżący są nadal w toku; poczekaj, aż zakończą, a następnie wymień klucze.',
     'payment_gateway_mode_changed' => 'Te klucze przełączają bramę pomiędzy trybem testowym a aktywnym, podczas gdy płatności lub zwroty pieniędzy są nadal w toku. Poczekaj, aż oni skończą pierwsi.',
-    'payment_gateway_in_use' => 'Na tej bramce nadal trwają płatności lub zwroty środków, więc nie można jej jeszcze odłączyć. Zamiast tego wyłącz tę opcję dla nowych płatności; można go odłączyć po zakończeniu.',
     'payment_method_not_available' => 'Ta metoda płatności nie jest oferowana w przypadku tego zamówienia.',
     'payment_not_awaiting_receipt' => 'Ta płatność nie oczekuje na zaksięgowanie pieniędzy: nie została opłacona ręcznie, została już otrzymana, nie powiodła się lub jest sprawdzana.',
     'payment_receipt_invalid' => 'Zapisz kwotę dodatnią w walucie płatności.',

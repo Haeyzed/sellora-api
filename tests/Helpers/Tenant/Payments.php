@@ -146,11 +146,29 @@ function queuedChecks(Payment $payment): array
 }
 
 /**
- * The webhook endpoint ID of the test store's connection with a fake gateway.
+ * The webhook endpoint ID of the test store's connection with a fake gateway, for the mode it is in, or another.
  */
-function fakeWebhookEndpoint(string $gateway = FakePaymentGateway::KEY): string
+function fakeWebhookEndpoint(string $gateway = FakePaymentGateway::KEY, ?GatewayMode $mode = null): string
 {
-    return (string) test()->store->run(static fn (): ?string => PaymentGatewayConnection::query()->where('gateway', $gateway)->value('endpoint_id'));
+    return (string) test()->store->run(static function () use ($gateway, $mode): ?string {
+        $connection = PaymentGatewayConnection::query()->where('gateway', $gateway)->sole();
+
+        return $connection->endpointFor($mode ?? $connection->mode ?? GatewayMode::Test);
+    });
+}
+
+/**
+ * What the test store's connection with a fake gateway still holds: its keys, the keys it kept from before they were replaced, and how many webhook endpoints.
+ *
+ * @return array{credentials: array<string, string>|null, retired_credentials: list<array<string, string>>|null, endpoints: int}
+ */
+function gatewayKeysHeld(string $gateway = FakePaymentGateway::KEY): array
+{
+    return test()->store->run(static function () use ($gateway): array {
+        $connection = PaymentGatewayConnection::query()->where('gateway', $gateway)->sole();
+
+        return ['credentials' => $connection->credentials, 'retired_credentials' => $connection->retired_credentials, 'endpoints' => count($connection->endpointIds())];
+    });
 }
 
 /**

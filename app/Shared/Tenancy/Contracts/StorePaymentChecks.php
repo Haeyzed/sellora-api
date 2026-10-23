@@ -34,6 +34,13 @@ interface StorePaymentChecks
     public function alertSlowRefunds(): int;
 
     /**
+     * Forgets the keys a gateway kept only for money in motion, now that it has all settled: those of a gateway disconnected meanwhile, with its webhook endpoints, and keys replaced meanwhile.
+     *
+     * @return int How many connections forgot keys.
+     */
+    public function forgetSettledCredentials(): int;
+
+    /**
      * The webhook endpoint IDs the store's gateway connections use, so the platform can prune the ones left behind.
      *
      * @return list<string>

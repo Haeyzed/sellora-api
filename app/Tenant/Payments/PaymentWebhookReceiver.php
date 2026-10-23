@@ -9,24 +9,27 @@ use App\Shared\Integrations\WebhookReceipt;
 use App\Tenant\Payments\Contracts\PaymentGateway;
 use App\Tenant\Payments\Data\GatewayWebhookEvent;
 use App\Tenant\Payments\Data\IncomingWebhook;
-use App\Tenant\Payments\Enums\ConnectionStatus;
 use App\Tenant\Payments\Jobs\ProcessPaymentWebhook;
 use App\Tenant\Payments\Models\PaymentGatewayConnection;
 use App\Tenant\Payments\Models\PaymentWebhookEvent;
 use Carbon\CarbonImmutable;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use LogicException;
 use SensitiveParameter;
 
 /**
- * The store's side of a payment webhook, in this order: the store's webhook limit, the connection the endpoint belongs to, then the signature, checked with that connection's keys before anything in the webhook is parsed, stored or acted on.
+ * The store's side of a payment webhook, in this order: the store's webhook limit and the endpoint's own, the connection the endpoint belongs to and the mode it serves, then the signature, checked with that connection's keys before anything in the webhook is parsed, stored or acted on.
  *
  * Never gated by the plan or the store's status: webhooks are money already
- * in motion. A webhook that checks out is recorded once per gateway event ID
- * (a resend is accepted and ignored), with what it said encrypted, and is
- * handled on the payments queue.
+ * in motion, so a gateway disconnected while money was in motion still
+ * receives them, and keys replaced meanwhile still check them. A webhook to
+ * the endpoint of the mode the connection is not in is refused unread: its
+ * keys are not the ones held. One that checks out is recorded once per
+ * gateway event ID (a resend is accepted and ignored), with what it said
+ * encrypted, and is handled on the payments queue.
  */
 final readonly class PaymentWebhookReceiver implements PaymentWebhooks
 {
@@ -39,20 +42,23 @@ final readonly class PaymentWebhookReceiver implements PaymentWebhooks
 
     public function receive(string $endpointId, #[SensitiveParameter] string $body, array $headers): WebhookReceipt
     {
-        if (! $this->withinStoreLimit()) {
+        if (! $this->withinLimit('tenant-webhooks') || ! $this->withinLimit('tenant-webhook-endpoints', $endpointId)) {
             return WebhookReceipt::Throttled;
         }
 
-        $connection = PaymentGatewayConnection::query()->where('endpoint_id', $endpointId)->where('status', ConnectionStatus::Connected->value)->first();
+        // Whatever its status: only a connection still holding keys has endpoints (payment_gateway_connections_keys_lead_webhooks).
+        $connection = PaymentGatewayConnection::query()
+            ->where(static fn (Builder $endpoints) => $endpoints->where('test_endpoint_id', $endpointId)->orWhere('live_endpoint_id', $endpointId))
+            ->first();
 
-        if ($connection === null || ! $this->registry->has($connection->gateway)) {
+        if ($connection === null || $connection->modeOfEndpoint($endpointId) !== $connection->mode || ! $this->registry->has($connection->gateway)) {
             return WebhookReceipt::UnknownEndpoint;
         }
 
         $gateway = $this->registry->get($connection->gateway);
         $webhook = new IncomingWebhook($body, $headers);
 
-        if (! $gateway->verifyWebhookSignature($connection->gatewayCredentials(), $webhook)) {
+        if (! $this->isSignedForConnection($gateway, $connection, $webhook)) {
             // Nothing from the webhook itself: it is untrusted.
             Log::notice('A payment webhook was refused: its signature did not match the store\'s keys.', ['gateway' => $connection->gateway]);
 
@@ -64,13 +70,27 @@ final readonly class PaymentWebhookReceiver implements PaymentWebhooks
         return WebhookReceipt::Accepted;
     }
 
-    private function withinStoreLimit(): bool
+    private function isSignedForConnection(PaymentGateway $gateway, PaymentGatewayConnection $connection, IncomingWebhook $webhook): bool
     {
-        $limiter = RateLimiter::limiter('tenant-webhooks');
-        $limit = $limiter === null ? null : $limiter();
+        foreach ($connection->webhookCredentials() as $credentials) {
+            if ($gateway->verifyWebhookSignature($credentials, $webhook)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Counts the webhook against a store-wide limit, or one per endpoint, so one endpoint flooded never takes the store's whole allowance.
+     */
+    private function withinLimit(string $name, ?string $endpointId = null): bool
+    {
+        $limiter = RateLimiter::limiter($name);
+        $limit = $limiter === null ? null : $limiter($endpointId);
 
         if (! $limit instanceof Limit) {
-            throw new LogicException('The tenant-webhooks rate limit must be one limit (RateLimitServiceProvider).');
+            throw new LogicException("The {$name} rate limit must be one limit (RateLimitServiceProvider).");
         }
 
         return RateLimiter::attempt($limit->key, $limit->maxAttempts, static fn (): bool => true, $limit->decaySeconds) !== false;

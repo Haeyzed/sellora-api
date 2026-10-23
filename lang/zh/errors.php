@@ -168,7 +168,6 @@ return [
     'payment_gateway_credentials_invalid' => '支付网关不接受这些凭据。在您的网关帐户中检查它们，然后重试。',
     'payment_gateway_account_changed' => '这些密钥属于另一个网关帐户。往来账户的付款或退款仍在进行中；等待他们完成，然后更换钥匙。',
     'payment_gateway_mode_changed' => '当付款或退款仍在进行中时，这些键可在测试和实时之间切换网关。先等他们说完。',
-    'payment_gateway_in_use' => '该网关仍有付款或退款正在进行中，因此还无法断开连接。改为在新付款时将其关闭；一旦完成就可以断开连接。',
     'payment_method_not_available' => '此订单不提供此付款方式。',
     'payment_not_awaiting_receipt' => '此付款不会等待资金被记录：它不是手工支付的，或者已经收到、失败或正在审核中。',
     'payment_receipt_invalid' => '以付款货币记录正数。',

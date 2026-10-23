@@ -168,7 +168,6 @@ return [
     'payment_gateway_credentials_invalid' => '결제 게이트웨이가 이러한 자격 증명을 수락하지 않았습니다. 게이트웨이 계정에서 확인하고 다시 시도하세요.',
     'payment_gateway_account_changed' => '이 키는 다른 게이트웨이 계정에 속합니다. 현재 계정에 대한 결제 또는 환불이 아직 진행 중입니다. 완료될 때까지 기다린 다음 키를 교체하십시오.',
     'payment_gateway_mode_changed' => '이 키는 결제 또는 환불이 진행되는 동안 테스트와 라이브 사이의 게이트웨이를 전환합니다. 그들이 먼저 끝날 때까지 기다리세요.',
-    'payment_gateway_in_use' => '이 게이트웨이에는 아직 결제 또는 환불이 진행 중이므로 연결을 해제할 수 없습니다. 대신 새로운 결제에 대해서는 이 기능을 끄십시오. 완료되면 연결을 끊을 수 있습니다.',
     'payment_method_not_available' => '이 주문에는 이 결제 수단을 사용할 수 없습니다.',
     'payment_not_awaiting_receipt' => '이 결제는 금액이 기록될 때까지 기다리지 않습니다. 직접 결제하지 않았거나 이미 수령했거나 실패했거나 검토 중입니다.',
     'payment_receipt_invalid' => '결제 통화로 양수 금액을 기록하세요.',

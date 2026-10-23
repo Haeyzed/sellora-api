@@ -168,7 +168,6 @@ return [
     'payment_gateway_credentials_invalid' => 'La pasarela de pago no aceptó estas credenciales. Verifíquelos en su cuenta de puerta de enlace e inténtelo nuevamente.',
     'payment_gateway_account_changed' => 'Estas claves pertenecen a otra cuenta de puerta de enlace. Los pagos o reembolsos en la cuenta corriente aún están en curso; Espere a que terminen y luego reemplace las llaves.',
     'payment_gateway_mode_changed' => 'Estas claves cambian la puerta de enlace entre prueba y en vivo mientras los pagos o reembolsos aún están en curso. Espere a que terminen primero.',
-    'payment_gateway_in_use' => 'Esta pasarela todavía tiene pagos o reembolsos en curso, por lo que no se puede desconectar todavía. En su lugar, desactívelo para nuevos pagos; se puede desconectar una vez que terminen.',
     'payment_method_not_available' => 'Este método de pago no se ofrece para este pedido.',
     'payment_not_awaiting_receipt' => 'Este pago no está esperando a que se registre el dinero: no se paga en mano, ni ya se recibió, falló o está en revisión.',
     'payment_receipt_invalid' => 'Registre un monto positivo, en la moneda del pago.',

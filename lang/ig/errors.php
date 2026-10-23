@@ -168,7 +168,6 @@ return [
     'payment_gateway_credentials_invalid' => 'Ọnụ ụzọ ịkwụ ụgwọ anabataghị nzere ndị a. Lelee ha na akaụntụ ọnụ ụzọ gị wee nwaa ọzọ.',
     'payment_gateway_account_changed' => 'Igodo ndị a bụ nke akaụntụ ọnụ ụzọ ámá ọzọ. Ịkwụ ụgwọ ma ọ bụ nkwụghachi na akaụntụ ugbu a ka na-aga n\'ihu; chere ka ha mechaa, wee dochie igodo.',
     'payment_gateway_mode_changed' => 'Igodo ndị a na-agbanwe ọnụ ụzọ n\'etiti ule na ndụ mgbe ịkwụ ụgwọ ma ọ bụ nkwụghachi ka na-aga n\'ihu. Chere ka ha buru ụzọ mechaa.',
-    'payment_gateway_in_use' => 'Ọnụ ụzọ ámá a ka nwere ụgwọ ma ọ bụ nkwụghachi na-aga n\'ihu, yabụ enweghị ike ịpụpụ ya. Gbanyụọ ya maka ịkwụ ụgwọ ọhụrụ kama; enwere ike ịkwụsị ya ozugbo ha mechara.',
     'payment_method_not_available' => 'A naghị enye usoro ịkwụ ụgwọ maka iwu a.',
     'payment_not_awaiting_receipt' => 'Ụgwọ a anaghị echere ka edekọ ego: ejighị aka kwụọ ya, ma ọ bụ natagoro ya, dara ma ọ bụ na-enyocha ya.',
     'payment_receipt_invalid' => 'Dekọọ ego dị mma, na ego ịkwụ ụgwọ.',

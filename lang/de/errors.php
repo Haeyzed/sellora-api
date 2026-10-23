@@ -168,7 +168,6 @@ return [
     'payment_gateway_credentials_invalid' => 'Das Zahlungsgateway hat diese Anmeldeinformationen nicht akzeptiert. Überprüfen Sie sie in Ihrem Gateway-Konto und versuchen Sie es erneut.',
     'payment_gateway_account_changed' => 'Diese Schlüssel gehören zu einem anderen Gateway-Konto. Zahlungen oder Rückerstattungen auf dem Girokonto sind noch in Bearbeitung; Warten Sie, bis der Vorgang abgeschlossen ist, und tauschen Sie dann die Schlüssel aus.',
     'payment_gateway_mode_changed' => 'Diese Tasten schalten das Gateway zwischen Test und Live um, während Zahlungen oder Rückerstattungen noch ausgeführt werden. Warten Sie, bis sie zuerst fertig sind.',
-    'payment_gateway_in_use' => 'Für dieses Gateway sind noch Zahlungen oder Rückerstattungen im Gange, daher kann die Verbindung noch nicht getrennt werden. Deaktivieren Sie es stattdessen für neue Zahlungen. Es kann getrennt werden, sobald sie fertig sind.',
     'payment_method_not_available' => 'Diese Zahlungsart wird für diese Bestellung nicht angeboten.',
     'payment_not_awaiting_receipt' => 'Diese Zahlung wartet nicht auf die Erfassung des Geldbetrags: Sie wurde nicht manuell bezahlt, ist bereits eingegangen, ist fehlgeschlagen oder befindet sich in der Prüfung.',
     'payment_receipt_invalid' => 'Erfassen Sie einen positiven Betrag in der Währung der Zahlung.',

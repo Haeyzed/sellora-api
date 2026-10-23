@@ -33,4 +33,9 @@ interface WebhookEndpoints
     public function idsFor(string $tenantId, string $integration): array;
 
     public function delete(string $endpointId): void;
+
+    /**
+     * The URL a payment gateway sends this endpoint's webhooks to, on the central domain, for the merchant to paste into the gateway's dashboard.
+     */
+    public function paymentWebhookUrl(string $endpointId): string;
 }

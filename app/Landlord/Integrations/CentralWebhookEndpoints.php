@@ -50,6 +50,17 @@ final readonly class CentralWebhookEndpoints implements WebhookEndpoints
     }
 
     /**
+     * On the first central domain, which the webhook routes are served on, with the scheme of the app's URL.
+     */
+    public function paymentWebhookUrl(string $endpointId): string
+    {
+        $scheme = parse_url(config()->string('app.url'), PHP_URL_SCHEME) ?: 'https';
+        $centralDomain = config()->array('platform.central_domains')[0] ?? 'localhost';
+
+        return $scheme.'://'.$centralDomain.route('webhooks.payments', ['endpoint' => $endpointId], absolute: false);
+    }
+
+    /**
      * Deletes a store's endpoints that none of its connections use, once older than the cutoff: younger ones may belong to a connection still being saved.
      *
      * @param  list<string>  $inUse

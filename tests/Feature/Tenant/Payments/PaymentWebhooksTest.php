@@ -120,6 +120,32 @@ it('limits each store\'s webhooks per minute, keeping nothing over the limit', f
     expect($this->store->run(static fn (): int => PaymentWebhookEvent::query()->count()))->toBe(2);
 });
 
+it('limits each endpoint\'s webhooks per minute too, so one flooded endpoint leaves the store\'s others working', function (): void {
+    config(['api.rate_limits.tenant_webhook_endpoints' => 2]);
+    connectFakeGateway('live', gateway: 'local_fake_gateway');
+
+    sendFakeWebhook(['id' => 'evt_1', 'type' => 'ignored'])->assertOk();
+    sendFakeWebhook(['id' => 'evt_2', 'type' => 'ignored'])->assertOk();
+    sendFakeWebhook(['id' => 'evt_3', 'type' => 'ignored'])->assertTooManyRequests();
+    sendFakeWebhook(['id' => 'evt_4', 'type' => 'ignored'], fakeWebhookEndpoint('local_fake_gateway'))->assertOk();
+
+    expect($this->store->run(static fn (): array => PaymentWebhookEvent::query()->orderBy('id')->pluck('event_id')->all()))->toBe(['evt_1', 'evt_2', 'evt_4']);
+});
+
+it('refuses a webhook to the endpoint of the mode the gateway is not connected in, before reading it', function (): void {
+    // Connected live: the test endpoint's webhooks are signed with test keys the store doesn't hold.
+    sendFakeWebhook(['id' => 'evt_1', 'type' => 'payment', 'reference' => $this->payment->reference], fakeWebhookEndpoint(mode: GatewayMode::Test))->assertNotFound();
+    sendFakeWebhook(['id' => 'evt_2', 'type' => 'payment', 'reference' => $this->payment->reference], fakeWebhookEndpoint(mode: GatewayMode::Test), fakeGatewayCredentials('test')['secret_key'])->assertNotFound();
+
+    expect($this->script->timesCalled('verifyPayment'))->toBe(0)
+        ->and($this->store->run(static fn (): int => PaymentWebhookEvent::query()->count()))->toBe(0);
+
+    // A gateway connected with test keys takes its webhooks at its test endpoint, and none at its live one.
+    connectFakeGateway('test', gateway: 'local_fake_gateway');
+    sendFakeWebhook(['id' => 'evt_3', 'type' => 'ignored'], fakeWebhookEndpoint('local_fake_gateway', GatewayMode::Test), fakeGatewayCredentials('test')['secret_key'])->assertOk();
+    sendFakeWebhook(['id' => 'evt_4', 'type' => 'ignored'], fakeWebhookEndpoint('local_fake_gateway', GatewayMode::Live), fakeGatewayCredentials('test')['secret_key'])->assertNotFound();
+});
+
 it('keeps handling webhooks for payments under way whatever the plan, and while the store is suspended', function (string $state): void {
     $state === 'store suspended' ? $this->store->update(['status' => TenantStatus::Suspended]) : putFakeGatewayInState($state);
     gatewayAnswers($this->payment, GatewayPaymentState::Succeeded, $this->payment->amount, GatewayMode::Live);

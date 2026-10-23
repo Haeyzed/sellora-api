@@ -58,11 +58,11 @@ it('connects the store\'s own account once the gateway accepts the keys, keeping
     $response = staffOrderRequest('PUT', '/payment-gateways/fake_gateway/connection', ['credentials' => fakeGatewayCredentials('test')])->assertCreated();
 
     expect($response->json('data'))->toMatchArray(['gateway' => 'fake_gateway', 'status' => 'connected', 'enabled' => true, 'mode' => 'test', 'credentials_hint' => '…6789'])
-        ->and($response->json('data'))->not->toHaveKeys(['credentials', 'endpoint_id', 'account_id'])
+        ->and($response->json('data'))->not->toHaveKeys(['credentials', 'retired_credentials', 'test_endpoint_id', 'live_endpoint_id', 'account_id'])
         ->and($response->getContent())->not->toContain('sk_test_')
         ->and(staffOrderRequest('GET', '/payment-gateways')->getContent())->not->toContain('sk_test_');
 
-    $endpointId = $this->store->run(function (): string {
+    [$testEndpointId, $liveEndpointId] = $this->store->run(function (): array {
         $connection = PaymentGatewayConnection::query()->sole();
 
         expect(DB::table('payment_gateway_connections')->value('credentials'))->not->toContain('sk_test_')
@@ -72,13 +72,20 @@ it('connects the store\'s own account once the gateway accepts the keys, keeping
             ->and(DB::table('audits')->where('auditable_type', 'payment_gateway_connection')->get()->flatMap(static fn (object $audit): array => array_keys((array) json_decode((string) $audit->new_values, true)))->all())->toContain('gateway')->not->toContain('credentials')
             ->and(Activity::query()->inLog('payments')->sole()->description)->toBe('Connected the payment gateway fake_gateway');
 
-        return (string) $connection->endpoint_id;
+        return [(string) $connection->test_endpoint_id, (string) $connection->live_endpoint_id];
     });
 
-    // The webhook URL names a random endpoint, never the store.
-    expect(WebhookEndpoint::query()->sole()->only(['public_id', 'tenant_id', 'integration']))->toBe(['public_id' => $endpointId, 'tenant_id' => $this->store->id, 'integration' => 'fake_gateway'])
-        ->and(mb_strlen($endpointId))->toBe(40)
-        ->and($endpointId)->not->toContain((string) $this->store->id);
+    // A webhook URL per mode, for the gateway dashboard's test and live fields, each naming a random endpoint, never the store.
+    expect($response->json('data.webhook_urls'))->toBe(['test' => centralUrl('/webhooks/payments/'.$testEndpointId), 'live' => centralUrl('/webhooks/payments/'.$liveEndpointId)])
+        ->and(WebhookEndpoint::query()->orderBy('id')->get()->map->only(['public_id', 'tenant_id', 'integration'])->all())->toBe([
+            ['public_id' => $testEndpointId, 'tenant_id' => $this->store->id, 'integration' => 'fake_gateway'],
+            ['public_id' => $liveEndpointId, 'tenant_id' => $this->store->id, 'integration' => 'fake_gateway'],
+        ])
+        ->and($testEndpointId)->not->toBe($liveEndpointId);
+
+    foreach ([$testEndpointId, $liveEndpointId] as $endpointId) {
+        expect(mb_strlen($endpointId))->toBe(40)->and($endpointId)->not->toContain((string) $this->store->id);
+    }
 });
 
 it('saves nothing when the gateway refuses the keys or doesn\'t answer, and checks them against the gateway\'s own fields', function (): void {
@@ -110,17 +117,18 @@ it('needs the gateway on the plan to connect it, but always lets the store repla
     staffOrderRequest('DELETE', '/payment-gateways/fake_gateway/connection')->assertOk()->assertJsonPath('data.status', 'disconnected');
 })->with(['locked', 'disabled', 'suspended', 'unavailable']);
 
-it('keeps the webhook endpoint when keys are replaced, removes keys and endpoint on disconnect, and makes a new endpoint on reconnecting', function (): void {
-    $first = connectFakeGateway('test')->endpoint_id;
+it('keeps the webhook endpoints when keys are replaced, removes keys and endpoints on disconnect with nothing in motion, and makes new endpoints on reconnecting', function (): void {
+    $first = connectFakeGateway('test');
     $replaced = connectFakeGateway('live', 'abcdefghij');
 
-    expect($replaced->endpoint_id)->toBe($first)
+    expect($replaced->only(['test_endpoint_id', 'live_endpoint_id']))->toBe($first->only(['test_endpoint_id', 'live_endpoint_id']))
         ->and($replaced->mode->value)->toBe('live')
+        ->and($replaced->retired_credentials)->toBeNull()
         ->and($this->store->run(static fn (): array => Activity::query()->inLog('payments')->pluck('description')->all()))->toBe(['Connected the payment gateway fake_gateway', 'Replaced the credentials of the payment gateway fake_gateway']);
 
-    staffOrderRequest('DELETE', '/payment-gateways/fake_gateway/connection')->assertOk()->assertJsonPath('data.credentials_hint', null);
+    staffOrderRequest('DELETE', '/payment-gateways/fake_gateway/connection')->assertOk()->assertJsonPath('data.credentials_hint', null)->assertJsonPath('data.webhook_urls', ['test' => null, 'live' => null]);
     $this->store->run(static function (): void {
-        expect(PaymentGatewayConnection::query()->sole()->only(['credentials', 'endpoint_id', 'enabled']))->toBe(['credentials' => null, 'endpoint_id' => null, 'enabled' => false]);
+        expect(PaymentGatewayConnection::query()->sole()->only(['credentials', 'test_endpoint_id', 'live_endpoint_id', 'enabled']))->toBe(['credentials' => null, 'test_endpoint_id' => null, 'live_endpoint_id' => null, 'enabled' => false]);
     });
     expect(WebhookEndpoint::query()->count())->toBe(0);
 
@@ -128,8 +136,8 @@ it('keeps the webhook endpoint when keys are replaced, removes keys and endpoint
     staffOrderRequest('PATCH', '/payment-gateways/fake_gateway/connection', ['enabled' => true])->assertConflict();
 
     $again = connectFakeGateway('test');
-    expect($again->endpoint_id)->not->toBe($first)
-        ->and(WebhookEndpoint::query()->sole()->public_id)->toBe($again->endpoint_id);
+    expect($again->test_endpoint_id)->not->toBe($first->test_endpoint_id)
+        ->and(WebhookEndpoint::query()->orderBy('id')->pluck('public_id')->all())->toBe([$again->test_endpoint_id, $again->live_endpoint_id]);
 });
 
 it('checks saved keys with the gateway on request', function (): void {
@@ -189,17 +197,22 @@ it('lets staff with payments.view look, only payments.manage_gateways change, an
     expect($this->store->run(static fn (): bool => PaymentGatewayConnection::query()->sole()->enabled))->toBeTrue();
 });
 
-it('refuses a connected gateway without keys, mode or endpoint at the database', function (): void {
+it('refuses a connected gateway without keys, mode or the endpoint of its mode, and endpoints without keys, at the database', function (): void {
     connectFakeGateway('test');
 
     $this->store->run(static function (): void {
-        expect(static fn () => DB::table('payment_gateway_connections')->update(['credentials' => null]))->toThrow(QueryException::class, 'payment_gateway_connections_connected_has_credentials')
-            ->and(static fn () => DB::table('payment_gateway_connections')->update(['mode' => 'sandbox']))->toThrow(QueryException::class, 'payment_gateway_connections_mode_check');
+        expect(static fn () => DB::table('payment_gateway_connections')->update(['mode' => 'sandbox']))->toThrow(QueryException::class, 'payment_gateway_connections_mode_check')
+            ->and(static fn () => DB::table('payment_gateway_connections')->update(['test_endpoint_id' => null]))->toThrow(QueryException::class, 'payment_gateway_connections_connected_has_credentials')
+            ->and(static fn () => DB::table('payment_gateway_connections')->update(['connected_at' => null]))->toThrow(QueryException::class, 'payment_gateway_connections_connected_at')
+            ->and(static fn () => DB::table('payment_gateway_connections')->update(['status' => 'disconnected', 'connected_at' => null, 'disconnected_at' => now(), 'credentials' => null]))->toThrow(QueryException::class, 'payment_gateway_connections_keys_lead_webhooks');
+
+        // Only the endpoint of its own mode is required.
+        DB::table('payment_gateway_connections')->update(['live_endpoint_id' => null]);
     });
 });
 
 it('leads webhooks only to stores that serve requests, and never shows or changes another store\'s gateways', function (): void {
-    $endpoint = (string) connectFakeGateway('test')->endpoint_id;
+    $endpoint = (string) connectFakeGateway('test')->test_endpoint_id;
     $other = createStore('other-store', ['country_code' => 'NG']);
     $other->run(static fn () => PaymentGatewayConnection::query()->count());
 
@@ -219,5 +232,7 @@ it('never puts gateway keys or webhook endpoints in a store export', function ()
 
     expect($exported)->toContain('gateway', 'mode', 'credentials_hint')
         ->not->toContain('credentials')
-        ->not->toContain('endpoint_id');
+        ->not->toContain('retired_credentials')
+        ->not->toContain('test_endpoint_id')
+        ->not->toContain('live_endpoint_id');
 });

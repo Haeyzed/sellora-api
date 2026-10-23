@@ -100,8 +100,8 @@ it('gives up on a payment still pending after a day: it becomes unresolved, staf
         ->and($this->store->run(fn (): array => $this->payment->events()->get()->map(static fn (PaymentEvent $event): string => $event->type->value)->all()))->toBe(['started', 'unresolved']);
     Event::assertDispatched(PaymentUnresolved::class, fn (PaymentUnresolved $event): bool => $event->payment->is($this->payment));
 
-    // Still in motion: its gateway stays connected, and the gateway is still asked.
-    staffOrderRequest('DELETE', '/payment-gateways/fake_gateway/connection')->assertConflict();
+    // Still in motion: disconnecting its gateway keeps the keys, and the gateway is still asked.
+    staffOrderRequest('DELETE', '/payment-gateways/fake_gateway/connection')->assertOk()->assertJsonPath('data.status', 'disconnected');
     gatewayAnswers($this->payment, GatewayPaymentState::Succeeded, $this->payment->amount, GatewayMode::Live);
     expect(($this->check)()->status->value)->toBe('succeeded');
 });
@@ -148,14 +148,15 @@ it('sweeps up every hour what each payment\'s own checks missed, and webhooks le
 
 it('deletes webhook endpoints no connection uses once they are an hour old, and keeps those that may still be saving', function (): void {
     $storeId = (string) $this->store->getTenantKey();
-    $inUse = fakeWebhookEndpoint();
+    // Both of the connection's endpoints, its test one and its live one.
+    $inUse = [fakeWebhookEndpoint(mode: GatewayMode::Test), fakeWebhookEndpoint(mode: GatewayMode::Live)];
     $old = app(WebhookEndpoints::class)->create($storeId, 'fake_gateway');
     $young = app(WebhookEndpoints::class)->create($storeId, 'fake_gateway');
-    WebhookEndpoint::query()->whereIn('public_id', [$old, $inUse])->update(['created_at' => now()->subMinutes(61)]);
+    WebhookEndpoint::query()->whereIn('public_id', [$old, ...$inUse])->update(['created_at' => now()->subMinutes(61)]);
 
     $this->artisan('payments:check-pending')->assertSuccessful();
 
-    expect(WebhookEndpoint::query()->orderBy('public_id')->pluck('public_id')->all())->toBe(collect([$inUse, $young])->sort()->values()->all());
+    expect(WebhookEndpoint::query()->orderBy('public_id')->pluck('public_id')->all())->toBe(collect([...$inUse, $young])->sort()->values()->all());
 });
 
 it('asks the gateway once more before an order expires, so a payment that went through pays it instead', function (): void {

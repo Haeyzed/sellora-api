@@ -303,7 +303,7 @@ it('settles a payment under the order\'s lock first, then the payment\'s, so it 
 it('keeps gateways with money in motion connected to the account and mode that took it', function (): void {
     $this->store->run(static fn (): Payment => startFakePayment(unpaidOrder()));
 
-    staffOrderRequest('DELETE', '/payment-gateways/fake_gateway/connection')->assertConflict()->assertJsonPath('code', 'payment_gateway_in_use');
+    // Disconnecting meanwhile keeps the keys (GatewayKeysInMotionTest).
     app(Tests\Fixtures\Payments\FakeGatewayScript::class)->accounts['sk_live_otheraccount'] = 'acct_other';
     staffOrderRequest('PUT', '/payment-gateways/fake_gateway/connection', ['credentials' => fakeGatewayCredentials('live', 'otheraccount')])->assertConflict()->assertJsonPath('code', 'payment_gateway_account_changed');
     staffOrderRequest('PUT', '/payment-gateways/fake_gateway/connection', ['credentials' => fakeGatewayCredentials('test', 'abcdefghij')])->assertConflict()->assertJsonPath('code', 'payment_gateway_mode_changed');

@@ -53,6 +53,7 @@
             "Modules\\": "modules/",
             "Integrations\\": "integrations/",
             "Integrations\\OpenExchangeRates\\": "integrations/OpenExchangeRates/src/",
+            "Integrations\\Paystack\\": "integrations/Paystack/src/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
         }
@@ -60,7 +61,8 @@
     "autoload-dev": {
         "psr-4": {
             "Tests\\": "tests/",
-            "Integrations\\OpenExchangeRates\\Tests\\": "integrations/OpenExchangeRates/tests/"
+            "Integrations\\OpenExchangeRates\\Tests\\": "integrations/OpenExchangeRates/tests/",
+            "Integrations\\Paystack\\Tests\\": "integrations/Paystack/tests/"
         }
     },
     "scripts": {

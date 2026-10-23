@@ -14,7 +14,7 @@ use Illuminate\Console\Command;
 use Throwable;
 
 /**
- * The hourly payments sweep in every store with a database: queues a check with the gateway for payments still waiting on it that haven't been asked about for a while, alerts staff about cash on delivery not recorded after delivery and about refunds pending at the gateway for days, asks payment methods again to give back what they took for cancelled orders when that failed, and deletes webhook endpoints the store's connections no longer use.
+ * The hourly payments sweep in every store with a database: queues a check with the gateway for payments still waiting on it that haven't been asked about for a while, alerts staff about cash on delivery not recorded after delivery and about refunds pending at the gateway for days, asks payment methods again to give back what they took for cancelled orders when that failed, forgets gateway keys kept only for money in motion once it has settled, and deletes webhook endpoints the store's connections no longer use.
  *
  * The safety net behind each payment's own schedule of checks. Suspended and
  * closed stores are swept too: payments already under way are always looked
@@ -33,7 +33,7 @@ final class CheckPendingPaymentsCommand extends Command
 
         foreach (Tenant::query()->whereNotIn('status', TenantStatus::withoutDatabase())->lazyById(100) as $tenant) {
             try {
-                [$queued, $alerted, $slowRefunds, $inUse, $givenBack] = $tenant->run(static fn (): array => [$storePaymentChecks->queueOverdueChecks(), $storePaymentChecks->alertOverdueCollections(), $storePaymentChecks->alertSlowRefunds(), $storePaymentChecks->webhookEndpointsInUse(), $storeCommittedPaymentRefunds->retryFailedRefunds()]);
+                [$queued, $alerted, $slowRefunds, $givenBack, $forgotKeys, $inUse] = $tenant->run(static fn (): array => [$storePaymentChecks->queueOverdueChecks(), $storePaymentChecks->alertOverdueCollections(), $storePaymentChecks->alertSlowRefunds(), $storeCommittedPaymentRefunds->retryFailedRefunds(), $storePaymentChecks->forgetSettledCredentials(), $storePaymentChecks->webhookEndpointsInUse()]);
                 $pruned = $webhookEndpoints->pruneUnused((string) $tenant->getTenantKey(), $inUse, $orphanCutoff);
             } catch (Throwable $exception) {
                 report($exception);
@@ -43,8 +43,8 @@ final class CheckPendingPaymentsCommand extends Command
                 continue;
             }
 
-            if ($queued + $alerted + $slowRefunds + $pruned + $givenBack > 0) {
-                $this->components->twoColumnDetail("Store {$tenant->id}", "{$queued} checks queued, {$alerted} cash collections overdue, {$slowRefunds} refunds still pending, {$givenBack} checkout payments given back, {$pruned} unused webhook endpoints deleted");
+            if ($queued + $alerted + $slowRefunds + $pruned + $givenBack + $forgotKeys > 0) {
+                $this->components->twoColumnDetail("Store {$tenant->id}", "{$queued} checks queued, {$alerted} cash collections overdue, {$slowRefunds} refunds still pending, {$givenBack} checkout payments given back, {$forgotKeys} gateway keys forgotten after settling, {$pruned} unused webhook endpoints deleted");
             }
         }
 

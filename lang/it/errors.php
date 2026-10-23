@@ -168,7 +168,6 @@ return [
     'payment_gateway_credentials_invalid' => 'Il gateway di pagamento non ha accettato queste credenziali. Controllali nel tuo account gateway e riprova.',
     'payment_gateway_account_changed' => 'Queste chiavi appartengono a un altro account gateway. I pagamenti o rimborsi sul conto corrente sono ancora in corso; attendere che finiscano, quindi sostituire le chiavi.',
     'payment_gateway_mode_changed' => 'Questi tasti commutano il gateway tra test e live mentre i pagamenti o i rimborsi sono ancora in corso. Aspetta che finiscano prima.',
-    'payment_gateway_in_use' => 'Questo gateway ha ancora pagamenti o rimborsi in corso, quindi non può ancora essere disconnesso. Disattivalo invece per i nuovi pagamenti; può essere disconnesso una volta terminato.',
     'payment_method_not_available' => 'Questo metodo di pagamento non è offerto per questo ordine.',
     'payment_not_awaiting_receipt' => 'Questo pagamento non è in attesa che il denaro venga registrato: non è stato pagato manualmente, oppure è già stato ricevuto, non è riuscito o è in revisione.',
     'payment_receipt_invalid' => 'Registra un importo positivo, nella valuta del pagamento.',

@@ -168,7 +168,6 @@ return [
     'payment_gateway_credentials_invalid' => 'De betalingsgateway heeft deze inloggegevens niet geaccepteerd. Controleer ze in uw gateway-account en probeer het opnieuw.',
     'payment_gateway_account_changed' => 'Deze sleutels behoren tot een ander gateway-account. Betalingen of terugbetalingen op de betaalrekening zijn nog in behandeling; wacht tot ze klaar zijn en vervang dan de sleutels.',
     'payment_gateway_mode_changed' => 'Deze sleutels schakelen de gateway tussen test en live terwijl betalingen of terugbetalingen nog gaande zijn. Wacht tot ze als eerste klaar zijn.',
-    'payment_gateway_in_use' => 'Deze gateway heeft nog betalingen of terugbetalingen in behandeling, dus de verbinding kan nog niet worden verbroken. Schakel het in plaats daarvan uit voor nieuwe betalingen; het kan worden losgekoppeld zodra ze klaar zijn.',
     'payment_method_not_available' => 'Deze betaalmethode wordt niet aangeboden voor deze bestelling.',
     'payment_not_awaiting_receipt' => 'Deze betaling wacht niet tot het geld is geregistreerd: de betaling is niet handmatig gedaan, of is al ontvangen, mislukt of wordt beoordeeld.',
     'payment_receipt_invalid' => 'Registreer een positief bedrag, in de valuta van de betaling.',

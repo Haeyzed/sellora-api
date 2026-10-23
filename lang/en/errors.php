@@ -191,7 +191,6 @@ return [
     'payment_gateway_credentials_invalid' => 'The payment gateway didn\'t accept these credentials. Check them in your gateway account and try again.',
     'payment_gateway_account_changed' => 'These keys belong to another gateway account. Payments or refunds on the current account are still in progress; wait for them to finish, then replace the keys.',
     'payment_gateway_mode_changed' => 'These keys switch the gateway between test and live while payments or refunds are still in progress. Wait for them to finish first.',
-    'payment_gateway_in_use' => 'This gateway still has payments or refunds in progress, so it can\'t be disconnected yet. Turn it off for new payments instead; it can be disconnected once they finish.',
     'payment_method_not_available' => 'This payment method isn\'t offered for this order.',
     'payment_not_awaiting_receipt' => 'This payment isn\'t waiting for money to be recorded: it isn\'t paid by hand, or was already received, failed or is in review.',
     'payment_receipt_invalid' => 'Record a positive amount, in the payment\'s currency.',

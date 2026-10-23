@@ -30,7 +30,7 @@ final readonly class VerifyRefund
     {
         $connection = $paymentRefund->payment->connection;
 
-        if ($paymentRefund->status === RefundStatus::Succeeded || $paymentRefund->recorded_by_type !== null || $connection === null || ! $connection->isConnected()) {
+        if ($paymentRefund->status === RefundStatus::Succeeded || $paymentRefund->recorded_by_type !== null || $connection === null || ! $connection->holdsCredentials()) {
             return $paymentRefund;
         }
 

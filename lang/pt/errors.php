@@ -168,7 +168,6 @@ return [
     'payment_gateway_credentials_invalid' => 'O gateway de pagamento não aceitou essas credenciais. Verifique-os na sua conta gateway e tente novamente.',
     'payment_gateway_account_changed' => 'Essas chaves pertencem a outra conta de gateway. Os pagamentos ou reembolsos em conta corrente ainda estão em andamento; espere que terminem e substitua as chaves.',
     'payment_gateway_mode_changed' => 'Essas chaves alternam o gateway entre teste e ativo enquanto os pagamentos ou reembolsos ainda estão em andamento. Espere que eles terminem primeiro.',
-    'payment_gateway_in_use' => 'Este gateway ainda tem pagamentos ou reembolsos em andamento, portanto ainda não pode ser desconectado. Em vez disso, desligue-o para novos pagamentos; ele pode ser desconectado assim que terminarem.',
     'payment_method_not_available' => 'Este método de pagamento não é oferecido para este pedido.',
     'payment_not_awaiting_receipt' => 'Este pagamento não está aguardando o registro do dinheiro: não foi pago em mãos, ou já foi recebido, falhou ou está em análise.',
     'payment_receipt_invalid' => 'Registre um valor positivo, na moeda do pagamento.',

@@ -168,7 +168,6 @@ return [
     'payment_gateway_credentials_invalid' => 'Ödeme ağ geçidi bu kimlik bilgilerini kabul etmedi. Bunları ağ geçidi hesabınızda kontrol edin ve tekrar deneyin.',
     'payment_gateway_account_changed' => 'Bu anahtarlar başka bir ağ geçidi hesabına aittir. Cari hesaba ilişkin ödeme veya iade işlemleri halen devam etmektedir; bitmelerini bekleyin, ardından anahtarları değiştirin.',
     'payment_gateway_mode_changed' => 'Bu anahtarlar, ödemeler veya geri ödemeler devam ederken ağ geçidini test ile canlı arasında değiştirir. Önce onların bitirmesini bekleyin.',
-    'payment_gateway_in_use' => 'Bu ağ geçidinde hâlâ devam eden ödemeler veya geri ödemeler olduğundan bağlantısı henüz kesilemez. Bunun yerine yeni ödemeler için bu özelliği kapatın; işleri bittiğinde bağlantı kesilebilir.',
     'payment_method_not_available' => 'Bu sipariş için bu ödeme yöntemi sunulmuyor.',
     'payment_not_awaiting_receipt' => 'Bu ödeme, paranın kaydedilmesini beklemiyor: elden ödenmiyor veya zaten alınmış, başarısız olmuş veya incelemede.',
     'payment_receipt_invalid' => 'Ödemenin para biriminde pozitif bir tutar kaydedin.',

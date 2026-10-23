@@ -71,6 +71,8 @@ return [
         'guest_order' => (int) env('RATE_LIMIT_GUEST_ORDER', 60),
         'guest_order_ip_ceiling' => (int) env('RATE_LIMIT_GUEST_ORDER_IP_CEILING', 300),
         'tenant_webhooks' => (int) env('RATE_LIMIT_TENANT_WEBHOOKS', 300),
+        // Per webhook endpoint of a store (a gateway's mode), within the store's own limit above.
+        'tenant_webhook_endpoints' => (int) env('RATE_LIMIT_TENANT_WEBHOOK_ENDPOINTS', 120),
         // Webhooks to endpoint IDs that lead nowhere, per IP address: guessing them is pointless, and this keeps it slow.
         'unknown_webhook_endpoints' => (int) env('RATE_LIMIT_UNKNOWN_WEBHOOK_ENDPOINTS', 30),
         'tenant_bulk_jobs' => (int) env('RATE_LIMIT_TENANT_BULK_JOBS', 60),

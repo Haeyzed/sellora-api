@@ -168,7 +168,6 @@ return [
     'payment_gateway_credentials_invalid' => 'Gerbang pembayaran tidak menerima kredensial ini. Periksa di akun gateway Anda dan coba lagi.',
     'payment_gateway_account_changed' => 'Kunci ini milik akun gateway lain. Pembayaran atau pengembalian dana pada rekening giro masih berlangsung; tunggu sampai selesai, lalu ganti kuncinya.',
     'payment_gateway_mode_changed' => 'Kunci ini mengalihkan gerbang antara pengujian dan siaran langsung saat pembayaran atau pengembalian dana masih berlangsung. Tunggu sampai mereka selesai dulu.',
-    'payment_gateway_in_use' => 'Pembayaran atau pengembalian dana pada gateway ini masih dalam proses, sehingga belum dapat diputuskan sambungannya. Matikan untuk pembayaran baru; itu dapat diputuskan setelah selesai.',
     'payment_method_not_available' => 'Metode pembayaran ini tidak ditawarkan untuk pesanan ini.',
     'payment_not_awaiting_receipt' => 'Pembayaran ini tidak menunggu uang untuk dicatat: pembayaran ini tidak dibayar secara langsung, atau sudah diterima, gagal, atau sedang dalam peninjauan.',
     'payment_receipt_invalid' => 'Catat jumlah positif, dalam mata uang pembayaran.',

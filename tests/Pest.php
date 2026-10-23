@@ -24,7 +24,7 @@ use Tests\TestCase;
 |
 */
 
-pest()->extend(TestCase::class)->in('Feature', '../integrations/OpenExchangeRates/tests');
+pest()->extend(TestCase::class)->in('Feature', '../integrations/OpenExchangeRates/tests', '../integrations/Paystack/tests');
 
 /*
 |--------------------------------------------------------------------------

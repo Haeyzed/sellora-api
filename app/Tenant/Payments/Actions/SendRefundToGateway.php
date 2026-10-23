@@ -31,7 +31,7 @@ final readonly class SendRefundToGateway
         $payment = $paymentRefund->payment;
         $connection = $payment->connection;
 
-        if ($paymentRefund->status !== RefundStatus::Pending || $connection === null || ! $connection->isConnected()) {
+        if ($paymentRefund->status !== RefundStatus::Pending || $connection === null || ! $connection->holdsCredentials()) {
             return $paymentRefund;
         }
 

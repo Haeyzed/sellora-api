@@ -33,7 +33,7 @@ final readonly class VerifyPayment
     {
         $connection = $payment->connection;
 
-        if ($payment->method !== PaymentMethod::Gateway || ! in_array($payment->status, self::VERIFIABLE, true) || $connection === null || ! $connection->isConnected()) {
+        if ($payment->method !== PaymentMethod::Gateway || ! in_array($payment->status, self::VERIFIABLE, true) || $connection === null || ! $connection->holdsCredentials()) {
             return $payment;
         }
 

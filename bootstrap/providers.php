@@ -7,4 +7,5 @@ return [
     App\Providers\RateLimitServiceProvider::class,
     App\Providers\TenancyServiceProvider::class,
     Integrations\OpenExchangeRates\OpenExchangeRatesServiceProvider::class,
+    Integrations\Paystack\PaystackServiceProvider::class,
 ];

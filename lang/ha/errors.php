@@ -168,7 +168,6 @@ return [
     'payment_gateway_credentials_invalid' => 'Ƙofar biyan kuɗi ba ta karɓi waɗannan takaddun shaida ba. Duba su a cikin asusun ƙofar ku kuma sake gwadawa.',
     'payment_gateway_account_changed' => 'Waɗannan maɓallan na wani asusun ƙofa ne. Ana ci gaba da biyan kuɗi ko maidowa akan asusun na yanzu; jira su gama, sa\'an nan kuma musanya makullin.',
     'payment_gateway_mode_changed' => 'Waɗannan maɓallan suna canza ƙofa tsakanin gwaji da rayuwa yayin da ake ci gaba da biyan kuɗi ko maidowa. Jira su fara gamawa.',
-    'payment_gateway_in_use' => 'Har yanzu wannan ƙofa tana da biyan kuɗi ko maidowa, don haka ba za a iya cire haɗin ta ba tukuna. Kashe shi don sababbin biyan kuɗi maimakon; ana iya katse shi da zarar sun gama.',
     'payment_method_not_available' => 'Ba a bayar da wannan hanyar biyan kuɗi don wannan odar ba.',
     'payment_not_awaiting_receipt' => 'Wannan biyan kuɗi baya jiran a rubuta kuɗi: ba a biya da hannu ba, ko an riga an karɓa, gazawa ko kuma ana cikin dubawa.',
     'payment_receipt_invalid' => 'Yi rikodin tabbataccen adadin, a cikin kuɗin biyan kuɗi.',
