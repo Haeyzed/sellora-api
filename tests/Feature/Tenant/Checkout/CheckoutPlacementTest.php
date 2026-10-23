@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Shared\Idempotency\IdempotencyKey;
 use App\Shared\Money\Money;
 use App\Tenant\Cart\Models\Cart;
 use App\Tenant\Catalog\Models\ProductVariant;
@@ -86,21 +87,38 @@ it('places a guest\'s order with everything held for it, and empties the cart', 
     });
 });
 
-it('needs an Idempotency-Key, and gives the same order however often it is placed, the token only the first time', function (): void {
+it('needs an Idempotency-Key, and gives the same order however often it is placed, with a fresh token on a retry', function (): void {
     $token = checkoutCart();
     $checkout = readyCheckout($token);
 
     placeCheckout($checkout['id'], $checkout['version'], token: $token, key: null)->assertBadRequest()->assertJsonPath('code', 'idempotency_key_missing');
 
     $first = placeCheckout($checkout['id'], $checkout['version'], token: $token, key: 'place-order-0001')->assertCreated();
+    // The guest never saw the first answer: the retry gives them a token of their own.
     $replayed = placeCheckout($checkout['id'], $checkout['version'], token: $token, key: 'place-order-0001')->assertCreated()->assertHeader('Idempotent-Replayed', 'true');
     $again = placeCheckout($checkout['id'], $checkout['version'], token: $token, key: 'place-order-0002')->assertOk();
+    $orderId = (string) $first->json('data.order.id');
+    $firstToken = (string) $first->headers->get(OrderAccessToken::HEADER);
+    $replayedToken = (string) $replayed->headers->get(OrderAccessToken::HEADER);
 
-    expect($first->headers->has(OrderAccessToken::HEADER))->toBeTrue()
-        ->and($replayed->headers->has(OrderAccessToken::HEADER))->toBeFalse()
+    expect(OrderAccessToken::isWellFormed($firstToken))->toBeTrue()
+        ->and(OrderAccessToken::isWellFormed($replayedToken))->toBeTrue()
+        ->and($replayedToken)->not->toBe($firstToken)
+        ->and($replayed->json())->toBe($first->json())
         ->and($again->headers->has(OrderAccessToken::HEADER))->toBeFalse()
-        ->and($again->json('data.order.id'))->toBe($first->json('data.order.id'))
-        ->and($this->store->run(static fn (): array => [Order::query()->count(), Payment::query()->count()]))->toBe([1, 1]);
+        ->and($again->json('data.order.id'))->toBe($orderId)
+        ->and($this->store->run(static fn (): array => [Order::query()->count(), Payment::query()->count(), OrderAccessToken::query()->count()]))->toBe([1, 1, 1]);
+
+    // The fresh token opens the order and replaces the first.
+    guestOrderRequest('GET', $orderId, $replayedToken, subdomain: 'cart-store')->assertOk();
+    guestOrderRequest('GET', $orderId, $firstToken, subdomain: 'cart-store')->assertNotFound();
+
+    // Neither token was kept for replay.
+    $stored = $this->store->run(static fn (): string => IdempotencyKey::query()->get()->map(static fn (IdempotencyKey $key): string => (string) json_encode($key->only(['response_status', 'response_content_type', 'response_body'])))->implode("\n"));
+    expect($stored)->toContain($orderId)->not->toContain($firstToken)->not->toContain($replayedToken);
+
+    // Another cart with the same key replays nothing of this guest's, and gets no token.
+    placeCheckout($checkout['id'], $checkout['version'], token: newGuestCart(), key: 'place-order-0001')->assertNotFound()->assertHeaderMissing(OrderAccessToken::HEADER);
 });
 
 it('places nothing when the quote isn\'t the one confirmed, and returns the new one', function (): void {
@@ -196,8 +214,10 @@ it('places a signed-in customer\'s order on their account, with no order token',
     $checkout = readyCheckout(as: $ada, changes: ['marketing_consents' => ['email' => true]]);
 
     $placed = placeCheckout($checkout['id'], $checkout['version'], as: $ada)->assertCreated();
+    $replayed = placeCheckout($checkout['id'], $checkout['version'], as: $ada)->assertCreated()->assertHeader('Idempotent-Replayed', 'true');
 
     expect($placed->headers->has(OrderAccessToken::HEADER))->toBeFalse()
+        ->and($replayed->headers->has(OrderAccessToken::HEADER))->toBeFalse()
         ->and($this->store->run(static fn (): array => [Order::query()->sole()->customer_id, OrderAccessToken::query()->count(), MarketingConsent::query()->sole()->customer_id]))->toBe([$ada->id, 0, $ada->id]);
 });
 

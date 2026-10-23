@@ -22,7 +22,7 @@ final class OrderTokenDocumentation implements OperationTransformer
     {
         return SecurityScheme::apiKey('header', OrderAccessToken::HEADER)
             ->as(self::SCHEME)
-            ->setDescription("A guest's order access token, given once in the X-Order-Token header of the response that placed the order. Only ever sent in this header: a token in the URL is never accepted.");
+            ->setDescription("A guest's order access token, given in the X-Order-Token header of the response that placed the order, and freshly again (replacing it) when that request is retried with the same Idempotency-Key. Only ever sent in this header: a token in the URL is never accepted.");
     }
 
     public function handle(Operation $operation, RouteInfo $routeInfo): void

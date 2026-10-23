@@ -37,6 +37,7 @@ use App\Shared\Http\PaginationDocumentation;
 use App\Shared\Idempotency\GuestRequester;
 use App\Shared\Idempotency\GuestRequesters;
 use App\Shared\Idempotency\IdempotencyKeyRetention;
+use App\Shared\Idempotency\ReplayPreparers;
 use App\Shared\Integrations\Contracts\PaymentWebhooks;
 use App\Shared\Integrations\Contracts\WebhookEndpoints;
 use App\Shared\Money\ExchangeRates\ExchangeRateRetention;
@@ -85,6 +86,7 @@ use App\Tenant\Checkout\CheckoutExtensions;
 use App\Tenant\Checkout\CheckoutOrderAmountHolds;
 use App\Tenant\Checkout\CheckoutRetention;
 use App\Tenant\Checkout\CheckoutStoreTables;
+use App\Tenant\Checkout\Http\IssueOrderTokenOnReplay;
 use App\Tenant\Checkout\Listeners\CommitPaymentHoldsWhenOrderPaid;
 use App\Tenant\Checkout\Listeners\ReleasePaymentHoldsWhenOrderCancelled;
 use App\Tenant\Checkout\Models\Checkout;
@@ -322,6 +324,13 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(PaymentCheckBeforeExpiry::class, GatewayCheckBeforeExpiry::class);
         // A guest's Idempotency-Keys are theirs by their order's access token, or else their cart token.
         $this->app->bind(GuestRequester::class, static fn (): GuestRequesters => new GuestRequesters(new OrderGuestRequester, new CartGuestRequester));
+        // A guest retrying their placement gets a fresh order token: tokens are never stored for replay.
+        $this->app->singleton(ReplayPreparers::class, static function (Application $app): ReplayPreparers {
+            $preparers = new ReplayPreparers($app);
+            $preparers->register('checkout.orders.store', IssueOrderTokenOnReplay::class);
+
+            return $preparers;
+        });
         // Core's own ways to pay come first; modules add theirs from their service providers.
         $this->app->singleton(CheckoutExtensions::class, static function (Application $app): CheckoutExtensions {
             $extensions = new CheckoutExtensions($app);

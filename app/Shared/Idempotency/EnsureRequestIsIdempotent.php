@@ -33,6 +33,7 @@ final readonly class EnsureRequestIsIdempotent
 
     public function __construct(
         private GuestRequester $guestRequester,
+        private ReplayPreparers $replayPreparers,
     ) {}
 
     /**
@@ -51,7 +52,7 @@ final readonly class EnsureRequestIsIdempotent
         $record = $this->claim($request, $key);
 
         if ($record->isCompleted()) {
-            return $this->replay($record);
+            return $this->replay($request, $record);
         }
 
         $response = $next($request);
@@ -160,12 +161,18 @@ final readonly class EnsureRequestIsIdempotent
         ])->save();
     }
 
-    private function replay(IdempotencyKey $record): Response
+    /**
+     * The stored answer again. Only the body is ever stored, never headers; a route that must hand back something secret (a guest's order token) adds a fresh one here (ReplayPreparers).
+     */
+    private function replay(Request $request, IdempotencyKey $record): Response
     {
-        return new Response((string) $record->response_body, (int) $record->response_status, [
+        $response = new Response((string) $record->response_body, (int) $record->response_status, [
             'Content-Type' => $record->response_content_type ?? 'application/json',
             'Idempotent-Replayed' => 'true',
         ]);
+        $this->replayPreparers->prepare($request, $response);
+
+        return $response;
     }
 
     /**

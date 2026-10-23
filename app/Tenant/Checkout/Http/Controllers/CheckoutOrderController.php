@@ -34,10 +34,11 @@ final class CheckoutOrderController extends Controller
      * price, stock, a promotion, shipping, tax or a payment method changed),
      * nothing is placed: 409 checkout_quote_changed, with the new quote as
      * `data`, to show and confirm. 409 checkout_not_ready, with the quote,
-     * while it has issues. A guest gets their order's access token once, in
-     * the X-Order-Token response header (never repeated, even on a retry):
-     * keep it to see, pay for or cancel the order. Placing again returns the
-     * same order (200).
+     * while it has issues. A guest gets their order's access token in the
+     * X-Order-Token response header: keep it to see, pay for or cancel the
+     * order. Retrying with the same Idempotency-Key returns the same answer
+     * with a fresh token, which replaces the earlier one. Placing again with
+     * another key returns the same order (200), without a token.
      *
      * @throws GuestCheckoutNotAllowedException
      * @throws CheckoutNotFoundException
