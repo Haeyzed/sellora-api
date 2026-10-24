@@ -19,6 +19,7 @@ use App\Tenant\Payments\Data\IncomingWebhook;
 use App\Tenant\Payments\Data\StartedPayment;
 use App\Tenant\Payments\Enums\GatewayMode;
 use App\Tenant\Payments\Enums\GatewayPaymentState;
+use App\Tenant\Payments\Enums\GatewayRefundState;
 use App\Tenant\Payments\Exceptions\GatewayRejectedException;
 use App\Tenant\Payments\Exceptions\GatewayUnavailableException;
 use Closure;
@@ -40,9 +41,9 @@ use LogicException;
  * Payments start on Paystack's hosted page and are verified by our
  * reference, strictly: a payment counts only when Paystack took exactly the
  * order's amount, so a merchant who passes Paystack's fees on to buyers gets
- * every such payment in review, for now. Refunds (16b.3) and webhooks
- * (16b.4) come next; until then each refuses without calling Paystack, the
- * way that leaves nothing to clean up.
+ * every such payment in review, for now. Refunds carry our reference as
+ * their merchant note and are found again by Paystack's ID for them, or by
+ * that note. Webhooks (16b.4) come next; until then each is refused unread.
  */
 final readonly class PaystackGateway implements PaymentGateway
 {
@@ -197,23 +198,79 @@ final readonly class PaystackGateway implements PaymentGateway
     }
 
     /**
-     * Not until Step 16b.3: refused without calling Paystack, so nothing was refunded.
+     * Asks Paystack to refund part or all of a transaction (POST /refund), with our refund reference as the refund's merchant note, by which it is found again. Paystack makes a second refund if asked twice, even with the same note: core never sends one twice without finding none first.
      *
      * @throws GatewayRejectedException
+     * @throws GatewayUnavailableException
      */
     public function refund(GatewayCredentials $credentials, GatewayRefundRequest $request): GatewayRefundResult
     {
-        throw new GatewayRejectedException(self::KEY, 'refund', 'not_available_yet');
+        try {
+            $amount = $this->amounts->toPaystack($request->amount);
+        } catch (PaystackAmountException) {
+            throw new GatewayRejectedException(self::KEY, 'refund', 'amount_not_supported');
+        }
+
+        $response = $this->send('refund', static fn (PendingRequest $paystack): Response => $paystack->post('refund', [
+            'transaction' => $request->paymentReference,
+            'amount' => (string) $amount,
+            'currency' => $request->amount->currency(),
+            'merchant_note' => $request->refundReference,
+        ]), $credentials);
+
+        if (self::isRefusal($response)) {
+            throw new GatewayRejectedException(self::KEY, 'refund', 'refund_refused');
+        }
+
+        // Anything else may still have made it: it stays pending, and is looked for.
+        if (! self::isAnswer($response) || ! is_array($response->json('data'))) {
+            throw new GatewayUnavailableException(self::KEY, 'refund');
+        }
+
+        /** @var array<string, mixed> $refund */
+        $refund = $response->json('data');
+
+        return $this->refundResultOf($refund, $request);
     }
 
     /**
-     * Not until Step 16b.3: its outcome stays unknown, never "not found", so nothing is ever sent again on its strength.
+     * Asks Paystack where a refund stands: by Paystack's ID for it (GET /refund/{id}) once Paystack gave one, otherwise among the transaction's refunds (GET /refund?transaction={id}), by our reference as the merchant note and the same amount.
+     *
+     * Exactly one match is the refund. More than one, or one for another
+     * amount, is unclear, and so is no match when Paystack says less is left
+     * to refund than this refund (meta.partialAmountLeft). No match is "not
+     * found" only when the whole list arrived; a list that can't be read, or
+     * comes in more than one page, leaves it unknown.
      *
      * @throws GatewayUnavailableException
      */
-    public function verifyRefund(GatewayCredentials $credentials, string $refundReference): GatewayRefundResult
+    public function verifyRefund(GatewayCredentials $credentials, GatewayRefundRequest $request, ?string $gatewayRefundReference): GatewayRefundResult
     {
-        throw new GatewayUnavailableException(self::KEY, 'verifyRefund');
+        if ($gatewayRefundReference !== null) {
+            return $this->fetchRefund($credentials, $request, $gatewayRefundReference);
+        }
+
+        $transactionId = $request->gatewayPaymentReference;
+
+        if ($transactionId === null || ! ctype_digit($transactionId)) {
+            throw new GatewayUnavailableException(self::KEY, 'verifyRefund');
+        }
+
+        $response = $this->send('verifyRefund', static fn (PendingRequest $paystack): Response => $paystack->get('refund', ['transaction' => $transactionId]), $credentials);
+        $refunds = $response->json('data');
+
+        if (! self::isAnswer($response) || ! is_array($refunds) || ! array_is_list($refunds) || $response->json('meta.total') !== count($refunds) || in_array(false, array_map(is_array(...), $refunds), true)) {
+            throw new GatewayUnavailableException(self::KEY, 'verifyRefund');
+        }
+
+        /** @var list<array<array-key, mixed>> $refunds */
+        $matches = array_values(array_filter($refunds, static fn (array $refund): bool => ($refund['merchant_note'] ?? null) === $request->refundReference));
+
+        return match (count($matches)) {
+            0 => $this->notFoundUnlessTooLittleLeft($response, $request),
+            1 => $this->refundResultOf($matches[0], $request),
+            default => new GatewayRefundResult(GatewayRefundState::Unclear),
+        };
     }
 
     /**
@@ -242,6 +299,77 @@ final readonly class PaystackGateway implements PaymentGateway
             preg_match('/^sk_live_[A-Za-z0-9]+$/', $secretKey) === 1 => GatewayMode::Live,
             default => null,
         };
+    }
+
+    /**
+     * @throws GatewayUnavailableException
+     */
+    private function fetchRefund(GatewayCredentials $credentials, GatewayRefundRequest $request, string $refundId): GatewayRefundResult
+    {
+        if (! ctype_digit($refundId)) {
+            throw new GatewayUnavailableException(self::KEY, 'verifyRefund');
+        }
+
+        $response = $this->send('verifyRefund', static fn (PendingRequest $paystack): Response => $paystack->get('refund/'.$refundId), $credentials);
+
+        if (! self::isAnswer($response) || ! is_array($response->json('data'))) {
+            throw new GatewayUnavailableException(self::KEY, 'verifyRefund');
+        }
+
+        /** @var array<string, mixed> $refund */
+        $refund = $response->json('data');
+
+        return $this->refundResultOf($refund, $request);
+    }
+
+    /**
+     * None of the transaction's refunds is ours: not found, unless Paystack says less is left to refund than ours, or doesn't say.
+     */
+    private function notFoundUnlessTooLittleLeft(Response $response, GatewayRefundRequest $request): GatewayRefundResult
+    {
+        $left = $response->json('meta.partialAmountLeft');
+
+        try {
+            $fits = is_int($left) && $left >= $this->amounts->toPaystack($request->amount);
+        } catch (PaystackAmountException) {
+            $fits = false;
+        }
+
+        return new GatewayRefundResult($fits ? GatewayRefundState::NotFound : GatewayRefundState::Unclear);
+    }
+
+    /**
+     * One Paystack refund as ours: unclear unless it carries our reference as its note and exactly our amount. Processed succeeds, failed fails, anything else is pending.
+     *
+     * @param  array<array-key, mixed>  $refund
+     */
+    private function refundResultOf(array $refund, GatewayRefundRequest $request): GatewayRefundResult
+    {
+        $amount = $refund['amount'] ?? null;
+        $currency = $refund['currency'] ?? null;
+
+        try {
+            $isOurs = ($refund['merchant_note'] ?? null) === $request->refundReference
+                && is_int($amount) && is_string($currency)
+                && $this->amounts->fromPaystack($amount, $currency)->isEqualTo($request->amount);
+        } catch (PaystackAmountException) {
+            $isOurs = false;
+        }
+
+        if (! $isOurs) {
+            return new GatewayRefundResult(GatewayRefundState::Unclear);
+        }
+
+        return new GatewayRefundResult(
+            state: match ($refund['status'] ?? null) {
+                'processed' => GatewayRefundState::Succeeded,
+                'failed' => GatewayRefundState::Failed,
+                default => GatewayRefundState::Pending,
+            },
+            gatewayRefundReference: is_int($refund['id'] ?? null) ? (string) $refund['id'] : null,
+            amount: $request->amount,
+            failureCode: ($refund['status'] ?? null) === 'failed' ? 'refund_failed' : null,
+        );
     }
 
     /**

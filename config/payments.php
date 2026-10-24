@@ -33,6 +33,11 @@ return [
     | gateway refund still pending refund_daily_after_days after it was sent
     | is asked about once a day from then on, and staff are alerted once.
     |
+    | A refund whose sending went unanswered is sent again only when the
+    | gateway, asked in full twice at least refund_resend_after_minutes apart,
+    | has no such refund either time, and only once (Paystack doesn't refuse
+    | the same refund twice, so it is never sent blindly).
+    |
     */
 
     'checks' => [
@@ -42,6 +47,7 @@ return [
         'sweep_after_minutes' => (int) env('PAYMENTS_SWEEP_AFTER_MINUTES', 60),
         'sweep_per_run' => (int) env('PAYMENTS_SWEEP_PER_RUN', 200),
         'refund_daily_after_days' => (int) env('PAYMENTS_REFUND_DAILY_AFTER_DAYS', 7),
+        'refund_resend_after_minutes' => (int) env('PAYMENTS_REFUND_RESEND_AFTER_MINUTES', 5),
     ],
 
     /*

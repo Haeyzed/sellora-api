@@ -8,8 +8,10 @@ use App\Tenant\Orders\Models\Order;
 use App\Tenant\Payments\Actions\ConnectPaymentGateway;
 use App\Tenant\Payments\Actions\StartPayment;
 use App\Tenant\Payments\Actions\VerifyPayment;
+use App\Tenant\Payments\Actions\VerifyRefund;
 use App\Tenant\Payments\Models\Payment;
 use App\Tenant\Payments\Models\PaymentGatewayConnection;
+use App\Tenant\Payments\Models\PaymentRefund;
 use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Http\Client\Request;
 use Illuminate\Log\Events\MessageLogged;
@@ -107,6 +109,73 @@ function verifyPaystackPayment(Payment $payment, string $fixture, array $changes
     Http::fake(["paystack.test/transaction/verify/{$payment->reference}" => Http::response(paystackFixture($fixture, ['data.reference' => $payment->reference, 'data.amount' => $total, 'data.requested_amount' => $total, ...$changes]), $status)]);
 
     return app(VerifyPayment::class)->handle($payment->refresh())->refresh();
+}
+
+/**
+ * A test order paid through Paystack, Paystack having answered as recorded (003); with its payment.
+ *
+ * @return array{Order, Payment}
+ */
+function paystackPaidOrder(): array
+{
+    return test()->store->run(static function (): array {
+        $payment = verifyPaystackPayment(startedPaystackPayment(), 'verify-success-003');
+
+        return [$payment->order->refresh(), $payment];
+    });
+}
+
+/**
+ * Makes Paystack answer each refund it is asked for (POST /refund) with a recording made to be about it (its merchant note and amount), changed as given; or with the answer given. Every request is kept, even one whose connection fails (paystackRefundRequests).
+ *
+ * @param  array<string, mixed>  $changes
+ * @param  (callable(Request): mixed)|null  $answer
+ */
+function paystackCreatesRefunds(string $fixture = 'refund-003', array $changes = [], int $status = 200, ?callable $answer = null): void
+{
+    $sent = new ArrayObject;
+    app()->instance('tests.paystack_refund_requests', $sent);
+    $answer ??= static fn (Request $request) => Http::response(paystackFixture($fixture, ['data.merchant_note' => $request['merchant_note'], 'data.amount' => (int) $request['amount'], ...$changes]), $status);
+
+    Http::fake(['paystack.test/refund' => static function (Request $request) use ($sent, $answer) {
+        $sent->append($request);
+
+        return $answer($request);
+    }]);
+}
+
+/**
+ * The refunds Paystack was asked for since paystackCreatesRefunds, in order.
+ *
+ * @return list<Request>
+ */
+function paystackRefundRequests(): array
+{
+    /** @var ArrayObject<int, Request> $sent */
+    $sent = app('tests.paystack_refund_requests');
+
+    return array_values($sent->getArrayCopy());
+}
+
+function paystackRefundsSent(): int
+{
+    return count(paystackRefundRequests());
+}
+
+/**
+ * Staff refunding an amount of a Paystack-paid order, in minor units; returns the part drawn from its payment.
+ */
+function paystackRefund(Order $order, int $amount): PaymentRefund
+{
+    return refundOrder($order, $amount)->paymentRefunds->sole();
+}
+
+/**
+ * One check with Paystack for a refund, as its schedule, the sweep or a webhook would; returns it freshly read.
+ */
+function checkPaystackRefund(PaymentRefund $paymentRefund): PaymentRefund
+{
+    return test()->store->run(static fn (): PaymentRefund => app(VerifyRefund::class)->handle($paymentRefund->refresh())->refresh());
 }
 
 /**

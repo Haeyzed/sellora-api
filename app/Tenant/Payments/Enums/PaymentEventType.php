@@ -31,4 +31,6 @@ enum PaymentEventType: string
     case RefundSucceededAfterFailing = 'refund_succeeded_after_failing';
     /** Staff were told a refund was still pending at the gateway after days; it is asked about daily from then on. */
     case RefundStillPending = 'refund_still_pending';
+    /** Part of a refund went to staff review: the gateway's answers can't tell whether it was made, so it is never sent again. */
+    case RefundNeedsReview = 'refund_needs_review';
 }

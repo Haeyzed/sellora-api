@@ -9,8 +9,10 @@ use App\Tenant\Orders\Models\Order;
 use App\Tenant\Payments\Data\GatewayRefundResult;
 use App\Tenant\Payments\Enums\GatewayRefundState;
 use App\Tenant\Payments\Enums\PaymentEventType;
+use App\Tenant\Payments\Enums\RefundReviewReason;
 use App\Tenant\Payments\Enums\RefundStatus;
 use App\Tenant\Payments\Events\RefundFailed;
+use App\Tenant\Payments\Events\RefundNeedsReview;
 use App\Tenant\Payments\Events\RefundSucceeded;
 use App\Tenant\Payments\Events\RefundSucceededAfterFailing;
 use App\Tenant\Payments\Models\Payment;
@@ -29,7 +31,8 @@ use Illuminate\Support\Facades\Log;
  * transaction, so the order's payment status moves with it. The gateway's
  * latest word wins, loudly: a refund it reported as failed that goes through
  * later counts, and staff are told (Orders flags the order if refunds then
- * exceed what was paid).
+ * exceed what was paid). A refund whose answers can't tell whether it was
+ * made goes to staff review, once, and is never sent again.
  */
 final readonly class RefundSettlement
 {
@@ -51,10 +54,65 @@ final readonly class RefundSettlement
             match ($result->state) {
                 GatewayRefundState::Succeeded => $this->succeedIfExact($locked, $payment, $order, $result),
                 GatewayRefundState::Failed => $this->fail($locked, $payment, $result->failureCode),
+                GatewayRefundState::Unclear => $this->review($locked, $payment, RefundReviewReason::GatewayUnclear),
                 GatewayRefundState::Pending, GatewayRefundState::NotFound => $locked->save(),
             };
 
             return $locked;
+        });
+    }
+
+    /**
+     * Sends part of a refund to staff review, once: it is never sent again, and stays pending, still using up what its payment can give back.
+     */
+    public function sendToReview(PaymentRefund $paymentRefund, RefundReviewReason $reason): PaymentRefund
+    {
+        return DB::transaction(function () use ($paymentRefund, $reason): PaymentRefund {
+            [, $payment, $locked] = $this->lock($paymentRefund);
+            $locked->forceFill(['last_checked_at' => CarbonImmutable::now(), 'checks' => $locked->checks + 1]);
+            $this->review($locked, $payment, $reason);
+
+            return $locked;
+        });
+    }
+
+    /**
+     * Notes that the gateway, asked in full, has no refund sent but never acknowledged, and says whether it may be sent again now: only the second time it is heard, at least config payments.checks.refund_resend_after_minutes after the first, and only once. Heard after it was sent again, it goes to staff review.
+     */
+    public function mayResendAfterNotFound(PaymentRefund $paymentRefund): bool
+    {
+        return DB::transaction(function () use ($paymentRefund): bool {
+            [, $payment, $locked] = $this->lock($paymentRefund);
+            $now = CarbonImmutable::now();
+            $locked->forceFill(['last_checked_at' => $now, 'checks' => $locked->checks + 1]);
+
+            if ($locked->status !== RefundStatus::Pending || $locked->needs_review_at !== null) {
+                $locked->save();
+
+                return false;
+            }
+
+            if ($locked->not_found_at === null) {
+                $locked->forceFill(['not_found_at' => $now])->save();
+
+                return false;
+            }
+
+            if ($locked->not_found_at->addMinutes(config()->integer('payments.checks.refund_resend_after_minutes'))->isAfter($now)) {
+                $locked->save();
+
+                return false;
+            }
+
+            if ($locked->send_attempts >= 2) {
+                $this->review($locked, $payment, RefundReviewReason::NotFoundAfterResend);
+
+                return false;
+            }
+
+            $locked->save();
+
+            return true;
         });
     }
 
@@ -140,6 +198,21 @@ final readonly class RefundSettlement
         // Only public IDs: staff find the rest from there.
         Log::warning('A gateway reported a refund as failed and later as gone through; it counts as refunded.', ['refund' => $locked->public_id, 'payment' => $payment->public_id]);
         RefundSucceededAfterFailing::dispatch($locked);
+    }
+
+    private function review(PaymentRefund $locked, Payment $payment, RefundReviewReason $reason): void
+    {
+        if ($locked->needs_review_at !== null || $locked->status !== RefundStatus::Pending) {
+            $locked->save();
+
+            return;
+        }
+
+        $locked->forceFill(['needs_review_at' => CarbonImmutable::now(), 'review_reason' => $reason])->save();
+        $this->paymentEventLog->record($payment, PaymentEventType::RefundNeedsReview, ['refund' => $locked->public_id, 'reason' => $reason->value]);
+        // Only public IDs: staff find the rest from there.
+        Log::warning('The gateway\'s answers can\'t tell whether a refund was made; it is never sent again until staff look at it.', ['refund' => $locked->public_id, 'payment' => $payment->public_id, 'reason' => $reason->value]);
+        RefundNeedsReview::dispatch($locked);
     }
 
     private function fail(PaymentRefund $locked, Payment $payment, ?string $failureCode): void

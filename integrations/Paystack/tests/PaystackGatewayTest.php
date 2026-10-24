@@ -149,14 +149,19 @@ it('refuses a payment in a currency whose Paystack units are not confirmed, with
     Http::assertNothingSent();
 });
 
-it('takes no refund or webhook before Steps 16b.3 and 16b.4, without calling Paystack', function (): void {
+it('refuses a refund in a currency whose Paystack units are not confirmed, without calling Paystack', function (): void {
     Http::fake();
-    $gateway = app(PaystackGateway::class);
-    $credentials = new GatewayCredentials(['secret_key' => PAYSTACK_FAKE_TEST_KEY]);
-    $amount = Money::ofMinor(500000, 'NGN');
+    $refund = static fn () => app(PaystackGateway::class)->refund(
+        new GatewayCredentials(['secret_key' => PAYSTACK_FAKE_TEST_KEY]),
+        new GatewayRefundRequest('rfd_x', 'pay_x', '6688258824', Money::ofMinor(2000, 'XOF')),
+    );
 
-    expect(static fn () => $gateway->refund($credentials, new GatewayRefundRequest('ref_x', 'pay_x', null, $amount)))->toThrow(GatewayRejectedException::class)
-        ->and(static fn () => $gateway->verifyRefund($credentials, 'ref_x'))->toThrow(GatewayUnavailableException::class)
-        ->and($gateway->verifyWebhookSignature($credentials, new IncomingWebhook('{}', ['x-paystack-signature' => 'x'])))->toBeFalse();
+    expect($refund)->toThrow(fn (GatewayRejectedException $exception) => expect($exception->failureCode)->toBe('amount_not_supported'));
     Http::assertNothingSent();
+});
+
+it('takes no webhook before Step 16b.4', function (): void {
+    $credentials = new GatewayCredentials(['secret_key' => PAYSTACK_FAKE_TEST_KEY]);
+
+    expect(app(PaystackGateway::class)->verifyWebhookSignature($credentials, new IncomingWebhook('{}', ['x-paystack-signature' => 'x'])))->toBeFalse();
 });

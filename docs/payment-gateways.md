@@ -10,10 +10,16 @@ CLAUDE.md section 3.3 has the rules; these are the parts an integration owns.
 - **Amounts cross the contract as `Money`.** The integration converts to and
   from the gateway's own amount format, in both directions, with tests per
   currency (including 0- and 3-decimal currencies).
-- **Our reference is the idempotency key.** `startPayment` and `refund` send
-  the reference they are given, so a retried call never charges or refunds
-  twice. `verifyRefund` answers `NotFound` only when the gateway has no refund
-  under that reference; core then sends it again with the same reference.
+- **Our reference goes with every payment and refund.** `startPayment` sends
+  it as the payment's reference. `refund` sends it so the refund can be found
+  again, but not every gateway refuses the same refund twice (Paystack makes
+  a second one), so core never relies on that: each send is claimed first,
+  and a refund is sent again at most once, only after `verifyRefund` twice
+  answered `NotFound`, a while apart. `verifyRefund` asks by the gateway's own
+  ID once it gave one; otherwise it looks for our reference, answering
+  `NotFound` only when the gateway's whole answer holds none, and `Unclear`
+  when it can't be tied to exactly this refund (core sends that to staff
+  review).
 - **A timeout or server error throws `GatewayUnavailableException`.** It
   means the outcome is unknown, never that it failed. Throw
   `GatewayRejectedException` only for a definite refusal.

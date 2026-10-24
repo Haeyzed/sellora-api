@@ -60,9 +60,9 @@ final readonly class LocalFakePaymentGateway implements PaymentGateway
         return $this->fake->refund($credentials, $request);
     }
 
-    public function verifyRefund(GatewayCredentials $credentials, string $refundReference): GatewayRefundResult
+    public function verifyRefund(GatewayCredentials $credentials, GatewayRefundRequest $request, ?string $gatewayRefundReference): GatewayRefundResult
     {
-        return $this->fake->verifyRefund($credentials, $refundReference);
+        return $this->fake->verifyRefund($credentials, $request, $gatewayRefundReference);
     }
 
     public function verifyWebhookSignature(GatewayCredentials $credentials, IncomingWebhook $webhook): bool

@@ -74,7 +74,12 @@ interface PaymentGateway
     public function verifyPayment(GatewayCredentials $credentials, string $reference): GatewayPaymentResult;
 
     /**
-     * Asks the gateway to refund part or all of a payment, with our refund reference as its idempotency key, so sending it again never refunds twice.
+     * Asks the gateway to refund part or all of a payment, sending our refund reference with it so it can be found again.
+     *
+     * Not every gateway refuses the same refund twice (Paystack makes a second
+     * one), so core never relies on it: each refund is claimed before it is
+     * sent, and sent again at most once, only after verifyRefund twice found
+     * none, a while apart.
      *
      * @throws GatewayRejectedException When the gateway refused the refund.
      * @throws GatewayUnavailableException
@@ -82,11 +87,13 @@ interface PaymentGateway
     public function refund(GatewayCredentials $credentials, GatewayRefundRequest $request): GatewayRefundResult;
 
     /**
-     * Asks the gateway where a refund stands, by our refund reference.
+     * Asks the gateway where a refund stands: by the gateway's own ID for it when it gave one, otherwise by finding it among the payment's refunds by our reference. NotFound only when the gateway answered in full and holds none; Unclear when its answer can't be tied to exactly this refund.
+     *
+     * @param  string|null  $gatewayRefundReference  The gateway's own ID for the refund, once it gave one.
      *
      * @throws GatewayUnavailableException
      */
-    public function verifyRefund(GatewayCredentials $credentials, string $refundReference): GatewayRefundResult;
+    public function verifyRefund(GatewayCredentials $credentials, GatewayRefundRequest $request, ?string $gatewayRefundReference): GatewayRefundResult;
 
     /**
      * Whether a webhook was really sent by the gateway for this account. Checked before anything in it is parsed, stored or acted on.

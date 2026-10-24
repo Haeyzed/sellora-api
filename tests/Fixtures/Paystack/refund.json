@@ -1,0 +1,1 @@
+{"status":false,"message":"This transaction failed","type":"validation_error","code":"declined","meta":{"nextStep":"Only successful transactions can be refunded"}}

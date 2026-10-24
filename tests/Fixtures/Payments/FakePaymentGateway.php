@@ -90,9 +90,11 @@ final readonly class FakePaymentGateway implements PaymentGateway
             ?? new GatewayRefundResult(GatewayRefundState::Succeeded, 'fake_'.$request->refundReference, $request->amount);
     }
 
-    public function verifyRefund(GatewayCredentials $credentials, string $refundReference): GatewayRefundResult
+    public function verifyRefund(GatewayCredentials $credentials, GatewayRefundRequest $request, ?string $gatewayRefundReference): GatewayRefundResult
     {
+        $refundReference = $request->refundReference;
         $this->call('verifyRefund', $refundReference);
+        $this->script->refundLookups[] = [$refundReference, $gatewayRefundReference];
         $wasSent = $this->script->timesCalled('refund', $refundReference) > 0;
 
         return $this->script->refunds[$refundReference]

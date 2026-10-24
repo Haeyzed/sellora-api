@@ -56,6 +56,13 @@ final class FakeGatewayScript
     public array $calls = [];
 
     /**
+     * Each refund asked about, as [our refund reference, the gateway's ID for it given, if any].
+     *
+     * @var list<array{string, string|null}>
+     */
+    public array $refundLookups = [];
+
+    /**
      * How deep in database transactions each payment was started: a gateway must never be called inside one.
      *
      * @var list<int>

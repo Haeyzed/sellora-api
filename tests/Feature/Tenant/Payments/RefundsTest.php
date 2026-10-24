@@ -483,7 +483,7 @@ it('checks a refund pending at the gateway on its own schedule until it settles'
     Queue::assertNotPushed(CheckRefundWithGateway::class, static fn (CheckRefundWithGateway $job): bool => $job->checkNumber === 2);
 });
 
-it('sends a refund again, with the same reference, when the gateway never got it', function (): void {
+it('sends a refund again, with the same reference, when the gateway twice says it never got it, a while apart', function (): void {
     [$order] = gatewayPaidOrder();
     $this->script->unavailable = true;
     $part = refundOrder($order, 4000)->paymentRefunds->sole();
@@ -491,6 +491,10 @@ it('sends a refund again, with the same reference, when the gateway never got it
 
     expect($part->status->value)->toBe('pending');
 
+    $this->store->run(static fn () => app(CheckPendingRefund::class)->handle($part->refresh()));
+    expect($this->script->timesCalled('refund'))->toBe(1);
+
+    $this->travel(config()->integer('payments.checks.refund_resend_after_minutes'))->minutes();
     $this->store->run(static fn () => app(CheckPendingRefund::class)->handle($part->refresh()));
 
     expect($this->store->run(static fn (): string => $part->refresh()->status->value))->toBe('succeeded')

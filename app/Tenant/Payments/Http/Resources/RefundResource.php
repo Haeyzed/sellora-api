@@ -60,7 +60,9 @@ final class RefundResource extends JsonResource
             /**
              * Each payment it draws on, and how that part stands: through the payment's gateway, or recorded as paid back by hand.
              *
-             * @var list<array{id: string, payment: string, status: string, amount: MoneyResource, gateway_reference: string|null, failure_code: string|null, recorded_by: array{type: string, id: string}|null, succeeded_at: string|null, failed_at: string|null}>
+             * A part whose needs_review_at is set waits for staff: the gateway's answers can't tell whether it was made (review_reason: "lookup_failed", "gateway_unclear" or "not_found_after_resend"), so it is never sent again, and it stays pending.
+             *
+             * @var list<array{id: string, payment: string, status: string, amount: MoneyResource, gateway_reference: string|null, failure_code: string|null, recorded_by: array{type: string, id: string}|null, succeeded_at: string|null, failed_at: string|null, needs_review_at: string|null, review_reason: string|null}>
              */
             'parts' => array_values($refund->paymentRefunds->map(static fn (PaymentRefund $part): array => [
                 'id' => $part->public_id,
@@ -72,6 +74,8 @@ final class RefundResource extends JsonResource
                 'recorded_by' => $part->recorded_by_type === null || $part->recorded_by_id === null ? null : ['type' => $part->recorded_by_type, 'id' => $part->recorded_by_id],
                 'succeeded_at' => $part->succeeded_at?->toIso8601String(),
                 'failed_at' => $part->failed_at?->toIso8601String(),
+                'needs_review_at' => $part->needs_review_at?->toIso8601String(),
+                'review_reason' => $part->review_reason?->value,
             ])->all()),
             'created_at' => $refund->created_at->toIso8601String(),
         ];

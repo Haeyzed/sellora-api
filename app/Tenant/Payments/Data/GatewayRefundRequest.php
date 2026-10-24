@@ -12,7 +12,7 @@ use App\Shared\Money\Money;
 final readonly class GatewayRefundRequest
 {
     /**
-     * @param  string  $refundReference  Ours, unique per refund: its idempotency key, so sending it again never refunds twice.
+     * @param  string  $refundReference  Ours, unique per refund, sent with it so it can be found again.
      * @param  string  $paymentReference  Our reference of the payment being refunded.
      * @param  string|null  $gatewayPaymentReference  The gateway's own reference of that payment, when it gave one.
      */

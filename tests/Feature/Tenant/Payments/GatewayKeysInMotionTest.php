@@ -91,6 +91,8 @@ it('still sends a refund that never reached the gateway through one disconnected
     $this->script->unavailable = false;
 
     staffOrderRequest('DELETE', '/payment-gateways/fake_gateway/connection')->assertOk();
+    $this->store->run(static fn () => app(CheckPendingRefund::class)->handle($part->refresh()));
+    $this->travel(config()->integer('payments.checks.refund_resend_after_minutes'))->minutes();
 
     expect($this->store->run(static fn (): string => app(CheckPendingRefund::class)->handle($part->refresh())->status->value))->toBe('succeeded')
         ->and($this->script->timesCalled('refund', $part->reference))->toBe(2);
