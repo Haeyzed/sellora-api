@@ -38,7 +38,8 @@ final class PaymentStoreTables implements ClassifiesStoreTables
         $registry->table('refund_lines', include: ['id', 'refund_id', 'order_line_id', 'quantity', 'currency', 'amount_amount', 'tax_amount', 'created_at']);
         $registry->table('payment_refunds', include: [
             'id', 'public_id', 'refund_id', 'payment_id', 'status', 'currency', 'amount_amount', 'reference', 'gateway_reference', 'failure_code',
-            'recorded_by_type', 'recorded_by_id', 'succeeded_at', 'failed_at', 'last_checked_at', 'checks', 'slow_alerted_at', 'created_at', 'updated_at',
+            'recorded_by_type', 'recorded_by_id', 'succeeded_at', 'failed_at', 'last_checked_at', 'checks', 'slow_alerted_at',
+            'send_attempts', 'not_found_at', 'needs_review_at', 'review_reason', 'created_at', 'updated_at',
         ]);
         $registry->table('payment_webhook_events', include: ['id', 'connection_id', 'gateway', 'event_id', 'kind', 'reference', 'received_at', 'processed_at'], exclude: [
             'payload' => 'What a gateway sent, encrypted with the platform key and kept only briefly; what it led to is in the payments.',
