@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Landlord\Integrations\Models\WebhookEndpoint;
 use App\Landlord\Legal\Models\LegalAcceptance;
 use App\Landlord\Legal\Models\LegalDocument;
 use App\Landlord\Plans\Models\Plan;
@@ -16,6 +17,7 @@ use App\Landlord\Tenancy\Models\ReleasedSubdomain;
 use App\Landlord\Tenancy\Models\StoreExport;
 use App\Landlord\Tenancy\Models\Tenant;
 use App\Landlord\Tenancy\Services\StoreSubdomains;
+use App\Shared\Integrations\Contracts\WebhookEndpoints;
 use Database\Seeders\Landlord\PlatformPermissionSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Artisan;
@@ -28,8 +30,8 @@ use Tests\Support\TruncatesCentralDatabase;
  * Section 9.1: a closed store past its purge date is purged only while
  * tenancy.purge_enabled is on. The purge is resumable and safe to run twice:
  * it drops the database, deletes the store's files and exports, deletes its
- * domains and holds its subdomain for 365 days, clears the owner's personal
- * data and marks the store Purged, keeping subscriptions and legal
+ * domains and holds its subdomain for 365 days, deletes its webhook endpoints,
+ * clears the owner's personal data and marks the store Purged, keeping subscriptions and legal
  * acceptances. Once a purge has started, the store can't be restored.
  */
 uses(TruncatesCentralDatabase::class);
@@ -75,6 +77,10 @@ it('deletes a closed store\'s data for good once its purge date has passed, keep
     $acceptance->forceFill(['tenant_id' => $store->id])->save();
     $featureGrant = FeatureGrant::query()->create(['tenant_id' => $store->id, 'feature_key' => 'loyalty', 'reason' => 'Pat asked for it after her surgery']);
     $limitOverride = TenantLimitOverride::query()->create(['tenant_id' => $store->id, 'limit_key' => 'staff', 'limit_value' => 20, 'reason' => 'Pat hired her family']);
+    $endpoints = app(WebhookEndpoints::class);
+    $endpoints->create($store->id, 'paystack');
+    $endpoints->create($store->id, 'paystack');
+    $othersEndpoint = $endpoints->create(createStore('other-store')->id, 'paystack');
 
     expect(Artisan::call('stores:purge-closed'))->toBe(0);
 
@@ -88,6 +94,7 @@ it('deletes a closed store\'s data for good once its purge date has passed, keep
         ->and(File::isDirectory(storage_path(config()->string('tenancy.filesystem.suffix_base').$store->id)))->toBeFalse()
         ->and(StoreExport::query()->count())->toBe(0)
         ->and(Domain::query()->where('tenant_id', $store->id)->exists())->toBeFalse()
+        ->and(WebhookEndpoint::query()->pluck('public_id')->all())->toBe([$othersEndpoint])
         ->and(Subscription::query()->whereKey($subscription->id)->exists())->toBeTrue()
         ->and(LegalAcceptance::query()->whereKey($acceptance->id)->exists())->toBeTrue()
         ->and($featureGrant->refresh()->reason)->toBeNull()
@@ -124,6 +131,7 @@ it('holds a purged store\'s subdomain for 365 days, so nobody takes over its old
 
 it('carries on a purge that stopped halfway, even with purging switched off, and is safe to run twice', function (): void {
     app(App\Landlord\Tenancy\Services\StoreDatabase::class)->drop($this->purgedStore);
+    app(WebhookEndpoints::class)->create($this->purgedStore->id, 'paystack');
     $this->purgedStore->update(['status' => TenantStatus::Purging]);
     config()->set('tenancy.purge_enabled', false);
 
@@ -131,6 +139,7 @@ it('carries on a purge that stopped halfway, even with purging switched off, and
     dispatch(new PurgeStore($this->purgedStore->id));
 
     expect($this->purgedStore->refresh()->status)->toBe(TenantStatus::Purged)
+        ->and(WebhookEndpoint::query()->where('tenant_id', $this->purgedStore->id)->exists())->toBeFalse()
         ->and($this->purgedStore->owner_email)->toBeNull()
         ->and(Activity::query()->where('event', 'store_purged')->count())->toBe(1);
 });

@@ -14,6 +14,7 @@ use App\Landlord\Tenancy\Models\Tenant;
 use App\Landlord\Tenancy\Services\StoreDatabase;
 use App\Landlord\Tenancy\StoreExportRetention;
 use App\Shared\Features\Features;
+use App\Shared\Integrations\Contracts\WebhookEndpoints;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -27,8 +28,9 @@ use Illuminate\Support\Facades\File;
  * on a restore is refused, and a purge that stops halfway carries on from
  * where it was. Then, each step doing nothing if already done: drop the
  * database, delete the store's files and exports, delete its domains and hold
- * its subdomain, clear the owner's personal data and every free-text reason,
- * and mark it Purged. Its subscriptions, feature grants, limit overrides and
+ * its subdomain, delete its webhook endpoints (a gateway resending to one then
+ * gets an ordinary 404), clear the owner's personal data and every free-text
+ * reason, and mark it Purged. Its subscriptions, feature grants, limit overrides and
  * the legal acceptances (the contract) are kept.
  */
 final class PurgeStore implements ShouldQueue
@@ -47,7 +49,7 @@ final class PurgeStore implements ShouldQueue
         $this->onQueue(config()->string('retention.queue'));
     }
 
-    public function handle(StoreDatabase $storeDatabase, StoreExportRetention $storeExportRetention, Features $features): void
+    public function handle(StoreDatabase $storeDatabase, StoreExportRetention $storeExportRetention, Features $features, WebhookEndpoints $webhookEndpoints): void
     {
         $store = $this->startPurging();
 
@@ -59,6 +61,7 @@ final class PurgeStore implements ShouldQueue
         $this->deleteFiles($store);
         $this->deleteExports($store, $storeExportRetention);
         $this->releaseDomains($store);
+        $webhookEndpoints->deleteAllFor($store->id);
         $this->finish($store);
         $features->forget($store->id);
     }

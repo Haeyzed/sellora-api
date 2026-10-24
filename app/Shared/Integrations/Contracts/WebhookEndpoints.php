@@ -35,6 +35,13 @@ interface WebhookEndpoints
     public function delete(string $endpointId): void;
 
     /**
+     * Deletes every endpoint a store has, for any integration, as its purge does; doing nothing when there are none.
+     *
+     * @return int How many were deleted.
+     */
+    public function deleteAllFor(string $tenantId): int;
+
+    /**
      * The URL a payment gateway sends this endpoint's webhooks to, on the central domain, for the merchant to paste into the gateway's dashboard.
      */
     public function paymentWebhookUrl(string $endpointId): string;

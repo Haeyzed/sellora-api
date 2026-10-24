@@ -49,6 +49,11 @@ final readonly class CentralWebhookEndpoints implements WebhookEndpoints
         WebhookEndpoint::query()->where('public_id', $endpointId)->delete();
     }
 
+    public function deleteAllFor(string $tenantId): int
+    {
+        return WebhookEndpoint::query()->where('tenant_id', $tenantId)->delete();
+    }
+
     /**
      * On the first central domain, which the webhook routes are served on, with the scheme of the app's URL.
      */
