@@ -71,6 +71,23 @@ unconfirmed: the `event` names, `data.reference` on `charge.success`,
 `data.transaction_reference` on refund events, the header's name and that
 its hex is lower case.
 
+## Paystack: the manual test-mode run
+
+`php artisan paystack:manual-test {store} {order}` runs one real payment and
+partial refund in Paystack's test mode, by hand, on a developer's machine. It
+reads a Paystack test secret key from `PAYSTACK_MANUAL_TEST_SECRET_KEY` in
+the local `.env` (never committed), refuses any key not starting `sk_test_`,
+any environment but local, and CI, and never prints the key. It connects the
+local store, starts a payment of one of its unpaid test orders, prints
+Paystack's checkout page, waits while it is paid with Paystack's test card,
+verifies it, refunds half and checks the refund.
+
+With `--save-webhooks` it prints the store's test webhook URL (for Paystack's
+dashboard, through a tunnel) and, while it runs, keeps each webhook whose
+signature checked out in `storage/app/private/paystack-webhooks`, which git
+ignores. What is kept may hold a buyer's details: sanitise it before it
+becomes a fixture (tests/Architecture/PaystackFixturesTest checks).
+
 ## Paystack: fees passed to the customer
 
 Paystack lets merchants pass transaction fees on to the customer. The amount

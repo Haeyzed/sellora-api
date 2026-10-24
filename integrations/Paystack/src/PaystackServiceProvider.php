@@ -6,6 +6,7 @@ namespace Integrations\Paystack;
 
 use App\Shared\Features\IntegrationServiceProvider;
 use App\Tenant\Payments\PaymentGatewayRegistry;
+use Integrations\Paystack\ManualTest\ManualTestCommand;
 
 /**
  * Paystack as a payment gateway integration (Step 16b): plan-gated by its key, "paystack", for starting new payments; money already in motion with it is never gated.
@@ -23,5 +24,12 @@ final class PaystackServiceProvider extends IntegrationServiceProvider
         $this->callAfterResolving(PaymentGatewayRegistry::class, static function (PaymentGatewayRegistry $registry): void {
             $registry->register(PaystackGateway::KEY, PaystackGateway::class);
         });
+    }
+
+    public function boot(): void
+    {
+        if ($this->app->runningInConsole()) {
+            $this->commands([ManualTestCommand::class]);
+        }
     }
 }

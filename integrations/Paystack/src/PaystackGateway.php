@@ -29,6 +29,7 @@ use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Integrations\Paystack\Exceptions\PaystackAmountException;
+use Integrations\Paystack\ManualTest\ReceivedWebhooks;
 
 /**
  * Paystack (Africa: cards, bank transfer, USSD, mobile money), for stores that connect their own Paystack account (section 3.3).
@@ -55,6 +56,7 @@ final readonly class PaystackGateway implements PaymentGateway
     public function __construct(
         private HttpFactory $http,
         private PaystackAmounts $amounts,
+        private ReceivedWebhooks $receivedWebhooks,
     ) {}
 
     public function key(): string
@@ -289,9 +291,13 @@ final readonly class PaystackGateway implements PaymentGateway
 
     /**
      * What a signed webhook names, read tolerantly: charge.success names a payment by its reference (data.reference), a refund.* event names the payment refunded (data.transaction_reference), so each of its refunds in motion is checked. Anything else, or anything not in that shape, is left alone. Paystack gives no event ID, so the body's hash stands in for one.
+     *
+     * Only ever called once the signature checked out, so this is where the
+     * manual test-mode run, when asked, keeps the webhook to make a fixture of.
      */
     public function parseWebhook(IncomingWebhook $webhook): GatewayWebhookEvent
     {
+        $this->receivedWebhooks->keep($webhook->body);
         $payload = json_decode($webhook->body, true);
         $event = is_array($payload) ? ($payload['event'] ?? null) : null;
         $data = is_array($payload) && is_array($payload['data'] ?? null) ? $payload['data'] : [];
