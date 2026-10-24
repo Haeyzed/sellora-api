@@ -15,4 +15,6 @@ enum RefundReviewReason: string
     case GatewayUnclear = 'gateway_unclear';
     /** Sent again after the gateway twice reported having none, and still not found. */
     case NotFoundAfterResend = 'not_found_after_resend';
+    /** The gateway refused the store's keys when it was sent: it wasn't made, and it waits for staff once the merchant reconnects. */
+    case CredentialsRefused = 'credentials_refused';
 }

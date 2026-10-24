@@ -172,6 +172,14 @@ function gatewayKeysHeld(string $gateway = FakePaymentGateway::KEY): array
 }
 
 /**
+ * When the gateway first refused the keys of the test store's connection with it, as the API shows it; null while they work.
+ */
+function gatewayKeysRefusedAt(string $gateway = FakePaymentGateway::KEY): ?string
+{
+    return test()->store->run(static fn (): ?string => PaymentGatewayConnection::query()->where('gateway', $gateway)->sole()->needs_attention_at?->toIso8601String());
+}
+
+/**
  * Sends a webhook from the fake gateway to an endpoint on the central domain, signed with a secret key (the live test keys by default), as the gateway would.
  *
  * @param  array<string, mixed>  $payload

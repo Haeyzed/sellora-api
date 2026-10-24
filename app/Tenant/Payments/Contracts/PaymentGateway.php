@@ -27,7 +27,9 @@ use App\Tenant\Payments\Exceptions\GatewayUnavailableException;
  * never stores them. Amounts cross this contract as Money: each integration
  * converts to and from its gateway's own amount format, with tests. A call
  * that times out or gets a server error throws GatewayUnavailableException,
- * meaning the outcome is unknown, never that it failed.
+ * meaning the outcome is unknown, never that it failed. So does a call the
+ * gateway refuses because of the store's keys (GatewayUnavailableException::
+ * keysRefused): nothing fails for it, and the merchant is asked to reconnect.
  *
  * Its key is also the plan feature key that gates starting new payments
  * with it. Money already in motion (verifying, refunding, webhooks) is never

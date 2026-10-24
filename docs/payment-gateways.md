@@ -22,7 +22,22 @@ CLAUDE.md section 3.3 has the rules; these are the parts an integration owns.
   review).
 - **A timeout or server error throws `GatewayUnavailableException`.** It
   means the outcome is unknown, never that it failed. Throw
-  `GatewayRejectedException` only for a definite refusal.
+  `GatewayRejectedException` only for a definite refusal, with our own
+  failure code, never the gateway's words.
+- **A refused key throws `GatewayUnavailableException::keysRefused()`.** An invalid
+  or revoked key never fails a payment or a refund: core leaves a payment
+  pending, sends a refund being sent to staff review (it wasn't made), and
+  marks the connection `needs_attention_at`, alerting the merchant once
+  (`PaymentGatewayNeedsReconnecting`). Reconnecting, or a check that finds the
+  keys work, clears it.
+- **Read the gateway's error code before its HTTP status,** when the gateway
+  doesn't keep its statuses to their meaning. Paystack answers 400
+  `transaction_not_found` for a reference it doesn't know yet (pending, never
+  a refusal), 401 `invalid_Key` for a bad key (it is not consistent about
+  case, so codes are compared in lower case), and 400 for a refund it won't
+  make (`declined`, `refund_amount_exceeds_transaction_amount`). Only 400 and
+  422 refuse; 408, 409, 429, 5xx, a timeout or an answer not shaped as
+  expected leave the outcome unknown.
 - **Verification is fail-closed.** `verifyPayment` is given the amount
   expected and returns the amount and currency the gateway took. Core marks a
   payment paid only when they equal what was expected exactly; a missing

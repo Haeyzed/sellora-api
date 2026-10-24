@@ -16,6 +16,9 @@ final class FakeGatewayScript
     /** Whether every call times out, as if the gateway were down. */
     public bool $unavailable = false;
 
+    /** Whether the store's keys are refused, as if revoked: every call throws, and a check of them finds them invalid. */
+    public bool $refusesKeys = false;
+
     /** Whether starting a payment is refused for good. */
     public bool $rejectsPayments = false;
 

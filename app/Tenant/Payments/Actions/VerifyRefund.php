@@ -11,6 +11,7 @@ use App\Tenant\Payments\Enums\RefundStatus;
 use App\Tenant\Payments\Exceptions\GatewayUnavailableException;
 use App\Tenant\Payments\Models\PaymentRefund;
 use App\Tenant\Payments\PaymentGatewayRegistry;
+use App\Tenant\Payments\Services\GatewayConnectionAttention;
 use App\Tenant\Payments\Services\RefundSettlement;
 
 /**
@@ -20,7 +21,8 @@ use App\Tenant\Payments\Services\RefundSettlement;
  * the gateway's own ID for it. One whose sending went unanswered is looked
  * for among the payment's refunds: found once, its ID is kept from then on;
  * found more than once, or unclear, or if the gateway can't be asked, staff
- * review it and it is never sent again. Only when the gateway, asked in full,
+ * review it and it is never sent again (a gateway refusing the store's keys
+ * also asks the merchant to reconnect it). Only when the gateway, asked in full,
  * twice has none, a while apart, is it sent again, and only once
  * (RefundSettlement::mayResendAfterNotFound). Never gated by the plan or the
  * store's status.
@@ -31,6 +33,7 @@ final readonly class VerifyRefund
         private PaymentGatewayRegistry $registry,
         private RefundSettlement $refundSettlement,
         private SendRefundToGateway $sendRefundToGateway,
+        private GatewayConnectionAttention $attention,
     ) {}
 
     public function handle(PaymentRefund $paymentRefund): PaymentRefund
@@ -50,7 +53,11 @@ final readonly class VerifyRefund
 
         try {
             $result = $this->registry->get($connection->gateway)->verifyRefund($connection->gatewayCredentials(), $request, $paymentRefund->gateway_reference);
-        } catch (GatewayUnavailableException) {
+        } catch (GatewayUnavailableException $exception) {
+            if ($exception->keysRefused) {
+                $this->attention->keysRefused($connection);
+            }
+
             return $this->cannotAsk($paymentRefund);
         }
 

@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Tenant\Payments\Actions;
 
 use App\Tenant\Payments\Data\GatewayRefundRequest;
+use App\Tenant\Payments\Enums\RefundReviewReason;
 use App\Tenant\Payments\Exceptions\GatewayRejectedException;
 use App\Tenant\Payments\Exceptions\GatewayUnavailableException;
 use App\Tenant\Payments\Models\PaymentRefund;
 use App\Tenant\Payments\PaymentGatewayRegistry;
+use App\Tenant\Payments\Services\GatewayConnectionAttention;
 use App\Tenant\Payments\Services\RefundSettlement;
 use Carbon\CarbonImmutable;
 
@@ -21,7 +23,9 @@ use Carbon\CarbonImmutable;
  * never both reach the gateway. A part is sent once, and again at most once
  * (resend), when the gateway twice reported having none (VerifyRefund); the
  * database refuses a third. A gateway that doesn't answer leaves it pending,
- * and its checks look for it.
+ * and its checks look for it. One that refuses the store's keys made none,
+ * but it goes to staff review, never sent again by itself, and the merchant
+ * is asked to reconnect.
  *
  * Never gated by the plan or the store's status: refunds of money already
  * taken carry on during a wind-down.
@@ -31,6 +35,7 @@ final readonly class SendRefundToGateway
     public function __construct(
         private PaymentGatewayRegistry $registry,
         private RefundSettlement $refundSettlement,
+        private GatewayConnectionAttention $attention,
     ) {}
 
     /**
@@ -64,7 +69,13 @@ final readonly class SendRefundToGateway
             $result = $this->registry->get($connection->gateway)->refund($connection->gatewayCredentials(), $request);
         } catch (GatewayRejectedException $exception) {
             return $this->refundSettlement->refuse($paymentRefund, $exception->failureCode);
-        } catch (GatewayUnavailableException) {
+        } catch (GatewayUnavailableException $exception) {
+            if ($exception->keysRefused) {
+                $this->attention->keysRefused($connection);
+
+                return $this->refundSettlement->sendToReview($paymentRefund, RefundReviewReason::CredentialsRefused);
+            }
+
             $this->refundSettlement->touch($paymentRefund);
 
             return $paymentRefund;

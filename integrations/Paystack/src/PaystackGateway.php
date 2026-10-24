@@ -99,7 +99,7 @@ final readonly class PaystackGateway implements PaymentGateway
             throw new GatewayUnavailableException(self::KEY, 'checkCredentials', $exception);
         }
 
-        if ($response->status() === 401 || $response->status() === 403) {
+        if (self::refusesKey($response)) {
             return new CredentialCheck(false, $mode);
         }
 
@@ -149,7 +149,7 @@ final readonly class PaystackGateway implements PaymentGateway
     }
 
     /**
-     * Asks Paystack where the transaction with our reference stands. Only the transaction's own status counts ("status": true only says the request worked): success, failed or reversed; anything else, abandoned included (the buyer may still pay), is pending, and so is a reference Paystack doesn't know yet.
+     * Asks Paystack where the transaction with our reference stands. Only the transaction's own status counts ("status": true only says the request worked): success, failed or reversed; anything else, abandoned included (the buyer may still pay), is pending. So is a reference Paystack doesn't know yet (400 "transaction_not_found", read before the status, in any case). A verify is never refused: any other answer but a success leaves the outcome unknown, and a refused key is told apart (send).
      *
      * Strict about the amount, reporting only amounts Paystack gave: when the
      * amount Paystack says it was asked for (requested_amount) is exactly the
@@ -165,7 +165,8 @@ final readonly class PaystackGateway implements PaymentGateway
     {
         $response = $this->send('verifyPayment', static fn (PendingRequest $paystack): Response => $paystack->get('transaction/verify/'.rawurlencode($reference)), $credentials);
 
-        if ($response->json('status') === false && $response->json('code') === 'transaction_not_found') {
+        // Paystack answers 400 for a reference it doesn't know (yet): never a refusal, only not there to see.
+        if (self::errorCodeOf($response) === 'transaction_not_found') {
             return new GatewayPaymentResult(GatewayPaymentState::Pending);
         }
 
@@ -221,7 +222,7 @@ final readonly class PaystackGateway implements PaymentGateway
         ]), $credentials);
 
         if (self::isRefusal($response)) {
-            throw new GatewayRejectedException(self::KEY, 'refund', 'refund_refused');
+            throw new GatewayRejectedException(self::KEY, 'refund', self::errorCodeOf($response) === 'refund_amount_exceeds_transaction_amount' ? 'refund_exceeds_payment' : 'refund_refused');
         }
 
         // Anything else may still have made it: it stays pending, and is looked for.
@@ -430,25 +431,49 @@ final readonly class PaystackGateway implements PaymentGateway
     }
 
     /**
-     * Paystack refused the request for good: it was not carried out. A rate limit or a timeout says nothing.
+     * Paystack refused the request for good (400 or 422): it was not carried out. Reported with our own codes, never Paystack's words. Anything else unanswered (a timeout, a rate limit, a conflict, a server error) says nothing.
      */
     private static function isRefusal(Response $response): bool
     {
-        return $response->clientError() && ! in_array($response->status(), [408, 409, 429], true);
+        return in_array($response->status(), [400, 422], true);
+    }
+
+    /**
+     * Paystack refused the key itself (invalid or revoked), by its error code or its status: nothing was carried out, and nothing is known.
+     */
+    private static function refusesKey(Response $response): bool
+    {
+        return self::errorCodeOf($response) === 'invalid_key' || in_array($response->status(), [401, 403], true);
+    }
+
+    /**
+     * Paystack's error code, in lower case: it isn't consistent about case ("invalid_Key"). Read before the status, which Paystack doesn't keep to its meaning (400 for a reference it doesn't know).
+     */
+    private static function errorCodeOf(Response $response): ?string
+    {
+        $code = $response->json('code');
+
+        return is_string($code) ? mb_strtolower($code) : null;
     }
 
     /**
      * @param  Closure(PendingRequest): Response  $request
      *
-     * @throws GatewayUnavailableException When Paystack didn't answer.
+     * @throws GatewayUnavailableException When Paystack didn't answer, or refused the key.
      */
     private function send(string $operation, Closure $request, GatewayCredentials $credentials): Response
     {
         try {
-            return $request($this->client($credentials));
+            $response = $request($this->client($credentials));
         } catch (ConnectionException $exception) {
             throw new GatewayUnavailableException(self::KEY, $operation, $exception);
         }
+
+        if (self::refusesKey($response)) {
+            throw GatewayUnavailableException::keysRefused(self::KEY, $operation);
+        }
+
+        return $response;
     }
 
     private function client(GatewayCredentials $credentials): PendingRequest

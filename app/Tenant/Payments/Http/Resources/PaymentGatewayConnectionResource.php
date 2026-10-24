@@ -22,7 +22,7 @@ final class PaymentGatewayConnectionResource extends JsonResource
     }
 
     /**
-     * @return array{id: string, gateway: string, status: string, enabled: bool, priority: int, mode: string|null, credentials_hint: string|null, webhook_urls: array{test: string|null, live: string|null}, connected_at: string|null, checked_at: string|null, disconnected_at: string|null}
+     * @return array{id: string, gateway: string, status: string, enabled: bool, priority: int, mode: string|null, credentials_hint: string|null, webhook_urls: array{test: string|null, live: string|null}, connected_at: string|null, checked_at: string|null, needs_attention_at: string|null, disconnected_at: string|null}
      */
     public function toArray(Request $request): array
     {
@@ -50,6 +50,8 @@ final class PaymentGatewayConnectionResource extends JsonResource
             ],
             'connected_at' => $connection->connected_at?->toIso8601String(),
             'checked_at' => $connection->checked_at?->toIso8601String(),
+            /** When the gateway first refused its keys, since they last worked: reconnect it with working keys. Payments and refunds in motion are never failed for it; they wait. Null while the keys work. */
+            'needs_attention_at' => $connection->needs_attention_at?->toIso8601String(),
             'disconnected_at' => $connection->disconnected_at?->toIso8601String(),
         ];
     }

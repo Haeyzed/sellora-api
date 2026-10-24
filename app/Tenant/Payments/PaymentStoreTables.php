@@ -16,7 +16,7 @@ final class PaymentStoreTables implements ClassifiesStoreTables
     {
         $registry->table('payment_gateway_connections', include: [
             'id', 'public_id', 'gateway', 'status', 'enabled', 'priority', 'mode', 'credentials_hint', 'account_id',
-            'connected_at', 'checked_at', 'disconnected_at', 'created_at', 'updated_at',
+            'connected_at', 'checked_at', 'needs_attention_at', 'disconnected_at', 'created_at', 'updated_at',
         ], exclude: [
             'credentials' => 'The gateway keys of the store: secrets, never exported.',
             'retired_credentials' => 'Earlier gateway keys of the store, kept while money they took settles: secrets, never exported.',

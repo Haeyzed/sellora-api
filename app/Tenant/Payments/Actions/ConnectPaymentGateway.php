@@ -90,6 +90,7 @@ final readonly class ConnectPaymentGateway
                 'live_endpoint_id' => $liveEndpointId,
                 'connected_at' => $isReplacing ? $connection->connected_at : $now,
                 'checked_at' => $now,
+                'needs_attention_at' => null,
                 'disconnected_at' => null,
             ]);
 

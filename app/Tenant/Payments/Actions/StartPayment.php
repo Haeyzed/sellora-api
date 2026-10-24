@@ -21,6 +21,7 @@ use App\Tenant\Payments\Models\Payment;
 use App\Tenant\Payments\Models\PaymentGatewayConnection;
 use App\Tenant\Payments\PaymentGatewayRegistry;
 use App\Tenant\Payments\PaymentGatewayResolver;
+use App\Tenant\Payments\Services\GatewayConnectionAttention;
 use App\Tenant\Payments\Services\OrderPayments;
 use App\Tenant\Payments\Services\PaymentChecks;
 use App\Tenant\Payments\Services\PaymentEventLog;
@@ -37,6 +38,8 @@ use Illuminate\Support\Str;
  * transaction, with our reference as the gateway's idempotency key; when the
  * gateway doesn't answer, the payment stays pending and is asked about later,
  * on its own schedule of checks, which starts before the gateway is called.
+ * A gateway refusing the store's keys is treated the same, and the merchant
+ * is asked to reconnect it.
  */
 final readonly class StartPayment
 {
@@ -47,6 +50,7 @@ final readonly class StartPayment
         private PaymentEventLog $paymentEventLog,
         private PaymentSettlement $paymentSettlement,
         private PaymentChecks $paymentChecks,
+        private GatewayConnectionAttention $attention,
     ) {}
 
     /**
@@ -144,7 +148,11 @@ final readonly class StartPayment
             $this->paymentSettlement->failToStart($payment, $exception->failureCode);
 
             throw new PaymentRefusedByGatewayException;
-        } catch (GatewayUnavailableException) {
+        } catch (GatewayUnavailableException $exception) {
+            if ($exception->keysRefused) {
+                $this->attention->keysRefused($connection);
+            }
+
             throw new PaymentGatewayUnreachableException;
         }
 

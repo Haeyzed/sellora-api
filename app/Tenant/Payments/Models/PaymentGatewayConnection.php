@@ -38,6 +38,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property string|null $live_endpoint_id Its webhook endpoint for live mode in Landlord\Integrations.
  * @property CarbonImmutable|null $connected_at
  * @property CarbonImmutable|null $checked_at
+ * @property CarbonImmutable|null $needs_attention_at When the gateway first refused its keys, since they last worked: the merchant is to reconnect it.
  * @property CarbonImmutable|null $disconnected_at
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
@@ -138,6 +139,7 @@ final class PaymentGatewayConnection extends Model implements AuditableContract
             'retired_credentials' => 'encrypted:array',
             'connected_at' => 'immutable_datetime',
             'checked_at' => 'immutable_datetime',
+            'needs_attention_at' => 'immutable_datetime',
             'disconnected_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',

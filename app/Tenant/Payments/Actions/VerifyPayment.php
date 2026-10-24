@@ -9,6 +9,7 @@ use App\Tenant\Payments\Enums\PaymentStatus;
 use App\Tenant\Payments\Exceptions\GatewayUnavailableException;
 use App\Tenant\Payments\Models\Payment;
 use App\Tenant\Payments\PaymentGatewayRegistry;
+use App\Tenant\Payments\Services\GatewayConnectionAttention;
 use App\Tenant\Payments\Services\PaymentSettlement;
 use Carbon\CarbonImmutable;
 
@@ -17,7 +18,8 @@ use Carbon\CarbonImmutable;
  *
  * Never gated by the plan or the store's status: money already in motion is
  * always looked after. A gateway that doesn't answer changes nothing but
- * when it was last asked.
+ * when it was last asked; one that refuses the store's keys changes nothing
+ * about the payment either, and the merchant is asked to reconnect it.
  */
 final readonly class VerifyPayment
 {
@@ -27,6 +29,7 @@ final readonly class VerifyPayment
     public function __construct(
         private PaymentGatewayRegistry $registry,
         private PaymentSettlement $paymentSettlement,
+        private GatewayConnectionAttention $attention,
     ) {}
 
     public function handle(Payment $payment): Payment
@@ -39,7 +42,11 @@ final readonly class VerifyPayment
 
         try {
             $result = $this->registry->get($connection->gateway)->verifyPayment($connection->gatewayCredentials(), $payment->reference, $payment->amount);
-        } catch (GatewayUnavailableException) {
+        } catch (GatewayUnavailableException $exception) {
+            if ($exception->keysRefused) {
+                $this->attention->keysRefused($connection);
+            }
+
             $payment->forceFill(['last_checked_at' => CarbonImmutable::now(), 'checks' => $payment->checks + 1])->save();
 
             return $payment;

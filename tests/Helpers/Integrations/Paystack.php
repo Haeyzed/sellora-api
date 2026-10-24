@@ -39,6 +39,18 @@ const PAYSTACK_FAKE_TEST_KEY = 'sk_test_'.'fakepaystackkey0123456789';
 /** A made-up Paystack live secret key. */
 const PAYSTACK_FAKE_LIVE_KEY = 'sk_live_'.'fakepaystackkey0123456789';
 
+/*
+ * Paystack error replies whose bodies weren't recorded, only their statuses
+ * and codes: put together in the shape of the recorded ones (verify-not-found,
+ * refund), never presented as recordings.
+ */
+
+/** Paystack refusing a refund above the transaction's amount, sent with status 400. Constructed: not a recorded body. */
+const PAYSTACK_REFUND_EXCEEDS_REPLY = ['status' => false, 'message' => 'Constructed: not a recorded reply.', 'type' => 'validation_error', 'code' => 'refund_amount_exceeds_transaction_amount'];
+
+/** Paystack refusing the key, sent with status 401, its code's capital K included. Constructed: not a recorded body. */
+const PAYSTACK_INVALID_KEY_REPLY = ['status' => false, 'message' => 'Constructed: not a recorded reply.', 'code' => 'invalid_Key'];
+
 /**
  * Puts Paystack on the test store's plan (or takes it off), with Paystack's API at a test address that only faked HTTP answers.
  */
@@ -109,6 +121,21 @@ function verifyPaystackPayment(Payment $payment, string $fixture, array $changes
     Http::fake(["paystack.test/transaction/verify/{$payment->reference}" => Http::response(paystackFixture($fixture, ['data.reference' => $payment->reference, 'data.amount' => $total, 'data.requested_amount' => $total, ...$changes]), $status)]);
 
     return app(VerifyPayment::class)->handle($payment->refresh())->refresh();
+}
+
+/**
+ * Starts a Paystack payment of a test order and verifies it, Paystack answering the verify exactly as given; returns it freshly read.
+ *
+ * @param  array<array-key, mixed>|string  $body
+ */
+function verifyPaystackAnswering(array|string $body, int $status): Payment
+{
+    return test()->store->run(static function () use ($body, $status): Payment {
+        $payment = startedPaystackPayment();
+        Http::fake(["paystack.test/transaction/verify/{$payment->reference}" => Http::response($body, $status)]);
+
+        return app(VerifyPayment::class)->handle($payment->refresh())->refresh();
+    });
 }
 
 /**

@@ -137,13 +137,13 @@ it('reads only the transaction\'s own status: abandoned and anything unknown sta
     'reversed' => ['verify-success-003', ['data.status' => 'reversed'], 200, 'failed', 'payment_reversed'],
 ]);
 
-it('answers that a reference Paystack doesn\'t know yet is pending, never failed', function (): void {
-    Http::fake(['paystack.test/transaction/verify/pay_x' => Http::response(paystackFixture('verify-not-found'), 400)]);
+it('answers that a reference Paystack doesn\'t know yet is pending, never failed, by its error code in any case', function (string $code): void {
+    Http::fake(['paystack.test/transaction/verify/pay_x' => Http::response(paystackFixture('verify-not-found', ['code' => $code]), 400)]);
 
     $result = app(PaystackGateway::class)->verifyPayment(new GatewayCredentials(['secret_key' => PAYSTACK_FAKE_TEST_KEY]), 'pay_x', Money::ofMinor(500000, 'NGN'));
 
     expect($result->state)->toBe(GatewayPaymentState::Pending);
-});
+})->with(['as recorded' => 'transaction_not_found', 'in capitals' => 'TRANSACTION_NOT_FOUND']);
 
 it('keeps card details only for card payments, and only in the shape expected', function (array $changes, array $card): void {
     $this->store->run(function () use ($changes, $card): void {

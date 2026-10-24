@@ -54,7 +54,7 @@ final readonly class FakePaymentGateway implements PaymentGateway
         $this->call('checkCredentials', '');
         $secret = $credentials->get('secret_key');
         $mode = str_starts_with($secret, 'sk_live_') ? GatewayMode::Live : GatewayMode::Test;
-        $isValid = str_starts_with($secret, 'sk_test_') || str_starts_with($secret, 'sk_live_');
+        $isValid = ! $this->script->refusesKeys && (str_starts_with($secret, 'sk_test_') || str_starts_with($secret, 'sk_live_'));
 
         return new CredentialCheck($isValid, $mode, $this->script->accounts[$secret] ?? 'acct_main', '…'.mb_substr($credentials->get('public_key'), -4));
     }
@@ -129,6 +129,11 @@ final readonly class FakePaymentGateway implements PaymentGateway
     private function call(string $operation, string $reference): void
     {
         $this->script->calls[] = [$operation, $reference];
+
+        // A refused key is an answer to a check of the keys, not an error.
+        if ($this->script->refusesKeys && $operation !== 'checkCredentials') {
+            throw GatewayUnavailableException::keysRefused(self::KEY, $operation);
+        }
 
         if ($this->script->unavailable) {
             throw new GatewayUnavailableException(self::KEY, $operation);
