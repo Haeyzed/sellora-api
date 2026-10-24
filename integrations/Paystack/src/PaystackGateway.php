@@ -20,6 +20,7 @@ use App\Tenant\Payments\Data\StartedPayment;
 use App\Tenant\Payments\Enums\GatewayMode;
 use App\Tenant\Payments\Enums\GatewayPaymentState;
 use App\Tenant\Payments\Enums\GatewayRefundState;
+use App\Tenant\Payments\Enums\GatewayWebhookKind;
 use App\Tenant\Payments\Exceptions\GatewayRejectedException;
 use App\Tenant\Payments\Exceptions\GatewayUnavailableException;
 use Closure;
@@ -28,7 +29,6 @@ use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Integrations\Paystack\Exceptions\PaystackAmountException;
-use LogicException;
 
 /**
  * Paystack (Africa: cards, bank transfer, USSD, mobile money), for stores that connect their own Paystack account (section 3.3).
@@ -43,7 +43,8 @@ use LogicException;
  * order's amount, so a merchant who passes Paystack's fees on to buyers gets
  * every such payment in review, for now. Refunds carry our reference as
  * their merchant note and are found again by Paystack's ID for them, or by
- * that note. Webhooks (16b.4) come next; until then each is refused unread.
+ * that note. Webhooks are signed with HMAC-SHA512 of the raw body under the
+ * secret key, and only say which payment to go and ask about.
  */
 final readonly class PaystackGateway implements PaymentGateway
 {
@@ -277,19 +278,31 @@ final readonly class PaystackGateway implements PaymentGateway
     }
 
     /**
-     * Not until Step 16b.4: every webhook is refused unread, and Paystack sends it again later.
+     * Paystack signs the raw body with HMAC-SHA512 under the secret key of the mode it is for, in "x-paystack-signature", as lower-case hex. Compared in constant time; nothing in the body is read.
      */
     public function verifyWebhookSignature(GatewayCredentials $credentials, IncomingWebhook $webhook): bool
     {
-        return false;
+        $signature = $webhook->header('x-paystack-signature');
+
+        return $signature !== null && hash_equals(hash_hmac('sha512', $webhook->body, $credentials->get(self::SECRET_KEY)), $signature);
     }
 
     /**
-     * Only ever called for a webhook whose signature checked out, which none does before Step 16b.4.
+     * What a signed webhook names, read tolerantly: charge.success names a payment by its reference (data.reference), a refund.* event names the payment refunded (data.transaction_reference), so each of its refunds in motion is checked. Anything else, or anything not in that shape, is left alone. Paystack gives no event ID, so the body's hash stands in for one.
      */
     public function parseWebhook(IncomingWebhook $webhook): GatewayWebhookEvent
     {
-        throw new LogicException('Paystack webhooks are not read before Step 16b.4.');
+        $payload = json_decode($webhook->body, true);
+        $event = is_array($payload) ? ($payload['event'] ?? null) : null;
+        $data = is_array($payload) && is_array($payload['data'] ?? null) ? $payload['data'] : [];
+
+        [$kind, $reference] = match (true) {
+            $event === 'charge.success' => [GatewayWebhookKind::Payment, $data['reference'] ?? null],
+            is_string($event) && str_starts_with($event, 'refund.') => [GatewayWebhookKind::Refund, $data['transaction_reference'] ?? null],
+            default => [GatewayWebhookKind::Ignored, null],
+        };
+
+        return new GatewayWebhookEvent('', $kind, is_string($reference) ? $reference : null);
     }
 
     /**

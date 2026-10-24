@@ -18,6 +18,7 @@ use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Testing\TestResponse;
 use Integrations\Paystack\PaystackGateway;
 use Tests\Fixtures\Features\FakeFeatureSource;
 
@@ -203,6 +204,19 @@ function paystackRefund(Order $order, int $amount): PaymentRefund
 function checkPaystackRefund(PaymentRefund $paymentRefund): PaymentRefund
 {
     return test()->store->run(static fn (): PaymentRefund => app(VerifyRefund::class)->handle($paymentRefund->refresh())->refresh());
+}
+
+/**
+ * Sends a webhook as Paystack does: its raw body signed with HMAC-SHA512 under a secret key (the test store's made-up test key by default) in "x-paystack-signature", to the endpoint of the store's Paystack connection for the mode it is in, or the one given.
+ *
+ * @param  array<array-key, mixed>|string  $payload  Sent as JSON, or exactly as given.
+ */
+function sendPaystackWebhook(array|string $payload, string $secret = PAYSTACK_FAKE_TEST_KEY, ?string $endpointId = null, ?string $signature = null): TestResponse
+{
+    $body = is_string($payload) ? $payload : (string) json_encode($payload);
+    $headers = ['CONTENT_TYPE' => 'application/json', 'HTTP_X_PAYSTACK_SIGNATURE' => $signature ?? hash_hmac('sha512', $body, $secret)];
+
+    return test()->call('POST', centralUrl('/webhooks/payments/'.($endpointId ?? fakeWebhookEndpoint(PaystackGateway::KEY))), server: $headers, content: $body);
 }
 
 /**

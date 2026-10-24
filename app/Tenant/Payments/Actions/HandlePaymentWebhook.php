@@ -56,6 +56,9 @@ final readonly class HandlePaymentWebhook
         }
     }
 
+    /**
+     * The refund it names, or, for a gateway whose refund webhooks name only the payment refunded (Paystack), each of that payment's refunds not in staff review.
+     */
     private function verifyNamedRefund(PaymentWebhookEvent $event): void
     {
         $paymentRefund = $event->reference === null ? null : PaymentRefund::query()
@@ -65,6 +68,15 @@ final readonly class HandlePaymentWebhook
 
         if ($paymentRefund !== null) {
             $this->verifyRefund->handle($paymentRefund);
+
+            return;
+        }
+
+        // A refund that went through is left alone by VerifyRefund; one that failed may still have gone through after all.
+        $refunds = $this->paymentNamedBy($event)?->refunds()->whereNull('needs_review_at')->orderBy('id')->get() ?? [];
+
+        foreach ($refunds as $part) {
+            $this->verifyRefund->handle($part);
         }
     }
 

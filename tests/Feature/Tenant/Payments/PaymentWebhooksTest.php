@@ -5,13 +5,17 @@ declare(strict_types=1);
 use App\Landlord\Tenancy\Enums\TenantStatus;
 use App\Shared\Integrations\Contracts\WebhookEndpoints;
 use App\Tenant\Payments\Actions\HandlePaymentWebhook;
+use App\Tenant\Payments\Data\GatewayRefundResult;
 use App\Tenant\Payments\Enums\GatewayMode;
 use App\Tenant\Payments\Enums\GatewayPaymentState;
+use App\Tenant\Payments\Enums\GatewayRefundState;
 use App\Tenant\Payments\Events\PaymentDisputed;
 use App\Tenant\Payments\Jobs\CheckPaymentWithGateway;
+use App\Tenant\Payments\Jobs\CheckRefundWithGateway;
 use App\Tenant\Payments\Jobs\ProcessPaymentWebhook;
 use App\Tenant\Payments\Models\Payment;
 use App\Tenant\Payments\Models\PaymentEvent;
+use App\Tenant\Payments\Models\PaymentRefund;
 use App\Tenant\Payments\Models\PaymentWebhookEvent;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -186,6 +190,27 @@ it('does nothing for a webhook about no payment of ours, or one taken through an
 
     expect($this->script->timesCalled('verifyPayment'))->toBe(0)
         ->and($this->store->run(static fn (): int => PaymentWebhookEvent::query()->whereNotNull('processed_at')->count()))->toBe(3);
+});
+
+it('asks about each refund of a payment when a refund webhook names only the payment, a failed one included, never one in review or gone through', function (): void {
+    // Each refund's own checks are left out, so only the webhook asks.
+    Queue::fake([CheckPaymentWithGateway::class, CheckRefundWithGateway::class]);
+    [$order, $paid] = gatewayPaidOrder();
+    $this->script->refundAnswer = new GatewayRefundResult(GatewayRefundState::Pending, 'fake_r');
+    $pending = refundOrder($order, 1000)->paymentRefunds->sole();
+    $reviewed = refundOrder($order, 1000)->paymentRefunds->sole();
+    $this->script->refundAnswer = new GatewayRefundResult(GatewayRefundState::Failed, 'fake_f', null, 'declined');
+    $failed = refundOrder($order, 1000)->paymentRefunds->sole();
+    $this->script->refundAnswer = null;
+    $settled = refundOrder($order, 1000)->paymentRefunds->sole();
+    $this->store->run(static fn () => DB::table('payment_refunds')->where('id', $reviewed->id)->update(['needs_review_at' => now(), 'review_reason' => 'gateway_unclear']));
+    $asked = fn (): array => array_map(fn (PaymentRefund $part): int => $this->script->timesCalled('verifyRefund', $part->reference), [$pending, $failed, $reviewed, $settled]);
+    $before = $asked();
+
+    sendFakeWebhook(['id' => 'evt_1', 'type' => 'refund', 'reference' => $paid->reference])->assertOk();
+
+    expect($failed->status->value)->toBe('failed')
+        ->and(array_map(static fn (int $after, int $earlier): int => $after - $earlier, $asked(), $before))->toBe([1, 1, 0, 0]);
 });
 
 it('empties what webhooks said after their retention period, and forgets the events later still', function (): void {

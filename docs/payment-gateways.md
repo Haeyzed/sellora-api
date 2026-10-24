@@ -51,6 +51,26 @@ CLAUDE.md section 3.3 has the rules; these are the parts an integration owns.
 - **Never card data, tokens or credentials in logs.** At most the card's
   brand and last four digits, when the gateway gives them.
 
+## Paystack: webhooks
+
+Paystack signs each webhook with HMAC-SHA512 of its raw body under the
+secret key of the mode it is for, in `x-paystack-signature`. The store checks
+it with `hash_equals` against its current keys (and keys retired while money
+they took is in motion) before anything is parsed or kept. A webhook to the
+endpoint of the mode the store isn't connected in is refused unread.
+
+Only two kinds are acted on, and only by asking Paystack: `charge.success`
+has the payment named by `data.reference` verified, and any `refund.*` event
+has the refunds in motion of the payment named by `data.transaction_reference`
+checked (by Paystack's ID for each, or by our merchant note). Everything else
+is recorded and left alone, whatever fields it has. Paystack gives webhooks
+no event ID, so each is known by its body's hash: a resend is handled once.
+
+No Paystack webhook has been recorded yet. Until one is, these are
+unconfirmed: the `event` names, `data.reference` on `charge.success`,
+`data.transaction_reference` on refund events, the header's name and that
+its hex is lower case.
+
 ## Paystack: fees passed to the customer
 
 Paystack lets merchants pass transaction fees on to the customer. The amount

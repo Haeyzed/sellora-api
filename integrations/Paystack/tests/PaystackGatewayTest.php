@@ -160,8 +160,14 @@ it('refuses a refund in a currency whose Paystack units are not confirmed, witho
     Http::assertNothingSent();
 });
 
-it('takes no webhook before Step 16b.4', function (): void {
+it('takes a webhook only signed with HMAC-SHA512 of its exact body under the key', function (array $headers, bool $isSigned): void {
     $credentials = new GatewayCredentials(['secret_key' => PAYSTACK_FAKE_TEST_KEY]);
 
-    expect(app(PaystackGateway::class)->verifyWebhookSignature($credentials, new IncomingWebhook('{}', ['x-paystack-signature' => 'x'])))->toBeFalse();
-});
+    expect(app(PaystackGateway::class)->verifyWebhookSignature($credentials, new IncomingWebhook('{"event":"charge.success"}', $headers)))->toBe($isSigned);
+})->with([
+    'signed' => [['x-paystack-signature' => hash_hmac('sha512', '{"event":"charge.success"}', PAYSTACK_FAKE_TEST_KEY)], true],
+    'another key' => [['x-paystack-signature' => hash_hmac('sha512', '{"event":"charge.success"}', PAYSTACK_FAKE_LIVE_KEY)], false],
+    'another body' => [['x-paystack-signature' => hash_hmac('sha512', '{"event":"charge.success" }', PAYSTACK_FAKE_TEST_KEY)], false],
+    'SHA-256' => [['x-paystack-signature' => hash_hmac('sha256', '{"event":"charge.success"}', PAYSTACK_FAKE_TEST_KEY)], false],
+    'no signature' => [[], false],
+]);

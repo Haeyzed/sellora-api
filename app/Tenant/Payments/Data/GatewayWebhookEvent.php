@@ -13,7 +13,7 @@ final readonly class GatewayWebhookEvent
 {
     /**
      * @param  string  $eventId  The gateway's own ID for the event, so it is handled once however often it is sent.
-     * @param  string|null  $reference  Our reference of the payment or refund it is about; null when it names none.
+     * @param  string|null  $reference  Our reference of the payment or refund it is about (for a refund, the payment's reference will do: each of its refunds in motion is asked about); null when it names none.
      */
     public function __construct(
         public string $eventId,
