@@ -63,3 +63,65 @@ function filesWithGatewayKeys(string $basePath, array $files): array
 
     return $leaks;
 }
+
+/*
+|--------------------------------------------------------------------------
+| For PaystackFixturesTest.php
+|--------------------------------------------------------------------------
+*/
+
+/** Fields of Paystack's answers that name a real person, device, card or staff member: in fixtures each holds an obviously fake value, or nothing. */
+const PAYSTACK_PERSONAL_FIELDS = ['ip_address', 'refunded_by', 'initiated_by', 'email', 'customer_code', 'authorization_code', 'signature'];
+
+/** Anything shaped like a Paystack key, however short. */
+const PAYSTACK_ANY_KEY_PATTERN = '/[sp]k_(?:live|test)_[A-Za-z0-9]/';
+
+/** IP addresses kept for documentation (RFC 5737), the only ones a fixture may hold. */
+const DOCUMENTATION_IP_PATTERN = '/^(?:192\.0\.2|198\.51\.100|203\.0\.113)\.\d{1,3}$/';
+
+/**
+ * What is wrong with the JSON fixtures in a folder, by file and field, never quoting the value found: a key, or a real-looking value in a personal field.
+ *
+ * @return list<string>
+ */
+function paystackFixtureProblems(string $folder): array
+{
+    $problems = [];
+
+    foreach (glob($folder.DIRECTORY_SEPARATOR.'*.json') ?: [] as $path) {
+        $name = basename($path);
+        $contents = (string) file_get_contents($path);
+        $decoded = json_decode($contents, true);
+
+        if (preg_match(PAYSTACK_ANY_KEY_PATTERN, $contents) === 1) {
+            $problems[] = "{$name}: something shaped like a Paystack key";
+        }
+
+        if (! is_array($decoded)) {
+            $problems[] = "{$name}: not JSON";
+
+            continue;
+        }
+
+        array_walk_recursive($decoded, static function (mixed $value, int|string $field) use ($name, &$problems): void {
+            if (in_array($field, PAYSTACK_PERSONAL_FIELDS, true) && ! isObviouslyFake($field, $value)) {
+                $problems[] = "{$name}: {$field} looks real";
+            }
+        });
+    }
+
+    return $problems;
+}
+
+function isObviouslyFake(string $field, mixed $value): bool
+{
+    if ($value === null || $value === '') {
+        return true;
+    }
+
+    if (! is_string($value)) {
+        return false;
+    }
+
+    return $field === 'ip_address' ? preg_match(DOCUMENTATION_IP_PATTERN, $value) === 1 : str_contains(mb_strtolower($value), 'fake');
+}

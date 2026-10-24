@@ -31,9 +31,14 @@ CLAUDE.md section 3.3 has the rules; these are the parts an integration owns.
 
 Paystack lets merchants pass transaction fees on to the customer. The amount
 the customer is charged then includes the fee, so it is more than the order
-total we asked for. Before shipping the Paystack integration, check how the
-verify response reports such a payment (for example whether it gives the
-amount requested separately from the amount charged) and report the amount
-that was asked for the order. Otherwise every normal payment from a merchant
-who passes fees on lands in `needs_review` instead of paying the order. Add a
-test for it with a recorded response.
+total we asked for. Recorded test-mode answers (tests/Fixtures/Paystack) only
+cover the merchant bearing the fee: `amount` equals `requested_amount`, and
+the fee is a separate `fees` field.
+
+So for now the integration is strict. It reports Paystack's `amount`, what
+was taken, and only when Paystack also reports `requested_amount`; core counts
+the payment only when that is exactly the order's amount, in its currency and
+mode. A merchant who passes fees on gets every such payment in `needs_review`,
+for staff to handle by hand. Nothing reconciles fees, and core's exact-amount
+rule is unchanged. Recognising the fee needs a recorded answer for that case
+first.

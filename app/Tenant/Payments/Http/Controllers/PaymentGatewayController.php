@@ -52,7 +52,13 @@ final class PaymentGatewayController extends Controller
      * account, or replaces its credentials, once the gateway confirms they
      * work. Connecting needs the gateway on the store's plan; replacing the
      * credentials of one already connected is always allowed. Credentials are
-     * never shown again.
+     * never shown again. The connection shows a webhook URL for each mode, to
+     * paste into the gateway's dashboard.
+     *
+     * Paystack: a payment counts only when Paystack took exactly the order's
+     * amount. A merchant who passes Paystack's fees on to customers is charged
+     * more than that, so for now every such payment goes to review
+     * (needs_review) for staff to handle by hand.
      *
      * @throws UnknownPaymentGatewayException
      * @throws FeatureNotEnabledException
@@ -81,7 +87,10 @@ final class PaymentGatewayController extends Controller
     /**
      * Disconnect a payment gateway.
      *
-     * Needs the payments.manage_gateways permission. Removes its credentials.
+     * Needs the payments.manage_gateways permission. It is offered for no new
+     * payment from then on. Payments and refunds it took that are still under
+     * way carry on: it keeps its credentials and webhook URLs until they have
+     * all settled, then they are removed.
      *
      * @throws PaymentGatewayNotConnectedException
      */

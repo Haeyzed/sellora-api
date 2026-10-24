@@ -138,15 +138,24 @@ it('is offered for connecting only to stores whose plan includes it, and its mon
     Http::assertNothingSent();
 });
 
-it('takes no payment, refund or webhook before Steps 16b.2 to 16b.4, without calling Paystack', function (): void {
+it('refuses a payment in a currency whose Paystack units are not confirmed, without calling Paystack', function (): void {
+    Http::fake();
+    $start = static fn () => app(PaystackGateway::class)->startPayment(
+        new GatewayCredentials(['secret_key' => PAYSTACK_FAKE_TEST_KEY]),
+        new GatewayPaymentRequest('pay_x', Money::ofMinor(500000, 'XOF'), 'buyer@example.com', 'ORD-1001', 'https://shop.example.com/return'),
+    );
+
+    expect($start)->toThrow(fn (GatewayRejectedException $exception) => expect($exception->failureCode)->toBe('amount_not_supported'));
+    Http::assertNothingSent();
+});
+
+it('takes no refund or webhook before Steps 16b.3 and 16b.4, without calling Paystack', function (): void {
     Http::fake();
     $gateway = app(PaystackGateway::class);
     $credentials = new GatewayCredentials(['secret_key' => PAYSTACK_FAKE_TEST_KEY]);
     $amount = Money::ofMinor(500000, 'NGN');
 
-    expect(static fn () => $gateway->startPayment($credentials, new GatewayPaymentRequest('pay_x', $amount, 'buyer@example.com', 'ORD-1001', 'https://shop.example.com/return')))->toThrow(GatewayRejectedException::class)
-        ->and(static fn () => $gateway->verifyPayment($credentials, 'pay_x'))->toThrow(GatewayUnavailableException::class)
-        ->and(static fn () => $gateway->refund($credentials, new GatewayRefundRequest('ref_x', 'pay_x', null, $amount)))->toThrow(GatewayRejectedException::class)
+    expect(static fn () => $gateway->refund($credentials, new GatewayRefundRequest('ref_x', 'pay_x', null, $amount)))->toThrow(GatewayRejectedException::class)
         ->and(static fn () => $gateway->verifyRefund($credentials, 'ref_x'))->toThrow(GatewayUnavailableException::class)
         ->and($gateway->verifyWebhookSignature($credentials, new IncomingWebhook('{}', ['x-paystack-signature' => 'x'])))->toBeFalse();
     Http::assertNothingSent();
