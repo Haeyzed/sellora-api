@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Fixtures\Payments;
 
+use App\Shared\Money\Money;
 use App\Tenant\Payments\Contracts\PaymentGateway;
 use App\Tenant\Payments\Data\CredentialCheck;
 use App\Tenant\Payments\Data\CredentialField;
@@ -70,9 +71,10 @@ final readonly class FakePaymentGateway implements PaymentGateway
         return new StartedPayment('https://pay.fake.test/'.$request->reference, 'fake_'.$request->reference);
     }
 
-    public function verifyPayment(GatewayCredentials $credentials, string $reference): GatewayPaymentResult
+    public function verifyPayment(GatewayCredentials $credentials, string $reference, Money $expectedAmount): GatewayPaymentResult
     {
         $this->call('verifyPayment', $reference);
+        $this->script->expectedAmounts[$reference] = $expectedAmount;
 
         return $this->script->payments[$reference] ?? new GatewayPaymentResult(GatewayPaymentState::Pending);
     }

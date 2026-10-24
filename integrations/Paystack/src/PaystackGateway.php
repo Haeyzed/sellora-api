@@ -151,15 +151,17 @@ final readonly class PaystackGateway implements PaymentGateway
     /**
      * Asks Paystack where the transaction with our reference stands. Only the transaction's own status counts ("status": true only says the request worked): success, failed or reversed; anything else, abandoned included (the buyer may still pay), is pending, and so is a reference Paystack doesn't know yet.
      *
-     * Strict about the amount: it is reported as Paystack's "amount", what
-     * was taken, and only when Paystack also reports the amount it was asked
-     * for, so core's exact check applies to what was taken. A merchant passing
-     * Paystack's fees on to the buyer is reported a larger amount, which core
-     * sends to review.
+     * Strict about the amount, reporting only amounts Paystack gave: when the
+     * amount Paystack says it was asked for (requested_amount) is exactly the
+     * one expected, what it took ("amount") is reported, so core's exact check
+     * applies to it (a merchant passing Paystack's fees on to the buyer is
+     * charged more, which core sends to review). When Paystack was asked for
+     * another amount, that amount is reported instead, which core's exact
+     * check never accepts. Either missing leaves it pending.
      *
      * @throws GatewayUnavailableException
      */
-    public function verifyPayment(GatewayCredentials $credentials, string $reference): GatewayPaymentResult
+    public function verifyPayment(GatewayCredentials $credentials, string $reference, Money $expectedAmount): GatewayPaymentResult
     {
         $response = $this->send('verifyPayment', static fn (PendingRequest $paystack): Response => $paystack->get('transaction/verify/'.rawurlencode($reference)), $credentials);
 
@@ -184,7 +186,7 @@ final readonly class PaystackGateway implements PaymentGateway
 
         return new GatewayPaymentResult(
             state: $state,
-            amount: $this->takenAmountOf($transaction),
+            amount: $this->reportedAmountOf($transaction, $expectedAmount),
             mode: $mode,
             gatewayReference: is_int($transaction['id'] ?? null) ? (string) $transaction['id'] : null,
             failureCode: match ($transaction['status'] ?? null) {
@@ -373,21 +375,24 @@ final readonly class PaystackGateway implements PaymentGateway
     }
 
     /**
-     * What the transaction took, only when Paystack reports both what it took and what it was asked for, as whole numbers in a currency whose units are confirmed; null otherwise, so it is never counted as paid on a guess.
+     * The amount to report: what the transaction took when Paystack was asked for exactly the amount expected, otherwise what Paystack was asked for, which core's exact check never accepts. Null unless Paystack reports both as whole numbers in a currency whose units are confirmed, so it is never counted as paid on a guess.
      *
      * @param  array<string, mixed>  $transaction
      */
-    private function takenAmountOf(array $transaction): ?Money
+    private function reportedAmountOf(array $transaction, Money $expectedAmount): ?Money
     {
         $taken = $transaction['amount'] ?? null;
+        $requested = $transaction['requested_amount'] ?? null;
         $currency = $transaction['currency'] ?? null;
 
-        if (! is_int($taken) || ! is_int($transaction['requested_amount'] ?? null) || ! is_string($currency)) {
+        if (! is_int($taken) || ! is_int($requested) || ! is_string($currency)) {
             return null;
         }
 
         try {
-            return $this->amounts->fromPaystack($taken, $currency);
+            $wasAskedForAnother = $requested !== $this->amounts->toPaystack($expectedAmount);
+
+            return $this->amounts->fromPaystack($wasAskedForAnother ? $requested : $taken, $currency);
         } catch (PaystackAmountException) {
             return null;
         }

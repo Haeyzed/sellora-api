@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Fixtures\Payments;
 
+use App\Shared\Money\Money;
 use App\Tenant\Payments\Contracts\PaymentGateway;
 use App\Tenant\Payments\Data\CredentialCheck;
 use App\Tenant\Payments\Data\GatewayCapabilities;
@@ -50,9 +51,9 @@ final readonly class LocalFakePaymentGateway implements PaymentGateway
         return $this->fake->startPayment($credentials, $request);
     }
 
-    public function verifyPayment(GatewayCredentials $credentials, string $reference): GatewayPaymentResult
+    public function verifyPayment(GatewayCredentials $credentials, string $reference, Money $expectedAmount): GatewayPaymentResult
     {
-        return $this->fake->verifyPayment($credentials, $reference);
+        return $this->fake->verifyPayment($credentials, $reference, $expectedAmount);
     }
 
     public function refund(GatewayCredentials $credentials, GatewayRefundRequest $request): GatewayRefundResult

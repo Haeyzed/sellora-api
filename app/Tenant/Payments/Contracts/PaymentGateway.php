@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tenant\Payments\Contracts;
 
+use App\Shared\Money\Money;
 use App\Tenant\Payments\Data\CredentialCheck;
 use App\Tenant\Payments\Data\CredentialField;
 use App\Tenant\Payments\Data\GatewayCapabilities;
@@ -69,9 +70,17 @@ interface PaymentGateway
     /**
      * Asks the gateway, server-side, where a payment stands. The only source of a payment's status.
      *
+     * The amount expected is given so the integration can hold the gateway's
+     * own record of what it was asked for against it: when they differ, it
+     * reports an amount other than the one expected, so core's exact check
+     * (PaymentConfirmation) sends the payment to review. Core still compares
+     * whatever is reported with the amount expected; nothing here loosens it.
+     *
+     * @param  Money  $expectedAmount  What the payment was started for.
+     *
      * @throws GatewayUnavailableException
      */
-    public function verifyPayment(GatewayCredentials $credentials, string $reference): GatewayPaymentResult;
+    public function verifyPayment(GatewayCredentials $credentials, string $reference, Money $expectedAmount): GatewayPaymentResult;
 
     /**
      * Asks the gateway to refund part or all of a payment, sending our refund reference with it so it can be found again.

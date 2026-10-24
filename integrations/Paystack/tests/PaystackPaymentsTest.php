@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Shared\Money\Money;
 use App\Tenant\Payments\Actions\VerifyPayment;
 use App\Tenant\Payments\Data\GatewayCredentials;
 use App\Tenant\Payments\Enums\GatewayPaymentState;
@@ -139,7 +140,7 @@ it('reads only the transaction\'s own status: abandoned and anything unknown sta
 it('answers that a reference Paystack doesn\'t know yet is pending, never failed', function (): void {
     Http::fake(['paystack.test/transaction/verify/pay_x' => Http::response(paystackFixture('verify-not-found'), 400)]);
 
-    $result = app(PaystackGateway::class)->verifyPayment(new GatewayCredentials(['secret_key' => PAYSTACK_FAKE_TEST_KEY]), 'pay_x');
+    $result = app(PaystackGateway::class)->verifyPayment(new GatewayCredentials(['secret_key' => PAYSTACK_FAKE_TEST_KEY]), 'pay_x', Money::ofMinor(500000, 'NGN'));
 
     expect($result->state)->toBe(GatewayPaymentState::Pending);
 });
@@ -160,7 +161,7 @@ it('keeps card details only for card payments, and only in the shape expected', 
 it('asks about a reference only as one part of Paystack\'s path, whatever it holds', function (): void {
     Http::fake(['paystack.test/*' => Http::response(paystackFixture('verify-not-found'), 400)]);
 
-    app(PaystackGateway::class)->verifyPayment(new GatewayCredentials(['secret_key' => PAYSTACK_FAKE_TEST_KEY]), '../balance?x=1');
+    app(PaystackGateway::class)->verifyPayment(new GatewayCredentials(['secret_key' => PAYSTACK_FAKE_TEST_KEY]), '../balance?x=1', Money::ofMinor(500000, 'NGN'));
 
     expect(paystackRequests())->toBe([['GET', 'https://paystack.test/transaction/verify/..%2Fbalance%3Fx%3D1', 'Bearer '.PAYSTACK_FAKE_TEST_KEY]]);
 });
@@ -179,6 +180,11 @@ it('is strict about the amount: anything but exactly the order\'s amount, curren
     'the buyer charged Paystack\'s fee on top' => [['data.amount' => static fn (int $total): int => $total + 17500], 'needs_review', 'amount_mismatch'],
     'one kobo short' => [['data.amount' => static fn (int $total): int => $total - 1], 'needs_review', 'amount_mismatch'],
     'asked and taken both more than the order' => [['data.amount' => static fn (int $total): int => $total + 100, 'data.requested_amount' => static fn (int $total): int => $total + 100], 'needs_review', 'amount_mismatch'],
+    'asked for another amount, though it took exactly the order\'s' => [['data.requested_amount' => static fn (int $total): int => $total + 100], 'needs_review', 'amount_mismatch'],
+    'asked for less, though it took exactly the order\'s' => [['data.requested_amount' => static fn (int $total): int => $total - 1], 'needs_review', 'amount_mismatch'],
+    'asked for the order\'s amount and took less' => [['data.amount' => static fn (int $total): int => $total - 100], 'needs_review', 'amount_mismatch'],
+    'asked and taken both other amounts, each different' => [['data.amount' => static fn (int $total): int => $total + 100, 'data.requested_amount' => static fn (int $total): int => $total + 200], 'needs_review', 'amount_mismatch'],
+    'no amount taken reported' => [['data.amount' => null], 'pending', null],
     'another currency Paystack takes' => [['data.currency' => 'GHS'], 'needs_review', 'currency_mismatch'],
     'a live payment for a test order' => [['data.domain' => 'live'], 'needs_review', 'mode_mismatch'],
     'no amount asked reported' => [['data.requested_amount' => null], 'pending', null],

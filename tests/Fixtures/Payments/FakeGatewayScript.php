@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Fixtures\Payments;
 
+use App\Shared\Money\Money;
 use App\Tenant\Payments\Data\GatewayPaymentResult;
 use App\Tenant\Payments\Data\GatewayRefundResult;
 
@@ -54,6 +55,13 @@ final class FakeGatewayScript
      * @var list<array{string, string}>
      */
     public array $calls = [];
+
+    /**
+     * The amount each payment was last verified as expected to be, by its reference.
+     *
+     * @var array<string, Money>
+     */
+    public array $expectedAmounts = [];
 
     /**
      * Each refund asked about, as [our refund reference, the gateway's ID for it given, if any].

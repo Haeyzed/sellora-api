@@ -38,7 +38,7 @@ final readonly class VerifyPayment
         }
 
         try {
-            $result = $this->registry->get($connection->gateway)->verifyPayment($connection->gatewayCredentials(), $payment->reference);
+            $result = $this->registry->get($connection->gateway)->verifyPayment($connection->gatewayCredentials(), $payment->reference, $payment->amount);
         } catch (GatewayUnavailableException) {
             $payment->forceFill(['last_checked_at' => CarbonImmutable::now(), 'checks' => $payment->checks + 1])->save();
 

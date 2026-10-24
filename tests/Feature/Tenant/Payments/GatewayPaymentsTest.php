@@ -92,6 +92,17 @@ it('marks a payment paid only when the gateway reports success with exactly the 
     'failed' => [static fn (Money $total): array => [GatewayPaymentState::Failed, null, null], 'failed', 'unpaid', null],
 ]);
 
+it('tells the gateway the amount the payment was started for when asking about it', function (): void {
+    $this->store->run(function (): void {
+        $payment = startFakePayment(unpaidOrder(10000));
+
+        verifyFakePayment($payment);
+
+        expect($this->script->expectedAmounts[$payment->reference]->isEqualTo($payment->amount))->toBeTrue()
+            ->and($this->script->expectedAmounts[$payment->reference]->currency())->toBe($payment->amount->currency());
+    });
+});
+
 it('takes a three-decimal currency to the last fils', function (): void {
     $this->store->run(function (): void {
         offerStoreCurrency('KWD', '0.002');
