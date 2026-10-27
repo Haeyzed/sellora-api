@@ -11,8 +11,8 @@ return [
         'ignore' => 'Se você não esperava por isso, pode ignorar este e-mail; nenhuma conta é criada.',
     ],
     'platform_admin' => [
-        'subject' => ':inviter convidou você para se juntar à equipe Sellora',
-        'reason' => ':inviter convidou você para ajudar a administrar a plataforma Sellora. Aceite escolher sua senha.',
+        'subject' => ':inviter convidou você para se juntar à equipe :app',
+        'reason' => ':inviter convidou você para ajudar a administrar a plataforma :app. Aceite escolher sua senha.',
         'action' => 'Aceite o convite',
         'expiry' => 'Este link funciona uma vez e expira em :days dias.',
         'two_factor' => 'Você precisará de um aplicativo autenticador: a autenticação de dois fatores é necessária antes de poder usar sua conta.',

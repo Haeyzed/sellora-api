@@ -42,6 +42,6 @@ final class OwnershipTransferredNotification extends Notification implements Sho
         return (new MailMessage)
             ->subject(__('ownership_transfers.completed.subject', ['store' => $this->storeName]))
             ->line(__($lines, ['store' => $this->storeName, 'owner' => $this->newOwnerName]))
-            ->line(__('ownership_transfers.completed.not_you'));
+            ->line(__('ownership_transfers.completed.not_you', ['app' => config('app.name')]));
     }
 }

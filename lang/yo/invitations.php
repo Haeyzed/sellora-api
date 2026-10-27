@@ -11,8 +11,8 @@ return [
         'ignore' => 'Ti o ko ba nireti eyi, o le foju parẹ imeeli yii; ko si iroyin ti wa ni da.',
     ],
     'platform_admin' => [
-        'subject' => ':inviter pe o lati darapọ mọ ẹgbẹ Sellora',
-        'reason' => ':inviter pe o lati ṣe iranlọwọ lati ṣiṣẹ Syeed Sellora. Gba lati yan ọrọ igbaniwọle rẹ.',
+        'subject' => ':inviter pe o lati darapọ mọ ẹgbẹ :app',
+        'reason' => ':inviter pe o lati ṣe iranlọwọ lati ṣiṣẹ Syeed :app. Gba lati yan ọrọ igbaniwọle rẹ.',
         'action' => 'Gba ìkésíni náà',
         'expiry' => 'Ọna asopọ yii ṣiṣẹ ni ẹẹkan ati pari ni awọn ọjọ :days.',
         'two_factor' => 'Iwọ yoo nilo ohun elo afọwọsi kan: ijẹrisi ifosiwewe meji ni a nilo ṣaaju ki o to le lo akọọlẹ rẹ.',

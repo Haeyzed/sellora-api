@@ -11,6 +11,6 @@ return [
         'subject' => 'Toko Anda :store akan dihapus pada :date',
         'line' => 'Toko Anda :store ditutup. Datanya akan dihapus selamanya pada :date, dan tidak dapat dipulihkan setelahnya.',
     ],
-    'export' => 'Jika Anda memerlukan salinan data toko Anda, atau ingin membuka kembali toko, hubungi dukungan Sellora sebelum :date: mereka dapat memulihkan toko sehingga Anda dapat mengekspor semuanya.',
-    'not_you' => 'Jika Anda tidak menutup toko ini, segera hubungi dukungan Sellora.',
+    'export' => 'Jika Anda memerlukan salinan data toko Anda, atau ingin membuka kembali toko, hubungi dukungan :app sebelum :date: mereka dapat memulihkan toko sehingga Anda dapat mengekspor semuanya.',
+    'not_you' => 'Jika Anda tidak menutup toko ini, segera hubungi dukungan :app.',
 ];

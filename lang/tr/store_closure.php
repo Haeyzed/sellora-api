@@ -11,6 +11,6 @@ return [
         'subject' => ':store mağazanız :date tarihinde silinecek',
         'line' => ':store mağazanız kapatıldı. Verileri :date tarihinde tamamen silinecek ve bundan sonra kurtarılamaz.',
     ],
-    'export' => 'Mağazanızın verilerinin bir kopyasına ihtiyacınız varsa veya mağazayı yeniden açmak istiyorsanız :date\'dan önce Sellora desteğiyle iletişime geçin: mağazayı geri yükleyebilirler, böylece her şeyi dışa aktarabilirsiniz.',
-    'not_you' => 'Bu mağazayı kapatmadıysanız hemen Sellora desteğiyle iletişime geçin.',
+    'export' => 'Mağazanızın verilerinin bir kopyasına ihtiyacınız varsa veya mağazayı yeniden açmak istiyorsanız :date\'dan önce :app desteğiyle iletişime geçin: mağazayı geri yükleyebilirler, böylece her şeyi dışa aktarabilirsiniz.',
+    'not_you' => 'Bu mağazayı kapatmadıysanız hemen :app desteğiyle iletişime geçin.',
 ];

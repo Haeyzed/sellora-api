@@ -49,14 +49,14 @@ final class StoreClosedNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $replacements = ['store' => $this->storeName, 'date' => $this->purgeAfter->toFormattedDayDateString()];
+        $replacements = ['store' => $this->storeName, 'date' => $this->purgeAfter->toFormattedDayDateString(), 'app' => config('app.name')];
         $kind = $this->isReminder ? 'reminder' : 'closed';
 
         return (new MailMessage)
             ->subject(__("store_closure.{$kind}.subject", $replacements))
             ->line(__("store_closure.{$kind}.line", $replacements))
             ->line(__('store_closure.export', $replacements))
-            ->line(__('store_closure.not_you'));
+            ->line(__('store_closure.not_you', ['app' => config('app.name')]));
     }
 
     /**

@@ -18,7 +18,7 @@ return [
         'line' => 'Your store :store was closed. Its data will be deleted for good on :date, and can\'t be recovered after that.',
     ],
 
-    'export' => 'If you need a copy of your store\'s data, or want to reopen the store, contact Sellora support before :date: they can restore the store so you can export everything.',
-    'not_you' => 'If you didn\'t close this store, contact Sellora support straight away.',
+    'export' => 'If you need a copy of your store\'s data, or want to reopen the store, contact :app support before :date: they can restore the store so you can export everything.',
+    'not_you' => 'If you didn\'t close this store, contact :app support straight away.',
 
 ];

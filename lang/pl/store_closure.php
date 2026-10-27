@@ -11,6 +11,6 @@ return [
         'subject' => 'Twój sklep :store zostanie usunięty w dniu :date',
         'line' => 'Twój sklep :store został zamknięty. Jego dane zostaną trwale usunięte w dniu :date i nie będzie można ich później odzyskać.',
     ],
-    'export' => 'Jeśli potrzebujesz kopii danych swojego sklepu lub chcesz go ponownie otworzyć, skontaktuj się z obsługą Sellory przed :date: mogą przywrócić sklep, abyś mógł wszystko wyeksportować.',
-    'not_you' => 'Jeśli to nie Ty zamknąłeś ten sklep, natychmiast skontaktuj się z obsługą Sellory.',
+    'export' => 'Jeśli potrzebujesz kopii danych swojego sklepu lub chcesz go ponownie otworzyć, skontaktuj się z obsługą :app przed :date: mogą przywrócić sklep, abyś mógł wszystko wyeksportować.',
+    'not_you' => 'Jeśli to nie Ty zamknąłeś ten sklep, natychmiast skontaktuj się z obsługą :app.',
 ];

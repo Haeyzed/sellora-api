@@ -11,8 +11,8 @@ return [
         'ignore' => 'Jika Anda tidak mengharapkannya, Anda dapat mengabaikan email ini; tidak ada akun yang dibuat.',
     ],
     'platform_admin' => [
-        'subject' => ':inviter mengundang Anda untuk bergabung dengan tim Sellora',
-        'reason' => ':inviter mengundang Anda untuk membantu menjalankan platform Sellora. Terima untuk memilih kata sandi Anda.',
+        'subject' => ':inviter mengundang Anda untuk bergabung dengan tim :app',
+        'reason' => ':inviter mengundang Anda untuk membantu menjalankan platform :app. Terima untuk memilih kata sandi Anda.',
         'action' => 'Terima undangannya',
         'expiry' => 'Tautan ini berfungsi satu kali dan habis masa berlakunya dalam :days hari.',
         'two_factor' => 'Anda memerlukan aplikasi autentikator: autentikasi dua faktor diperlukan sebelum Anda dapat menggunakan akun Anda.',

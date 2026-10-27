@@ -11,6 +11,6 @@ return [
         'subject' => 'Uw winkel :store wordt verwijderd op :date',
         'line' => 'Uw winkel :store is gesloten. De gegevens ervan worden definitief verwijderd op :date en kunnen daarna niet meer worden hersteld.',
     ],
-    'export' => 'Als je een kopie van de gegevens van je winkel nodig hebt, of de winkel wilt heropenen, neem dan vóór :date contact op met Sellora-ondersteuning: zij kunnen de winkel herstellen, zodat je alles kunt exporteren.',
-    'not_you' => 'Als u deze winkel niet heeft gesloten, neem dan onmiddellijk contact op met Sellora-ondersteuning.',
+    'export' => 'Als je een kopie van de gegevens van je winkel nodig hebt, of de winkel wilt heropenen, neem dan vóór :date contact op met :app-ondersteuning: zij kunnen de winkel herstellen, zodat je alles kunt exporteren.',
+    'not_you' => 'Als u deze winkel niet heeft gesloten, neem dan onmiddellijk contact op met :app-ondersteuning.',
 ];

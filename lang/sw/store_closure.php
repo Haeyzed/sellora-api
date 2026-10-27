@@ -8,9 +8,9 @@ return [
         'line' => 'Duka lako :store limefungwa. Haifungui tena kwa mtu yeyote, na kila mtu aliondolewa. Data yake itafutwa kabisa kwenye :date.',
     ],
     'reminder' => [
-        'subject' => 'Duka lako la _VAR0__ litafutwa mnamo :date',
+        'subject' => 'Duka lako la :store litafutwa mnamo :date',
         'line' => 'Duka lako :store lilifungwa. Data yake itafutwa kabisa kwenye :date na haiwezi kurejeshwa baada ya hapo.',
     ],
-    'export' => 'Ikiwa unahitaji nakala ya data ya duka lako, au ungependa kufungua tena duka, wasiliana na usaidizi wa Sellora kabla ya :date: wanaweza kurejesha duka ili uweze kuhamisha kila kitu.',
-    'not_you' => 'Ikiwa hukufunga duka hili, wasiliana na usaidizi wa Sellora mara moja.',
+    'export' => 'Ikiwa unahitaji nakala ya data ya duka lako, au ungependa kufungua tena duka, wasiliana na usaidizi wa :app kabla ya :date: wanaweza kurejesha duka ili uweze kuhamisha kila kitu.',
+    'not_you' => 'Ikiwa hukufunga duka hili, wasiliana na usaidizi wa :app mara moja.',
 ];

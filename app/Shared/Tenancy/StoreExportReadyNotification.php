@@ -45,7 +45,7 @@ final class StoreExportReadyNotification extends Notification implements ShouldQ
             ->subject(__('store_exports.ready.subject', ['store' => $this->storeName]))
             ->line(__('store_exports.ready.line', ['store' => $this->storeName, 'date' => $date]))
             ->action(__('store_exports.ready.action'), $this->exportUrl)
-            ->line(__('store_exports.ready.signed_in'));
+            ->line(__('store_exports.ready.signed_in', ['app' => config('app.name')]));
     }
 
     /**

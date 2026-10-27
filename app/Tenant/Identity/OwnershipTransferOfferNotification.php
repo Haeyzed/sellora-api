@@ -49,8 +49,8 @@ final class OwnershipTransferOfferNotification extends Notification implements S
     {
         return (new MailMessage)
             ->subject(__('ownership_transfers.offer.subject', ['owner' => $this->ownerName]))
-            ->line(__('ownership_transfers.offer.reason', ['owner' => $this->ownerName]))
-            ->line(__('ownership_transfers.offer.terms'))
+            ->line(__('ownership_transfers.offer.reason', ['owner' => $this->ownerName, 'app' => config('app.name')]))
+            ->line(__('ownership_transfers.offer.terms', ['app' => config('app.name')]))
             ->action(__('ownership_transfers.offer.action'), $this->acceptUrl)
             ->line(__('ownership_transfers.offer.expiry', ['hours' => $this->expiresInHours]))
             ->line(__('ownership_transfers.offer.ignore'));

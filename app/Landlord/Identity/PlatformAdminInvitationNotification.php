@@ -46,8 +46,8 @@ final class PlatformAdminInvitationNotification extends Notification implements 
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject(__('invitations.platform_admin.subject', ['inviter' => $this->inviterName]))
-            ->line(__('invitations.platform_admin.reason', ['inviter' => $this->inviterName]))
+            ->subject(__('invitations.platform_admin.subject', ['inviter' => $this->inviterName, 'app' => config('app.name')]))
+            ->line(__('invitations.platform_admin.reason', ['inviter' => $this->inviterName, 'app' => config('app.name')]))
             ->action(__('invitations.platform_admin.action'), $this->acceptUrl)
             ->line(__('invitations.platform_admin.expiry', ['days' => $this->expiresInDays]))
             ->line(__('invitations.platform_admin.two_factor'))

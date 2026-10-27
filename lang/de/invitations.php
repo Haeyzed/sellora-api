@@ -11,8 +11,8 @@ return [
         'ignore' => 'Wenn Sie damit nicht gerechnet haben, können Sie diese E-Mail ignorieren; Es wird kein Konto erstellt.',
     ],
     'platform_admin' => [
-        'subject' => ':inviter hat Sie eingeladen, dem Sellora-Team beizutreten',
-        'reason' => ':inviter hat Sie eingeladen, beim Betrieb der Sellora-Plattform mitzuhelfen. Akzeptieren Sie die Auswahl Ihres Passworts.',
+        'subject' => ':inviter hat Sie eingeladen, dem :app-Team beizutreten',
+        'reason' => ':inviter hat Sie eingeladen, beim Betrieb der :app-Plattform mitzuhelfen. Akzeptieren Sie die Auswahl Ihres Passworts.',
         'action' => 'Nehmen Sie die Einladung an',
         'expiry' => 'Dieser Link funktioniert einmal und läuft in :days Tagen ab.',
         'two_factor' => 'Sie benötigen eine Authentifizierungs-App: Bevor Sie Ihr Konto nutzen können, ist eine Zwei-Faktor-Authentifizierung erforderlich.',

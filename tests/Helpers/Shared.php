@@ -72,3 +72,31 @@ function seedExpiredIdempotencyKey(Tenant $store, string $key): void
         ]);
     });
 }
+
+/*
+|--------------------------------------------------------------------------
+| For BrandInEmailsTest.php
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * A notification's email text (subject and every line) in every language the application has, one after another.
+ */
+function brandedEmailText(Illuminate\Notifications\Notification $notification): string
+{
+    $text = '';
+    $previousLocale = app()->getLocale();
+
+    try {
+        foreach (glob(lang_path('*'), GLOB_ONLYDIR) ?: [] as $folder) {
+            app()->setLocale(basename($folder));
+            /** @var Illuminate\Notifications\Messages\MailMessage $mail */
+            $mail = $notification->toMail(new Illuminate\Notifications\AnonymousNotifiable);
+            $text .= implode("\n", [(string) $mail->subject, ...$mail->introLines, ...$mail->outroLines])."\n";
+        }
+    } finally {
+        app()->setLocale($previousLocale);
+    }
+
+    return $text;
+}

@@ -11,6 +11,6 @@ return [
         'subject' => 'Ile-itaja rẹ :store yoo parẹ ni :date',
         'line' => 'Ile-itaja rẹ :store ti wa ni pipade. Awọn data rẹ yoo paarẹ fun rere lori :date, ati pe ko le gba pada lẹhin iyẹn.',
     ],
-    'export' => 'Ti o ba nilo ẹda data ile itaja rẹ, tabi fẹ tun ile itaja naa, kan si atilẹyin Sellora ṣaaju :date: wọn le mu ile itaja pada ki o le gbe ohun gbogbo jade.',
-    'not_you' => 'Ti o ko ba tii ile itaja yii, kan si atilẹyin Sellora lẹsẹkẹsẹ.',
+    'export' => 'Ti o ba nilo ẹda data ile itaja rẹ, tabi fẹ tun ile itaja naa, kan si atilẹyin :app ṣaaju :date: wọn le mu ile itaja pada ki o le gbe ohun gbogbo jade.',
+    'not_you' => 'Ti o ko ba tii ile itaja yii, kan si atilẹyin :app lẹsẹkẹsẹ.',
 ];
