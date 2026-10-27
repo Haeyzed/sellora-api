@@ -119,7 +119,7 @@ final readonly class CancelOrder
         return DB::transaction(function () use ($order): bool {
             $locked = $this->orderProgress->lock($order);
 
-            if (! $locked->awaitsPayment() || $locked->payment_due_at->isFuture() || $this->isOnItsWayForCash($locked)) {
+            if (! $locked->awaitsPayment() || $this->orderProgress->paymentDeadline($locked)->isFuture() || $this->isOnItsWayForCash($locked)) {
                 return false;
             }
 
@@ -145,19 +145,20 @@ final readonly class CancelOrder
     }
 
     /**
-     * An order paid on delivery whose first shipment exists: its stock has left the shelf, so its deadline no longer applies.
+     * An order paid on delivery with a shipment that hasn't been cancelled or come back: its stock is leaving the shelf, so its deadline no longer applies. Once a delivery comes back, the deadline runs again from then (Step 17).
      */
     private function isOnItsWayForCash(Order $locked): bool
     {
-        return $locked->pay_on_delivery && $locked->shipments()->where('status', '<>', ShipmentStatus::Cancelled->value)->exists();
+        return $locked->pay_on_delivery && $this->orderProgress->hasShipments($locked);
     }
 
     /**
-     * Whether anything on it has left (shipped, or a pickup collected), as its fulfilment says: then it can't be cancelled.
+     * Whether anything on it has left (shipped, or a pickup collected), as its fulfilment says, or is with a driver right now: then it can't be cancelled.
      */
     private function hasShipped(Order $locked): bool
     {
-        return in_array($locked->fulfilment_status, [FulfilmentStatus::PartiallyFulfilled, FulfilmentStatus::Fulfilled], true);
+        return in_array($locked->fulfilment_status, [FulfilmentStatus::PartiallyFulfilled, FulfilmentStatus::Fulfilled], true)
+            || $this->orderProgress->hasShipmentUnderway($locked);
     }
 
     /**

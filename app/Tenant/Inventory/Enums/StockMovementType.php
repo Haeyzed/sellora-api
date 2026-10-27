@@ -26,4 +26,7 @@ enum StockMovementType: string
 
     /** A hold ran out and was given back, such as a checkout left open. */
     case Expired = 'expired';
+
+    /** Stock that left for an order came back undelivered: on hand again, and held for the order once more. */
+    case Returned = 'returned';
 }

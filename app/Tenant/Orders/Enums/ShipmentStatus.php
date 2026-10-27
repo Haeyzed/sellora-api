@@ -7,7 +7,7 @@ namespace App\Tenant\Orders\Enums;
 use App\Tenant\Shipping\Enums\ShippingFulfilment;
 
 /**
- * Where a shipment is. Shipped with a carrier or the store's own drivers: pending → shipped → delivered. A pickup: pending → ready_for_pickup → delivered (collected). One that hasn't left can be cancelled.
+ * Where a shipment is. Shipped with a carrier or the store's own drivers: pending → shipped → delivered. A pickup: pending → ready_for_pickup → delivered (collected). One that hasn't left can be cancelled. One of the store's own deliveries that comes back undelivered is returned (Step 17).
  */
 enum ShipmentStatus: string
 {
@@ -26,6 +26,9 @@ enum ShipmentStatus: string
     /** Never left; what it held can ship again. Final. */
     case Cancelled = 'cancelled';
 
+    /** One of the store's own deliveries that came back undelivered; what it held is back on the shelf for the order. Final. */
+    case Returned = 'returned';
+
     /**
      * Whether a shipment of this kind may move from this status to the other.
      */
@@ -36,16 +39,16 @@ enum ShipmentStatus: string
         return match ($this) {
             self::Pending => $next === self::Cancelled || $next === ($pickup ? self::ReadyForPickup : self::Shipped),
             self::ReadyForPickup => $next === self::Delivered || $next === self::Cancelled,
-            self::Shipped => $next === self::Delivered,
-            self::Delivered, self::Cancelled => false,
+            self::Shipped => $next === self::Delivered || ($next === self::Returned && $fulfilment === ShippingFulfilment::OwnDelivery),
+            self::Delivered, self::Cancelled, self::Returned => false,
         };
     }
 
     /**
-     * Whether what it holds has reached, or left for, the buyer, so counts as fulfilled.
+     * Whether what it holds counts as fulfilled: delivered or collected, or handed to a carrier. One of the store's own deliveries counts only once delivered, since it may come back.
      */
     public function hasLeft(ShippingFulfilment $fulfilment): bool
     {
-        return $this === self::Delivered || ($this === self::Shipped && $fulfilment !== ShippingFulfilment::Pickup);
+        return $this === self::Delivered || ($this === self::Shipped && $fulfilment === ShippingFulfilment::Ship);
     }
 }

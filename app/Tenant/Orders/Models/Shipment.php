@@ -36,6 +36,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property CarbonImmutable|null $shipped_at
  * @property CarbonImmutable|null $delivered_at When it arrived, or was collected.
  * @property CarbonImmutable|null $cancelled_at
+ * @property CarbonImmutable|null $returned_at One of the store's own deliveries, when it came back undelivered.
  * @property string $created_by_type
  * @property string $created_by_id
  * @property CarbonImmutable|null $created_at
@@ -94,6 +95,7 @@ final class Shipment extends Model implements AuditableContract
             'shipped_at' => 'immutable_datetime',
             'delivered_at' => 'immutable_datetime',
             'cancelled_at' => 'immutable_datetime',
+            'returned_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];

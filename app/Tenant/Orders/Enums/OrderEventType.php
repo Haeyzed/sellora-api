@@ -51,6 +51,9 @@ enum OrderEventType: string
 
     case ShipmentCancelled = 'shipment_cancelled';
 
+    /** One of the store's own deliveries came back undelivered (Step 17). */
+    case ShipmentReturned = 'shipment_returned';
+
     /** The order's contact details and addresses were anonymised; its amounts, tax and country stay. */
     case Anonymised = 'anonymised';
 }

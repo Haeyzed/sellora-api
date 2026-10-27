@@ -6,6 +6,7 @@ namespace App\Tenant\Orders\Actions;
 
 use App\Shared\Auth\AccountReference;
 use App\Tenant\Inventory\Actions\CommitReservedStock;
+use App\Tenant\Inventory\Actions\ReturnCommittedStock;
 use App\Tenant\Inventory\Data\StockHolder;
 use App\Tenant\Inventory\Exceptions\InsufficientStockException;
 use App\Tenant\Orders\Enums\OrderEventType;
@@ -13,6 +14,7 @@ use App\Tenant\Orders\Enums\ShipmentStatus;
 use App\Tenant\Orders\Events\ShipmentCancelled;
 use App\Tenant\Orders\Events\ShipmentDelivered;
 use App\Tenant\Orders\Events\ShipmentReadyForPickup;
+use App\Tenant\Orders\Events\ShipmentReturned;
 use App\Tenant\Orders\Events\ShipmentShipped;
 use App\Tenant\Orders\Exceptions\ShipmentTransitionNotAllowedException;
 use App\Tenant\Orders\Exceptions\TrackingNumberRequiredException;
@@ -26,11 +28,12 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Moves a shipment along: ready for pickup, shipped, delivered (or collected), or cancelled before it leaves. For staff, and for Delivery's drivers (Step 17).
+ * Moves a shipment along: ready for pickup, shipped, delivered (or collected), cancelled before it leaves, or returned undelivered. For staff, and for Delivery's drivers (Step 17).
  *
  * Each move locks the order, then the shipment, and works from what is saved,
  * so moves at the same moment happen one after the other. Stock leaves the
- * shelf when the shipment ships, or when a pickup is collected. The order's
+ * shelf when the shipment ships, or when a pickup is collected, and comes
+ * back when one of the store's own deliveries is returned. The order's
  * fulfilment is worked out again after each move; it completes once paid and
  * fulfilled.
  */
@@ -40,6 +43,7 @@ final readonly class MoveShipment
         private OrderProgress $orderProgress,
         private OrderEventLog $orderEventLog,
         private CommitReservedStock $commitReservedStock,
+        private ReturnCommittedStock $returnCommittedStock,
     ) {}
 
     /**
@@ -103,6 +107,19 @@ final readonly class MoveShipment
     }
 
     /**
+     * One of the store's own deliveries came back undelivered: what it held goes back on the shelf, held for the order again, so it can ship once more or be given back if the order is cancelled. For Delivery (Step 17).
+     *
+     * @throws ShipmentTransitionNotAllowedException When it isn't an own delivery that has shipped.
+     */
+    public function returnToStore(Shipment $shipment, AccountReference $actor): Shipment
+    {
+        return $this->move($shipment, ShipmentStatus::Returned, $actor, function (Shipment $locked, Order $order) use ($actor): void {
+            $this->returnCommittedStock->handle(StockHolder::of($order), $this->quantities($locked), $actor);
+            $locked->returned_at = CarbonImmutable::now();
+        }, static fn (Shipment $moved) => ShipmentReturned::dispatch($moved));
+    }
+
+    /**
      * @param-immediately-invoked-callable $apply
      * @param-immediately-invoked-callable $announce
      *
@@ -143,6 +160,16 @@ final readonly class MoveShipment
      */
     private function commitStock(Shipment $locked, Order $order, AccountReference $actor): void
     {
+        $this->commitReservedStock->handle(StockHolder::of($order), $this->quantities($locked), $actor);
+    }
+
+    /**
+     * How many of each variant it holds, by variant ID.
+     *
+     * @return array<int, int>
+     */
+    private function quantities(Shipment $locked): array
+    {
         $quantities = [];
 
         foreach ($locked->lines()->with('orderLine')->get() as $line) {
@@ -151,7 +178,7 @@ final readonly class MoveShipment
             $quantities[$variant] = ($quantities[$variant] ?? 0) + $line->quantity;
         }
 
-        $this->commitReservedStock->handle(StockHolder::of($order), $quantities, $actor);
+        return $quantities;
     }
 
     private static function eventFor(ShipmentStatus $status): OrderEventType
@@ -160,6 +187,7 @@ final readonly class MoveShipment
             ShipmentStatus::ReadyForPickup => OrderEventType::ShipmentReady,
             ShipmentStatus::Shipped => OrderEventType::ShipmentShipped,
             ShipmentStatus::Delivered => OrderEventType::ShipmentDelivered,
+            ShipmentStatus::Returned => OrderEventType::ShipmentReturned,
             ShipmentStatus::Cancelled, ShipmentStatus::Pending => OrderEventType::ShipmentCancelled,
         };
     }

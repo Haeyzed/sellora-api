@@ -33,7 +33,7 @@ final class ShipmentResource extends JsonResource
             'order' => ['id' => $shipment->order->public_id, 'number' => $shipment->order->number],
             /** "ship" (a carrier), "own_delivery" (the store's drivers) or "pickup". */
             'fulfilment' => $shipment->fulfilment->value,
-            /** "pending", "ready_for_pickup", "shipped", "delivered" or "cancelled". */
+            /** "pending", "ready_for_pickup", "shipped", "delivered", "cancelled" or "returned" (one of the store's own deliveries that came back undelivered). */
             'status' => $shipment->status->value,
             'carrier' => $shipment->carrier,
             'carrier_service' => $shipment->carrier_service,
@@ -47,6 +47,7 @@ final class ShipmentResource extends JsonResource
             'shipped_at' => $shipment->shipped_at?->toIso8601String(),
             'delivered_at' => $shipment->delivered_at?->toIso8601String(),
             'cancelled_at' => $shipment->cancelled_at?->toIso8601String(),
+            'returned_at' => $shipment->returned_at?->toIso8601String(),
             'created_at' => $shipment->created_at?->toIso8601String(),
         ];
     }

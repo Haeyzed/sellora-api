@@ -21,14 +21,14 @@ final readonly class UpdateShipmentTracking
     /**
      * @param  string|null  $trackingUrl  Always https.
      *
-     * @throws ShipmentClosedException When it has arrived or was cancelled.
+     * @throws ShipmentClosedException When it has arrived, was cancelled, or came back.
      */
     public function handle(StaffMember $actor, Shipment $shipment, ?string $trackingNumber, ?string $trackingUrl): Shipment
     {
         return DB::transaction(function () use ($actor, $shipment, $trackingNumber, $trackingUrl): Shipment {
             $locked = Shipment::query()->whereKey($shipment->id)->lockForUpdate()->firstOrFail();
 
-            if (in_array($locked->status, [ShipmentStatus::Delivered, ShipmentStatus::Cancelled], true)) {
+            if (in_array($locked->status, [ShipmentStatus::Delivered, ShipmentStatus::Cancelled, ShipmentStatus::Returned], true)) {
                 throw new ShipmentClosedException;
             }
 

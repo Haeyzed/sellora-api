@@ -13,7 +13,9 @@ use App\Tenant\Orders\Events\OrderFulfilled;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Orders\Models\OrderLine;
 use App\Tenant\Orders\Models\ShipmentLine;
+use App\Tenant\Shipping\Enums\ShippingFulfilment;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 
 /**
  * Moves orders along for the Actions that change them: each change locks the order's row first and works from what is saved, never from a copy read earlier, so two changes at once happen one after the other.
@@ -47,7 +49,7 @@ final readonly class OrderProgress
     }
 
     /**
-     * What is left to ship of each line that ships, by its database ID: its quantity less what its shipments that aren't cancelled hold. Run under the order's lock.
+     * What is left to ship of each line that ships, by its database ID: its quantity less what its shipments that aren't cancelled or returned hold. Run under the order's lock.
      *
      * @return array<int, int>
      */
@@ -56,7 +58,7 @@ final readonly class OrderProgress
         $allocated = ShipmentLine::query()
             ->join('shipments', 'shipments.id', '=', 'shipment_lines.shipment_id')
             ->where('shipments.order_id', $locked->id)
-            ->where('shipments.status', '<>', ShipmentStatus::Cancelled->value)
+            ->whereNotIn('shipments.status', self::endedWithoutDelivery())
             ->groupBy('shipment_lines.order_line_id')
             ->selectRaw('shipment_lines.order_line_id, sum(shipment_lines.quantity) as allocated')
             ->pluck('allocated', 'order_line_id');
@@ -70,15 +72,47 @@ final readonly class OrderProgress
     }
 
     /**
-     * Whether the order has a shipment that isn't cancelled.
+     * Whether the order has a shipment that isn't cancelled or returned.
      */
     public function hasShipments(Order $locked): bool
     {
-        return $locked->shipments()->where('status', '<>', ShipmentStatus::Cancelled->value)->exists();
+        return $locked->shipments()->whereNotIn('status', self::endedWithoutDelivery())->exists();
     }
 
     /**
-     * Works a locked open order's fulfilment out again from its shipments that have left (shipped, or delivered and collected), and completes it when paid and fulfilled.
+     * Whether one of the order's shipments is with a carrier or driver right now: then it can't be cancelled.
+     */
+    public function hasShipmentUnderway(Order $locked): bool
+    {
+        return $locked->shipments()->where('status', ShipmentStatus::Shipped->value)->exists();
+    }
+
+    /**
+     * When an unpaid order is cancelled: its payment deadline, or, once one of its deliveries has come back, the same time again from the latest return (Step 17).
+     */
+    public function paymentDeadline(Order $order): CarbonImmutable
+    {
+        $lastReturned = $order->shipments()->max('returned_at');
+
+        if ($lastReturned === null) {
+            return $order->payment_due_at;
+        }
+
+        return CarbonImmutable::parse($lastReturned)->add($order->placed_at->diff($order->payment_due_at));
+    }
+
+    /**
+     * Statuses of shipments that ended without reaching the buyer, so hold nothing of the order.
+     *
+     * @return list<string>
+     */
+    public static function endedWithoutDelivery(): array
+    {
+        return [ShipmentStatus::Cancelled->value, ShipmentStatus::Returned->value];
+    }
+
+    /**
+     * Works a locked open order's fulfilment out again from its shipments that count as fulfilled (handed to a carrier, or delivered and collected; one of the store's own deliveries only once delivered), and completes it when paid and fulfilled.
      */
     public function recomputeFulfilment(Order $locked): void
     {
@@ -89,7 +123,9 @@ final readonly class OrderProgress
         $sent = ShipmentLine::query()
             ->join('shipments', 'shipments.id', '=', 'shipment_lines.shipment_id')
             ->where('shipments.order_id', $locked->id)
-            ->whereIn('shipments.status', [ShipmentStatus::Shipped->value, ShipmentStatus::Delivered->value])
+            ->where(static fn (Builder $sent) => $sent
+                ->where('shipments.status', ShipmentStatus::Delivered->value)
+                ->orWhere(static fn (Builder $carrier) => $carrier->where('shipments.status', ShipmentStatus::Shipped->value)->where('shipments.fulfilment', ShippingFulfilment::Ship->value)))
             ->groupBy('shipment_lines.order_line_id')
             ->selectRaw('shipment_lines.order_line_id, sum(shipment_lines.quantity) as sent')
             ->pluck('sent', 'order_line_id');

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Shared\Auth\AccessTokenIssuer;
+use App\Shared\Auth\AccountReference;
 use App\Shared\Auth\Models\Role;
 use App\Shared\Money\Money;
 use App\Tenant\Catalog\Models\Attribute;
@@ -15,14 +16,17 @@ use App\Tenant\Inventory\Actions\ReserveStock;
 use App\Tenant\Inventory\Data\StockHolder;
 use App\Tenant\Inventory\Data\StockLine;
 use App\Tenant\Inventory\Models\StockLocation;
+use App\Tenant\Orders\Actions\CreateShipment;
 use App\Tenant\Orders\Actions\IssueOrderAccessToken;
 use App\Tenant\Orders\Actions\MarkOrderAsPaid;
+use App\Tenant\Orders\Actions\MoveShipment;
 use App\Tenant\Orders\Actions\PlaceOrder;
 use App\Tenant\Orders\Data\OrderBuyer;
 use App\Tenant\Orders\Data\OrderDraft;
 use App\Tenant\Orders\Enums\OrderPermission;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Orders\Models\OrderAccessToken;
+use App\Tenant\Orders\Models\Shipment;
 use App\Tenant\Pricing\Data\TaxAddress;
 use App\Tenant\Promotions\Actions\ReservePromotionUses;
 use App\Tenant\Promotions\Data\DiscountBuyer;
@@ -280,4 +284,34 @@ function personalDataOnOrders(): array
         'line1' => $order->addresses->first()?->line1, 'country' => $order->addresses->first()?->country_code,
         'anonymised' => $order->anonymised_at !== null, 'total' => $order->total->minorAmount(),
     ]])->all());
+}
+
+/*
+|--------------------------------------------------------------------------
+| For ReturnedShipmentsTest.php and the Delivery tests
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * An order of 2 of one variant (5 in stock), sent with the store's own drivers, with 72 hours to pay: paid, unless paid on delivery. Made in the current store.
+ */
+function ownDeliveryOrder(bool $payOnDelivery = false): Order
+{
+    $draft = orderDraft([[cartVariant(10000, stock: 5), 2]], orderShippingMethod(ShippingFulfilment::OwnDelivery, 'Same day'), paymentDueAt: CarbonImmutable::now()->addHours(72), payOnDelivery: $payOnDelivery);
+    $order = placeOrder($draft);
+
+    return ($payOnDelivery ? $order : markPaid($order))->load('lines');
+}
+
+/**
+ * An own-delivery order, as ownDeliveryOrder() makes, and its shipment of both, shipped by the given staff.
+ *
+ * @return array{0: Order, 1: Shipment}
+ */
+function shippedOwnDelivery(AccountReference $staff, bool $payOnDelivery = false): array
+{
+    $order = ownDeliveryOrder($payOnDelivery);
+    $shipment = app(CreateShipment::class)->handle($order, [$order->lines[0]->public_id => 2], $staff);
+
+    return [$order, app(MoveShipment::class)->ship($shipment, $staff)];
 }
