@@ -204,4 +204,8 @@ return [
     'driver_deactivated' => 'Dereva huyu amezimwa. Mwamshe tena kwanza.',
     'driver_erased' => 'Data binafsi ya dereva huyu imefutwa. Rekodi imebaki kwa ajili ya usafirishaji wake wa awali tu.',
     'invalid_driver_setup_code' => 'Msimbo huu si sahihi, au umeisha muda. Omba duka msimbo mpya.',
+    'delivery_transition_not_allowed' => 'Uwasilishaji huu hauwezi kuhamia hali hiyo kutoka mahali ulipo sasa.',
+    'shipment_cannot_be_assigned' => 'Ni usafirishaji wa uwasilishaji wa duka lenyewe ambao bado haujaondoka, usio na uwasilishaji unaoendelea, pekee unaoweza kupewa dereva.',
+    'driver_holds_goods' => 'Dereva huyu bado ana bidhaa za uwasilishaji uliochukuliwa, ulio njiani, au ulioshindwa na bado haujatatuliwa. Utatue kwanza.',
+    'shipment_with_driver' => 'Mmoja wa madereva wa duka ana usafirishaji huu. Uwasilishaji wake ndio unaousogeza mbele.',
 ];

@@ -204,4 +204,8 @@ return [
     'driver_deactivated' => 'Questo autista è disattivato. Riattivalo prima.',
     'driver_erased' => 'I dati personali di questo autista sono stati cancellati. Il record resta solo per le sue consegne passate.',
     'invalid_driver_setup_code' => 'Questo codice non è corretto o è scaduto. Chiedi un nuovo codice al negozio.',
+    'delivery_transition_not_allowed' => 'Questa consegna non può passare a quello stato da dove si trova ora.',
+    'shipment_cannot_be_assigned' => 'Solo una spedizione consegnata dal negozio stesso, non ancora partita e senza una consegna già in corso, può essere affidata a un autista.',
+    'driver_holds_goods' => 'Questo autista ha ancora la merce di una consegna ritirata, in viaggio, o fallita e non ancora risolta. Risolvila prima.',
+    'shipment_with_driver' => 'Uno degli autisti del negozio ha questa spedizione. È la sua consegna a farla avanzare.',
 ];

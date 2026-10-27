@@ -204,4 +204,8 @@ return [
     'driver_deactivated' => 'Ten kierowca jest dezaktywowany. Najpierw aktywuj go ponownie.',
     'driver_erased' => 'Dane osobowe tego kierowcy zostały usunięte. Rekord pozostaje tylko na potrzeby jego wcześniejszych dostaw.',
     'invalid_driver_setup_code' => 'Ten kod jest nieprawidłowy lub wygasł. Poproś sklep o nowy kod.',
+    'delivery_transition_not_allowed' => 'Ta dostawa nie może przejść do tego statusu z obecnego.',
+    'shipment_cannot_be_assigned' => 'Kierowcy można przydzielić tylko własną dostawę sklepu, która jeszcze nie wyjechała i nie ma już trwającej dostawy.',
+    'driver_holds_goods' => 'Ten kierowca wciąż ma towar z dostawy odebranej, w drodze lub nieudanej i jeszcze nierozstrzygniętej. Najpierw ją rozstrzygnij.',
+    'shipment_with_driver' => 'Tę przesyłkę ma jeden z kierowców sklepu. To jego dostawa ją przesuwa dalej.',
 ];

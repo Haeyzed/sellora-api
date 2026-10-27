@@ -8,7 +8,7 @@ use App\Shared\Privacy\Contracts\ClassifiesStoreTables;
 use App\Shared\Privacy\StoreExportRegistry;
 
 /**
- * How drivers appear in a store export. Their PINs and setup codes never leave the store.
+ * How drivers and their deliveries appear in a store export. Their PINs and setup codes never leave the store.
  */
 final class DeliveryStoreTables implements ClassifiesStoreTables
 {
@@ -25,5 +25,13 @@ final class DeliveryStoreTables implements ClassifiesStoreTables
             include: ['id', 'driver_id', 'failed_attempts', 'expires_at', 'used_at', 'voided_at', 'issued_by_type', 'issued_by_id', 'created_at', 'updated_at'],
             exclude: ['code_hash' => 'Hash of a one-time PIN setup code, a secret.'],
         );
+
+        $registry->table('deliveries', include: [
+            'id', 'public_id', 'shipment_id', 'driver_id', 'attempt', 'status', 'failure_reason', 'failure_note', 'recipient_name',
+            'assigned_at', 'picked_up_at', 'on_the_way_at', 'delivered_at', 'failed_at', 'cancelled_at', 'resolved_at', 'resolution',
+            'assigned_by_type', 'assigned_by_id', 'created_at', 'updated_at',
+        ]);
+
+        $registry->table('delivery_status_changes', include: ['id', 'delivery_id', 'from_status', 'to_status', 'changed_by_type', 'changed_by_id', 'created_at']);
     }
 }

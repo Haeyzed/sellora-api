@@ -204,4 +204,8 @@ return [
     'driver_deactivated' => 'Agbanyụrụ onye ọkwọ ụgbọ a. Buru ụzọ mee ka ọ rụọ ọrụ ọzọ.',
     'driver_erased' => 'Ehichapụla data nkeonwe nke onye ọkwọ ụgbọ a. Ndekọ ahụ dị naanị maka nnyefe ya gara aga.',
     'invalid_driver_setup_code' => 'Koodu a ezighi ezi, ma ọ bụ na ọ gwụla. Rịọ ụlọ ahịa ka ha nye gị koodu ọhụrụ.',
+    'delivery_transition_not_allowed' => 'Nnyefe a enweghị ike ịgafe n\'ọnọdụ ahụ site n\'ebe ọ nọ ugbu a.',
+    'shipment_cannot_be_assigned' => 'Naanị mbupu nke ụlọ ahịa n\'onwe ya na-ebuga nke na-apụbeghị, nke na-enweghị nnyefe na-aga n\'ihu, ka enwere ike inye onye ọkwọ ụgbọ.',
+    'driver_holds_goods' => 'Onye ọkwọ ụgbọ a ka nwere ngwongwo nke nnyefe e welitere, nọ n\'ụzọ, ma ọ bụ dara ada ma edozibeghị. Buru ụzọ dozie ya.',
+    'shipment_with_driver' => 'Otu n\'ime ndị ọkwọ ụgbọ ụlọ ahịa nwere mbupu a. Nnyefe ya na-ebuga ya n\'ihu kama.',
 ];

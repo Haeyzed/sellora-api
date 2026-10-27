@@ -204,4 +204,8 @@ return [
     'driver_deactivated' => 'A ti dá awakọ̀ yìí dúró. Kọ́kọ́ mú un ṣiṣẹ́ padà.',
     'driver_erased' => 'A ti pa dátà ara ẹni awakọ̀ yìí rẹ́. Àkọsílẹ̀ náà wà fún àwọn ìfijíṣẹ́ rẹ̀ àtẹ̀yìnwá nìkan.',
     'invalid_driver_setup_code' => 'Kóòdù yìí kò tọ̀nà, tàbí ó ti parí. Béèrè kóòdù tuntun lọ́wọ́ ilé ìtajà.',
+    'delivery_transition_not_allowed' => 'Ìfijíṣẹ́ yìí kò lè lọ sí ipò yẹn láti ibi tí ó wà báyìí.',
+    'shipment_cannot_be_assigned' => 'Ẹrù tí ilé ìtajà fúnra rẹ̀ ń fi jíṣẹ́ tí kò tíì kúrò, tí kò sì ní ìfijíṣẹ́ tó ń lọ lọ́wọ́, nìkan ni a lè fún awakọ̀.',
+    'driver_holds_goods' => 'Awakọ̀ yìí ṣì ní ọjà ìfijíṣẹ́ kan tí wọ́n ti gbé, tí ó wà lójú ọ̀nà, tàbí tí kò yọrí tí a kò tíì yanjú. Ẹ yanjú rẹ̀ ná.',
+    'shipment_with_driver' => 'Ọ̀kan nínú àwọn awakọ̀ ilé ìtajà ló ní ẹrù yìí. Ìfijíṣẹ́ rẹ̀ ni ó ń gbé e síwájú dípò.',
 ];

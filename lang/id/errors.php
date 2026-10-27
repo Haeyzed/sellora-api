@@ -204,4 +204,8 @@ return [
     'driver_deactivated' => 'Pengemudi ini dinonaktifkan. Aktifkan kembali terlebih dahulu.',
     'driver_erased' => 'Data pribadi pengemudi ini telah dihapus. Catatannya disimpan hanya untuk pengiriman sebelumnya.',
     'invalid_driver_setup_code' => 'Kode ini salah atau sudah kedaluwarsa. Minta kode baru ke toko.',
+    'delivery_transition_not_allowed' => 'Pengiriman ini tidak dapat berpindah ke status itu dari posisinya sekarang.',
+    'shipment_cannot_be_assigned' => 'Hanya pengiriman milik toko sendiri yang belum berangkat dan belum punya pengantaran berjalan yang dapat diberikan ke pengemudi.',
+    'driver_holds_goods' => 'Pengemudi ini masih membawa barang dari pengantaran yang sudah diambil, dalam perjalanan, atau gagal dan belum diselesaikan. Selesaikan dulu.',
+    'shipment_with_driver' => 'Salah satu pengemudi toko memegang pengiriman ini. Pengantarannyalah yang memajukannya.',
 ];

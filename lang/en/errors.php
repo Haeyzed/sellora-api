@@ -227,5 +227,9 @@ return [
     'driver_deactivated' => 'This driver is deactivated. Reactivate them first.',
     'driver_erased' => 'This driver\'s personal data was erased. The record stays only for their past deliveries.',
     'invalid_driver_setup_code' => 'This code isn\'t right, or has expired. Ask the store for a new code.',
+    'delivery_transition_not_allowed' => 'This delivery can\'t move to that status from where it is now.',
+    'shipment_cannot_be_assigned' => 'Only one of the store\'s own deliveries that hasn\'t left, without a delivery already under way, can be given to a driver.',
+    'driver_holds_goods' => 'This driver still has goods from a delivery that is picked up, on the way, or failed and not yet resolved. Resolve it first.',
+    'shipment_with_driver' => 'One of the store\'s drivers has this shipment. Their delivery moves it along instead.',
 
 ];

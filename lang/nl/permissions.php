@@ -68,6 +68,7 @@ return [
     ],
     'delivery' => [
         'view' => 'De bezorgers en bezorgingen van de winkel bekijken.',
+        'manage' => 'Zendingen aan bezorgers geven, en hun bezorgingen verder zetten, opnieuw proberen, terugnemen of annuleren.',
     ],
     'drivers' => [
         'manage' => 'Bezorgers toevoegen, wijzigen, deactiveren en wissen, en hun codes geven om een pincode te kiezen.',

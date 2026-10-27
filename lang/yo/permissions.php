@@ -68,6 +68,7 @@ return [
     ],
     'delivery' => [
         'view' => 'Wo àwọn awakọ̀ àti ìfijíṣẹ́ ilé ìtajà.',
+        'manage' => 'Fífún àwọn awakọ̀ ní ẹrù, àti gbígbé ìfijíṣẹ́ wọn síwájú, títún gbìyànjú, gbígba ọjà padà tàbí fífagilé wọn.',
     ],
     'drivers' => [
         'manage' => 'Ṣàfikún, yí padà, dá dúró kí o sì pa àwọn awakọ̀ rẹ́, kí o sì fún wọn ní kóòdù láti yan PIN.',

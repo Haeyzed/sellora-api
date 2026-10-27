@@ -68,6 +68,7 @@ return [
     ],
     'delivery' => [
         'view' => 'Przeglądanie kierowców i dostaw sklepu.',
+        'manage' => 'Przydzielać przesyłki kierowcom oraz przesuwać, ponawiać, odbierać z powrotem lub anulować ich dostawy.',
     ],
     'drivers' => [
         'manage' => 'Dodawanie, zmienianie, dezaktywowanie i usuwanie kierowców oraz dawanie im kodów do wyboru PIN-u.',

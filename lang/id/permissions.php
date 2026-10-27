@@ -68,6 +68,7 @@ return [
     ],
     'delivery' => [
         'view' => 'Lihat pengemudi dan pengiriman toko.',
+        'manage' => 'Memberikan pengiriman ke pengemudi, serta memajukan, mengulang, menarik kembali, atau membatalkan pengantaran mereka.',
     ],
     'drivers' => [
         'manage' => 'Tambah, ubah, nonaktifkan, dan hapus pengemudi, serta beri mereka kode untuk memilih PIN.',

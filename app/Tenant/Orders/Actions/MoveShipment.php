@@ -9,6 +9,7 @@ use App\Tenant\Inventory\Actions\CommitReservedStock;
 use App\Tenant\Inventory\Actions\ReturnCommittedStock;
 use App\Tenant\Inventory\Data\StockHolder;
 use App\Tenant\Inventory\Exceptions\InsufficientStockException;
+use App\Tenant\Orders\Contracts\ShipmentDrivers;
 use App\Tenant\Orders\Enums\OrderEventType;
 use App\Tenant\Orders\Enums\ShipmentStatus;
 use App\Tenant\Orders\Events\ShipmentCancelled;
@@ -17,6 +18,7 @@ use App\Tenant\Orders\Events\ShipmentReadyForPickup;
 use App\Tenant\Orders\Events\ShipmentReturned;
 use App\Tenant\Orders\Events\ShipmentShipped;
 use App\Tenant\Orders\Exceptions\ShipmentTransitionNotAllowedException;
+use App\Tenant\Orders\Exceptions\ShipmentWithDriverException;
 use App\Tenant\Orders\Exceptions\TrackingNumberRequiredException;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Orders\Models\Shipment;
@@ -44,6 +46,7 @@ final readonly class MoveShipment
         private OrderEventLog $orderEventLog,
         private CommitReservedStock $commitReservedStock,
         private ReturnCommittedStock $returnCommittedStock,
+        private ShipmentDrivers $shipmentDrivers,
     ) {}
 
     /**
@@ -61,13 +64,18 @@ final readonly class MoveShipment
     /**
      * Handed to the carrier or driver: its stock leaves the shelf. A carrier shipment needs its tracking number first.
      *
+     * @param  bool  $byDriver  Delivery moving it for one of the store's drivers; otherwise one a driver has is refused.
+     *
      * @throws ShipmentTransitionNotAllowedException
      * @throws TrackingNumberRequiredException
+     * @throws ShipmentWithDriverException When one of the store's drivers has it, and it isn't their delivery moving it.
      * @throws InsufficientStockException When what it holds isn't on hand, such as a backorder that hasn't arrived.
      */
-    public function ship(Shipment $shipment, AccountReference $actor): Shipment
+    public function ship(Shipment $shipment, AccountReference $actor, bool $byDriver = false): Shipment
     {
-        return $this->move($shipment, ShipmentStatus::Shipped, $actor, function (Shipment $locked, Order $order) use ($actor): void {
+        return $this->move($shipment, ShipmentStatus::Shipped, $actor, function (Shipment $locked, Order $order) use ($actor, $byDriver): void {
+            $this->ensureNotWithDriver($locked, $byDriver);
+
             if ($locked->fulfilment === ShippingFulfilment::Ship && ($locked->tracking_number === null || $locked->tracking_number === '')) {
                 throw new TrackingNumberRequiredException;
             }
@@ -80,12 +88,17 @@ final readonly class MoveShipment
     /**
      * Arrived, or collected: a collected pickup's stock leaves the shelf now.
      *
+     * @param  bool  $byDriver  Delivery moving it for one of the store's drivers; otherwise one a driver has is refused.
+     *
      * @throws ShipmentTransitionNotAllowedException
+     * @throws ShipmentWithDriverException When one of the store's drivers has it, and it isn't their delivery moving it.
      * @throws InsufficientStockException When a collected pickup's stock isn't on hand.
      */
-    public function deliver(Shipment $shipment, AccountReference $actor): Shipment
+    public function deliver(Shipment $shipment, AccountReference $actor, bool $byDriver = false): Shipment
     {
-        return $this->move($shipment, ShipmentStatus::Delivered, $actor, function (Shipment $locked, Order $order) use ($actor): void {
+        return $this->move($shipment, ShipmentStatus::Delivered, $actor, function (Shipment $locked, Order $order) use ($actor, $byDriver): void {
+            $this->ensureNotWithDriver($locked, $byDriver);
+
             if ($locked->fulfilment === ShippingFulfilment::Pickup) {
                 $this->commitStock($locked, $order, $actor);
             }
@@ -153,6 +166,18 @@ final readonly class MoveShipment
 
             return $locked->load('lines.orderLine');
         });
+    }
+
+    /**
+     * Staff can't mark a shipment one of the store's drivers has shipped or delivered: the driver's delivery moves it. Asked under the order's and the shipment's locks, which assigning a driver also takes.
+     *
+     * @throws ShipmentWithDriverException
+     */
+    private function ensureNotWithDriver(Shipment $locked, bool $byDriver): void
+    {
+        if (! $byDriver && $locked->fulfilment === ShippingFulfilment::OwnDelivery && $this->shipmentDrivers->hasDelivery($locked)) {
+            throw new ShipmentWithDriverException;
+        }
     }
 
     /**

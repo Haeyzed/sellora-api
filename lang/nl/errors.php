@@ -204,4 +204,8 @@ return [
     'driver_deactivated' => 'Deze bezorger is gedeactiveerd. Activeer hem eerst opnieuw.',
     'driver_erased' => 'De persoonsgegevens van deze bezorger zijn gewist. Het record blijft alleen voor eerdere bezorgingen bestaan.',
     'invalid_driver_setup_code' => 'Deze code klopt niet of is verlopen. Vraag de winkel om een nieuwe code.',
+    'delivery_transition_not_allowed' => 'Deze bezorging kan vanuit de huidige stand niet naar die status.',
+    'shipment_cannot_be_assigned' => 'Alleen een eigen bezorging van de winkel die nog niet vertrokken is en geen lopende bezorging heeft, kan aan een bezorger worden gegeven.',
+    'driver_holds_goods' => 'Deze bezorger heeft nog goederen van een bezorging die is opgehaald, onderweg is, of mislukt en nog niet afgehandeld. Handel die eerst af.',
+    'shipment_with_driver' => 'Een van de bezorgers van de winkel heeft deze zending. Zijn bezorging brengt haar verder.',
 ];

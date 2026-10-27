@@ -204,4 +204,8 @@ return [
     'driver_deactivated' => 'An dakatar da wannan direban. Sake kunna shi tukuna.',
     'driver_erased' => 'An goge bayanan sirri na wannan direban. Rikodin yana nan ne kawai saboda isar da kayan da ya yi a baya.',
     'invalid_driver_setup_code' => 'Wannan lambar ba daidai ba ce, ko ta ƙare. Nemi sabuwar lamba daga shagon.',
+    'delivery_transition_not_allowed' => 'Wannan isarwar ba za ta iya komawa wannan matsayi daga inda take yanzu ba.',
+    'shipment_cannot_be_assigned' => 'Jigilar shagon ta kansa da ba ta tashi ba, wadda ba ta da isarwa da ke gudana, ce kawai za a iya ba direba.',
+    'driver_holds_goods' => 'Wannan direban yana da kayan isarwa da aka ɗauka, ko ke kan hanya, ko ta gaza ba a warware ta ba tukuna. A warware ta tukuna.',
+    'shipment_with_driver' => 'Ɗaya daga cikin direbobin shagon yana da wannan jigila. Isarwarsa ce ke ciyar da ita gaba.',
 ];

@@ -60,7 +60,7 @@ admin token to a store endpoint.
 
 ## Endpoint cURL reference
 
-The following commands cover all 306 operations in the current tenant
+The following commands cover all 320 operations in the current tenant
 Scramble OpenAPI export, including the shared geography endpoints available
 on the store domain. Request bodies include required fields (or one
 representative field when all are optional); values such as IDs, email
@@ -82,6 +82,7 @@ $CreditNote = 'replace-with-credit-note'
 $Currency = 'replace-with-currency'
 $Customer = 'replace-with-customer'
 $CustomerGroup = 'replace-with-customer-group'
+$Delivery = 'replace-with-delivery'
 $Driver = 'replace-with-driver'
 $Export = 'replace-with-export'
 $Gateway = 'replace-with-gateway'
@@ -931,6 +932,78 @@ curl.exe --request PUT "${StoreBase}/customer/account/tax-id" `
   --data-raw '{"tax_id":"replace-with-value","country":"replace-with-value"}'
 ```
 
+#### Delivery
+
+**GET** `/staff/delivery/deliveries` — staff bearer token. List deliveries
+
+```powershell
+curl.exe --request GET "${StoreBase}/staff/delivery/deliveries" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
+**GET** `/staff/delivery/deliveries/{delivery}` — staff bearer token. Show a delivery
+
+```powershell
+curl.exe --request GET "${StoreBase}/staff/delivery/deliveries/${Delivery}" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
+**POST** `/staff/delivery/shipments/{shipment}/deliveries` — staff bearer token. Assign a driver to a shipment
+
+```powershell
+curl.exe --request POST "${StoreBase}/staff/delivery/shipments/${Shipment}/deliveries" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw '{"driver":"replace-with-value"}'
+```
+
+**POST** `/staff/delivery/deliveries/{delivery}/reassign` — staff bearer token. Give a delivery to another driver
+
+```powershell
+curl.exe --request POST "${StoreBase}/staff/delivery/deliveries/${Delivery}/reassign" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw '{"driver":"replace-with-value"}'
+```
+
+**POST** `/staff/delivery/deliveries/{delivery}/cancel` — staff bearer token. Cancel a delivery
+
+```powershell
+curl.exe --request POST "${StoreBase}/staff/delivery/deliveries/${Delivery}/cancel" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
+**POST** `/staff/delivery/deliveries/{delivery}/status` — staff bearer token. Move a delivery along for its driver
+
+```powershell
+curl.exe --request POST "${StoreBase}/staff/delivery/deliveries/${Delivery}/status" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw '{"status":"replace-with-value"}'
+```
+
+**POST** `/staff/delivery/deliveries/{delivery}/retry` — staff bearer token. Send a failed delivery out again
+
+```powershell
+curl.exe --request POST "${StoreBase}/staff/delivery/deliveries/${Delivery}/retry" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
+**POST** `/staff/delivery/deliveries/{delivery}/return` — staff bearer token. Take back a failed delivery's goods
+
+```powershell
+curl.exe --request POST "${StoreBase}/staff/delivery/deliveries/${Delivery}/return" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
 #### DiscountPreview
 
 **POST** `/staff/promotions/preview` — staff bearer token. Preview a basket's discounts
@@ -1013,6 +1086,60 @@ curl.exe --request POST "${StoreBase}/staff/delivery/drivers/${Driver}/reactivat
 curl.exe --request POST "${StoreBase}/staff/delivery/drivers/${Driver}/setup-codes" `
   --header 'Accept: application/json' `
   --header "Authorization: Bearer $StaffToken"
+```
+
+#### DriverDelivery
+
+**GET** `/driver/deliveries` — driver bearer token. List my deliveries
+
+```powershell
+curl.exe --request GET "${StoreBase}/driver/deliveries" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $DriverToken"
+```
+
+**GET** `/driver/deliveries/{delivery}` — driver bearer token. Show one of my deliveries
+
+```powershell
+curl.exe --request GET "${StoreBase}/driver/deliveries/${Delivery}" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $DriverToken"
+```
+
+**POST** `/driver/deliveries/{delivery}/pick-up` — driver bearer token. Pick up a delivery
+
+```powershell
+curl.exe --request POST "${StoreBase}/driver/deliveries/${Delivery}/pick-up" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $DriverToken"
+```
+
+**POST** `/driver/deliveries/{delivery}/on-the-way` — driver bearer token. Set off with a delivery
+
+```powershell
+curl.exe --request POST "${StoreBase}/driver/deliveries/${Delivery}/on-the-way" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $DriverToken"
+```
+
+**POST** `/driver/deliveries/{delivery}/delivered` — driver bearer token. Hand over a delivery
+
+```powershell
+curl.exe --request POST "${StoreBase}/driver/deliveries/${Delivery}/delivered" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $DriverToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw '{"recipient_name":"replace-with-value"}'
+```
+
+**POST** `/driver/deliveries/{delivery}/failed` — driver bearer token. Report a delivery failed
+
+```powershell
+curl.exe --request POST "${StoreBase}/driver/deliveries/${Delivery}/failed" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $DriverToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw '{"reason":"replace-with-value"}'
 ```
 
 #### DriverPin

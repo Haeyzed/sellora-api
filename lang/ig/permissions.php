@@ -68,6 +68,7 @@ return [
     ],
     'delivery' => [
         'view' => 'Hụ ndị ọkwọ ụgbọ na nnyefe nke ụlọ ahịa.',
+        'manage' => 'Inye ndị ọkwọ ụgbọ mbupu, na ibuga nnyefe ha n\'ihu, nwalee ọzọ, weghachite ngwongwo ma ọ bụ kagbuo ha.',
     ],
     'drivers' => [
         'manage' => 'Tinye, gbanwee, gbanyụọ ma hichapụ ndị ọkwọ ụgbọ, ma nye ha koodu iji họrọ PIN.',

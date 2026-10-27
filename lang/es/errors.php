@@ -204,4 +204,8 @@ return [
     'driver_deactivated' => 'Este repartidor está desactivado. Reactívalo primero.',
     'driver_erased' => 'Los datos personales de este repartidor se borraron. El registro solo se conserva por sus entregas anteriores.',
     'invalid_driver_setup_code' => 'Este código no es correcto o ha caducado. Pide un código nuevo a la tienda.',
+    'delivery_transition_not_allowed' => 'Esta entrega no puede pasar a ese estado desde donde está ahora.',
+    'shipment_cannot_be_assigned' => 'Solo se puede asignar a un repartidor un envío de reparto propio de la tienda que no haya salido y que no tenga ya una entrega en curso.',
+    'driver_holds_goods' => 'Este repartidor aún tiene mercancía de una entrega recogida, en camino o fallida y sin resolver. Resuélvela primero.',
+    'shipment_with_driver' => 'Uno de los repartidores de la tienda tiene este envío. Es su entrega la que lo hace avanzar.',
 ];

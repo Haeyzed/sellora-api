@@ -4,9 +4,15 @@ declare(strict_types=1);
 
 use App\Landlord\Tenancy\Models\Tenant;
 use App\Shared\Auth\AccessTokenIssuer;
+use App\Shared\Auth\AccountReference;
 use App\Shared\Auth\Models\Role;
+use App\Tenant\Delivery\Actions\AssignDriver;
+use App\Tenant\Delivery\Models\Delivery;
 use App\Tenant\Delivery\Models\Driver;
+use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
+use App\Tenant\Orders\Actions\CreateShipment;
+use App\Tenant\Orders\Models\Shipment;
 use Illuminate\Testing\TestResponse;
 use Spatie\Permission\Models\Permission;
 use Tests\Fixtures\Features\FakeFeatureSource;
@@ -115,4 +121,55 @@ function chooseDriverPin(string $phone, string $code, string $pin, string $subdo
 function driverTokenWorks(string $token): bool
 {
     return driverAppRequest('GET', 'auth/me', token: $token)->status() === 200;
+}
+
+/*
+|--------------------------------------------------------------------------
+| For DeliveriesTest.php and DriverDeliveriesTest.php
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * An active driver of the current store, with a PIN.
+ */
+function activeDriver(string $phone = '+2348012345678', string $name = 'Dayo Driver'): Driver
+{
+    return Driver::factory()->create(['name' => $name, 'phone' => $phone, 'pin' => '482915', 'is_active' => true]);
+}
+
+/**
+ * A shipment of an own-delivery order (2 of one variant, 5 in stock), waiting to leave, made in the current store by the given staff member.
+ */
+function pendingOwnDelivery(StaffMember $staff, bool $payOnDelivery = false): Shipment
+{
+    $order = ownDeliveryOrder($payOnDelivery);
+
+    return app(CreateShipment::class)->handle($order, [$order->lines[0]->public_id => 2], AccountReference::to($staff));
+}
+
+/**
+ * A store for the delivery tests, in Nigeria, with room for drivers, its owner, and an active driver with a token.
+ *
+ * @return array{store: Tenant, owner: StaffMember, driver: Driver, token: string}
+ */
+function deliveryStore(string $subdomain = 'first-store'): array
+{
+    $store = createStore($subdomain, ['country_code' => 'NG']);
+    allowDrivers($store->getTenantKey(), 10);
+    [$owner, $driver] = $store->run(static function (): array {
+        $owner = StaffMember::factory()->create(['password' => DELIVERY_STAFF_PASSWORD]);
+        $owner->assignRole(StaffRole::Owner->value);
+
+        return [$owner, activeDriver()];
+    });
+
+    return ['store' => $store, 'owner' => $owner, 'driver' => $driver, 'token' => driverTokenFor($driver, $store)];
+}
+
+/**
+ * A delivery of a new own-delivery shipment, assigned to the driver by the staff member, in the given store.
+ */
+function assignedDelivery(Tenant $store, StaffMember $staff, Driver $driver, bool $payOnDelivery = false): Delivery
+{
+    return $store->run(static fn (): Delivery => app(AssignDriver::class)->handle($staff, pendingOwnDelivery($staff, $payOnDelivery), $driver));
 }

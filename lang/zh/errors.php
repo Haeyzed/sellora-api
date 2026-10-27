@@ -204,4 +204,8 @@ return [
     'driver_deactivated' => '此司机已停用。请先重新启用。',
     'driver_erased' => '此司机的个人数据已被删除。记录仅为其过去的配送而保留。',
     'invalid_driver_setup_code' => '此代码不正确或已过期。请向商店索取新代码。',
+    'delivery_transition_not_allowed' => '此配送无法从当前状态变为该状态。',
+    'shipment_cannot_be_assigned' => '只有尚未出发、且没有进行中配送的商店自送货件才能分配给司机。',
+    'driver_holds_goods' => '该司机仍持有某个已取货、配送中或失败且尚未处理的配送的货物。请先处理。',
+    'shipment_with_driver' => '此货件在商店的一位司机手中。应由该司机的配送来推进它。',
 ];

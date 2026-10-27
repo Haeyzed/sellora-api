@@ -118,7 +118,10 @@ use App\Tenant\Customers\TrashedCustomerRetention;
 use App\Tenant\Delivery\DeliveryStoreTables;
 use App\Tenant\Delivery\DriverSetupCodeRetention;
 use App\Tenant\Delivery\Enums\DeliveryPermission;
+use App\Tenant\Delivery\Listeners\CancelDeliveriesWhenShipmentCancelled;
+use App\Tenant\Delivery\Models\Delivery;
 use App\Tenant\Delivery\Models\Driver;
+use App\Tenant\Delivery\OpenDeliveries;
 use App\Tenant\Delivery\Privacy\DriverAccountData;
 use App\Tenant\Delivery\Privacy\DriverDataSubject;
 use App\Tenant\Identity\Enums\StaffPermission;
@@ -149,12 +152,14 @@ use App\Tenant\Inventory\StockLedgerReconciliation;
 use App\Tenant\Orders\Contracts\OrderAmountHolds;
 use App\Tenant\Orders\Contracts\PaymentCheckBeforeExpiry;
 use App\Tenant\Orders\Contracts\RefundsAwaitingCreditNotes;
+use App\Tenant\Orders\Contracts\ShipmentDrivers;
 use App\Tenant\Orders\Enums\OrderPermission;
 use App\Tenant\Orders\Events\CreditNoteIssued;
 use App\Tenant\Orders\Events\InvoiceIssued;
 use App\Tenant\Orders\Events\OrderAnonymised;
 use App\Tenant\Orders\Events\OrderCancelled;
 use App\Tenant\Orders\Events\OrderPaid;
+use App\Tenant\Orders\Events\ShipmentCancelled;
 use App\Tenant\Orders\ExpiredOrderSweep;
 use App\Tenant\Orders\Http\OrderGuestRequester;
 use App\Tenant\Orders\Http\OrderTokenDocumentation;
@@ -330,6 +335,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(StoreCommittedPaymentRefunds::class, CommittedPaymentRefundSweep::class);
         // Orders asks Payments for one last check before an order expires.
         $this->app->bind(PaymentCheckBeforeExpiry::class, GatewayCheckBeforeExpiry::class);
+        $this->app->bind(ShipmentDrivers::class, OpenDeliveries::class);
         // A guest's Idempotency-Keys are theirs by their order's access token, or else their cart token.
         $this->app->bind(GuestRequester::class, static fn (): GuestRequesters => new GuestRequesters(new OrderGuestRequester, new CartGuestRequester));
         // A guest retrying their placement gets a fresh order token: tokens are never stored for replay.
@@ -565,6 +571,7 @@ final class AppServiceProvider extends ServiceProvider
             'customer' => Customer::class,
             'customer_group' => CustomerGroup::class,
             'driver' => Driver::class,
+            'delivery' => Delivery::class,
             'staff_invitation' => StaffInvitation::class,
             'role' => Role::class,
             'store' => Tenant::class,
@@ -719,6 +726,7 @@ final class AppServiceProvider extends ServiceProvider
         Event::listen(OrderCancelled::class, RefundCommittedPaymentHoldsWhenOrderCancelled::class);
         Event::listen([InvoiceIssued::class, CreditNoteIssued::class], RenderPdfWhenTaxDocumentIssued::class);
         Event::listen(OrderAnonymised::class, ForgetCardDetailsWhenOrderAnonymised::class);
+        Event::listen(ShipmentCancelled::class, CancelDeliveriesWhenShipmentCancelled::class);
     }
 
     /**

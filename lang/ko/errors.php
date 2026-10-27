@@ -204,4 +204,8 @@ return [
     'driver_deactivated' => '이 기사는 비활성화되었습니다. 먼저 다시 활성화하세요.',
     'driver_erased' => '이 기사의 개인 데이터는 삭제되었습니다. 기록은 과거 배송을 위해서만 남아 있습니다.',
     'invalid_driver_setup_code' => '이 코드가 올바르지 않거나 만료되었습니다. 스토어에 새 코드를 요청하세요.',
+    'delivery_transition_not_allowed' => '이 배송은 현재 상태에서 해당 상태로 바뀔 수 없습니다.',
+    'shipment_cannot_be_assigned' => '아직 출발하지 않았고 진행 중인 배송이 없는 스토어 자체 배송 출하만 기사에게 맡길 수 있습니다.',
+    'driver_holds_goods' => '이 기사는 픽업했거나 배송 중이거나 실패 후 아직 해결되지 않은 배송의 상품을 아직 가지고 있습니다. 먼저 해결하세요.',
+    'shipment_with_driver' => '이 출하는 스토어 기사 중 한 명이 맡고 있습니다. 대신 그 기사의 배송으로 진행됩니다.',
 ];

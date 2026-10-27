@@ -204,4 +204,8 @@ return [
     'driver_deactivated' => 'Ce livreur est désactivé. Réactivez-le d’abord.',
     'driver_erased' => 'Les données personnelles de ce livreur ont été effacées. La fiche n’est conservée que pour ses livraisons passées.',
     'invalid_driver_setup_code' => 'Ce code est incorrect ou a expiré. Demandez un nouveau code à la boutique.',
+    'delivery_transition_not_allowed' => 'Cette livraison ne peut pas passer à ce statut depuis son état actuel.',
+    'shipment_cannot_be_assigned' => 'Seul un envoi livré par la boutique elle-même, pas encore parti et sans livraison déjà en cours, peut être confié à un livreur.',
+    'driver_holds_goods' => 'Ce livreur a encore la marchandise d’une livraison récupérée, en route, ou échouée et pas encore réglée. Réglez-la d’abord.',
+    'shipment_with_driver' => 'Un des livreurs de la boutique a cet envoi. C’est sa livraison qui le fait avancer.',
 ];

@@ -204,4 +204,8 @@ return [
     'driver_deactivated' => 'Bu sürücü devre dışı. Önce yeniden etkinleştirin.',
     'driver_erased' => 'Bu sürücünün kişisel verileri silindi. Kayıt yalnızca geçmiş teslimatları için tutuluyor.',
     'invalid_driver_setup_code' => 'Bu kod doğru değil veya süresi dolmuş. Mağazadan yeni bir kod isteyin.',
+    'delivery_transition_not_allowed' => 'Bu teslimat şu anki durumundan o duruma geçemez.',
+    'shipment_cannot_be_assigned' => 'Sürücüye yalnızca henüz yola çıkmamış ve devam eden bir teslimatı olmayan, mağazanın kendi teslimatı olan bir gönderi verilebilir.',
+    'driver_holds_goods' => 'Bu sürücüde hâlâ alınmış, yolda olan veya başarısız olup henüz çözülmemiş bir teslimatın ürünleri var. Önce onu çözün.',
+    'shipment_with_driver' => 'Bu gönderi mağazanın sürücülerinden birinde. Onun yerine sürücünün teslimatı onu ilerletir.',
 ];

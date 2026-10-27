@@ -13,6 +13,7 @@ use App\Tenant\Delivery\Actions\ReactivateDriver;
 use App\Tenant\Delivery\Actions\UpdateDriver;
 use App\Tenant\Delivery\Exceptions\DriverDeactivatedException;
 use App\Tenant\Delivery\Exceptions\DriverErasedException;
+use App\Tenant\Delivery\Exceptions\DriverHoldsGoodsException;
 use App\Tenant\Delivery\Exceptions\DriverPhoneTakenException;
 use App\Tenant\Delivery\Http\Requests\ListDriversRequest;
 use App\Tenant\Delivery\Http\Requests\ManageDriverRequest;
@@ -96,7 +97,11 @@ final class DriverController extends Controller
      *
      * Needs the drivers.manage permission. They are signed out everywhere at
      * once and can't sign in; their history is kept, and they no longer
-     * count towards the driver limit.
+     * count towards the driver limit. Refused while they have goods (a
+     * delivery picked up, on the way, or failed and not yet resolved);
+     * deliveries only assigned to them are taken back.
+     *
+     * @throws DriverHoldsGoodsException
      */
     public function deactivate(ManageDriverRequest $request, Driver $driver, DeactivateDriver $deactivateDriver): DriverAccountResource
     {

@@ -10,6 +10,7 @@ use App\Shared\Http\Controller;
 use App\Shared\Privacy\ErasureOutcomeResource;
 use App\Shared\Privacy\PersonalDataRegistry;
 use App\Tenant\Delivery\Actions\EraseDriver;
+use App\Tenant\Delivery\Exceptions\DriverHoldsGoodsException;
 use App\Tenant\Delivery\Http\Requests\DriverPrivacyRequest;
 use App\Tenant\Delivery\Models\Driver;
 use App\Tenant\Delivery\Privacy\DriverDataSubject;
@@ -37,10 +38,12 @@ final class DriverPrivacyController extends Controller
      * Needs the drivers.manage permission and your own password. Clears the
      * driver's name, phone and PIN, deactivates them and signs them out
      * everywhere; it can't be undone. Their past deliveries stay, without
-     * their details.
+     * their details. Refused while they have goods; deliveries only assigned
+     * to them are taken back.
      *
      * @throws IncorrectCurrentPasswordException
      * @throws TooManyIncorrectAttemptsException
+     * @throws DriverHoldsGoodsException
      */
     public function destroy(DriverPrivacyRequest $request, Driver $driver, EraseDriver $eraseDriver): ErasureOutcomeResource
     {

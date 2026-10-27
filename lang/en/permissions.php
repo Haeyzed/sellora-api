@@ -87,6 +87,7 @@ return [
 
     'delivery' => [
         'view' => 'See the store\'s drivers and deliveries.',
+        'manage' => 'Give shipments to drivers, and move, retry, take back or cancel their deliveries.',
     ],
 
     'drivers' => [

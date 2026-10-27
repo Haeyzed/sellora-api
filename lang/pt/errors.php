@@ -204,4 +204,8 @@ return [
     'driver_deactivated' => 'Este motorista está desativado. Reative-o primeiro.',
     'driver_erased' => 'Os dados pessoais deste motorista foram apagados. O registro permanece apenas pelas entregas anteriores.',
     'invalid_driver_setup_code' => 'Este código não está correto ou expirou. Peça um novo código à loja.',
+    'delivery_transition_not_allowed' => 'Esta entrega não pode passar para esse estado a partir de onde está agora.',
+    'shipment_cannot_be_assigned' => 'Só é possível atribuir a um motorista um envio de entrega própria da loja que ainda não saiu e sem uma entrega já em curso.',
+    'driver_holds_goods' => 'Este motorista ainda tem mercadoria de uma entrega recolhida, a caminho, ou falhada e ainda não resolvida. Resolva-a primeiro.',
+    'shipment_with_driver' => 'Um dos motoristas da loja tem este envio. É a entrega dele que o faz avançar.',
 ];

@@ -14,6 +14,7 @@ use App\Tenant\Orders\Exceptions\OrderCannotBeFulfilledException;
 use App\Tenant\Orders\Exceptions\ShipmentClosedException;
 use App\Tenant\Orders\Exceptions\ShipmentQuantityTooHighException;
 use App\Tenant\Orders\Exceptions\ShipmentTransitionNotAllowedException;
+use App\Tenant\Orders\Exceptions\ShipmentWithDriverException;
 use App\Tenant\Orders\Exceptions\TrackingNumberRequiredException;
 use App\Tenant\Orders\Http\Requests\CreateShipmentRequest;
 use App\Tenant\Orders\Http\Requests\FulfilOrderRequest;
@@ -112,10 +113,12 @@ final class ShipmentController extends Controller
      * Mark a shipment shipped.
      *
      * Needs the orders.fulfil permission. Its stock leaves the shelf. A carrier
-     * shipment needs its tracking number first.
+     * shipment needs its tracking number first. Not while one of the store's
+     * drivers has it: their delivery moves it along.
      *
      * @throws ShipmentTransitionNotAllowedException
      * @throws TrackingNumberRequiredException
+     * @throws ShipmentWithDriverException
      * @throws InsufficientStockException
      */
     public function ship(FulfilOrderRequest $request, Shipment $shipment, MoveShipment $moveShipment): ShipmentResource
@@ -127,9 +130,10 @@ final class ShipmentController extends Controller
      * Mark a shipment delivered, or a pickup collected.
      *
      * Needs the orders.fulfil permission. A collected pickup's stock leaves
-     * the shelf now.
+     * the shelf now. Not while one of the store's drivers has it.
      *
      * @throws ShipmentTransitionNotAllowedException
+     * @throws ShipmentWithDriverException
      * @throws InsufficientStockException
      */
     public function deliver(FulfilOrderRequest $request, Shipment $shipment, MoveShipment $moveShipment): ShipmentResource
