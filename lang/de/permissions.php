@@ -45,6 +45,9 @@ return [
         'manage' => 'Stornieren Sie Bestellungen, fügen Sie Notizen und Tags hinzu und korrigieren Sie die Kontaktdaten und Lieferadressen der Käufer.',
         'fulfil' => 'Erstellen Sie Sendungen, fügen Sie die Sendungsverfolgung hinzu und markieren Sie, was noch übrig ist, zur Abholung bereit ist oder eingetroffen ist.',
     ],
+    'invoices' => [
+        'view' => 'Sehen Sie sich Rechnungen und Gutschriften mit den Details des Käufers an und laden Sie deren PDFs herunter.',
+    ],
     'payments' => [
         'view' => 'Sehen Sie sich Zahlungen, Rückerstattungen und die Verbindung von Zahlungsgateways an.',
         'confirm' => 'Bestätigen Sie, dass eine Banküberweisung oder eine Nachnahme eingegangen ist, und fragen Sie erneut bei einem Gateway nach einer Zahlung.',

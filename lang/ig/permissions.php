@@ -45,6 +45,9 @@ return [
         'manage' => 'Kagbuo iwu, tinye ndetu na mkpado, ma dozie nkọwa kọntaktị nke ndị na-azụ ahịa na adreesị mbupu.',
         'fulfil' => 'Mepụta mbupu, tinye nsuso, ma kaa ihe fọdụrụ, dị njikere maka mbupu ma ọ bụ bịarute.',
     ],
+    'invoices' => [
+        'view' => 'Le n’ego na akwụkwọ kredit ndị nwere ndepụta onye zụrụ ya, ma budata PDF ha.',
+    ],
     'payments' => [
         'view' => 'Hụ ịkwụ ụgwọ, nkwụghachi yana otu esi ejikọta ọnụ ụzọ ịkwụ ụgwọ.',
         'confirm' => 'Kwenye na mbufe ụlọ akụ bịarutere ma ọ bụ anakọtara ego mgbe ebufe ya, ma jụọkwa ụzọ maka ịkwụ ụgwọ.',

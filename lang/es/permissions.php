@@ -45,6 +45,9 @@ return [
         'manage' => 'Cancele pedidos, agregue notas y etiquetas, y corrija los datos de contacto y las direcciones de envío de los compradores.',
         'fulfil' => 'Cree envíos, agregue seguimiento y marque lo que queda, lo que está listo para ser recogido o lo que ha llegado.',
     ],
+    'invoices' => [
+        'view' => 'Vea facturas y notas de crédito, con los datos del comprador, y descargue sus PDFs.',
+    ],
     'payments' => [
         'view' => 'Vea pagos, reembolsos y cómo se conectan las pasarelas de pago.',
         'confirm' => 'Confirma que llegó una transferencia bancaria o se cobró contra reembolso y pregunta nuevamente a una pasarela sobre un pago.',

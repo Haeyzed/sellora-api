@@ -45,6 +45,9 @@ return [
         'manage' => 'Annuleer bestellingen, voeg notities en tags toe en corrigeer de contactgegevens en verzendadressen van kopers.',
         'fulfil' => 'Maak zendingen aan, voeg tracking toe en markeer wat er nog is, klaar is om opgehaald te worden of is aangekomen.',
     ],
+    'invoices' => [
+        'view' => 'Bekijk facturen en creditnota\'s met de gegevens van de koper en download hun PDF-bestanden.',
+    ],
     'payments' => [
         'view' => 'Bekijk betalingen, terugbetalingen en hoe betalingsgateways zijn verbonden.',
         'confirm' => 'Bevestig dat er een bankoverschrijving is ontvangen of dat er onder rembours is betaald, en vraag een gateway opnieuw naar een betaling.',

@@ -45,6 +45,9 @@ return [
         'manage' => 'Soke umarni, ƙara bayanin kula da alamun alama, da gyara bayanan tuntuɓar masu siye da adiresoshin jigilar kaya.',
         'fulfil' => 'Ƙirƙiri jigilar kaya, ƙara bin diddigi, da yiwa abin da ya rage alama, an shirya don ɗauka ko ya iso.',
     ],
+    'invoices' => [
+        'view' => 'Duba lissafi da bayanan bashi tare da cikakkun bayanan mai siye, kuma sauke PDFs ɗin su.',
+    ],
     'payments' => [
         'view' => 'Dubi biyan kuɗi, maidowa da yadda ake haɗa ƙofofin biyan kuɗi.',
         'confirm' => 'Tabbatar da cewa canja wurin banki ya iso ko an karɓi kuɗi lokacin bayarwa, kuma a sake tambayar ƙofa game da biyan kuɗi.',

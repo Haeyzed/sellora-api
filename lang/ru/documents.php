@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'price_reduction' => 'Скидка',
+    'invoice' => 'Счёт',
+    'credit_note' => 'Кредитная накладная',
+    'test_document' => 'Тестовый документ: не является налоговым документом',
+    'number' => 'Номер',
+    'issued_on' => 'Дата выдачи',
+    'paid_on' => 'Дата продажи',
+    'credits_invoice' => 'Счёт по кредитам',
+    'seller' => 'От',
+    'buyer' => 'Выставлен для',
+    'buyer_tax_id' => 'ИНН (:country)',
+    'shipping_address' => 'Отправлено',
+    'description' => 'Описание',
+    'sku' => 'Артикул',
+    'quantity' => 'Кол-во',
+    'unit_price' => 'Цена за единицу',
+    'discount' => 'Скидка',
+    'net' => 'Без НДС',
+    'tax' => 'Налог',
+    'total' => 'Итого',
+    'shipping' => 'Доставка',
+    'tax_summary' => 'Налог по ставке',
+    'rate' => 'Ставка',
+    'taxable' => 'Облагается налогом',
+    'subtotal' => 'Промежуточный итог',
+    'total_due' => 'Всего оплачено',
+    'total_credited' => 'Всего зачислено',
+    'prices_include_tax' => 'Цены включают налог.',
+    'prices_exclude_tax' => 'Цены не включают налог.',
+    'currency' => 'Валюта',
+    'exchange_rate' => '1 :base = :rate :currency',
+    'page' => 'Страница',
+];

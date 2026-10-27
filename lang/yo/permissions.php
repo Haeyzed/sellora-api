@@ -45,6 +45,9 @@ return [
         'manage' => 'Fagilee awọn aṣẹ, ṣafikun awọn akọsilẹ ati awọn afi, ati ṣatunṣe awọn alaye olubasọrọ awọn olura ati awọn adirẹsi gbigbe.',
         'fulfil' => 'Ṣẹda awọn gbigbe, ṣafikun ipasẹ, ati samisi ohun ti o kù, ti ṣetan fun gbigbe tabi ti de.',
     ],
+    'invoices' => [
+        'view' => 'Wo awọn iwe owo ati awọn akọsilẹ kirẹditi, pẹlu alaye olura wọn lori wọn, ati gba awọn PDF wọn.',
+    ],
     'payments' => [
         'view' => 'Wo awọn sisanwo, awọn agbapada ati bii awọn ẹnu-ọna isanwo ṣe sopọ.',
         'confirm' => 'Jẹrisi pe gbigbe ile ifowo kan de tabi owo lori ifijiṣẹ ti gba, ati beere ẹnu-ọna lẹẹkansi nipa isanwo kan.',

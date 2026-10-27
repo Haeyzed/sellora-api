@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'price_reduction' => 'Idinku idiyele',
+    'invoice' => 'Iwe owo',
+    'credit_note' => 'Akọsilẹ kirẹditi',
+    'test_document' => 'Iwe idanwo: kii ṣe iwe owo-ori',
+    'number' => 'Nọmba',
+    'issued_on' => 'Ọjọ itẹjade',
+    'paid_on' => 'Ọjọ tita',
+    'credits_invoice' => 'Iwe owo kirẹditi',
+    'seller' => 'Lati',
+    'buyer' => 'Fowo si',
+    'buyer_tax_id' => 'ID owo-ori (:country)',
+    'shipping_address' => 'Firanṣẹ si',
+    'description' => 'Apejuwe',
+    'sku' => 'SKU',
+    'quantity' => 'Nọmba',
+    'unit_price' => 'Iye ẹyọkan',
+    'discount' => 'Idinku',
+    'net' => 'Eto',
+    'tax' => 'Owo-ori',
+    'total' => 'Lapapọ',
+    'shipping' => 'Fifiranṣẹ',
+    'tax_summary' => 'Owo-ori ni oṣuwọn',
+    'rate' => 'Oṣuwọn',
+    'taxable' => 'Ti o le gba owo-ori',
+    'subtotal' => 'Eto apakan',
+    'total_due' => 'Lapapọ ti san',
+    'total_credited' => 'Lapapọ ti a san',
+    'prices_include_tax' => 'Awọn idiyele pẹlu owo-ori.',
+    'prices_exclude_tax' => 'Awọn idiyele ko pẹlu owo-ori.',
+    'currency' => 'Owó',
+    'exchange_rate' => '1 :base = :rate :currency',
+    'page' => 'Oju',
+];

@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'price_reduction' => '価格引き',
+    'invoice' => '請求書',
+    'credit_note' => 'クレジットノート',
+    'test_document' => 'テスト文書: 税務書類ではありません',
+    'number' => '番号',
+    'issued_on' => '発行日',
+    'paid_on' => '販売日',
+    'credits_invoice' => 'クレジット請求書',
+    'seller' => '発行元',
+    'buyer' => '請求先',
+    'buyer_tax_id' => '税番号 (:country)',
+    'shipping_address' => '配送先',
+    'description' => '説明',
+    'sku' => 'SKU',
+    'quantity' => '数量',
+    'unit_price' => '単価',
+    'discount' => '割引',
+    'net' => '純額',
+    'tax' => '税金',
+    'total' => '合計',
+    'shipping' => '配送',
+    'tax_summary' => '税率別税額',
+    'rate' => '税率',
+    'taxable' => '課税対象',
+    'subtotal' => '小計',
+    'total_due' => '支払総額',
+    'total_credited' => 'クレジット総額',
+    'prices_include_tax' => '価格には税金が含まれています。',
+    'prices_exclude_tax' => '価格には税金は含まれていません。',
+    'currency' => '通貨',
+    'exchange_rate' => '1 :base = :rate :currency',
+    'page' => 'ページ',
+];

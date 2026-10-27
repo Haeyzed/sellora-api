@@ -17,6 +17,20 @@ return [
         'expiry' => 'Questo collegamento funziona una volta e scade tra :minutes minuti.',
         'ignore' => 'Se non sei stato tu a richiederlo, puoi ignorare questa email; non cambia nulla.',
     ],
+    'social_link' => [
+        'subject' => 'Qualcuno sta collegando un accesso al tuo account',
+        'reason' => 'Qualcuno si è registrato con :provider usando questo indirizzo email e ha chiesto di collegarlo al tuo account. Conferma solo se sei stato tu: una volta collegato, accedere con :provider apre il tuo account.',
+        'action' => 'Sì, collega :provider',
+        'expiry' => 'Questo collegamento funziona una volta e scade tra :minutes minuti.',
+        'ignore' => 'Se non sei stato tu, ignora questa email: nulla è collegato e il tuo account resta invariato.',
+    ],
+    'erasure' => [
+        'subject' => 'Conferma la cancellazione del tuo account',
+        'reason' => 'Hai chiesto di cancellare il tuo account in questo negozio. Apri questo link mentre sei loggato per confermare: tutto ciò che il negozio tiene di te viene eliminato e non può essere annullato.',
+        'action' => 'Elimina il mio account',
+        'expiry' => 'Questo collegamento funziona una volta e scade tra :minutes minuti.',
+        'ignore' => 'Se non sei stato tu a richiederlo, ignora questa email: nulla viene cancellato. Un’altra persona potrebbe essere collegata al tuo account, quindi disconnettiti dagli altri dispositivi.',
+    ],
     'marketing_consent' => [
         'email' => 'Inviami notizie e offerte da :store via e-mail. Posso annullare l\'iscrizione in qualsiasi momento.',
         'sms' => 'Inviami novità e offerte da :store tramite SMS. Posso annullare l\'iscrizione in qualsiasi momento.',

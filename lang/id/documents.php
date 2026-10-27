@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'price_reduction' => 'Pengurangan harga',
+    'invoice' => 'Faktur',
+    'credit_note' => 'Catatan kredit',
+    'test_document' => 'Dokumen tes: bukan dokumen pajak',
+    'number' => 'Nomor',
+    'issued_on' => 'Tanggal terbit',
+    'paid_on' => 'Tanggal penjualan',
+    'credits_invoice' => 'Faktur kredit',
+    'seller' => 'Dari',
+    'buyer' => 'Ditagih ke',
+    'buyer_tax_id' => 'NPWP (:country)',
+    'shipping_address' => 'Dikirim ke',
+    'description' => 'Deskripsi',
+    'sku' => 'SKU',
+    'quantity' => 'Jml',
+    'unit_price' => 'Harga satuan',
+    'discount' => 'Diskon',
+    'net' => 'Bersih',
+    'tax' => 'Pajak',
+    'total' => 'Total',
+    'shipping' => 'Pengiriman',
+    'tax_summary' => 'Pajak per tarif',
+    'rate' => 'Tarif',
+    'taxable' => 'Kena pajak',
+    'subtotal' => 'Subtotal',
+    'total_due' => 'Total dibayar',
+    'total_credited' => 'Total dikreditkan',
+    'prices_include_tax' => 'Harga sudah termasuk pajak.',
+    'prices_exclude_tax' => 'Harga belum termasuk pajak.',
+    'currency' => 'Mata uang',
+    'exchange_rate' => '1 :base = :rate :currency',
+    'page' => 'Halaman',
+];

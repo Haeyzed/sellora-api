@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'price_reduction' => 'Preisreduktion',
+    'invoice' => 'Rechnung',
+    'credit_note' => 'Gutschrift',
+    'test_document' => 'Testdokument: kein Steuerdokument',
+    'number' => 'Nummer',
+    'issued_on' => 'Ausstellungsdatum',
+    'paid_on' => 'Verkaufsdatum',
+    'credits_invoice' => 'Gutschriftenrechnung',
+    'seller' => 'Von',
+    'buyer' => 'Rechnung an',
+    'buyer_tax_id' => 'Steuernummer (:country)',
+    'shipping_address' => 'Versendet an',
+    'description' => 'Beschreibung',
+    'sku' => 'SKU',
+    'quantity' => 'Menge',
+    'unit_price' => 'Einzelpreis',
+    'discount' => 'Rabatt',
+    'net' => 'Netto',
+    'tax' => 'Steuern',
+    'total' => 'Gesamt',
+    'shipping' => 'Versand',
+    'tax_summary' => 'Steuer nach Satz',
+    'rate' => 'Satz',
+    'taxable' => 'Steuerpflichtig',
+    'subtotal' => 'Zwischensumme',
+    'total_due' => 'Gesamt bezahlt',
+    'total_credited' => 'Gesamt gutgeschrieben',
+    'prices_include_tax' => 'Die Preise enthalten Steuern.',
+    'prices_exclude_tax' => 'Die Preise schließen Steuern aus.',
+    'currency' => 'Währung',
+    'exchange_rate' => '1 :base = :rate :currency',
+    'page' => 'Seite',
+];

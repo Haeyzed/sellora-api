@@ -45,6 +45,9 @@ return [
         'manage' => 'Siparişleri iptal edin, notlar ve etiketler ekleyin ve alıcıların iletişim bilgilerini ve teslimat adreslerini düzeltin.',
         'fulfil' => 'Gönderiler oluşturun, takip ekleyin ve kalanları, teslim alınmaya hazır olanları veya ulaşanları işaretleyin.',
     ],
+    'invoices' => [
+        'view' => 'Alıcının bilgileriyle birlikte faturaları ve kredi notlarını görün ve PDF’lerini indirin.',
+    ],
     'payments' => [
         'view' => 'Ödemeleri, geri ödemeleri ve ödeme ağ geçitlerinin nasıl bağlandığını görün.',
         'confirm' => 'Bir banka havalesinin ulaştığını veya teslimatta nakit paranın tahsil edildiğini doğrulayın ve ağ geçidinden ödeme hakkında tekrar bilgi isteyin.',

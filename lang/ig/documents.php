@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'price_reduction' => 'Mbelata ọnụahịa',
+    'invoice' => 'Nnata ego',
+    'credit_note' => 'Nkọwa mkpebi',
+    'test_document' => 'Dokumentụ nlele: ọ bụghị akwụkwọ ụtụ',
+    'number' => 'Nọmba',
+    'issued_on' => 'Ụbọchị mwepụta',
+    'paid_on' => 'Ụbọchị ire',
+    'credits_invoice' => 'Nnata ego maka kredit',
+    'seller' => 'Site',
+    'buyer' => 'Edebu n’',
+    'buyer_tax_id' => 'Tax ID (:country)',
+    'shipping_address' => 'Ezigara na',
+    'description' => 'Nkọwa',
+    'sku' => 'SKU',
+    'quantity' => 'Ụọ',
+    'unit_price' => 'Ọnụahịa nke otu',
+    'discount' => 'Ndaghachi',
+    'net' => 'Nnukwu',
+    'tax' => 'Ụtụ',
+    'total' => 'Mkpokọta',
+    'shipping' => 'Nbugharị',
+    'tax_summary' => 'Ụtụ site na ọnụego',
+    'rate' => 'Ọnụego',
+    'taxable' => 'Nke a ga-akwụ ụtụ',
+    'subtotal' => 'Mkpokọta ntakịrị',
+    'total_due' => 'Mkpokọta akwụla',
+    'total_credited' => 'Mkpokọta kredit',
+    'prices_include_tax' => 'Ọnụahịa gụnyere ụtụ.',
+    'prices_exclude_tax' => 'Ọnụahịa na-ewepụ ụtụ.',
+    'currency' => 'Ego',
+    'exchange_rate' => '1 :base = :rate :currency',
+    'page' => 'Ibe',
+];

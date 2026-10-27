@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'price_reduction' => '가격 인하',
+    'invoice' => '청구서',
+    'credit_note' => '신용 노트',
+    'test_document' => '테스트 문서: 세금 문서가 아닙니다',
+    'number' => '번호',
+    'issued_on' => '발행일',
+    'paid_on' => '판매일',
+    'credits_invoice' => '크레딧 청구서',
+    'seller' => '발행자',
+    'buyer' => '청구 대상',
+    'buyer_tax_id' => '세금 ID (:country)',
+    'shipping_address' => '배송지',
+    'description' => '설명',
+    'sku' => 'SKU',
+    'quantity' => '수량',
+    'unit_price' => '단가',
+    'discount' => '할인',
+    'net' => '순액',
+    'tax' => '세금',
+    'total' => '합계',
+    'shipping' => '배송',
+    'tax_summary' => '세율별 세금',
+    'rate' => '율',
+    'taxable' => '과세 대상',
+    'subtotal' => '소계',
+    'total_due' => '총 지급액',
+    'total_credited' => '총 크레딧',
+    'prices_include_tax' => '가격에 세금이 포함됩니다.',
+    'prices_exclude_tax' => '가격에서 세금이 제외됩니다.',
+    'currency' => '통화',
+    'exchange_rate' => '1 :base = :rate :currency',
+    'page' => '페이지',
+];

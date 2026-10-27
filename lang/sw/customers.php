@@ -17,6 +17,20 @@ return [
         'expiry' => 'Kiungo hiki hufanya kazi mara moja na muda wake utaisha baada ya dakika :minutes.',
         'ignore' => 'Ikiwa hukuuliza hili, unaweza kupuuza barua pepe hii; hakuna mabadiliko.',
     ],
+    'social_link' => [
+        'subject' => 'Mtu anafungua njia ya kuingia kwenye akaunti yako',
+        'reason' => 'Mtu aliingia kutumia :provider kwa anwani hii ya barua pepe na aliomba kuunganisha kwenye akaunti yako. Thibitisha tu ikiwa ulikuwa wewe: baada ya kuunganishwa, kuingia kwa :provider kutafungua akaunti yako.',
+        'action' => 'Ndiyo, unganisha :provider',
+        'expiry' => 'Kiungo hiki kinafanya kazi mara moja na kinaisha ndani ya dakika :minutes.',
+        'ignore' => 'Kama si wewe, puzilia barua pepe hii: hakuna kilichounganishwa, na akaunti yako inabaki vile ilivyo.',
+    ],
+    'erasure' => [
+        'subject' => 'Thibitisha kufuta akaunti yako',
+        'reason' => 'Uliomba kufuta akaunti yako kwenye duka hili. Fungua kiungo hiki ukiwa umeingia katika akaunti yako ili kuthibitisha: kila kitu ambacho duka hili kina uhakika kukuhusu kitafutwa, na hii haiwezi kutenduliwa.',
+        'action' => 'Futa akaunti yangu',
+        'expiry' => 'Kiungo hiki kinafanya kazi mara moja na kinaisha ndani ya dakika :minutes.',
+        'ignore' => 'Kama hukukuomba hili, puzilia barua pepe hii: hakuna kilichofutwa. Mtu mwingine anaweza kuwa ameingia kwenye akaunti yako, hivyo toka kwenye vifaa vyako vingine.',
+    ],
     'marketing_consent' => [
         'email' => 'Nitumie habari na matoleo kutoka :store kwa barua pepe. Ninaweza kujiondoa wakati wowote.',
         'sms' => 'Nitumie habari na matoleo kutoka :store kwa SMS. Ninaweza kujiondoa wakati wowote.',

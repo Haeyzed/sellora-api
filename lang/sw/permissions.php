@@ -45,6 +45,9 @@ return [
         'manage' => 'Ghairi maagizo, ongeza madokezo na lebo, na sahihisha maelezo ya mawasiliano ya wanunuzi na anwani za usafirishaji.',
         'fulfil' => 'Unda usafirishaji, ongeza ufuatiliaji, na utie alama kile kilichosalia, kiko tayari kuchukuliwa au kimefika.',
     ],
+    'invoices' => [
+        'view' => 'Tazama ankara na noti za mkopo zilizo na maelezo ya mnunuzi, na upakue PDF zao.',
+    ],
     'payments' => [
         'view' => 'Angalia malipo, urejeshaji fedha na jinsi lango la malipo linavyounganishwa.',
         'confirm' => 'Thibitisha kuwa uhamishaji wa benki ulifika au pesa taslimu ilipowasilishwa zilikusanywa, na uulize lango tena kuhusu malipo.',

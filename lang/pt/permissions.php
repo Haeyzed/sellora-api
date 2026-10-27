@@ -45,6 +45,9 @@ return [
         'manage' => 'Cancele pedidos, adicione notas e etiquetas e corrija os detalhes de contato e endereços de entrega dos compradores.',
         'fulfil' => 'Crie remessas, adicione rastreamento e marque o que sobrou, está pronto para retirada ou chegou.',
     ],
+    'invoices' => [
+        'view' => 'Veja faturas e notas de crédito com os detalhes do comprador e baixe seus PDFs.',
+    ],
     'payments' => [
         'view' => 'Veja pagamentos, reembolsos e como os gateways de pagamento estão conectados.',
         'confirm' => 'Confirme se uma transferência bancária chegou ou se o dinheiro na entrega foi coletado e pergunte novamente ao gateway sobre um pagamento.',

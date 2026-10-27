@@ -45,6 +45,9 @@ return [
         'manage' => 'Annulez les commandes, ajoutez des notes et des étiquettes, et corrigez les coordonnées et les adresses de livraison des acheteurs.',
         'fulfil' => 'Créez des envois, ajoutez un suivi et marquez ce qui reste, ce qui est prêt à être récupéré ou ce qui est arrivé.',
     ],
+    'invoices' => [
+        'view' => 'Consultez les factures et les notes de crédit, avec les détails de l\'acheteur dessus, et téléchargez leurs PDF.',
+    ],
     'payments' => [
         'view' => 'Consultez les paiements, les remboursements et la manière dont les passerelles de paiement sont connectées.',
         'confirm' => 'Confirmez qu\'un virement bancaire est arrivé ou qu\'un paiement à la livraison a été encaissé, et demandez à nouveau à une passerelle un paiement.',

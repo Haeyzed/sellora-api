@@ -45,6 +45,9 @@ return [
         'manage' => 'Annulla ordini, aggiungi note ed etichette e correggi i dettagli di contatto e gli indirizzi di spedizione degli acquirenti.',
         'fulfil' => 'Crea spedizioni, aggiungi tracciabilità e contrassegna ciò che è rimasto, è pronto per il ritiro o è arrivato.',
     ],
+    'invoices' => [
+        'view' => 'Visualizza fatture e note di credito con i dettagli dell\'acquirente e scarica i relativi PDF.',
+    ],
     'payments' => [
         'view' => 'Scopri pagamenti, rimborsi e come sono collegati i gateway di pagamento.',
         'confirm' => 'Conferma che sia arrivato un bonifico bancario o che sia stato riscosso il pagamento in contrassegno e chiedi nuovamente al gateway informazioni sul pagamento.',

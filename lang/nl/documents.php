@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'price_reduction' => 'Prijsverlaging',
+    'invoice' => 'Factuur',
+    'credit_note' => 'Creditnota',
+    'test_document' => 'Testdocument: geen belastingdocument',
+    'number' => 'Nummer',
+    'issued_on' => 'Uitgiftedatum',
+    'paid_on' => 'Verkoopdatum',
+    'credits_invoice' => 'Creditfactuur',
+    'seller' => 'Van',
+    'buyer' => 'Gefactureerd aan',
+    'buyer_tax_id' => 'BTW-nummer (:country)',
+    'shipping_address' => 'Verzonden naar',
+    'description' => 'Beschrijving',
+    'sku' => 'SKU',
+    'quantity' => 'Aantal',
+    'unit_price' => 'Stukprijs',
+    'discount' => 'Korting',
+    'net' => 'Netto',
+    'tax' => 'Belasting',
+    'total' => 'Totaal',
+    'shipping' => 'Verzending',
+    'tax_summary' => 'Belasting per tarief',
+    'rate' => 'Tarief',
+    'taxable' => 'Belastbaar',
+    'subtotal' => 'Subtotaal',
+    'total_due' => 'Totaal betaald',
+    'total_credited' => 'Totaal gecrediteerd',
+    'prices_include_tax' => 'Prijzen zijn inclusief belasting.',
+    'prices_exclude_tax' => 'Prijzen zijn exclusief belasting.',
+    'currency' => 'Valuta',
+    'exchange_rate' => '1 :base = :rate :currency',
+    'page' => 'Pagina',
+];

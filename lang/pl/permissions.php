@@ -45,6 +45,9 @@ return [
         'manage' => 'Anuluj zamówienia, dodawaj notatki i znaczniki oraz poprawiaj dane kontaktowe kupujących i adresy wysyłki.',
         'fulfil' => 'Twórz przesyłki, dodawaj śledzenie i zaznaczaj, co zostało, jest gotowe do odbioru lub dotarło.',
     ],
+    'invoices' => [
+        'view' => 'Zobacz faktury i noty kredytowe z danymi kupującego oraz pobierz ich pliki PDF.',
+    ],
     'payments' => [
         'view' => 'Zobacz płatności, zwroty pieniędzy i sposób podłączenia bramek płatniczych.',
         'confirm' => 'Potwierdź otrzymanie przelewu bankowego lub pobranie gotówki i ponownie zapytaj bramkę o płatność.',

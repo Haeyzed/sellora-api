@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'price_reduction' => 'Riduzione di prezzo',
+    'invoice' => 'Fattura',
+    'credit_note' => 'Nota di credito',
+    'test_document' => 'Documento di test: non è un documento fiscale',
+    'number' => 'Numero',
+    'issued_on' => 'Data di emissione',
+    'paid_on' => 'Data di vendita',
+    'credits_invoice' => 'Fattura di accrediti',
+    'seller' => 'Da',
+    'buyer' => 'Fatturato a',
+    'buyer_tax_id' => 'Partita IVA (:country)',
+    'shipping_address' => 'Spedito a',
+    'description' => 'Descrizione',
+    'sku' => 'SKU',
+    'quantity' => 'Qtà',
+    'unit_price' => 'Prezzo unitario',
+    'discount' => 'Sconto',
+    'net' => 'Netto',
+    'tax' => 'Tasse',
+    'total' => 'Totale',
+    'shipping' => 'Spedizione',
+    'tax_summary' => 'Tasse per aliquota',
+    'rate' => 'Aliquota',
+    'taxable' => 'Imponibile',
+    'subtotal' => 'Subtotale',
+    'total_due' => 'Totale pagato',
+    'total_credited' => 'Totale accreditato',
+    'prices_include_tax' => 'I prezzi includono le tasse.',
+    'prices_exclude_tax' => 'I prezzi escludono le tasse.',
+    'currency' => 'Valuta',
+    'exchange_rate' => '1 :base = :rate :currency',
+    'page' => 'Pagina',
+];

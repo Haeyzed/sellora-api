@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'price_reduction' => 'Fiyat indirimi',
+    'invoice' => 'Fatura',
+    'credit_note' => 'Alacak notu',
+    'test_document' => 'Test belgesi: vergi belgesi değil',
+    'number' => 'Numara',
+    'issued_on' => 'Düzenleme tarihi',
+    'paid_on' => 'Satış tarihi',
+    'credits_invoice' => 'Kredi faturası',
+    'seller' => 'Gönderen',
+    'buyer' => 'Faturalanan',
+    'buyer_tax_id' => 'Vergi kimliği (:country)',
+    'shipping_address' => 'Gönderilen adres',
+    'description' => 'Açıklama',
+    'sku' => 'SKU',
+    'quantity' => 'Adet',
+    'unit_price' => 'Birim fiyat',
+    'discount' => 'İndirim',
+    'net' => 'Net',
+    'tax' => 'Vergi',
+    'total' => 'Toplam',
+    'shipping' => 'Kargo',
+    'tax_summary' => 'Orana göre vergi',
+    'rate' => 'Oran',
+    'taxable' => 'Vergiye tabi',
+    'subtotal' => 'Ara toplam',
+    'total_due' => 'Toplam ödenen',
+    'total_credited' => 'Toplam kredi',
+    'prices_include_tax' => 'Fiyatlar vergi dahil.',
+    'prices_exclude_tax' => 'Fiyatlar vergi hariç.',
+    'currency' => 'Para birimi',
+    'exchange_rate' => '1 :base = :rate :currency',
+    'page' => 'Sayfa',
+];

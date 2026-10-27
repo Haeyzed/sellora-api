@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'price_reduction' => 'Makarancin farashi',
+    'invoice' => 'Lissafi',
+    'credit_note' => 'Bayanin bashi',
+    'test_document' => 'Takaddar gwaji: ba takardar haraji ba',
+    'number' => 'Lamba',
+    'issued_on' => 'Kwanan fitowa',
+    'paid_on' => 'Kwanan sayarwa',
+    'credits_invoice' => 'Lissafin bashi',
+    'seller' => 'Daga',
+    'buyer' => 'An biya wa',
+    'buyer_tax_id' => 'ID haraji (:country)',
+    'shipping_address' => 'An aike zuwa',
+    'description' => 'Bayani',
+    'sku' => 'SKU',
+    'quantity' => 'Yawan',
+    'unit_price' => 'Farashin kashi',
+    'discount' => 'Raguwar farashi',
+    'net' => 'Net',
+    'tax' => 'Haraji',
+    'total' => 'Jimilla',
+    'shipping' => 'Aike',
+    'tax_summary' => 'Haraji bisa adadin',
+    'rate' => 'Kuduri',
+    'taxable' => 'Mai haraji',
+    'subtotal' => 'Jimillar jihohi',
+    'total_due' => 'Jimillar da aka biya',
+    'total_credited' => 'Jimillar da aka bashi',
+    'prices_include_tax' => 'Farashin ya hada haraji.',
+    'prices_exclude_tax' => 'Farashin bai hada haraji ba.',
+    'currency' => 'Kudaden',
+    'exchange_rate' => '1 :base = :rate :currency',
+    'page' => 'Shafi',
+];

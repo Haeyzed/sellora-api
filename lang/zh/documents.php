@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'price_reduction' => '降价',
+    'invoice' => '发票',
+    'credit_note' => '信用凭证',
+    'test_document' => '测试文档：不是税务文件',
+    'number' => '编号',
+    'issued_on' => '开票日期',
+    'paid_on' => '销售日期',
+    'credits_invoice' => '信用发票',
+    'seller' => '发件人',
+    'buyer' => '账单收件人',
+    'buyer_tax_id' => '税号 (:country)',
+    'shipping_address' => '送货至',
+    'description' => '说明',
+    'sku' => 'SKU',
+    'quantity' => '数量',
+    'unit_price' => '单价',
+    'discount' => '折扣',
+    'net' => '净额',
+    'tax' => '税费',
+    'total' => '总计',
+    'shipping' => '配送',
+    'tax_summary' => '按税率汇总税额',
+    'rate' => '税率',
+    'taxable' => '应税',
+    'subtotal' => '小计',
+    'total_due' => '已支付总额',
+    'total_credited' => '已贷记总额',
+    'prices_include_tax' => '价格已含税。',
+    'prices_exclude_tax' => '价格不含税。',
+    'currency' => '货币',
+    'exchange_rate' => '1 :base = :rate :currency',
+    'page' => '页',
+];

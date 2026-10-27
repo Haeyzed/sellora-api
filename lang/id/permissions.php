@@ -45,6 +45,9 @@ return [
         'manage' => 'Batalkan pesanan, tambahkan catatan dan tag, serta perbaiki detail kontak pembeli dan alamat pengiriman.',
         'fulfil' => 'Buat pengiriman, tambahkan pelacakan, dan tandai apa yang tersisa, siap diambil, atau telah tiba.',
     ],
+    'invoices' => [
+        'view' => 'Lihat faktur dan catatan kredit dengan detail pembeli di dalamnya, dan unduh file PDF-nya.',
+    ],
     'payments' => [
         'view' => 'Lihat pembayaran, pengembalian dana, dan cara gateway pembayaran terhubung.',
         'confirm' => 'Konfirmasikan bahwa transfer bank telah tiba atau pembayaran tunai telah diambil, dan tanyakan lagi kepada gateway tentang pembayaran.',

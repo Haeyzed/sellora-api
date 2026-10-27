@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'price_reduction' => 'कीमत में कमी',
+    'invoice' => 'इनवॉइस',
+    'credit_note' => 'क्रेडिट नोट',
+    'test_document' => 'परीक्षण दस्तावेज़: यह टैक्स दस्तावेज़ नहीं है',
+    'number' => 'संख्या',
+    'issued_on' => 'जारी करने की तिथि',
+    'paid_on' => 'बिक्री की तिथि',
+    'credits_invoice' => 'क्रेडिट इनवॉइस',
+    'seller' => 'से',
+    'buyer' => 'इनके नाम बिल किया गया',
+    'buyer_tax_id' => 'टैक्स आईडी (:country)',
+    'shipping_address' => 'यहाँ भेजा गया',
+    'description' => 'विवरण',
+    'sku' => 'SKU',
+    'quantity' => 'मात्रा',
+    'unit_price' => 'यूनिट कीमत',
+    'discount' => 'छूट',
+    'net' => 'शुद्ध',
+    'tax' => 'कर',
+    'total' => 'कुल',
+    'shipping' => 'शिपिंग',
+    'tax_summary' => 'दर के अनुसार कर',
+    'rate' => 'दर',
+    'taxable' => 'कर योग्य',
+    'subtotal' => 'उप-योग',
+    'total_due' => 'कुल भुगतान',
+    'total_credited' => 'कुल क्रेडिट',
+    'prices_include_tax' => 'कीमतों में कर शामिल है।',
+    'prices_exclude_tax' => 'कीमतों में कर शामिल नहीं है।',
+    'currency' => 'मुद्रा',
+    'exchange_rate' => '1 :base = :rate :currency',
+    'page' => 'पेज',
+];

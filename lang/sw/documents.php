@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'price_reduction' => 'Kupunguzwa kwa bei',
+    'invoice' => 'Ankara',
+    'credit_note' => 'Noti ya mkopo',
+    'test_document' => 'Hati ya jaribio: si hati ya kodi',
+    'number' => 'Namba',
+    'issued_on' => 'Tarehe ya kutolewa',
+    'paid_on' => 'Tarehe ya mauzo',
+    'credits_invoice' => 'Ankara ya mkopo',
+    'seller' => 'Kutoka',
+    'buyer' => 'Imelipishwa kwa',
+    'buyer_tax_id' => 'Namba ya kodi (:country)',
+    'shipping_address' => 'Imepelekwa kwa',
+    'description' => 'Maelezo',
+    'sku' => 'SKU',
+    'quantity' => 'Kiasi',
+    'unit_price' => 'Bei ya kitengo',
+    'discount' => 'Punguzo',
+    'net' => 'Neti',
+    'tax' => 'Kodi',
+    'total' => 'Jumla',
+    'shipping' => 'Usafirishaji',
+    'tax_summary' => 'Kodi kulingana na kiwango',
+    'rate' => 'Kiwango',
+    'taxable' => 'Inayolipa kodi',
+    'subtotal' => 'Jumla ndogo',
+    'total_due' => 'Jumla iliyolipwa',
+    'total_credited' => 'Jumla iliyoidhinishwa',
+    'prices_include_tax' => 'Bei zinajumuisha kodi.',
+    'prices_exclude_tax' => 'Bei hazijumuishi kodi.',
+    'currency' => 'Sarafu',
+    'exchange_rate' => '1 :base = :rate :currency',
+    'page' => 'Ukurasa',
+];
