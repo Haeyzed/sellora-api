@@ -974,7 +974,7 @@ There are four guards, all on Sanctum. Each guard has its own model, provider, l
 - Driver location is personal data. Collect it only during an active delivery, keep it only as long as needed, and never expose it beyond the store and the customer of that delivery.
 - Staff assign and manage deliveries, so staff permissions cover managing drivers. Drivers use a separate, minimal API meant for a mobile driver app.
 - **Driver login** is phone number plus PIN. PINs are hashed like passwords, login is rate-limited, and the account locks temporarily after repeated wrong attempts. Staff can reset a driver's PIN and deactivate a driver, which immediately revokes their tokens.
-- **Open question for me:** drivers are designed as belonging to one store. If Sellora later offers a shared driver network across many stores, drivers would move to the landlord side. Ask before building anything that depends on this.
+- **Decided: drivers belong to one store.** A driver account exists only in that store's database and sees only that store's deliveries; someone who drives for two stores has two accounts. A shared Sellora driver network is not planned; if it ever is, it is a separate platform feature that sits beside stores' own drivers, never a change to them.
 
 ---
 
@@ -1318,7 +1318,6 @@ If you notice a security problem anywhere, in the legacy project, in this reposi
 
 Don't build anything that depends on these until I decide. If a task needs one, stop and ask.
 
-- **Drivers:** per store (current design) or a shared Sellora driver network (section 10).
 - **Themes:** whether and when to add `Landlord\Themes` and theme settings. (Storefront content itself is decided: `Tenant\Storefront`.)
 - **Queue monitoring:** whether to add `laravel/horizon`.
 - **Search engine:** a hosted engine through Scout (Meilisearch, Typesense or other), replacing today's `pg_trgm` search when stores outgrow it.
