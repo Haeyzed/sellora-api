@@ -298,3 +298,36 @@ function knownCodeNames(): array
 
     return $names;
 }
+
+/*
+|--------------------------------------------------------------------------
+| For DatabaseCommentsTest.php
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * What lacks a comment in a database, as "table" or "table.column": every table, and every column that is money
+ * (ending in _amount), a status, a public ID or a hash (ending in _hash), which nobody can read correctly without one.
+ *
+ * @return list<string>
+ */
+function uncommentedSchema(Illuminate\Database\Connection $connection): array
+{
+    $missing = [];
+
+    foreach (app(App\Shared\Database\TableDescriptions::class)->of($connection) as $table => $description) {
+        if (($description['comment'] ?? '') === '') {
+            $missing[] = $table;
+        }
+
+        foreach ($description['columns'] as $column => $details) {
+            $mustBeDescribed = str_ends_with($column, '_amount') || str_ends_with($column, '_hash') || in_array($column, ['status', 'public_id'], true);
+
+            if ($mustBeDescribed && ($details['comment'] ?? '') === '') {
+                $missing[] = "{$table}.{$column}";
+            }
+        }
+    }
+
+    return $missing;
+}

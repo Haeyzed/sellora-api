@@ -30,6 +30,7 @@ return new class extends Migration
         'cities' => ['Reference data: cities (nnjeim/world). Read-only for the application.', []],
         'countries' => ['Reference data: countries (nnjeim/world). Read-only for the application.', [
             'iso2' => 'ISO 3166-1 alpha-2 code, the one the application uses.',
+            'status' => '1 when the country is offered; Geography lists only those. 0 hides it.',
         ]],
         'currencies' => ['Reference data: currencies (nnjeim/world). Read-only for the application.', [
             'code' => 'ISO 4217 code.',
@@ -154,7 +155,9 @@ return new class extends Migration
             'past_due_at' => 'When a payment failed; the grace period counts from here.',
             'ends_at' => 'When a cancelled subscription\'s paid period ends.',
         ]],
-        'telescope_entries' => ['Laravel Telescope debugging entries; Telescope runs only on a developer\'s machine.', []],
+        'telescope_entries' => ['Laravel Telescope debugging entries; Telescope runs only on a developer\'s machine.', [
+            'family_hash' => 'Groups repeats of the same entry, such as one exception thrown many times; not a secret.',
+        ]],
         'telescope_entries_tags' => ['Laravel Telescope entry tags; Telescope runs only on a developer\'s machine.', []],
         'telescope_monitoring' => ['Tags Laravel Telescope is watching; Telescope runs only on a developer\'s machine.', []],
         'tenant_features' => ['Each store\'s state for a module or integration it has had: whether its plan removed it or the merchant turned it off. Its data stays readable either way.', [

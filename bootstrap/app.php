@@ -12,6 +12,7 @@ use App\Landlord\Tenancy\Console\ReconcileStockLevelsCommand;
 use App\Landlord\Tenancy\Console\ReleaseExpiredReservationsCommand;
 use App\Landlord\Tenancy\Console\SendPurgeRemindersCommand;
 use App\Landlord\Tenancy\Console\SyncPermissionsCommand;
+use App\Shared\Database\SchemaReferenceCommand;
 use App\Shared\Exceptions\ApiErrorRenderer;
 use App\Shared\Features\Http\Middleware\EnsureIntegrationIsEnabled;
 use App\Shared\Features\Http\Middleware\EnsureModuleIsEnabled;
@@ -83,6 +84,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ListSubdivisionChangesCommand::class,
         CheckPendingPaymentsCommand::class,
         IssueMissingTaxDocumentsCommand::class,
+        SchemaReferenceCommand::class,
     ])
     ->withMiddleware(static function (Middleware $middleware): void {
         $middleware->prepend(ForceJsonResponse::class);
