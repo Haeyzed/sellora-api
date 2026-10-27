@@ -69,6 +69,9 @@ return [
     'delivery' => [
         'view' => 'De bezorgers en bezorgingen van de winkel bekijken.',
         'manage' => 'Zendingen aan bezorgers geven, en hun bezorgingen verder zetten, opnieuw proberen, terugnemen of annuleren.',
+        'cash' => [
+            'manage' => 'Contant geld registreren dat bezorgers afdragen, nooit meer dan ze hebben.',
+        ],
     ],
     'drivers' => [
         'manage' => 'Bezorgers toevoegen, wijzigen, deactiveren en wissen, en hun codes geven om een pincode te kiezen.',

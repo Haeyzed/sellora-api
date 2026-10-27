@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 use App\Shared\Auth\Http\Controllers\AccessTokenController;
 use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
+use App\Tenant\Delivery\Http\Controllers\CurrentDriverCashController;
 use App\Tenant\Delivery\Http\Controllers\CurrentDriverController;
 use App\Tenant\Delivery\Http\Controllers\DeliveryController;
+use App\Tenant\Delivery\Http\Controllers\DriverCashController;
 use App\Tenant\Delivery\Http\Controllers\DriverController;
 use App\Tenant\Delivery\Http\Controllers\DriverDeliveryController;
 use App\Tenant\Delivery\Http\Controllers\DriverPinController;
@@ -35,6 +37,8 @@ Route::prefix('driver/auth')->name('driver.auth.')->group(static function (): vo
     });
 });
 
+Route::get('driver/cash', CurrentDriverCashController::class)->middleware(['auth:'.Driver::GUARD, 'throttle:api'])->name('driver.cash.show');
+
 Route::prefix('driver/deliveries')
     ->name('driver.deliveries.')
     ->middleware(['auth:'.Driver::GUARD, 'throttle:api'])
@@ -43,7 +47,7 @@ Route::prefix('driver/deliveries')
         Route::get('{delivery}', [DriverDeliveryController::class, 'show'])->name('show');
         Route::post('{delivery}/pick-up', [DriverDeliveryController::class, 'pickUp'])->name('pick-up');
         Route::post('{delivery}/on-the-way', [DriverDeliveryController::class, 'onTheWay'])->name('on-the-way');
-        Route::post('{delivery}/delivered', [DriverDeliveryController::class, 'delivered'])->name('delivered');
+        Route::post('{delivery}/delivered', [DriverDeliveryController::class, 'delivered'])->middleware('idempotent')->name('delivered');
         Route::post('{delivery}/failed', [DriverDeliveryController::class, 'failed'])->name('failed');
     });
 
@@ -63,7 +67,11 @@ Route::prefix('staff/delivery')
         Route::post('shipments/{shipment}/deliveries', [DeliveryController::class, 'store'])->name('shipments.deliveries.store');
         Route::post('deliveries/{delivery}/reassign', [DeliveryController::class, 'reassign'])->name('deliveries.reassign');
         Route::post('deliveries/{delivery}/cancel', [DeliveryController::class, 'cancel'])->name('deliveries.cancel');
-        Route::post('deliveries/{delivery}/status', [DeliveryController::class, 'move'])->name('deliveries.status');
+        Route::post('deliveries/{delivery}/status', [DeliveryController::class, 'move'])->middleware('idempotent')->name('deliveries.status');
         Route::post('deliveries/{delivery}/retry', [DeliveryController::class, 'retry'])->name('deliveries.retry');
         Route::post('deliveries/{delivery}/return', [DeliveryController::class, 'returnToStore'])->name('deliveries.return');
+
+        Route::get('drivers/{driver}/cash', [DriverCashController::class, 'show'])->name('drivers.cash.show');
+        Route::get('drivers/{driver}/cash-entries', [DriverCashController::class, 'entries'])->name('drivers.cash-entries.index');
+        Route::post('drivers/{driver}/cash-handovers', [DriverCashController::class, 'handover'])->middleware('idempotent')->name('drivers.cash-handovers.store');
     });

@@ -208,4 +208,6 @@ return [
     'shipment_cannot_be_assigned' => 'Nur eine eigene Lieferung des Shops, die noch nicht unterwegs ist und keine laufende Zustellung hat, kann einem Fahrer gegeben werden.',
     'driver_holds_goods' => 'Dieser Fahrer hat noch Ware aus einer Lieferung, die abgeholt, unterwegs oder fehlgeschlagen und noch nicht geklärt ist. Klären Sie sie zuerst.',
     'shipment_with_driver' => 'Einer der Fahrer des Shops hat diese Sendung. Stattdessen bringt seine Lieferung sie voran.',
+    'cash_handover_exceeds_balance' => 'Das ist mehr Bargeld, als der Fahrer in dieser Währung hat.',
+    'cash_collection_required' => 'Bei dieser Lieferung ist Bargeld zu kassieren. Geben Sie an, wie viel kassiert wurde.',
 ];

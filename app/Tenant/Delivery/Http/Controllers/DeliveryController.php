@@ -12,6 +12,7 @@ use App\Tenant\Delivery\Actions\MoveDelivery;
 use App\Tenant\Delivery\Actions\ReassignDelivery;
 use App\Tenant\Delivery\Actions\ResolveFailedDelivery;
 use App\Tenant\Delivery\Enums\DeliveryStatus;
+use App\Tenant\Delivery\Exceptions\CashCollectionRequiredException;
 use App\Tenant\Delivery\Exceptions\DeliveryTransitionNotAllowedException;
 use App\Tenant\Delivery\Exceptions\DriverDeactivatedException;
 use App\Tenant\Delivery\Exceptions\DriverErasedException;
@@ -26,6 +27,9 @@ use App\Tenant\Delivery\Models\Delivery;
 use App\Tenant\Inventory\Exceptions\InsufficientStockException;
 use App\Tenant\Orders\Exceptions\ShipmentTransitionNotAllowedException;
 use App\Tenant\Orders\Models\Shipment;
+use App\Tenant\Payments\Exceptions\PaymentNotAwaitingReceiptException;
+use App\Tenant\Payments\Exceptions\PaymentReceiptInvalidException;
+use Dedoc\Scramble\Attributes\HeaderParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
@@ -113,22 +117,27 @@ final class DeliveryController extends Controller
     /**
      * Move a delivery along for its driver.
      *
-     * Needs the delivery.manage permission. For a driver who can't use the
-     * app, such as one whose phone died: picked up, on the way, delivered
-     * (with who took the goods) or failed (with why). Recorded as done by
-     * the staff member.
+     * Needs the delivery.manage permission and an Idempotency-Key. For a
+     * driver who can't use the app, such as one whose phone died: picked up,
+     * on the way, delivered (with who took the goods, and any cash the driver
+     * collected, which goes into their cash ledger) or failed (with why).
+     * Recorded as done by the staff member.
      *
      * @throws DeliveryTransitionNotAllowedException
      * @throws ShipmentTransitionNotAllowedException
      * @throws InsufficientStockException
+     * @throws CashCollectionRequiredException
+     * @throws PaymentNotAwaitingReceiptException
+     * @throws PaymentReceiptInvalidException
      */
+    #[HeaderParameter('Idempotency-Key', 'A new key for each change, 8 to 128 letters, digits, - or _. Sending the same request again with it returns the first answer instead of recording cash twice.', required: true, type: 'string', example: 'delivery-status-2f9c1a7e')]
     public function move(MoveDeliveryRequest $request, Delivery $delivery, MoveDelivery $moveDelivery): DeliveryResource
     {
         $by = AccountReference::to($request->actor());
         $moved = match ($request->nextStatus()) {
             DeliveryStatus::PickedUp => $moveDelivery->pickUp($delivery, $by),
             DeliveryStatus::OnTheWay => $moveDelivery->onTheWay($delivery, $by),
-            DeliveryStatus::Delivered => $moveDelivery->deliver($delivery, $by, $request->recipientName()),
+            DeliveryStatus::Delivered => $moveDelivery->deliver($delivery, $by, $request->recipientName(), $request->cashCollected()),
             default => $moveDelivery->fail($delivery, $by, $request->failureReason(), $request->failureNote()),
         };
 

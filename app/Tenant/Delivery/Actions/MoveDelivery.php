@@ -5,15 +5,22 @@ declare(strict_types=1);
 namespace App\Tenant\Delivery\Actions;
 
 use App\Shared\Auth\AccountReference;
+use App\Shared\Money\Money;
 use App\Tenant\Delivery\Enums\DeliveryFailureReason;
 use App\Tenant\Delivery\Enums\DeliveryStatus;
+use App\Tenant\Delivery\Exceptions\CashCollectionRequiredException;
 use App\Tenant\Delivery\Exceptions\DeliveryTransitionNotAllowedException;
 use App\Tenant\Delivery\Models\Delivery;
 use App\Tenant\Delivery\Services\DeliveryProgress;
+use App\Tenant\Delivery\Services\DriverCashLedger;
 use App\Tenant\Inventory\Exceptions\InsufficientStockException;
 use App\Tenant\Orders\Actions\MoveShipment;
 use App\Tenant\Orders\Enums\ShipmentStatus;
 use App\Tenant\Orders\Exceptions\ShipmentTransitionNotAllowedException;
+use App\Tenant\Payments\Actions\FindCashToCollect;
+use App\Tenant\Payments\Actions\RecordCashCollectedOnDelivery;
+use App\Tenant\Payments\Exceptions\PaymentNotAwaitingReceiptException;
+use App\Tenant\Payments\Exceptions\PaymentReceiptInvalidException;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -22,14 +29,18 @@ use Illuminate\Support\Facades\DB;
  * Each move locks the delivery first, then Orders locks the order and the
  * shipment, so the same delivery moved twice at once moves once. Picking up
  * ships the shipment: its stock leaves the shelf. Delivering delivers it,
- * with the name of who took the goods. A failed delivery keeps the goods with
- * the driver until staff retry it or take the goods back.
+ * with the name of who took the goods, and records any cash collected
+ * (Payments then takes the payment's lock). A failed delivery keeps the
+ * goods with the driver until staff retry it or take the goods back.
  */
 final readonly class MoveDelivery
 {
     public function __construct(
         private DeliveryProgress $deliveryProgress,
         private MoveShipment $moveShipment,
+        private FindCashToCollect $findCashToCollect,
+        private RecordCashCollectedOnDelivery $recordCashCollectedOnDelivery,
+        private DriverCashLedger $driverCashLedger,
     ) {}
 
     /**
@@ -56,21 +67,33 @@ final readonly class MoveDelivery
     }
 
     /**
-     * @param-immediately-invoked-callable $alsoDo
+     * Handed over. When the order is paid in cash on delivery, the cash the driver collected pays it and goes into their cash ledger, all in this one transaction: the payment, the ledger entry and the delivery are saved together or not at all.
      *
-     * @param  (callable(Delivery): void)|null  $alsoDo  Anything else to do under the same locks, such as recording cash collected (Step 17).
+     * @param  int|null  $cashCollected  In minor units of the order's currency; required when there is cash to collect.
      *
      * @throws DeliveryTransitionNotAllowedException
      * @throws ShipmentTransitionNotAllowedException
+     * @throws CashCollectionRequiredException When there is cash to collect and no amount was given.
+     * @throws PaymentNotAwaitingReceiptException When cash was given for an order with none to collect, such as a test order.
+     * @throws PaymentReceiptInvalidException
      */
-    public function deliver(Delivery $delivery, AccountReference $by, string $recipientName, ?callable $alsoDo = null): Delivery
+    public function deliver(Delivery $delivery, AccountReference $by, string $recipientName, ?int $cashCollected = null): Delivery
     {
-        return $this->transition($delivery, DeliveryStatus::Delivered, $by, function (Delivery $locked) use ($by, $alsoDo): void {
+        return $this->transition($delivery, DeliveryStatus::Delivered, $by, function (Delivery $locked) use ($by, $cashCollected): void {
             $this->moveShipment->deliver($locked->shipment, $by, byDriver: true);
+            $order = $locked->shipment->order;
 
-            if ($alsoDo !== null) {
-                $alsoDo($locked);
+            if ($cashCollected === null) {
+                if ($this->findCashToCollect->handle($order) !== null) {
+                    throw new CashCollectionRequiredException;
+                }
+
+                return;
             }
+
+            $cash = Money::ofMinor($cashCollected, $order->currency);
+            $payment = $this->recordCashCollectedOnDelivery->handle($locked->driver, $order, $cash);
+            $this->driverCashLedger->collected($locked->driver, $locked, $cash, $payment->public_id, $by);
         }, ['recipient_name' => $recipientName]);
     }
 

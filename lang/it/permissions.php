@@ -69,6 +69,9 @@ return [
     'delivery' => [
         'view' => 'Vedere gli autisti e le consegne del negozio.',
         'manage' => 'Affidare spedizioni agli autisti e far avanzare, ritentare, riprendere o annullare le loro consegne.',
+        'cash' => [
+            'manage' => 'Registrare i contanti consegnati dagli autisti, mai più di quanto ne abbiano.',
+        ],
     ],
     'drivers' => [
         'manage' => 'Aggiungere, modificare, disattivare e cancellare autisti, e dare loro codici per scegliere un PIN.',

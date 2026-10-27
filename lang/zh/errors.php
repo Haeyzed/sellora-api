@@ -208,4 +208,6 @@ return [
     'shipment_cannot_be_assigned' => '只有尚未出发、且没有进行中配送的商店自送货件才能分配给司机。',
     'driver_holds_goods' => '该司机仍持有某个已取货、配送中或失败且尚未处理的配送的货物。请先处理。',
     'shipment_with_driver' => '此货件在商店的一位司机手中。应由该司机的配送来推进它。',
+    'cash_handover_exceeds_balance' => '该金额超过司机持有的此币种现金。',
+    'cash_collection_required' => '此配送需要收取现金。请说明收取了多少现金。',
 ];

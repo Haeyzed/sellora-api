@@ -69,6 +69,9 @@ return [
     'delivery' => [
         'view' => 'Lihat pengemudi dan pengiriman toko.',
         'manage' => 'Memberikan pengiriman ke pengemudi, serta memajukan, mengulang, menarik kembali, atau membatalkan pengantaran mereka.',
+        'cash' => [
+            'manage' => 'Mencatat uang tunai yang diserahkan pengemudi, tidak pernah lebih dari yang mereka pegang.',
+        ],
     ],
     'drivers' => [
         'manage' => 'Tambah, ubah, nonaktifkan, dan hapus pengemudi, serta beri mereka kode untuk memilih PIN.',

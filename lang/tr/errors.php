@@ -208,4 +208,6 @@ return [
     'shipment_cannot_be_assigned' => 'Sürücüye yalnızca henüz yola çıkmamış ve devam eden bir teslimatı olmayan, mağazanın kendi teslimatı olan bir gönderi verilebilir.',
     'driver_holds_goods' => 'Bu sürücüde hâlâ alınmış, yolda olan veya başarısız olup henüz çözülmemiş bir teslimatın ürünleri var. Önce onu çözün.',
     'shipment_with_driver' => 'Bu gönderi mağazanın sürücülerinden birinde. Onun yerine sürücünün teslimatı onu ilerletir.',
+    'cash_handover_exceeds_balance' => 'Bu, sürücünün bu para biriminde elinde bulunan nakitten fazla.',
+    'cash_collection_required' => 'Bu teslimatta tahsil edilecek nakit var. Ne kadar tahsil edildiğini belirtin.',
 ];

@@ -208,4 +208,6 @@ return [
     'shipment_cannot_be_assigned' => 'Hanya pengiriman milik toko sendiri yang belum berangkat dan belum punya pengantaran berjalan yang dapat diberikan ke pengemudi.',
     'driver_holds_goods' => 'Pengemudi ini masih membawa barang dari pengantaran yang sudah diambil, dalam perjalanan, atau gagal dan belum diselesaikan. Selesaikan dulu.',
     'shipment_with_driver' => 'Salah satu pengemudi toko memegang pengiriman ini. Pengantarannyalah yang memajukannya.',
+    'cash_handover_exceeds_balance' => 'Itu lebih banyak dari uang tunai yang dipegang pengemudi dalam mata uang ini.',
+    'cash_collection_required' => 'Pengantaran ini ada uang tunai yang harus ditagih. Sebutkan berapa yang ditagih.',
 ];

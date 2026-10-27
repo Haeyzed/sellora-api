@@ -208,4 +208,6 @@ return [
     'shipment_cannot_be_assigned' => 'Solo una spedizione consegnata dal negozio stesso, non ancora partita e senza una consegna già in corso, può essere affidata a un autista.',
     'driver_holds_goods' => 'Questo autista ha ancora la merce di una consegna ritirata, in viaggio, o fallita e non ancora risolta. Risolvila prima.',
     'shipment_with_driver' => 'Uno degli autisti del negozio ha questa spedizione. È la sua consegna a farla avanzare.',
+    'cash_handover_exceeds_balance' => 'È più contante di quanto l’autista abbia in questa valuta.',
+    'cash_collection_required' => 'Questa consegna ha contanti da incassare. Indica quanto è stato incassato.',
 ];

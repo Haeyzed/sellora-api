@@ -69,6 +69,9 @@ return [
     'delivery' => [
         'view' => 'Ver los repartidores y las entregas de la tienda.',
         'manage' => 'Dar envíos a los repartidores y avanzar, reintentar, recuperar o cancelar sus entregas.',
+        'cash' => [
+            'manage' => 'Registrar el efectivo que entregan los repartidores, nunca más del que tienen.',
+        ],
     ],
     'drivers' => [
         'manage' => 'Añadir, cambiar, desactivar y borrar repartidores, y darles códigos para elegir un PIN.',

@@ -208,4 +208,6 @@ return [
     'shipment_cannot_be_assigned' => 'Ni usafirishaji wa uwasilishaji wa duka lenyewe ambao bado haujaondoka, usio na uwasilishaji unaoendelea, pekee unaoweza kupewa dereva.',
     'driver_holds_goods' => 'Dereva huyu bado ana bidhaa za uwasilishaji uliochukuliwa, ulio njiani, au ulioshindwa na bado haujatatuliwa. Utatue kwanza.',
     'shipment_with_driver' => 'Mmoja wa madereva wa duka ana usafirishaji huu. Uwasilishaji wake ndio unaousogeza mbele.',
+    'cash_handover_exceeds_balance' => 'Hiyo ni pesa taslimu zaidi ya alizonazo dereva kwa sarafu hii.',
+    'cash_collection_required' => 'Uwasilishaji huu una pesa taslimu za kukusanya. Sema ni kiasi gani kilikusanywa.',
 ];

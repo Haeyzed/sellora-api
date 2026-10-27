@@ -72,6 +72,29 @@ database guarantees.
 - A driver sees only their own deliveries: where to collect them, what they
   hold, where they go, and how much cash to collect. The recipient's address
   and phone are shown only while the delivery is under way.
+
+### Cash held by drivers
+
+For an order paid in cash on delivery, the driver app shows how much cash to
+collect. Handing the delivery over needs the amount collected (and an
+`Idempotency-Key`): it pays the order's pending cash payment, confirmed by
+the driver, and adds the cash to the driver's cash ledger, in one
+transaction with the delivery. Less leaves the rest to collect; more is
+recorded and owed back. A test order is never paid in cash, so its cash never
+enters the ledger.
+
+- The ledger is append-only: a trigger refuses edits and deletions.
+- What a driver holds in a currency is what they collected in it less what
+  they handed over in it, in minor units. Currencies are never added
+  together. Staff with `delivery.view` see each driver's balances and
+  entries; a driver sees their own.
+- Staff with `delivery.cash.manage` record cash a driver hands over (with an
+  `Idempotency-Key`). It can never be more than the driver holds in that
+  currency, checked under the driver's lock, so two handovers at once can't
+  take the same cash.
+- The ledger is in the driver's personal data export, and is kept as a
+  business record when the driver is erased, still pointing at them.
+
 Sign-in is phone plus PIN. Repeated wrong attempts lock sign-in for that
 phone in that store for a while, so a short PIN is hard to guess. A
 deactivated driver can't sign in. The access token works only on driver
@@ -81,7 +104,7 @@ routes.
 
 Not built yet:
 
-- proof of delivery (photo or signature) and cash on delivery;
+- proof of delivery (photo or signature);
 - driver location during an active delivery.
 
 ## Action flow and domain handoffs

@@ -13,6 +13,11 @@ use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Orders\Actions\CreateShipment;
 use App\Tenant\Orders\Models\Shipment;
+use App\Tenant\Payments\Actions\FindCashToCollect;
+use App\Tenant\Payments\Actions\StartManualPayment;
+use App\Tenant\Payments\Enums\PaymentMethod;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Spatie\Permission\Models\Permission;
 use Tests\Fixtures\Features\FakeFeatureSource;
@@ -64,14 +69,17 @@ function deliveryStaffWith(Tenant $store, array $permissions): StaffMember
 }
 
 /**
- * Sends a request to a store's staff delivery API as the given staff member, or with no token.
+ * Sends a request to a store's staff delivery API as the given staff member, or with no token, with any headers given.
+ *
+ * @param  array<string, string>  $headers
  */
-function deliveryRequest(string $method, string $path, array $data = [], ?StaffMember $as = null, string $subdomain = 'first-store'): TestResponse
+function deliveryRequest(string $method, string $path, array $data = [], ?StaffMember $as = null, string $subdomain = 'first-store', array $headers = []): TestResponse
 {
     $request = $as === null ? test()->withoutToken() : test()->withToken(staffTokenFor($as, $subdomain));
 
     forgetSignIns();
-    $response = $request->json($method, storeUrl($subdomain, '/api/v1/staff/delivery/'.$path), $data);
+    $response = $request->withHeaders($headers)->json($method, storeUrl($subdomain, '/api/v1/staff/delivery/'.$path), $data);
+    test()->flushHeaders();
     tenancy()->end();
     forgetSignIns();
 
@@ -79,14 +87,17 @@ function deliveryRequest(string $method, string $path, array $data = [], ?StaffM
 }
 
 /**
- * Sends a request to the driver app's API with a bearer token, or with none.
+ * Sends a request to the driver app's API with a bearer token, or with none, with any headers given.
+ *
+ * @param  array<string, string>  $headers
  */
-function driverAppRequest(string $method, string $path, array $data = [], ?string $token = null, string $subdomain = 'first-store'): TestResponse
+function driverAppRequest(string $method, string $path, array $data = [], ?string $token = null, string $subdomain = 'first-store', array $headers = []): TestResponse
 {
     $request = $token === null ? test()->withoutToken() : test()->withToken($token);
 
     forgetSignIns();
-    $response = $request->json($method, storeUrl($subdomain, '/api/v1/driver/'.$path), $data);
+    $response = $request->withHeaders($headers)->json($method, storeUrl($subdomain, '/api/v1/driver/'.$path), $data);
+    test()->flushHeaders();
     tenancy()->end();
     forgetSignIns();
 
@@ -172,4 +183,58 @@ function deliveryStore(string $subdomain = 'first-store'): array
 function assignedDelivery(Tenant $store, StaffMember $staff, Driver $driver, bool $payOnDelivery = false): Delivery
 {
     return $store->run(static fn (): Delivery => app(AssignDriver::class)->handle($staff, pendingOwnDelivery($staff, $payOnDelivery), $driver));
+}
+
+/*
+|--------------------------------------------------------------------------
+| For DriverCashTest.php
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * A delivery of an own-delivery order paid in cash on delivery, in the store's currency or the one given, with its cash payment pending, assigned to the driver by the staff member. Turns cash on delivery on first.
+ */
+function cashDelivery(Tenant $store, StaffMember $staff, Driver $driver, ?string $currency = null): Delivery
+{
+    offerManualMethod(PaymentMethod::CashOnDelivery);
+
+    return $store->run(static function () use ($staff, $driver, $currency): Delivery {
+        if ($currency !== null && ! DB::table('store_currencies')->where('currency_code', $currency)->exists()) {
+            offerStoreCurrency($currency, '0.001');
+        }
+
+        $order = ownDeliveryOrder(payOnDelivery: true, currency: $currency);
+        app(StartManualPayment::class)->handle($order, PaymentMethod::CashOnDelivery);
+        $shipment = app(CreateShipment::class)->handle($order, [$order->lines[0]->public_id => 2], AccountReference::to($staff));
+
+        return app(AssignDriver::class)->handle($staff, $shipment, $driver);
+    });
+}
+
+/**
+ * How much cash the driver should collect for the delivery, in minor units.
+ */
+function cashToCollect(Tenant $store, Delivery $delivery): int
+{
+    return $store->run(static fn (): int => app(FindCashToCollect::class)->handle($delivery->shipment->order)?->minorAmount() ?? 0);
+}
+
+/**
+ * The driver picking the delivery up and handing it over, saying how much cash they collected, with a new Idempotency-Key unless one is given.
+ */
+function deliverWithCash(string $delivery, ?int $cashCollected, string $token, ?string $key = null): TestResponse
+{
+    driverAppRequest('POST', "deliveries/{$delivery}/pick-up", token: $token);
+
+    return driverAppRequest('POST', "deliveries/{$delivery}/delivered", array_filter(['recipient_name' => 'Ada Obi', 'cash_collected' => $cashCollected], static fn (mixed $value): bool => $value !== null), $token, headers: ['Idempotency-Key' => $key ?? 'delivered-'.Str::lower((string) Str::ulid())]);
+}
+
+/**
+ * The amounts and currencies of a cash balance response, without their formatting.
+ *
+ * @return list<array{amount: int, currency: string}>
+ */
+function heldCash(TestResponse $response): array
+{
+    return array_map(static fn (array $balance): array => ['amount' => $balance['amount'], 'currency' => $balance['currency']], $response->json('data.balances'));
 }

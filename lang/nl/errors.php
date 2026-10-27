@@ -208,4 +208,6 @@ return [
     'shipment_cannot_be_assigned' => 'Alleen een eigen bezorging van de winkel die nog niet vertrokken is en geen lopende bezorging heeft, kan aan een bezorger worden gegeven.',
     'driver_holds_goods' => 'Deze bezorger heeft nog goederen van een bezorging die is opgehaald, onderweg is, of mislukt en nog niet afgehandeld. Handel die eerst af.',
     'shipment_with_driver' => 'Een van de bezorgers van de winkel heeft deze zending. Zijn bezorging brengt haar verder.',
+    'cash_handover_exceeds_balance' => 'Dat is meer contant geld dan de bezorger in deze valuta heeft.',
+    'cash_collection_required' => 'Bij deze bezorging moet contant geld worden geïnd. Geef aan hoeveel er is geïnd.',
 ];

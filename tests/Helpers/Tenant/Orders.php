@@ -293,11 +293,11 @@ function personalDataOnOrders(): array
 */
 
 /**
- * An order of 2 of one variant (5 in stock), sent with the store's own drivers, with 72 hours to pay: paid, unless paid on delivery. Made in the current store.
+ * An order of 2 of one variant (5 in stock), sent with the store's own drivers, with 72 hours to pay: paid, unless paid on delivery. In the store's currency or the one given. Made in the current store.
  */
-function ownDeliveryOrder(bool $payOnDelivery = false): Order
+function ownDeliveryOrder(bool $payOnDelivery = false, ?string $currency = null): Order
 {
-    $draft = orderDraft([[cartVariant(10000, stock: 5), 2]], orderShippingMethod(ShippingFulfilment::OwnDelivery, 'Same day'), paymentDueAt: CarbonImmutable::now()->addHours(72), payOnDelivery: $payOnDelivery);
+    $draft = orderDraft([[cartVariant(10000, stock: 5), 2]], orderShippingMethod(ShippingFulfilment::OwnDelivery, 'Same day'), currency: $currency, paymentDueAt: CarbonImmutable::now()->addHours(72), payOnDelivery: $payOnDelivery);
     $order = placeOrder($draft);
 
     return ($payOnDelivery ? $order : markPaid($order))->load('lines');

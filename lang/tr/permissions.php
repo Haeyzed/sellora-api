@@ -69,6 +69,9 @@ return [
     'delivery' => [
         'view' => 'Mağazanın sürücülerini ve teslimatlarını görüntüleyin.',
         'manage' => 'Sürücülere gönderi vermek; teslimatlarını ilerletmek, yeniden denemek, geri almak veya iptal etmek.',
+        'cash' => [
+            'manage' => 'Sürücülerin teslim ettiği nakdi kaydetmek; asla ellerindekinden fazla değil.',
+        ],
     ],
     'drivers' => [
         'manage' => 'Sürücü ekleyin, değiştirin, devre dışı bırakın ve silin; PIN seçmeleri için kod verin.',

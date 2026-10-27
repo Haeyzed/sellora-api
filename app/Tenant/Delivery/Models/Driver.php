@@ -35,6 +35,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property CarbonImmutable|null $updated_at
  * @property-read \Illuminate\Database\Eloquent\Collection<int, DriverSetupCode> $setupCodes
  * @property-read \Illuminate\Database\Eloquent\Collection<int, Delivery> $deliveries
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, DriverCashEntry> $cashEntries
  */
 final class Driver extends Model implements AuthenticatableContract, HasApiTokensContract
 {
@@ -78,6 +79,14 @@ final class Driver extends Model implements AuthenticatableContract, HasApiToken
     public function deliveries(): HasMany
     {
         return $this->hasMany(Delivery::class);
+    }
+
+    /**
+     * @return HasMany<DriverCashEntry, $this>
+     */
+    public function cashEntries(): HasMany
+    {
+        return $this->hasMany(DriverCashEntry::class);
     }
 
     /**

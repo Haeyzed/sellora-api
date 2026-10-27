@@ -208,4 +208,6 @@ return [
     'shipment_cannot_be_assigned' => 'Ẹrù tí ilé ìtajà fúnra rẹ̀ ń fi jíṣẹ́ tí kò tíì kúrò, tí kò sì ní ìfijíṣẹ́ tó ń lọ lọ́wọ́, nìkan ni a lè fún awakọ̀.',
     'driver_holds_goods' => 'Awakọ̀ yìí ṣì ní ọjà ìfijíṣẹ́ kan tí wọ́n ti gbé, tí ó wà lójú ọ̀nà, tàbí tí kò yọrí tí a kò tíì yanjú. Ẹ yanjú rẹ̀ ná.',
     'shipment_with_driver' => 'Ọ̀kan nínú àwọn awakọ̀ ilé ìtajà ló ní ẹrù yìí. Ìfijíṣẹ́ rẹ̀ ni ó ń gbé e síwájú dípò.',
+    'cash_handover_exceeds_balance' => 'Ìyẹn ju owó tí awakọ̀ náà ní lọ́wọ́ nínú owó yìí.',
+    'cash_collection_required' => 'Ìfijíṣẹ́ yìí ní owó tí a ó gbà. Sọ iye owó tí a gbà.',
 ];

@@ -69,6 +69,9 @@ return [
     'delivery' => [
         'view' => 'Duba direbobin shagon da isar da kaya.',
         'manage' => 'Ba direbobi jigila, da ciyar da isarwarsu gaba, sake gwadawa, karɓo kaya ko soke su.',
+        'cash' => [
+            'manage' => 'Rubuta kuɗin da direbobi suka mika, ba fiye da abin da suke riƙe da shi ba.',
+        ],
     ],
     'drivers' => [
         'manage' => 'Ƙara, canza, dakatar da goge direbobi, kuma ba su lambobi don zaɓar PIN.',

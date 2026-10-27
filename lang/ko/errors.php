@@ -208,4 +208,6 @@ return [
     'shipment_cannot_be_assigned' => '아직 출발하지 않았고 진행 중인 배송이 없는 스토어 자체 배송 출하만 기사에게 맡길 수 있습니다.',
     'driver_holds_goods' => '이 기사는 픽업했거나 배송 중이거나 실패 후 아직 해결되지 않은 배송의 상품을 아직 가지고 있습니다. 먼저 해결하세요.',
     'shipment_with_driver' => '이 출하는 스토어 기사 중 한 명이 맡고 있습니다. 대신 그 기사의 배송으로 진행됩니다.',
+    'cash_handover_exceeds_balance' => '기사가 이 통화로 가지고 있는 현금보다 많습니다.',
+    'cash_collection_required' => '이 배송에는 받을 현금이 있습니다. 받은 현금 금액을 입력하세요.',
 ];

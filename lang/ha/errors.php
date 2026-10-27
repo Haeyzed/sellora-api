@@ -208,4 +208,6 @@ return [
     'shipment_cannot_be_assigned' => 'Jigilar shagon ta kansa da ba ta tashi ba, wadda ba ta da isarwa da ke gudana, ce kawai za a iya ba direba.',
     'driver_holds_goods' => 'Wannan direban yana da kayan isarwa da aka ɗauka, ko ke kan hanya, ko ta gaza ba a warware ta ba tukuna. A warware ta tukuna.',
     'shipment_with_driver' => 'Ɗaya daga cikin direbobin shagon yana da wannan jigila. Isarwarsa ce ke ciyar da ita gaba.',
+    'cash_handover_exceeds_balance' => 'Wannan kuɗi ya fi abin da direban ke riƙe da shi a wannan kuɗin.',
+    'cash_collection_required' => 'Wannan isarwar tana da kuɗin da za a karɓa. Faɗi nawa aka karɓa.',
 ];

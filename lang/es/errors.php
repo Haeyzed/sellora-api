@@ -208,4 +208,6 @@ return [
     'shipment_cannot_be_assigned' => 'Solo se puede asignar a un repartidor un envío de reparto propio de la tienda que no haya salido y que no tenga ya una entrega en curso.',
     'driver_holds_goods' => 'Este repartidor aún tiene mercancía de una entrega recogida, en camino o fallida y sin resolver. Resuélvela primero.',
     'shipment_with_driver' => 'Uno de los repartidores de la tienda tiene este envío. Es su entrega la que lo hace avanzar.',
+    'cash_handover_exceeds_balance' => 'Es más efectivo del que el repartidor tiene en esta moneda.',
+    'cash_collection_required' => 'Esta entrega tiene efectivo por cobrar. Indica cuánto efectivo se cobró.',
 ];

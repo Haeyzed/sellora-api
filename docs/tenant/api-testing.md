@@ -60,7 +60,7 @@ admin token to a store endpoint.
 
 ## Endpoint cURL reference
 
-The following commands cover all 320 operations in the current tenant
+The following commands cover all 324 operations in the current tenant
 Scramble OpenAPI export, including the shared geography endpoints available
 on the store domain. Request bodies include required fields (or one
 representative field when all are optional); values such as IDs, email
@@ -559,6 +559,16 @@ curl.exe --request GET "${StoreBase}/driver/auth/me" `
   --header "Authorization: Bearer $DriverToken"
 ```
 
+#### CurrentDriverCash
+
+**GET** `/driver/cash` — driver bearer token. Show the cash I hold
+
+```powershell
+curl.exe --request GET "${StoreBase}/driver/cash" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $DriverToken"
+```
+
 #### CurrentStaffMember
 
 **GET** `/staff/auth/me` — staff bearer token. Get the signed-in staff member
@@ -984,6 +994,7 @@ curl.exe --request POST "${StoreBase}/staff/delivery/deliveries/${Delivery}/canc
 curl.exe --request POST "${StoreBase}/staff/delivery/deliveries/${Delivery}/status" `
   --header 'Accept: application/json' `
   --header "Authorization: Bearer $StaffToken" `
+  --header 'Idempotency-Key: replace-with-unique-request-key' `
   --header 'Content-Type: application/json' `
   --data-raw '{"status":"replace-with-value"}'
 ```
@@ -1088,6 +1099,35 @@ curl.exe --request POST "${StoreBase}/staff/delivery/drivers/${Driver}/setup-cod
   --header "Authorization: Bearer $StaffToken"
 ```
 
+#### DriverCash
+
+**GET** `/staff/delivery/drivers/{driver}/cash` — staff bearer token. Show the cash a driver holds
+
+```powershell
+curl.exe --request GET "${StoreBase}/staff/delivery/drivers/${Driver}/cash" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
+**GET** `/staff/delivery/drivers/{driver}/cash-entries` — staff bearer token. List a driver's cash entries
+
+```powershell
+curl.exe --request GET "${StoreBase}/staff/delivery/drivers/${Driver}/cash-entries" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
+**POST** `/staff/delivery/drivers/{driver}/cash-handovers` — staff bearer token. Record cash a driver handed over
+
+```powershell
+curl.exe --request POST "${StoreBase}/staff/delivery/drivers/${Driver}/cash-handovers" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken" `
+  --header 'Idempotency-Key: replace-with-unique-request-key' `
+  --header 'Content-Type: application/json' `
+  --data-raw '{"amount":1,"currency":"replace-with-value"}'
+```
+
 #### DriverDelivery
 
 **GET** `/driver/deliveries` — driver bearer token. List my deliveries
@@ -1128,6 +1168,7 @@ curl.exe --request POST "${StoreBase}/driver/deliveries/${Delivery}/on-the-way" 
 curl.exe --request POST "${StoreBase}/driver/deliveries/${Delivery}/delivered" `
   --header 'Accept: application/json' `
   --header "Authorization: Bearer $DriverToken" `
+  --header 'Idempotency-Key: replace-with-unique-request-key' `
   --header 'Content-Type: application/json' `
   --data-raw '{"recipient_name":"replace-with-value"}'
 ```

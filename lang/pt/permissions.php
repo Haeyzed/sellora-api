@@ -69,6 +69,9 @@ return [
     'delivery' => [
         'view' => 'Ver os motoristas e as entregas da loja.',
         'manage' => 'Dar envios aos motoristas e fazer avançar, repetir, recolher ou cancelar as suas entregas.',
+        'cash' => [
+            'manage' => 'Registar o dinheiro que os motoristas entregam, nunca mais do que têm.',
+        ],
     ],
     'drivers' => [
         'manage' => 'Adicionar, alterar, desativar e apagar motoristas, e dar-lhes códigos para escolher um PIN.',

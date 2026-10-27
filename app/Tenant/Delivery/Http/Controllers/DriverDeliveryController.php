@@ -7,6 +7,7 @@ namespace App\Tenant\Delivery\Http\Controllers;
 use App\Shared\Auth\AccountReference;
 use App\Shared\Http\Controller;
 use App\Tenant\Delivery\Actions\MoveDelivery;
+use App\Tenant\Delivery\Exceptions\CashCollectionRequiredException;
 use App\Tenant\Delivery\Exceptions\DeliveryTransitionNotAllowedException;
 use App\Tenant\Delivery\Http\Requests\DeliveredRequest;
 use App\Tenant\Delivery\Http\Requests\DeliveryFailedRequest;
@@ -16,6 +17,9 @@ use App\Tenant\Delivery\Http\Resources\DriverDeliveryResource;
 use App\Tenant\Delivery\Models\Delivery;
 use App\Tenant\Inventory\Exceptions\InsufficientStockException;
 use App\Tenant\Orders\Exceptions\ShipmentTransitionNotAllowedException;
+use App\Tenant\Payments\Exceptions\PaymentNotAwaitingReceiptException;
+use App\Tenant\Payments\Exceptions\PaymentReceiptInvalidException;
+use Dedoc\Scramble\Attributes\HeaderParameter;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 /**
@@ -80,14 +84,20 @@ final class DriverDeliveryController extends Controller
     /**
      * Hand over a delivery.
      *
-     * With the name of who took the goods.
+     * Needs an Idempotency-Key. With the name of who took the goods, and,
+     * when the delivery shows cash to collect, how much cash you collected:
+     * it pays the order and is added to the cash you hold, all at once.
      *
      * @throws DeliveryTransitionNotAllowedException
      * @throws ShipmentTransitionNotAllowedException
+     * @throws CashCollectionRequiredException
+     * @throws PaymentNotAwaitingReceiptException
+     * @throws PaymentReceiptInvalidException
      */
+    #[HeaderParameter('Idempotency-Key', 'A new key for each hand-over, 8 to 128 letters, digits, - or _. Sending the same request again with it returns the first answer instead of recording the cash twice.', required: true, type: 'string', example: 'delivered-2f9c1a7e')]
     public function delivered(DeliveredRequest $request, Delivery $delivery, MoveDelivery $moveDelivery): DriverDeliveryResource
     {
-        return new DriverDeliveryResource($moveDelivery->deliver($delivery, AccountReference::to($request->driver()), $request->recipientName())->load(self::WITH));
+        return new DriverDeliveryResource($moveDelivery->deliver($delivery, AccountReference::to($request->driver()), $request->recipientName(), $request->cashCollected())->load(self::WITH));
     }
 
     /**

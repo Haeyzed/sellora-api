@@ -69,6 +69,9 @@ return [
     'delivery' => [
         'view' => 'Die Fahrer und Lieferungen des Shops ansehen.',
         'manage' => 'Sendungen an Fahrer geben und ihre Lieferungen weiterführen, erneut versuchen, zurücknehmen oder stornieren.',
+        'cash' => [
+            'manage' => 'Bargeld erfassen, das Fahrer abgeben, nie mehr als sie haben.',
+        ],
     ],
     'drivers' => [
         'manage' => 'Fahrer hinzufügen, ändern, deaktivieren und löschen und ihnen Codes zur Wahl einer PIN geben.',

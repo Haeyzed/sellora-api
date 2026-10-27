@@ -123,6 +123,7 @@ use App\Tenant\Delivery\Models\Delivery;
 use App\Tenant\Delivery\Models\Driver;
 use App\Tenant\Delivery\OpenDeliveries;
 use App\Tenant\Delivery\Privacy\DriverAccountData;
+use App\Tenant\Delivery\Privacy\DriverCashData;
 use App\Tenant\Delivery\Privacy\DriverDataSubject;
 use App\Tenant\Identity\Enums\StaffPermission;
 use App\Tenant\Identity\Enums\StaffRole;
@@ -492,6 +493,7 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(GuestDataSubject::TYPE, 'tax_documents', TaxDocumentData::class);
             $registry->register(GuestDataSubject::TYPE, 'checkouts', CheckoutData::class);
 
+            $registry->register(DriverDataSubject::TYPE, 'cash', DriverCashData::class);
             $registry->register(DriverDataSubject::TYPE, 'account', DriverAccountData::class);
 
             return $registry;

@@ -208,4 +208,6 @@ return [
     'shipment_cannot_be_assigned' => 'Kierowcy można przydzielić tylko własną dostawę sklepu, która jeszcze nie wyjechała i nie ma już trwającej dostawy.',
     'driver_holds_goods' => 'Ten kierowca wciąż ma towar z dostawy odebranej, w drodze lub nieudanej i jeszcze nierozstrzygniętej. Najpierw ją rozstrzygnij.',
     'shipment_with_driver' => 'Tę przesyłkę ma jeden z kierowców sklepu. To jego dostawa ją przesuwa dalej.',
+    'cash_handover_exceeds_balance' => 'To więcej gotówki, niż kierowca ma w tej walucie.',
+    'cash_collection_required' => 'Przy tej dostawie trzeba pobrać gotówkę. Podaj, ile pobrano.',
 ];

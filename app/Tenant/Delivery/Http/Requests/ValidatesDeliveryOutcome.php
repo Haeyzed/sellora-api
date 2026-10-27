@@ -22,6 +22,22 @@ trait ValidatesDeliveryOutcome
     }
 
     /**
+     * @return list<string>
+     */
+    protected function cashCollectedRules(): array
+    {
+        return ['nullable', 'integer', 'min:1', 'max:'.PHP_INT_MAX];
+    }
+
+    /**
+     * The cash collected, in minor units of the order's currency; null when none was given.
+     */
+    public function cashCollected(): ?int
+    {
+        return $this->filled('cash_collected') ? $this->integer('cash_collected') : null;
+    }
+
+    /**
      * @return array<string, list<string|Enum>>
      */
     protected function failureRules(string $required = 'required'): array

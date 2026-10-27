@@ -69,6 +69,9 @@ return [
     'delivery' => [
         'view' => 'Ona madereva na usafirishaji wa duka.',
         'manage' => 'Kuwapa madereva usafirishaji, na kusogeza, kurudia, kurejesha au kughairi uwasilishaji wao.',
+        'cash' => [
+            'manage' => 'Kurekodi pesa taslimu wanazokabidhi madereva, kamwe si zaidi ya walizonazo.',
+        ],
     ],
     'drivers' => [
         'manage' => 'Ongeza, badilisha, zima na futa madereva, na uwape misimbo ya kuchagua PIN.',

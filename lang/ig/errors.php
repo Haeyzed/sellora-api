@@ -208,4 +208,6 @@ return [
     'shipment_cannot_be_assigned' => 'Naanị mbupu nke ụlọ ahịa n\'onwe ya na-ebuga nke na-apụbeghị, nke na-enweghị nnyefe na-aga n\'ihu, ka enwere ike inye onye ọkwọ ụgbọ.',
     'driver_holds_goods' => 'Onye ọkwọ ụgbọ a ka nwere ngwongwo nke nnyefe e welitere, nọ n\'ụzọ, ma ọ bụ dara ada ma edozibeghị. Buru ụzọ dozie ya.',
     'shipment_with_driver' => 'Otu n\'ime ndị ọkwọ ụgbọ ụlọ ahịa nwere mbupu a. Nnyefe ya na-ebuga ya n\'ihu kama.',
+    'cash_handover_exceeds_balance' => 'Nke ahụ karịrị ego onye ọkwọ ụgbọ ji n\'ego a.',
+    'cash_collection_required' => 'Nnyefe a nwere ego a ga-anakọta. Kwuo ole ego a nakọtara.',
 ];

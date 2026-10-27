@@ -34,6 +34,8 @@ final class MoveDeliveryRequest extends FormRequest
             'status' => ['required', 'string', Rule::enum(DeliveryStatus::class)->only(DeliveryStatus::driverMoves())],
             /** Who took the goods; required when delivered. */
             'recipient_name' => $this->recipientNameRules('required_if:status,'.DeliveryStatus::Delivered->value),
+            /** When delivered: the cash the driver collected, in minor units of the order's currency; required when there is cash to collect. It goes into the driver's cash ledger. */
+            'cash_collected' => [...$this->cashCollectedRules(), 'prohibited_unless:status,'.DeliveryStatus::Delivered->value],
             ...$this->failureRules('required_if:status,'.DeliveryStatus::Failed->value),
         ];
     }

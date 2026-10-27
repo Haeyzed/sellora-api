@@ -208,4 +208,6 @@ return [
     'shipment_cannot_be_assigned' => 'Seul un envoi livré par la boutique elle-même, pas encore parti et sans livraison déjà en cours, peut être confié à un livreur.',
     'driver_holds_goods' => 'Ce livreur a encore la marchandise d’une livraison récupérée, en route, ou échouée et pas encore réglée. Réglez-la d’abord.',
     'shipment_with_driver' => 'Un des livreurs de la boutique a cet envoi. C’est sa livraison qui le fait avancer.',
+    'cash_handover_exceeds_balance' => 'C’est plus d’espèces que le livreur n’en détient dans cette devise.',
+    'cash_collection_required' => 'Cette livraison comporte des espèces à encaisser. Indiquez le montant encaissé.',
 ];

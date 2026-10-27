@@ -69,6 +69,9 @@ return [
     'delivery' => [
         'view' => 'Consultez les livreurs et les livraisons de la boutique.',
         'manage' => 'Confier des envois aux livreurs, et faire avancer, relancer, reprendre ou annuler leurs livraisons.',
+        'cash' => [
+            'manage' => 'Enregistrer les espèces remises par les livreurs, jamais plus qu’ils n’en détiennent.',
+        ],
     ],
     'drivers' => [
         'manage' => 'Ajoutez, modifiez, désactivez et effacez des livreurs, et donnez-leur des codes pour choisir un code PIN.',
