@@ -123,6 +123,12 @@
         }
     },
     "config": {
+        "audit": {
+            "ignore": {
+                "GHSA-9vw2-f4vp-x7gf": "PHPUnit is dev-only; we use no PHPT tests or PHPT coverage; CI runners are not shared. Remove when Pest allows PHPUnit >= 13.4.4.",
+                "PKSA-qhjm-rpqc-qkn6": "Packagist's ID for GHSA-9vw2-f4vp-x7gf, which is how composer audit reports it. PHPUnit is dev-only; we use no PHPT tests or PHPT coverage; CI runners are not shared. Remove when Pest allows PHPUnit >= 13.4.4."
+            }
+        },
         "optimize-autoloader": true,
         "platform": {
             "php": "8.4.24"
