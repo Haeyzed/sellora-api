@@ -1,6 +1,6 @@
 # Deploying Sellora
 
-Run these on every deploy, in this order, after the new code is in place and
+Run this on every deployment, after the new code is in place and
 `composer install --no-dev --optimize-autoloader` has run:
 
 ```sh

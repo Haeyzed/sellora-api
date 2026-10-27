@@ -1,59 +1,187 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Sellora API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Sellora is a multi-tenant e-commerce platform. Merchants run independent
+stores, each with its own database, while Sellora operates a central platform
+for store registration, plans, platform staff and tenant management.
 
-## About Laravel
+This repository contains the Laravel API used by the platform admin app,
+merchant dashboards and storefronts. It is a modular monolith organized into
+`app/Landlord`, `app/Tenant`, `app/Shared`, `modules` and `integrations`.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Start with the [project and domain documentation](docs/README.md) for a
+plain-language overview of the landlord/tenant split and the store purchase
+flows.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Requirements
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- PHP 8.4 and Composer
+- PostgreSQL (the central database and tenant databases)
+- Redis (cache, sessions and queues in the default local configuration)
+- Node.js and npm (Vite assets and frontend development)
+- Laravel Herd is the recommended local environment on Windows
 
-## Learning Laravel
+The PHP requirement and framework/package versions are declared in
+[`composer.json`](composer.json). Local service and application settings are
+listed in [`.env.example`](.env.example).
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Local setup with Herd on Windows
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 1. Start required services
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+Start PostgreSQL and Redis using Herd or your local service manager. Create
+the central PostgreSQL database; the example environment calls it
+`sellora_central`.
 
-## Agentic Development
+### 2. Configure the environment
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+From the repository root, copy the example environment and edit the database,
+Redis, mail and domain values to match your machine:
 
-```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+```powershell
+Copy-Item .env.example .env
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+At minimum, check these values in `.env`:
 
-## Contributing
+```dotenv
+APP_URL=http://sellora-api.test
+PLATFORM_DOMAIN=sellora-api.test
+PLATFORM_CENTRAL_DOMAINS=sellora-api.test,localhost,127.0.0.1
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+DB_CONNECTION=central
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_DATABASE=sellora_central
+DB_USERNAME=postgres
+DB_PASSWORD=
 
-## Code of Conduct
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Use credentials appropriate for your local PostgreSQL installation. Keep
+secrets in `.env`; do not commit them.
 
-## Security Vulnerabilities
+### 3. Install and initialize
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Run the repository's setup script:
 
-## License
+```powershell
+composer setup
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-# sellora-api
+The script installs PHP and JavaScript dependencies, creates an application
+key, runs central migrations, synchronizes permissions, and builds frontend
+assets. The database must exist and be reachable first.
+
+Seed the central reference data, starter plan and platform permission data:
+
+```powershell
+php artisan db:seed --force
+```
+
+### 4. Open the API
+
+Herd serves this project at `http://sellora-api.test`. Confirm that the
+application responds at:
+
+```text
+http://sellora-api.test/up
+```
+
+For Windows Herd setup, API addresses, tenant subdomains and sign-in examples,
+see the [landlord API testing guide](docs/landlord/api-testing.md) and the
+[tenant API testing guide](docs/tenant/api-testing.md).
+
+## Running locally
+
+Herd serves the HTTP site. In separate terminals from the project root, start
+the queue worker and (when actively changing frontend assets) Vite:
+
+```powershell
+php artisan queue:listen --queue=payments,default,bulk --tries=1 --timeout=0
+```
+
+```powershell
+npm run dev
+```
+
+The queues are ordered so gateway checks and webhooks (`payments`) are not
+stuck behind general or bulk work. `npm run dev` is optional if you only
+need the API and have already built assets.
+
+The Composer `dev` script starts `php artisan serve`, a queue listener and
+Vite together. It is intended for setups without Herd; do not run it when
+Herd is already serving the same site.
+
+### Creating a platform administrator
+
+After setup and migrations, create the first platform administrator with:
+
+```powershell
+php artisan platform:create-admin --name="Platform Admin" --email="admin@example.com" --super-admin
+```
+
+The command prompts for the password and guides you through authenticator
+setup. Store the displayed recovery codes securely. Platform administrators
+must use two-factor authentication.
+
+### Registering and provisioning a local store
+
+Store registration uses a database-server pool. To test the full registration
+flow locally, add a reachable PostgreSQL server for a configured hosting
+region:
+
+```powershell
+php artisan platform:add-database-server
+```
+
+The command prompts for the database-server password and tests the connection
+before saving it. The database account must be able to create tenant
+databases. Each store subdomain also needs a Windows hosts-file entry; the
+[tenant API testing guide](docs/tenant/api-testing.md) shows the example.
+
+## Tests and useful commands
+
+Run the full test suite:
+
+```powershell
+composer test
+```
+
+Run a focused test file:
+
+```powershell
+php artisan test --compact tests/Feature/Shared/QueueWorkersTest.php
+```
+
+Export the platform, registration and store OpenAPI documents:
+
+```powershell
+composer docs:export
+```
+
+The generated JSON files are written to the untracked `api-docs/` directory.
+
+## Documentation
+
+- [Documentation home](docs/README.md)
+- [Landlord: central platform](docs/landlord/README.md)
+- [Tenant: one merchant store](docs/tenant/README.md)
+- [End-to-end store purchase flow](docs/tenant/business-flows.md)
+- [Landlord and registration API testing](docs/landlord/api-testing.md)
+- [Tenant API testing](docs/tenant/api-testing.md)
+- [Deployment](docs/deployment.md)
+
+## Important boundaries
+
+- The central database stores the platform's store directory and management
+  data; each tenant database stores that merchant's business data.
+- Tenant Payments handles shopper payments for merchant orders. Landlord
+  subscription billing is not implemented yet.
+- Tenant Delivery currently supports driver sign-in, not shipment assignment.
+- The Messaging tenant domain is a placeholder and does not provide a central
+  messaging workflow.
+
+See [CLAUDE.md](CLAUDE.md) for the repository's architecture and engineering
+constraints.
