@@ -27,6 +27,8 @@ final class FreePlanSeeder extends Seeder
         'storage_in_megabytes' => 1024,
         // Besides the base currency, which never counts.
         'presentment_currencies' => 1,
+        // Active drivers; deactivated ones don't count.
+        'drivers' => 2,
     ];
 
     public function run(): void

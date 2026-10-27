@@ -200,4 +200,8 @@ return [
     'payment_not_found' => 'There is no payment with this reference at this store.',
     'guest_checkout_not_allowed' => 'This store needs you to sign in or create an account to check out.',
     'tax_document_pdf_not_ready' => 'This document\'s PDF is still being prepared. Try again in a few minutes.',
+    'driver_phone_taken' => 'Wani direban shagon yana shiga da wannan lambar waya tuni.',
+    'driver_deactivated' => 'An dakatar da wannan direban. Sake kunna shi tukuna.',
+    'driver_erased' => 'An goge bayanan sirri na wannan direban. Rikodin yana nan ne kawai saboda isar da kayan da ya yi a baya.',
+    'invalid_driver_setup_code' => 'Wannan lambar ba daidai ba ce, ko ta ƙare. Nemi sabuwar lamba daga shagon.',
 ];

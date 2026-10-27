@@ -66,4 +66,10 @@ return [
         'view' => 'Découvrez les rôles du magasin et ce que chacun permet.',
         'manage' => 'Créez, renommez et supprimez des rôles, et choisissez ce que chacun autorise.',
     ],
+    'delivery' => [
+        'view' => 'Consultez les livreurs et les livraisons de la boutique.',
+    ],
+    'drivers' => [
+        'manage' => 'Ajoutez, modifiez, désactivez et effacez des livreurs, et donnez-leur des codes pour choisir un code PIN.',
+    ],
 ];

@@ -200,4 +200,8 @@ return [
     'payment_not_found' => 'There is no payment with this reference at this store.',
     'guest_checkout_not_allowed' => 'This store needs you to sign in or create an account to check out.',
     'tax_document_pdf_not_ready' => 'This document\'s PDF is still being prepared. Try again in a few minutes.',
+    'driver_phone_taken' => 'Pengemudi lain di toko ini sudah masuk dengan nomor telepon ini.',
+    'driver_deactivated' => 'Pengemudi ini dinonaktifkan. Aktifkan kembali terlebih dahulu.',
+    'driver_erased' => 'Data pribadi pengemudi ini telah dihapus. Catatannya disimpan hanya untuk pengiriman sebelumnya.',
+    'invalid_driver_setup_code' => 'Kode ini salah atau sudah kedaluwarsa. Minta kode baru ke toko.',
 ];

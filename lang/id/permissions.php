@@ -66,4 +66,10 @@ return [
         'view' => 'Lihat peran toko dan apa yang diperbolehkan oleh masing-masing toko.',
         'manage' => 'Buat, ganti nama, dan hapus peran, dan pilih peran yang diizinkan masing-masing peran.',
     ],
+    'delivery' => [
+        'view' => 'Lihat pengemudi dan pengiriman toko.',
+    ],
+    'drivers' => [
+        'manage' => 'Tambah, ubah, nonaktifkan, dan hapus pengemudi, serta beri mereka kode untuk memilih PIN.',
+    ],
 ];

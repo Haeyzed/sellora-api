@@ -66,4 +66,10 @@ return [
         'view' => 'Duba ayyukan kantin da abin da kowanne ya ba da izini.',
         'manage' => 'Ƙirƙiri, sake suna da share matsayin, kuma zaɓi abin da kowanne ya ba da izini.',
     ],
+    'delivery' => [
+        'view' => 'Duba direbobin shagon da isar da kaya.',
+    ],
+    'drivers' => [
+        'manage' => 'Ƙara, canza, dakatar da goge direbobi, kuma ba su lambobi don zaɓar PIN.',
+    ],
 ];

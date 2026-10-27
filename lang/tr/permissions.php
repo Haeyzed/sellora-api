@@ -66,4 +66,10 @@ return [
         'view' => 'Mağazanın rollerini ve her birinin neye izin verdiğini görün.',
         'manage' => 'Rolleri oluşturun, yeniden adlandırın, silin ve her birinin neye izin vereceğini seçin.',
     ],
+    'delivery' => [
+        'view' => 'Mağazanın sürücülerini ve teslimatlarını görüntüleyin.',
+    ],
+    'drivers' => [
+        'manage' => 'Sürücü ekleyin, değiştirin, devre dışı bırakın ve silin; PIN seçmeleri için kod verin.',
+    ],
 ];

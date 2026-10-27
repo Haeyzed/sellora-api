@@ -66,4 +66,10 @@ return [
         'view' => 'Consulta los roles de la tienda y lo que permite cada uno.',
         'manage' => 'Crea, renombra y elimina roles, y elige lo que permite cada uno.',
     ],
+    'delivery' => [
+        'view' => 'Ver los repartidores y las entregas de la tienda.',
+    ],
+    'drivers' => [
+        'manage' => 'Añadir, cambiar, desactivar y borrar repartidores, y darles códigos para elegir un PIN.',
+    ],
 ];

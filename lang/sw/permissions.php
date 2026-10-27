@@ -66,4 +66,10 @@ return [
         'view' => 'Tazama majukumu ya duka na kile ambacho kila moja inaruhusu.',
         'manage' => 'Unda, ubadilishe jina na ufute majukumu, na uchague kile ambacho kila kimoja kinaruhusu.',
     ],
+    'delivery' => [
+        'view' => 'Ona madereva na usafirishaji wa duka.',
+    ],
+    'drivers' => [
+        'manage' => 'Ongeza, badilisha, zima na futa madereva, na uwape misimbo ya kuchagua PIN.',
+    ],
 ];

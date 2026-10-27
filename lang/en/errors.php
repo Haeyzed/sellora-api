@@ -223,5 +223,9 @@ return [
     'payment_not_found' => 'There is no payment with this reference at this store.',
     'guest_checkout_not_allowed' => 'This store needs you to sign in or create an account to check out.',
     'tax_document_pdf_not_ready' => 'This document\'s PDF is still being prepared. Try again in a few minutes.',
+    'driver_phone_taken' => 'Another of the store\'s drivers already signs in with this phone number.',
+    'driver_deactivated' => 'This driver is deactivated. Reactivate them first.',
+    'driver_erased' => 'This driver\'s personal data was erased. The record stays only for their past deliveries.',
+    'invalid_driver_setup_code' => 'This code isn\'t right, or has expired. Ask the store for a new code.',
 
 ];

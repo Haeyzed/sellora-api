@@ -37,6 +37,7 @@ const PAGE_NUMBER_LISTS = [
         '/staff/catalog/brands', '/staff/catalog/categories', '/staff/catalog/attributes', '/staff/customer-groups', '/staff/promotions', '/staff/shipping/zones', '/staff/shipping/methods',
         '/catalog/brands', '/catalog/categories',
         '/staff/inventory/locations',
+        '/staff/delivery/drivers',
         '/staff/pricing/tax-classes', '/staff/pricing/tax-rates', '/staff/pricing/currencies', '/catalog/currencies',
     ],
     'platform' => [

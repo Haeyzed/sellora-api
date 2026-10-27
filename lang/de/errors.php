@@ -200,4 +200,8 @@ return [
     'payment_not_found' => 'Für diese Referenz gibt es in diesem Shop keine Zahlung.',
     'guest_checkout_not_allowed' => 'Dieser Shop verlangt, dass Sie sich anmelden oder ein Konto erstellen, um zu bezahlen.',
     'tax_document_pdf_not_ready' => 'Das PDF dieses Dokuments wird noch vorbereitet. Versuchen Sie es in einigen Minuten erneut.',
+    'driver_phone_taken' => 'Ein anderer Fahrer des Shops meldet sich bereits mit dieser Telefonnummer an.',
+    'driver_deactivated' => 'Dieser Fahrer ist deaktiviert. Aktivieren Sie ihn zuerst wieder.',
+    'driver_erased' => 'Die personenbezogenen Daten dieses Fahrers wurden gelöscht. Der Datensatz bleibt nur für seine früheren Lieferungen erhalten.',
+    'invalid_driver_setup_code' => 'Dieser Code ist falsch oder abgelaufen. Bitten Sie den Shop um einen neuen Code.',
 ];

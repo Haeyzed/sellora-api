@@ -66,4 +66,10 @@ return [
         'view' => 'Veja as funções da loja e o que cada uma permite.',
         'manage' => 'Crie, renomeie e exclua funções e escolha o que cada uma permite.',
     ],
+    'delivery' => [
+        'view' => 'Ver os motoristas e as entregas da loja.',
+    ],
+    'drivers' => [
+        'manage' => 'Adicionar, alterar, desativar e apagar motoristas, e dar-lhes códigos para escolher um PIN.',
+    ],
 ];

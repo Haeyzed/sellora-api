@@ -200,4 +200,8 @@ return [
     'payment_not_found' => 'There is no payment with this reference at this store.',
     'guest_checkout_not_allowed' => 'This store needs you to sign in or create an account to check out.',
     'tax_document_pdf_not_ready' => 'This document\'s PDF is still being prepared. Try again in a few minutes.',
+    'driver_phone_taken' => 'Dereva mwingine wa duka tayari anaingia kwa nambari hii ya simu.',
+    'driver_deactivated' => 'Dereva huyu amezimwa. Mwamshe tena kwanza.',
+    'driver_erased' => 'Data binafsi ya dereva huyu imefutwa. Rekodi imebaki kwa ajili ya usafirishaji wake wa awali tu.',
+    'invalid_driver_setup_code' => 'Msimbo huu si sahihi, au umeisha muda. Omba duka msimbo mpya.',
 ];

@@ -200,4 +200,8 @@ return [
     'payment_not_found' => 'There is no payment with this reference at this store.',
     'guest_checkout_not_allowed' => 'This store needs you to sign in or create an account to check out.',
     'tax_document_pdf_not_ready' => 'This document\'s PDF is still being prepared. Try again in a few minutes.',
+    'driver_phone_taken' => 'Inny kierowca sklepu już loguje się tym numerem telefonu.',
+    'driver_deactivated' => 'Ten kierowca jest dezaktywowany. Najpierw aktywuj go ponownie.',
+    'driver_erased' => 'Dane osobowe tego kierowcy zostały usunięte. Rekord pozostaje tylko na potrzeby jego wcześniejszych dostaw.',
+    'invalid_driver_setup_code' => 'Ten kod jest nieprawidłowy lub wygasł. Poproś sklep o nowy kod.',
 ];

@@ -200,4 +200,8 @@ return [
     'payment_not_found' => 'No hay ningún pago con esta referencia en esta tienda.',
     'guest_checkout_not_allowed' => 'Esta tienda necesita que inicies sesión o crees una cuenta para pagar.',
     'tax_document_pdf_not_ready' => 'El PDF de este documento todavía se está preparando. Inténtalo de nuevo en unos minutos.',
+    'driver_phone_taken' => 'Otro repartidor de la tienda ya inicia sesión con este número de teléfono.',
+    'driver_deactivated' => 'Este repartidor está desactivado. Reactívalo primero.',
+    'driver_erased' => 'Los datos personales de este repartidor se borraron. El registro solo se conserva por sus entregas anteriores.',
+    'invalid_driver_setup_code' => 'Este código no es correcto o ha caducado. Pide un código nuevo a la tienda.',
 ];

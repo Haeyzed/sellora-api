@@ -66,4 +66,10 @@ return [
         'view' => 'Wo awọn ipa ile itaja ati ohun ti ọkọọkan gba laaye.',
         'manage' => 'Ṣẹda, fun lorukọ mii ati paarẹ awọn ipa rẹ, ki o yan ohun ti ọkọọkan gba laaye.',
     ],
+    'delivery' => [
+        'view' => 'Wo àwọn awakọ̀ àti ìfijíṣẹ́ ilé ìtajà.',
+    ],
+    'drivers' => [
+        'manage' => 'Ṣàfikún, yí padà, dá dúró kí o sì pa àwọn awakọ̀ rẹ́, kí o sì fún wọn ní kóòdù láti yan PIN.',
+    ],
 ];

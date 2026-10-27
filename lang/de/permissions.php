@@ -66,4 +66,10 @@ return [
         'view' => 'Sehen Sie sich die Rollen des Shops an und erfahren Sie, was jeder einzelne erlaubt.',
         'manage' => 'Erstellen, benennen und löschen Sie Rollen und wählen Sie aus, was jede Rolle zulässt.',
     ],
+    'delivery' => [
+        'view' => 'Die Fahrer und Lieferungen des Shops ansehen.',
+    ],
+    'drivers' => [
+        'manage' => 'Fahrer hinzufügen, ändern, deaktivieren und löschen und ihnen Codes zur Wahl einer PIN geben.',
+    ],
 ];

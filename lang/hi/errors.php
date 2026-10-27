@@ -200,4 +200,8 @@ return [
     'payment_not_found' => 'There is no payment with this reference at this store.',
     'guest_checkout_not_allowed' => 'This store needs you to sign in or create an account to check out.',
     'tax_document_pdf_not_ready' => 'This document\'s PDF is still being prepared. Try again in a few minutes.',
+    'driver_phone_taken' => 'स्टोर का कोई दूसरा ड्राइवर पहले से इस फ़ोन नंबर से साइन इन करता है।',
+    'driver_deactivated' => 'यह ड्राइवर निष्क्रिय है। पहले इसे फिर से सक्रिय करें।',
+    'driver_erased' => 'इस ड्राइवर का व्यक्तिगत डेटा मिटा दिया गया है। रिकॉर्ड केवल उसकी पिछली डिलीवरी के लिए रखा गया है।',
+    'invalid_driver_setup_code' => 'यह कोड सही नहीं है, या इसकी अवधि समाप्त हो गई है। स्टोर से नया कोड माँगें।',
 ];

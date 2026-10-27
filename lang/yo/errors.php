@@ -200,4 +200,8 @@ return [
     'payment_not_found' => 'Ko si sisanwo pẹlu itọkasi yii ni ile itaja yii.',
     'guest_checkout_not_allowed' => 'Ile itaja yii nilo pe o wọle tabi ṣẹda akọọlẹ lati sanwo.',
     'tax_document_pdf_not_ready' => 'PDF iwe yii tun n mura. Gbiyanju lẹẹkansi ni iṣẹju diẹ.',
+    'driver_phone_taken' => 'Awakọ̀ míràn ti ilé ìtajà ti ń wọlé pẹ̀lú nọ́mbà fóònù yìí tẹ́lẹ̀.',
+    'driver_deactivated' => 'A ti dá awakọ̀ yìí dúró. Kọ́kọ́ mú un ṣiṣẹ́ padà.',
+    'driver_erased' => 'A ti pa dátà ara ẹni awakọ̀ yìí rẹ́. Àkọsílẹ̀ náà wà fún àwọn ìfijíṣẹ́ rẹ̀ àtẹ̀yìnwá nìkan.',
+    'invalid_driver_setup_code' => 'Kóòdù yìí kò tọ̀nà, tàbí ó ti parí. Béèrè kóòdù tuntun lọ́wọ́ ilé ìtajà.',
 ];

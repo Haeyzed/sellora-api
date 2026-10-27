@@ -116,7 +116,11 @@ use App\Tenant\Customers\SocialSignInAttemptRetention;
 use App\Tenant\Customers\SocialSignInTicketRetention;
 use App\Tenant\Customers\TrashedCustomerRetention;
 use App\Tenant\Delivery\DeliveryStoreTables;
+use App\Tenant\Delivery\DriverSetupCodeRetention;
+use App\Tenant\Delivery\Enums\DeliveryPermission;
 use App\Tenant\Delivery\Models\Driver;
+use App\Tenant\Delivery\Privacy\DriverAccountData;
+use App\Tenant\Delivery\Privacy\DriverDataSubject;
 use App\Tenant\Identity\Enums\StaffPermission;
 use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\IdentityStoreTables;
@@ -362,6 +366,7 @@ final class AppServiceProvider extends ServiceProvider
             $catalogue->register(ShippingPermission::class);
             $catalogue->register(OrderPermission::class);
             $catalogue->register(PaymentPermission::class);
+            $catalogue->register(DeliveryPermission::class);
 
             return $catalogue;
         });
@@ -481,6 +486,8 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(GuestDataSubject::TYPE, 'tax_documents', TaxDocumentData::class);
             $registry->register(GuestDataSubject::TYPE, 'checkouts', CheckoutData::class);
 
+            $registry->register(DriverDataSubject::TYPE, 'account', DriverAccountData::class);
+
             return $registry;
         });
 
@@ -505,6 +512,7 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(ActivityLogRetention::class);
             $registry->register(AuditRetention::class);
             $registry->register(StaffInvitationRetention::class);
+            $registry->register(DriverSetupCodeRetention::class);
             $registry->register(CustomerEmailTokenRetention::class);
             $registry->register(TrashedCustomerRetention::class);
             $registry->register(CustomerDataExportRetention::class);

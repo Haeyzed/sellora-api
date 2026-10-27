@@ -200,4 +200,8 @@ return [
     'payment_not_found' => 'There is no payment with this reference at this store.',
     'guest_checkout_not_allowed' => 'This store needs you to sign in or create an account to check out.',
     'tax_document_pdf_not_ready' => 'This document\'s PDF is still being prepared. Try again in a few minutes.',
+    'driver_phone_taken' => 'ストアの別のドライバーがすでにこの電話番号でサインインしています。',
+    'driver_deactivated' => 'このドライバーは無効になっています。先に再有効化してください。',
+    'driver_erased' => 'このドライバーの個人データは消去されました。記録は過去の配達のためだけに残っています。',
+    'invalid_driver_setup_code' => 'このコードが正しくないか、有効期限が切れています。ストアに新しいコードを依頼してください。',
 ];

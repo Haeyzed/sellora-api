@@ -24,7 +24,8 @@ final class DriverSignInRequest extends FormRequest
         return [
             /** In international format with the country code, for example +2348012345678. */
             'phone' => ['required', 'string', 'max:20', (new Phone)->international()],
-            'pin' => ['required', 'string', 'regex:/^\d{4,6}$/'],
+            /** 6 digits. */
+            'pin' => ['required', 'string', 'regex:/^\d{6}$/'],
             /** A label for the device, shown when staff review where the driver is signed in. */
             'device_name' => ['sometimes', 'string', 'max:100'],
         ];

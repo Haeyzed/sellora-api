@@ -85,4 +85,12 @@ return [
         'manage' => 'Create, rename and delete roles, and choose what each one allows.',
     ],
 
+    'delivery' => [
+        'view' => 'See the store\'s drivers and deliveries.',
+    ],
+
+    'drivers' => [
+        'manage' => 'Add, change, deactivate and erase drivers, and give them codes to choose a PIN with.',
+    ],
+
 ];

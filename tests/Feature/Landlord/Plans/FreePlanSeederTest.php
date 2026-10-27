@@ -27,25 +27,29 @@ it('creates the plan new stores start on, with the approved limits and no paid m
             'staff_accounts' => 2,
             'storage_in_megabytes' => 1024,
             'presentment_currencies' => 1,
+            'drivers' => 2,
         ]);
 });
 
 /*
- * Existing free stores get the presentment_currencies limit from their plan's
- * row, which deploys add with a migration (they don't run seeders). A value
- * someone already set is kept.
+ * Existing free stores get limits added later from their plan's row, which
+ * deploys add with a migration (they don't run seeders). A value someone
+ * already set is kept.
  */
-it('gives the free plan its presentment currency limit on deploy, keeping a value already set', function (): void {
-    $migration = require database_path('migrations/landlord/2026_10_13_130100_add_presentment_currencies_limit_to_free_plan.php');
+it('gives the free plan a limit added later on deploy, keeping a value already set', function (string $migrationFile, string $limitKey, int $limitValue): void {
+    $migration = require database_path('migrations/landlord/'.$migrationFile);
 
     $migration->up();
     expect(Plan::query()->count())->toBe(0);
 
     $plan = Plan::factory()->create(['code' => config()->string('platform.store_registration.plan')]);
     $migration->up();
-    expect($plan->limits()->where('limit_key', 'presentment_currencies')->value('limit_value'))->toBe(1);
+    expect($plan->limits()->where('limit_key', $limitKey)->value('limit_value'))->toBe($limitValue);
 
-    $plan->limits()->where('limit_key', 'presentment_currencies')->update(['limit_value' => 4]);
+    $plan->limits()->where('limit_key', $limitKey)->update(['limit_value' => 4]);
     $migration->up();
-    expect($plan->limits()->where('limit_key', 'presentment_currencies')->value('limit_value'))->toBe(4);
-});
+    expect($plan->limits()->where('limit_key', $limitKey)->value('limit_value'))->toBe(4);
+})->with([
+    'presentment currencies' => ['2026_10_13_130100_add_presentment_currencies_limit_to_free_plan.php', 'presentment_currencies', 1],
+    'drivers' => ['2026_10_28_100000_add_drivers_limit_to_free_plan.php', 'drivers', 2],
+]);

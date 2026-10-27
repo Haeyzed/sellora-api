@@ -200,4 +200,8 @@ return [
     'payment_not_found' => 'Il n\'existe aucun paiement avec cette référence dans ce magasin.',
     'guest_checkout_not_allowed' => 'Ce magasin exige que vous vous connectiez ou créiez un compte avant de payer.',
     'tax_document_pdf_not_ready' => 'Le PDF de ce document est encore en préparation. Réessayez dans quelques minutes.',
+    'driver_phone_taken' => 'Un autre livreur de la boutique se connecte déjà avec ce numéro de téléphone.',
+    'driver_deactivated' => 'Ce livreur est désactivé. Réactivez-le d’abord.',
+    'driver_erased' => 'Les données personnelles de ce livreur ont été effacées. La fiche n’est conservée que pour ses livraisons passées.',
+    'invalid_driver_setup_code' => 'Ce code est incorrect ou a expiré. Demandez un nouveau code à la boutique.',
 ];

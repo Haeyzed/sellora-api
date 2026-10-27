@@ -60,13 +60,13 @@ admin token to a store endpoint.
 
 ## Endpoint cURL reference
 
-The following commands cover all 295 operations in the current tenant
+The following commands cover all 306 operations in the current tenant
 Scramble OpenAPI export, including the shared geography endpoints available
 on the store domain. Request bodies include required fields (or one
 representative field when all are optional); values such as IDs, email
 addresses and secrets are placeholders and must be replaced. Optional filters
 and pagination can be added using the query parameters shown in the API docs.
-The route list also accepts `PATCH` on five resource update routes; those
+The route list also accepts `PATCH` on six resource update routes; those
 alternatives are included below even though Scramble exports their `PUT`
 forms. Business-state checks may impose additional requirements.
 
@@ -82,6 +82,7 @@ $CreditNote = 'replace-with-credit-note'
 $Currency = 'replace-with-currency'
 $Customer = 'replace-with-customer'
 $CustomerGroup = 'replace-with-customer-group'
+$Driver = 'replace-with-driver'
 $Export = 'replace-with-export'
 $Gateway = 'replace-with-gateway'
 $Identity = 'replace-with-identity'
@@ -940,6 +941,119 @@ curl.exe --request POST "${StoreBase}/staff/promotions/preview" `
   --header "Authorization: Bearer $StaffToken" `
   --header 'Content-Type: application/json' `
   --data-raw '{"lines":[{"variant":"replace-with-value","quantity":1}]}'
+```
+
+#### Driver
+
+**GET** `/staff/delivery/drivers` — staff bearer token. List drivers
+
+```powershell
+curl.exe --request GET "${StoreBase}/staff/delivery/drivers" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
+**POST** `/staff/delivery/drivers` — staff bearer token. Add a driver
+
+```powershell
+curl.exe --request POST "${StoreBase}/staff/delivery/drivers" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw '{"name":"replace-with-value","phone":"replace-with-value"}'
+```
+
+**GET** `/staff/delivery/drivers/{driver}` — staff bearer token. Show a driver
+
+```powershell
+curl.exe --request GET "${StoreBase}/staff/delivery/drivers/${Driver}" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
+**PUT** `/staff/delivery/drivers/{driver}` — staff bearer token. Change a driver
+
+```powershell
+curl.exe --request PUT "${StoreBase}/staff/delivery/drivers/${Driver}" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw '{"name":"replace-with-value"}'
+```
+
+**PATCH** `/staff/delivery/drivers/{driver}` — this route accepts PATCH with the same update request shape.
+
+```powershell
+curl.exe --request PATCH "${StoreBase}/staff/delivery/drivers/${Driver}" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw '{"name":"replace-with-value"}'
+```
+
+**POST** `/staff/delivery/drivers/{driver}/deactivate` — staff bearer token. Deactivate a driver
+
+```powershell
+curl.exe --request POST "${StoreBase}/staff/delivery/drivers/${Driver}/deactivate" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
+**POST** `/staff/delivery/drivers/{driver}/reactivate` — staff bearer token. Reactivate a driver
+
+```powershell
+curl.exe --request POST "${StoreBase}/staff/delivery/drivers/${Driver}/reactivate" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
+**POST** `/staff/delivery/drivers/{driver}/setup-codes` — staff bearer token. Issue a PIN setup code
+
+```powershell
+curl.exe --request POST "${StoreBase}/staff/delivery/drivers/${Driver}/setup-codes" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
+#### DriverPin
+
+**POST** `/driver/auth/pin` — public. Choose a PIN with a setup code
+
+```powershell
+curl.exe --request POST "${StoreBase}/driver/auth/pin" `
+  --header 'Accept: application/json' `
+  --header 'Content-Type: application/json' `
+  --data-raw '{"phone":"replace-with-value","setup_code":"replace-with-value","pin":"replace-with-value"}'
+```
+
+**PUT** `/driver/auth/pin` — driver bearer token. Change your PIN
+
+```powershell
+curl.exe --request PUT "${StoreBase}/driver/auth/pin" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $DriverToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw '{"current_pin":"replace-with-value","pin":"replace-with-value"}'
+```
+
+#### DriverPrivacy
+
+**GET** `/staff/delivery/drivers/{driver}/personal-data` — staff bearer token. Get a driver's personal data
+
+```powershell
+curl.exe --request GET "${StoreBase}/staff/delivery/drivers/${Driver}/personal-data" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
+**POST** `/staff/delivery/drivers/{driver}/erasure` — staff bearer token. Erase a driver
+
+```powershell
+curl.exe --request POST "${StoreBase}/staff/delivery/drivers/${Driver}/erasure" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw '{"password":"replace-with-value"}'
 ```
 
 #### EmailChange

@@ -66,4 +66,10 @@ return [
         'view' => 'Zobacz role sklepu i możliwości każdej z nich.',
         'manage' => 'Twórz, zmieniaj nazwy i usuwaj role oraz wybieraj, na co pozwala każda z nich.',
     ],
+    'delivery' => [
+        'view' => 'Przeglądanie kierowców i dostaw sklepu.',
+    ],
+    'drivers' => [
+        'manage' => 'Dodawanie, zmienianie, dezaktywowanie i usuwanie kierowców oraz dawanie im kodów do wyboru PIN-u.',
+    ],
 ];

@@ -200,4 +200,8 @@ return [
     'payment_not_found' => 'There is no payment with this reference at this store.',
     'guest_checkout_not_allowed' => 'This store needs you to sign in or create an account to check out.',
     'tax_document_pdf_not_ready' => 'This document\'s PDF is still being prepared. Try again in a few minutes.',
+    'driver_phone_taken' => '스토어의 다른 기사가 이미 이 전화번호로 로그인하고 있습니다.',
+    'driver_deactivated' => '이 기사는 비활성화되었습니다. 먼저 다시 활성화하세요.',
+    'driver_erased' => '이 기사의 개인 데이터는 삭제되었습니다. 기록은 과거 배송을 위해서만 남아 있습니다.',
+    'invalid_driver_setup_code' => '이 코드가 올바르지 않거나 만료되었습니다. 스토어에 새 코드를 요청하세요.',
 ];

@@ -27,9 +27,10 @@ final class DriverResource extends JsonResource
     {
         return [
             'id' => $this->resource->public_id,
-            'name' => $this->resource->name,
+            // A signed-in driver is never erased, so both are always set here.
+            'name' => (string) $this->resource->name,
             /** In E.164 format. */
-            'phone' => $this->resource->phone,
+            'phone' => (string) $this->resource->phone,
         ];
     }
 }

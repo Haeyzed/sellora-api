@@ -66,4 +66,10 @@ return [
         'view' => 'Visualizza i ruoli del negozio e ciò che ciascuno consente.',
         'manage' => 'Crea, rinomina ed elimina ruoli e scegli cosa consente ciascuno.',
     ],
+    'delivery' => [
+        'view' => 'Vedere gli autisti e le consegne del negozio.',
+    ],
+    'drivers' => [
+        'manage' => 'Aggiungere, modificare, disattivare e cancellare autisti, e dare loro codici per scegliere un PIN.',
+    ],
 ];

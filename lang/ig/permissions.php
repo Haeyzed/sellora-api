@@ -66,4 +66,10 @@ return [
         'view' => 'Hụ ọrụ ụlọ ahịa na ihe onye ọ bụla na-enye ohere.',
         'manage' => 'Mepụta, nyegharịa aha na hichapụ ọrụ, wee họrọ ihe nke ọ bụla na-enye ohere.',
     ],
+    'delivery' => [
+        'view' => 'Hụ ndị ọkwọ ụgbọ na nnyefe nke ụlọ ahịa.',
+    ],
+    'drivers' => [
+        'manage' => 'Tinye, gbanwee, gbanyụọ ma hichapụ ndị ọkwọ ụgbọ, ma nye ha koodu iji họrọ PIN.',
+    ],
 ];

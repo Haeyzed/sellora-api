@@ -66,4 +66,10 @@ return [
         'view' => 'Bekijk de rollen van de winkel en wat elke rol toestaat.',
         'manage' => 'Creëer, hernoem en verwijder rollen, en kies wat elke rol toestaat.',
     ],
+    'delivery' => [
+        'view' => 'De bezorgers en bezorgingen van de winkel bekijken.',
+    ],
+    'drivers' => [
+        'manage' => 'Bezorgers toevoegen, wijzigen, deactiveren en wissen, en hun codes geven om een pincode te kiezen.',
+    ],
 ];

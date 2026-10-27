@@ -21,6 +21,8 @@ return [
         'expired_tokens' => (int) env('RETENTION_EXPIRED_TOKENS_DAYS', 7),
         'expired_password_reset_tokens' => (int) env('RETENTION_EXPIRED_PASSWORD_RESET_TOKENS_DAYS', 1),
         'staff_invitations' => (int) env('RETENTION_STAFF_INVITATIONS_DAYS', 30),
+        // Drivers' PIN setup codes, after they expire; each works once, within hours.
+        'driver_setup_codes' => (int) env('RETENTION_DRIVER_SETUP_CODES_DAYS', 1),
         // Customers' verification and email-change links, after they expire.
         'customer_email_tokens' => (int) env('RETENTION_CUSTOMER_EMAIL_TOKENS_DAYS', 1),
         // Customers left in the trash are erased for good after this; restoring them before then keeps them.

@@ -200,4 +200,8 @@ return [
     'payment_not_found' => 'There is no payment with this reference at this store.',
     'guest_checkout_not_allowed' => 'This store needs you to sign in or create an account to check out.',
     'tax_document_pdf_not_ready' => 'This document\'s PDF is still being prepared. Try again in a few minutes.',
+    'driver_phone_taken' => '商店的另一位司机已在使用此电话号码登录。',
+    'driver_deactivated' => '此司机已停用。请先重新启用。',
+    'driver_erased' => '此司机的个人数据已被删除。记录仅为其过去的配送而保留。',
+    'invalid_driver_setup_code' => '此代码不正确或已过期。请向商店索取新代码。',
 ];

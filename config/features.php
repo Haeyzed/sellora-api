@@ -24,6 +24,8 @@ return [
         'storage_in_megabytes',
         // Currencies a store sells in besides its base currency, which never counts.
         'presentment_currencies',
+        // Active drivers; deactivated ones don't count.
+        'drivers',
     ],
 
     /*

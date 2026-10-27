@@ -34,11 +34,12 @@ it('stores the PIN hashed, never as typed', function (): void {
         ->and(password_verify('482915', $storedPin))->toBeTrue();
 });
 
-it('refuses a phone number without a country code, or a PIN that isn\'t 4 to 6 digits', function (string $phone, string $pin, string $invalidField): void {
+it('refuses a phone number without a country code, or a PIN that isn\'t 6 digits', function (string $phone, string $pin, string $invalidField): void {
     signInAsDriver($phone, $pin)->assertUnprocessable()->assertJsonValidationErrors($invalidField);
 })->with([
     'no country code' => ['08012345678', '482915', 'phone'],
     'PIN with letters' => ['+2348012345678', '48a915', 'pin'],
+    'PIN too short' => ['+2348012345678', '48291', 'pin'],
     'PIN too long' => ['+2348012345678', '4829150', 'pin'],
 ]);
 
