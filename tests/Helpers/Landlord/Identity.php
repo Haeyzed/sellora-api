@@ -6,6 +6,9 @@ use App\Landlord\Identity\Models\PlatformAdmin;
 use App\Landlord\Identity\PlatformAdminInvitationNotification;
 use App\Shared\Auth\AccessTokenIssuer;
 use App\Shared\Auth\Models\Role;
+use chillerlan\QRCode\Output\QRStringText;
+use chillerlan\QRCode\QRCode;
+use chillerlan\QRCode\QROptions;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
@@ -52,6 +55,14 @@ function useFixedTwoFactorSecret(string $secret): void
             return $this->fixedSecret;
         }
     });
+}
+
+/**
+ * The QR code the admin creation command should draw for a setup link, as text blocks.
+ */
+function terminalQrCodeFor(string $setupUrl): string
+{
+    return (new QRCode(new QROptions(['outputInterface' => QRStringText::class])))->render($setupUrl);
 }
 
 /*

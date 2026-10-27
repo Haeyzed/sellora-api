@@ -6,6 +6,7 @@ use App\Landlord\Identity\Enums\PlatformRole;
 use App\Landlord\Identity\Models\PlatformAdmin;
 use App\Shared\Auth\Models\Role;
 use App\Shared\Auth\PasswordResetLinkNotification;
+use App\Shared\Auth\TwoFactor\TwoFactorAuthenticator;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -190,10 +191,14 @@ it('refuses a wrong or reused reset token with the same 422', function (): void 
 it('creates the first super admin from the command line, with two-factor authentication set up before the account exists', function (): void {
     $secret = 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
     useFixedTwoFactorSecret($secret);
+    $setupUrl = app(TwoFactorAuthenticator::class)->setupUrl('grace@sellora.test', $secret);
+    $logged = capturedLogs();
 
     $this->artisan('platform:create-admin', ['--name' => 'Grace Hopper', '--email' => 'Grace@Sellora.test', '--super-admin' => true])
         ->expectsQuestion('Password (at least 12 characters)', 'a-long-founder-password')
-        ->expectsOutputToContain('otpauth://totp/')
+        ->expectsOutputToContain(terminalQrCodeFor($setupUrl))
+        ->expectsOutputToContain($setupUrl)
+        ->expectsOutputToContain($secret)
         ->expectsQuestion('6-digit code from the authenticator app', '000000')
         ->expectsOutputToContain('That code is incorrect')
         ->expectsQuestion('6-digit code from the authenticator app', twoFactorCode($secret))
@@ -206,9 +211,25 @@ it('creates the first super admin from the command line, with two-factor authent
         ->and($this->admin->can('anything.at.all'))->toBeFalse()
         ->and($grace->hasTwoFactorEnabled())->toBeTrue()
         ->and($grace->two_factor_secret)->toBe($secret)
-        ->and($grace->two_factor_recovery_codes)->toHaveCount(8);
+        ->and($grace->two_factor_recovery_codes)->toHaveCount(8)
+        ->and(implode("\n", $logged->getArrayCopy()))->not->toContain($secret)->not->toContain('otpauth');
 
     $this->postJson('/api/v1/platform/auth/tokens', ['email' => 'grace@sellora.test', 'password' => 'a-long-founder-password'])->assertAccepted();
+});
+
+it('leaves out the QR code when asked, for a terminal that can\'t show it, and still shows the setup link and key', function (): void {
+    $secret = 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
+    useFixedTwoFactorSecret($secret);
+
+    $this->artisan('platform:create-admin', ['--name' => 'Grace Hopper', '--email' => 'grace@sellora.test', '--no-qr' => true])
+        ->expectsQuestion('Password (at least 12 characters)', 'a-long-founder-password')
+        ->doesntExpectOutputToContain('█')
+        ->expectsOutputToContain(app(TwoFactorAuthenticator::class)->setupUrl('grace@sellora.test', $secret))
+        ->expectsOutputToContain($secret)
+        ->expectsQuestion('6-digit code from the authenticator app', twoFactorCode($secret))
+        ->assertSuccessful();
+
+    expect(PlatformAdmin::query()->where('email', 'grace@sellora.test')->firstOrFail()->hasTwoFactorEnabled())->toBeTrue();
 });
 
 it('creates no admin when the authenticator code is wrong three times', function (): void {

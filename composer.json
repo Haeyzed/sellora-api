@@ -11,6 +11,7 @@
     "require": {
         "php": "^8.4",
         "brick/money": "^0.15.2",
+        "chillerlan/php-qrcode": "^6.0",
         "commerceguys/addressing": "^2.3.1",
         "dedoc/scramble": "^0.13.47",
         "laravel/framework": "^13.17",

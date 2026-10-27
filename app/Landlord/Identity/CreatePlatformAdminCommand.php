@@ -8,6 +8,9 @@ use App\Landlord\Identity\Actions\CreatePlatformAdmin;
 use App\Landlord\Identity\Enums\PlatformRole;
 use App\Landlord\Identity\Models\PlatformAdmin;
 use App\Shared\Auth\TwoFactor\TwoFactorAuthenticator;
+use chillerlan\QRCode\Output\QRStringText;
+use chillerlan\QRCode\QRCode;
+use chillerlan\QRCode\QROptions;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -21,16 +24,19 @@ use function Laravel\Prompts\text;
  *
  * The password is always typed at a hidden prompt, never passed as an
  * option, so it never ends up in shell history or process lists. Two-factor
- * authentication is set up before the admin is created: the command shows the
- * authenticator secret, asks for a code from the app, and prints the recovery
- * codes once.
+ * authentication is set up before the admin is created: the command shows a
+ * QR code and authenticator secret, asks for a code from the app, and prints
+ * the recovery codes once. The QR code is drawn only in the terminal, from
+ * the same setup link printed under it; --no-qr leaves it out for terminals
+ * that can't show it.
  */
 final class CreatePlatformAdminCommand extends Command
 {
     protected $signature = 'platform:create-admin
         {--name= : Full name}
         {--email= : Email address used to sign in}
-        {--super-admin : Give the new admin every permission}';
+        {--super-admin : Give the new admin every permission}
+        {--no-qr : Leave out the QR code, for terminals that can\'t show it; the setup link and key are shown either way}';
 
     protected $description = 'Create a platform admin, with two-factor authentication set up, who can sign in to the platform admin app';
 
@@ -85,8 +91,17 @@ final class CreatePlatformAdminCommand extends Command
      */
     private function confirmAuthenticatorApp(TwoFactorAuthenticator $twoFactorAuthenticator, string $email, string $twoFactorSecret): ?int
     {
-        $this->components->info('Two-factor authentication is required for platform admins. Add the account to an authenticator app:');
-        $this->components->twoColumnDetail('Setup link (open it, or show it as a QR code)', $twoFactorAuthenticator->setupUrl($email, $twoFactorSecret));
+        $setupUrl = $twoFactorAuthenticator->setupUrl($email, $twoFactorSecret);
+
+        if ($this->option('no-qr') === true) {
+            $this->components->info('Two-factor authentication is required for platform admins. Add the account to an authenticator app:');
+        } else {
+            $this->components->info('Two-factor authentication is required for platform admins. Scan this QR code with an authenticator app:');
+            $this->line((new QRCode(new QROptions(['outputInterface' => QRStringText::class])))->render($setupUrl));
+            $this->line('If the QR code looks garbled, use the setup link or key below, or run the command again with --no-qr.');
+        }
+
+        $this->components->twoColumnDetail('Setup link', $setupUrl);
         $this->components->twoColumnDetail('Or type this key into the app', $twoFactorSecret);
 
         for ($attempt = 1; $attempt <= self::MAXIMUM_CODE_ATTEMPTS; $attempt++) {

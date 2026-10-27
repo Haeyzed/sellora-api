@@ -83,6 +83,19 @@ arch('integrations never use the one-time password library')
     ->expect('Integrations')
     ->not->toUse('PragmaRX\Google2FA');
 
+arch('only the platform admin creation command draws QR codes, in the terminal, so the library stays out of the API')
+    ->expect('App')
+    ->not->toUse('chillerlan\QRCode')
+    ->ignoring('App\Landlord\Identity\CreatePlatformAdminCommand');
+
+arch('modules never use the QR code library')
+    ->expect('Modules')
+    ->not->toUse('chillerlan\QRCode');
+
+arch('integrations never use the QR code library')
+    ->expect('Integrations')
+    ->not->toUse('chillerlan\QRCode');
+
 arch('integrations never import modules')
     ->expect('Integrations')
     ->not->toUse('Modules');
