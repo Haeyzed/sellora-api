@@ -50,6 +50,8 @@ afterEach(function (): void {
 });
 
 it('closes a store: it stops opening, everyone is signed out, and the owner is emailed the purge date', function (): void {
+    // The purge date is compared with today's: the clock is held, so the test can't cross midnight.
+    $this->freezeSecond();
     [$customer, $driver] = $this->store->run(static fn (): array => [Customer::factory()->create(), Driver::factory()->create()]);
     $staffToken = closingStoreToken($this->store, $this->storeOwner, StaffMember::GUARD);
     closingStoreToken($this->store, $customer, Customer::GUARD);
@@ -129,6 +131,8 @@ it('needs the stores.manage permission and a reason', function (): void {
 });
 
 it('lets the owner close their own store with their password, signing them out too', function (): void {
+    // The purge date is compared with today's: the clock is held, so the test can't cross midnight.
+    $this->freezeSecond();
     $staffToken = closingStoreToken($this->store, $this->storeOwner, StaffMember::GUARD);
 
     closeOwnStore(['current_password' => 'not-the-password'])->assertUnprocessable()->assertJsonPath('code', 'current_password_incorrect');

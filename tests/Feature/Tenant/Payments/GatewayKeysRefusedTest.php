@@ -41,6 +41,7 @@ afterEach(function (): void {
 });
 
 it('leaves a payment being verified pending, never failed, and asks the merchant once to reconnect', function (): void {
+    $this->freezeSecond();
     Event::fake([PaymentGatewayNeedsReconnecting::class, PaymentFailed::class]);
     $payment = $this->store->run(static fn (): Payment => startFakePayment(unpaidOrder()));
     $this->script->refusesKeys = true;

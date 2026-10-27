@@ -119,6 +119,8 @@ it('never purges a store before its purge date, nor one that isn\'t closed', fun
 });
 
 it('holds a purged store\'s subdomain for 365 days, so nobody takes over its old links', function (): void {
+    // The hold's end is compared with today's: the clock is held, so the test can't cross midnight.
+    $this->freezeSecond();
     Artisan::call('stores:purge-closed');
 
     expect(app(StoreSubdomains::class)->isTaken('purged-store'))->toBeTrue()
