@@ -100,3 +100,201 @@ function brandedEmailText(Illuminate\Notifications\Notification $notification): 
 
     return $text;
 }
+
+/*
+|--------------------------------------------------------------------------
+| For DocsExamplesTest.php
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * The hand-written guides: the README and every Markdown file under docs/.
+ *
+ * @return list<string>
+ */
+function guideFiles(): array
+{
+    $files = [base_path('README.md')];
+
+    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(base_path('docs'), FilesystemIterator::SKIP_DOTS)) as $file) {
+        if ($file->getExtension() === 'md') {
+            $files[] = $file->getPathname();
+        }
+    }
+
+    sort($files);
+
+    return $files;
+}
+
+function guideName(string $file): string
+{
+    return str_replace('\\', '/', mb_substr($file, mb_strlen(base_path()) + 1));
+}
+
+/**
+ * Every cURL example in a guide, as [method, path]. The address is resolved
+ * through the guide's own "$Base = "$Other/..."" lines, an *Origin variable
+ * being the domain; variables inside the path become "X". Null for the path
+ * when its base variable isn't defined in the guide.
+ *
+ * @return list<array{0: string, 1: string|null, 2: string}>
+ */
+function curlExamplesIn(string $file): array
+{
+    $text = (string) file_get_contents($file);
+    preg_match_all('/\$(\w+)\s*=\s*["\']\$\{?(\w+)\}?(\/[^"\']*)["\']/', $text, $definitions, PREG_SET_ORDER);
+    $bases = [];
+
+    foreach ($definitions as [, $name, $parent, $suffix]) {
+        $bases[$name] = [$parent, $suffix];
+    }
+
+    $resolve = static function (string $name, int $depth = 0) use (&$resolve, $bases): ?string {
+        if (str_ends_with($name, 'Origin')) {
+            return '';
+        }
+
+        if (! isset($bases[$name]) || $depth > 5) {
+            return null;
+        }
+
+        $parent = $resolve($bases[$name][0], $depth + 1);
+
+        return $parent === null ? null : $parent.$bases[$name][1];
+    };
+
+    preg_match_all('/--request\s+(GET|POST|PUT|PATCH|DELETE)\s+"\$\{?(\w+)\}?(\/[^"?]*)?[^"]*"/', $text, $matches, PREG_SET_ORDER);
+    $examples = [];
+
+    foreach ($matches as $match) {
+        $prefix = $resolve($match[2]);
+        $path = $prefix === null ? null : rtrim((string) preg_replace('/\$\{?\w+\}?/', 'X', $prefix.($match[3] ?? '')), '/');
+        $examples[] = [$match[1], $path, '$'.$match[2].($match[3] ?? '')];
+    }
+
+    return $examples;
+}
+
+/**
+ * The application's routes as [method, uri, regex matching a path with any value in each parameter], without HEAD.
+ *
+ * @return list<array{0: string, 1: string, 2: string}>
+ */
+function routesForGuides(): array
+{
+    $routes = [];
+
+    foreach (app('router')->getRoutes() as $route) {
+        $uri = '/'.ltrim($route->uri(), '/');
+        $regex = '#^'.preg_replace('#\\\\\{[^}]+\\\\\}#', '[^/]+', preg_quote($uri, '#')).'$#';
+
+        foreach ($route->methods() as $method) {
+            if ($method !== 'HEAD') {
+                $routes[] = [$method, $uri, $regex];
+            }
+        }
+    }
+
+    return $routes;
+}
+
+/**
+ * Where the guides go wrong about the code, one line each: a cURL example with no route, an API route with no example,
+ * an artisan command, a backticked class name or a relative link that doesn't exist.
+ *
+ * @return array{examples: list<string>, routes: list<string>, commands: list<string>, classes: list<string>, links: list<string>}
+ */
+function guideProblems(): array
+{
+    $problems = ['examples' => [], 'routes' => [], 'commands' => [], 'classes' => [], 'links' => []];
+    $routes = routesForGuides();
+    $covered = [];
+    $commands = array_keys(Illuminate\Support\Facades\Artisan::all());
+    $names = knownCodeNames();
+
+    foreach (guideFiles() as $file) {
+        $guide = guideName($file);
+        $text = (string) file_get_contents($file);
+
+        foreach (curlExamplesIn($file) as [$method, $path, $written]) {
+            $route = $path === null ? null : collect($routes)->first(static fn (array $route): bool => $route[0] === $method && preg_match($route[2], $path) === 1);
+
+            if ($route === null) {
+                $problems['examples'][] = "{$guide}: {$method} {$written}";
+            } else {
+                $covered["{$route[0]} {$route[1]}"] = true;
+            }
+        }
+
+        preg_match_all('/\bartisan\s+([a-z][a-z0-9-]*(?::[a-z0-9-]+)*)/', $text, $commandMatches);
+
+        foreach (array_unique($commandMatches[1]) as $command) {
+            if (! in_array($command, $commands, true)) {
+                $problems['commands'][] = "{$guide}: {$command}";
+            }
+        }
+
+        preg_match_all('/`([A-Z][a-z]+(?:[A-Z][a-z0-9]*)+)`/', $text, $classMatches);
+
+        foreach (array_unique($classMatches[1]) as $name) {
+            if (! isset($names[$name])) {
+                $problems['classes'][] = "{$guide}: {$name}";
+            }
+        }
+
+        preg_match_all('/\]\((?!https?:|mailto:|#)([^)\s#]+)/', $text, $linkMatches);
+
+        foreach (array_unique($linkMatches[1]) as $link) {
+            if (! file_exists(dirname($file).DIRECTORY_SEPARATOR.$link)) {
+                $problems['links'][] = "{$guide}: {$link}";
+            }
+        }
+    }
+
+    foreach ($routes as [$method, $uri]) {
+        if (str_starts_with($uri, '/api/') && ! isset($covered["{$method} {$uri}"])) {
+            $problems['routes'][] = "{$method} {$uri}";
+        }
+    }
+
+    return array_map(static fn (array $list): array => array_values(array_unique($list)), $problems);
+}
+
+/**
+ * Names a guide may put in backticks as code: every class, enum, interface or trait file in the code, every enum case,
+ * and the modules named in CLAUDE.md's catalogue, which may be on the roadmap only.
+ *
+ * @return array<string, true>
+ */
+function knownCodeNames(): array
+{
+    $names = [];
+
+    foreach (['app', 'database', 'integrations', 'modules'] as $folder) {
+        if (! is_dir(base_path($folder))) {
+            continue;
+        }
+
+        foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(base_path($folder), FilesystemIterator::SKIP_DOTS)) as $file) {
+            if ($file->getExtension() !== 'php') {
+                continue;
+            }
+
+            $names[$file->getBasename('.php')] = true;
+            preg_match_all('/^\s*case\s+(\w+)\b/m', (string) file_get_contents($file->getPathname()), $cases);
+
+            foreach ($cases[1] as $case) {
+                $names[$case] = true;
+            }
+        }
+    }
+
+    preg_match_all('/^\|\s*`(\w+)`/m', (string) file_get_contents(base_path('CLAUDE.md')), $modules);
+
+    foreach ($modules[1] as $module) {
+        $names[$module] = true;
+    }
+
+    return $names;
+}
