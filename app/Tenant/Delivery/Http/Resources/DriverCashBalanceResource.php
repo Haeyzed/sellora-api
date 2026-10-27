@@ -12,6 +12,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * The cash a driver holds now, one amount per currency: currencies are never added together.
+ *
+ * @mixin Driver
  */
 final class DriverCashBalanceResource extends JsonResource
 {
@@ -34,8 +36,6 @@ final class DriverCashBalanceResource extends JsonResource
         return [
             /**
              * The driver's public ID.
-             *
-             * @var string
              */
             'driver' => $driver->public_id,
             /**
