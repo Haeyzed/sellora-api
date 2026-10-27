@@ -49,11 +49,25 @@ final readonly class RecordManualPayment
      */
     public function handle(StaffMember $actor, Payment $payment, Money $received, ?string $reference = null, ?PaymentMethod $method = null): Payment
     {
+        $recorded = $this->record(AccountReference::to($actor), $payment, $received, $reference, $method);
+        $this->paymentActivity->record($actor, $recorded, 'payment_recorded', 'Recorded a payment received by '.str_replace('_', ' ', $recorded->method->value));
+
+        return $recorded;
+    }
+
+    /**
+     * Records what arrived for whoever took it, such as a driver collecting cash on delivery (Step 17), without an activity entry: the caller writes its own. Joins the caller's transaction when there is one.
+     *
+     * @throws PaymentNotAwaitingReceiptException
+     * @throws PaymentReceiptInvalidException
+     */
+    public function record(AccountReference $actor, Payment $payment, Money $received, ?string $reference = null, ?PaymentMethod $method = null): Payment
+    {
         if (! $received->isPositive() || ! $received->hasSameCurrencyAs($payment->amount)) {
             throw new PaymentReceiptInvalidException;
         }
 
-        $recorded = DB::transaction(function () use ($actor, $payment, $received, $reference, $method): Payment {
+        return DB::transaction(function () use ($actor, $payment, $received, $reference, $method): Payment {
             $order = Order::query()->whereKey($payment->order_id)->lockForUpdate()->firstOrFail();
             $locked = Payment::query()->whereKey($payment->id)->lockForUpdate()->firstOrFail();
             $isThatMethod = $method === null || $locked->method === $method;
@@ -63,7 +77,7 @@ final readonly class RecordManualPayment
             }
 
             $wasExpected = $locked->status === PaymentStatus::Pending;
-            $this->markReceived($locked, $received, AccountReference::to($actor), $reference);
+            $this->markReceived($locked, $received, $actor, $reference);
 
             if ($received->isLessThan($locked->amount) && $wasExpected && $order->awaitsPayment()) {
                 $this->expectTheRest($locked, $locked->amount->subtract($received));
@@ -77,10 +91,6 @@ final readonly class RecordManualPayment
 
             return $locked;
         });
-
-        $this->paymentActivity->record($actor, $recorded, 'payment_recorded', 'Recorded a payment received by '.str_replace('_', ' ', $recorded->method->value));
-
-        return $recorded;
     }
 
     private function markReceived(Payment $locked, Money $received, AccountReference $actor, ?string $reference): void
