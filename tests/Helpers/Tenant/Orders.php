@@ -54,7 +54,7 @@ function rawOrder(array $order = []): int
 {
     $variant = cartVariant(5000);
     $zone = ShippingZone::query()->firstOrCreate(['name' => 'Everywhere'], ['is_active' => true, 'covers_rest_of_world' => false]);
-    $method = ShippingMethod::query()->first() ?? tap((new ShippingMethod)->forceFill([
+    $method = ShippingMethod::query()->orderBy('id')->first() ?? tap((new ShippingMethod)->forceFill([
         'shipping_zone_id' => $zone->id, 'name' => ['en' => 'Standard'], 'fulfilment' => ShippingFulfilment::Ship, 'pricing' => ShippingPricing::Flat, 'currency' => 'NGN',
     ]))->save();
     $now = now();

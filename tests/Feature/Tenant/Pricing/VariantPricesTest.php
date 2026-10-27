@@ -152,7 +152,7 @@ it('lets staff set and remove fixed prices, and shows what a unit costs in each 
     variantPriceRequest('DELETE', "/{$variant->public_id}/prices/USD")->assertOk()->assertJsonCount(0, 'data.fixed_prices')->assertJsonPath('data.prices.3.price.amount', 100);
 
     $this->store->run(static function (): void {
-        expect(Audit::query()->where('auditable_type', 'fixed_price')->pluck('event')->all())->toBe(['created', 'deleted']);
+        expect(Audit::query()->where('auditable_type', 'fixed_price')->orderBy('id')->pluck('event')->all())->toBe(['created', 'deleted']);
     });
 });
 

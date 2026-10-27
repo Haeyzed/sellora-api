@@ -66,7 +66,7 @@ it('invites someone who joins with their own password and must set up two-factor
         'token' => $token, 'name' => 'Someone Else', 'password' => PLATFORM_TEAM_PASSWORD, 'password_confirmation' => PLATFORM_TEAM_PASSWORD,
     ])->assertUnprocessable()->assertJsonPath('code', 'platform_admin_invitation_invalid');
 
-    expect(Activity::query()->pluck('event')->all())->toBe(['platform_admin_invited', 'platform_admin_joined']);
+    expect(Activity::query()->orderBy('id')->pluck('event')->all())->toBe(['platform_admin_invited', 'platform_admin_joined']);
 });
 
 it('refuses duplicate invitations, and a resent link replaces the old one', function (): void {

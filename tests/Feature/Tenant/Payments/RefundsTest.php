@@ -88,7 +88,7 @@ it('gives back an amount through the payment\'s gateway, with its own reference 
             ->and($this->script->timesCalled('refund', $part->reference))->toBe(1)
             ->and(paymentHistory($payment))->toBe(['started', 'succeeded', 'refund_started', 'refunded'])
             ->and($order->refresh()->payment_status->value)->toBe('partially_refunded')
-            ->and(Activity::query()->inLog('payments')->pluck('description')->last())->toStartWith('Refunded part or all of order');
+            ->and(Activity::query()->inLog('payments')->orderBy('id')->pluck('description')->last())->toStartWith('Refunded part or all of order');
         Queue::assertPushed(CheckRefundWithGateway::class, static fn (CheckRefundWithGateway $job): bool => $job->paymentRefundId === $part->id && $job->checkNumber === 0);
     });
 

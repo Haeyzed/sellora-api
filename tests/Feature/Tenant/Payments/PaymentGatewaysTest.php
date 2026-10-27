@@ -124,7 +124,7 @@ it('keeps the webhook endpoints when keys are replaced, removes keys and endpoin
     expect($replaced->only(['test_endpoint_id', 'live_endpoint_id']))->toBe($first->only(['test_endpoint_id', 'live_endpoint_id']))
         ->and($replaced->mode->value)->toBe('live')
         ->and($replaced->retired_credentials)->toBeNull()
-        ->and($this->store->run(static fn (): array => Activity::query()->inLog('payments')->pluck('description')->all()))->toBe(['Connected the payment gateway fake_gateway', 'Replaced the credentials of the payment gateway fake_gateway']);
+        ->and($this->store->run(static fn (): array => Activity::query()->inLog('payments')->orderBy('id')->pluck('description')->all()))->toBe(['Connected the payment gateway fake_gateway', 'Replaced the credentials of the payment gateway fake_gateway']);
 
     staffOrderRequest('DELETE', '/payment-gateways/fake_gateway/connection')->assertOk()->assertJsonPath('data.credentials_hint', null)->assertJsonPath('data.webhook_urls', ['test' => null, 'live' => null]);
     $this->store->run(static function (): void {

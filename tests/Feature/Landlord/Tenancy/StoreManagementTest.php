@@ -82,7 +82,7 @@ it('suspends a store\'s features while still serving it, separately from billing
     Subscription::query()->where('tenant_id', $store->id)->update(['status' => SubscriptionStatus::Active]);
     app(Features::class)->forget($store->id);
     expect(storeFeatureState($store, 'gift_cards'))->toBe(FeatureState::Enabled)
-        ->and(Activity::query()->where('causer_id', (string) $this->operator->id)->pluck('event')->all())->toBe(['store_suspended', 'store_reactivated']);
+        ->and(Activity::query()->where('causer_id', (string) $this->operator->id)->orderBy('id')->pluck('event')->all())->toBe(['store_suspended', 'store_reactivated']);
 });
 
 it('retries setting up a store only after its setup failed', function (): void {
@@ -148,7 +148,7 @@ it('overrides a usage limit until a date, and the plan\'s limit applies again af
     manageStores('DELETE', "/{$store->public_id}/limit-overrides/products")->assertNoContent();
     expect(app(Features::class)->limitFor($store->id, 'products'))->toBe(100)
         ->and(TenantLimitOverride::query()->count())->toBe(0)
-        ->and(Audit::query()->where('auditable_type', 'limit_override')->pluck('event')->all())->toBe(['created', 'updated', 'deleted']);
+        ->and(Audit::query()->where('auditable_type', 'limit_override')->orderBy('id')->pluck('event')->all())->toBe(['created', 'updated', 'deleted']);
 
     manageStores('PUT', "/{$store->public_id}/limit-overrides/not_a_limit", ['value' => 1, 'reason' => 'Typo'])->assertNotFound();
 });

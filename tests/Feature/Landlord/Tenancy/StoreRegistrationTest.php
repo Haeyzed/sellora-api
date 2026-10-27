@@ -81,7 +81,7 @@ it('registers a store, sets it up on a server in its region, and lets the owner 
         ->and(Subscription::query()->where('tenant_id', $store->id)->sole()->status)->toBe(SubscriptionStatus::Active)
         ->and(StoreRegistration::query()->sole()->password_hash)->toBeNull()
         ->and(LegalAcceptance::query()->where('tenant_id', $store->id)->whereNull('store_registration_id')->count())->toBe(2)
-        ->and(Activity::query()->where('subject_id', $store->id)->pluck('event')->all())->toBe(['store_registered', 'store_provisioned']);
+        ->and(Activity::query()->where('subject_id', $store->id)->orderBy('id')->pluck('event')->all())->toBe(['store_registered', 'store_provisioned']);
 
     $this->postJson(storeUrl('ada-fabrics', '/api/v1/staff/auth/tokens'), ['email' => 'ada@example.com', 'password' => OWNER_PASSWORD])->assertOk();
     tenancy()->end();
@@ -277,7 +277,7 @@ it('marks a store as failed when setting it up fails for good', function (): voi
     $store = Tenant::query()->sole();
     expect($store->status)->toBe(TenantStatus::ProvisioningFailed)
         ->and(StoreRegistration::query()->sole()->password_hash)->not->toBeNull()
-        ->and(Activity::query()->where('subject_id', $store->id)->pluck('event')->all())->toBe(['store_registered', 'store_provisioning_failed']);
+        ->and(Activity::query()->where('subject_id', $store->id)->orderBy('id')->pluck('event')->all())->toBe(['store_registered', 'store_provisioning_failed']);
 });
 
 it('sets the store\'s currency and content language from its country', function (): void {
