@@ -101,6 +101,7 @@ On a fresh project, **the first task is installing and configuring all dependenc
 | Static analysis (dev) | `larastan/larastan` | **level 8**, with a `phpstan.neon` |
 | Formatting (dev) | `laravel/pint` | with a `pint.json` |
 | S3 storage | `league/flysystem-aws-s3-v3` | Laravel's official S3 adapter, for per-region disks (approved in Step 5c) |
+| Terminal QR codes | `chillerlan/php-qrcode` | MIT or Apache-2.0; draws the 2FA setup QR code in `platform:create-admin` only (an architecture rule enforces this) |
 | Address formats | `commerceguys/addressing` | per-country address rules (required fields, postcode patterns) from Google's address data; used only inside `App\Shared\Geography` (approved in Step 10, if compatible with PHP 8.4) |
 
 If a package's skill gives install steps, the skill's steps win over this table. Don't install anything not listed here without asking.
@@ -400,7 +401,7 @@ sellora-api/
 │   ├── Unit/
 │   ├── Pest.php
 │   └── TestCase.php
-├── docs/                             # hand-written guides only when I ask for them (deployment.md, api-testing.md); never generated files
+├── docs/                             # hand-written guides only: README.md (product guide), landlord/ and tenant/ API guides; never generated files
 ├── api-docs/                         # git-ignored output of `composer docs:export` (OpenAPI JSON for Postman)
 ├── composer.json
 ├── phpunit.xml                       # includes module and integration test folders
@@ -1109,6 +1110,7 @@ Names must say exactly what a thing is or does, so the code reads without explan
 - Columns: snake_case. Foreign keys: `{singular}_id`. Booleans: `is_` or `has_` prefix (`is_active`). Timestamps: `_at` suffix (`published_at`).
 - Money columns store integer minor units with a matching currency column: `price_amount`, `price_currency`.
 - Migration files use Laravel's default names (`create_products_table`).
+- **Every table has a comment**, and so do money (`*_amount`, in minor units), status, public ID and hash columns, plus any column whose meaning isn't obvious from its name. New tables set them with `->comment()` when created; a test fails when a required comment is missing. Comments name the enum class rather than copying its values, never contain personal data or secrets, and never say "Sellora". The field reference is generated from these comments into the git-ignored `api-docs/`, never hand-written.
 
 ### Routes, config and other files
 
