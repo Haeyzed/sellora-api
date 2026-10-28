@@ -6,6 +6,12 @@ namespace App\Tenant\Delivery\Services;
 
 use App\Shared\Auth\AccountReference;
 use App\Tenant\Delivery\Enums\DeliveryStatus;
+use App\Tenant\Delivery\Events\DeliveryCancelled;
+use App\Tenant\Delivery\Events\DeliveryCompleted;
+use App\Tenant\Delivery\Events\DeliveryFailed;
+use App\Tenant\Delivery\Events\DeliveryOnTheWay;
+use App\Tenant\Delivery\Events\DeliveryPickedUp;
+use App\Tenant\Delivery\Events\DriverAssigned;
 use App\Tenant\Delivery\Exceptions\DeliveryTransitionNotAllowedException;
 use App\Tenant\Delivery\Models\Delivery;
 use App\Tenant\Delivery\Models\DeliveryStatusChange;
@@ -69,7 +75,7 @@ final readonly class DeliveryProgress
     }
 
     /**
-     * Adds a change to the delivery's history.
+     * Adds a change to the delivery's history, and announces it once the transaction commits (for Messaging, Step 20).
      */
     public function record(Delivery $delivery, ?DeliveryStatus $from, DeliveryStatus $to, ?AccountReference $by): void
     {
@@ -80,6 +86,15 @@ final readonly class DeliveryProgress
             'changed_by_type' => $by?->type,
             'changed_by_id' => $by?->publicId,
         ])->save();
+
+        match ($to) {
+            DeliveryStatus::Assigned => DriverAssigned::dispatch($delivery),
+            DeliveryStatus::PickedUp => DeliveryPickedUp::dispatch($delivery),
+            DeliveryStatus::OnTheWay => DeliveryOnTheWay::dispatch($delivery),
+            DeliveryStatus::Delivered => DeliveryCompleted::dispatch($delivery),
+            DeliveryStatus::Failed => DeliveryFailed::dispatch($delivery),
+            DeliveryStatus::Cancelled => DeliveryCancelled::dispatch($delivery),
+        };
     }
 
     private static function stampFor(DeliveryStatus $status): string
