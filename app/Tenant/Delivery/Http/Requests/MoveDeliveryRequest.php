@@ -9,7 +9,6 @@ use App\Tenant\Delivery\Models\Delivery;
 use App\Tenant\Identity\Concerns\ActsAsStaffMember;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Enum;
 
 /**
  * Staff moving a delivery along for its driver, such as one whose phone died. Needs the delivery.manage permission.
@@ -25,11 +24,15 @@ final class MoveDeliveryRequest extends FormRequest
     }
 
     /**
-     * @return array<string, list<string|Enum>>
+     * @return array<string, list<mixed>>
      */
     public function rules(): array
     {
         return [
+            ...$this->proofRules(
+                required: $this->input('status') === DeliveryStatus::Delivered->value,
+                prohibited: 'prohibited_unless:status,'.DeliveryStatus::Delivered->value,
+            ),
             /** "picked_up", "on_the_way", "delivered" or "failed". */
             'status' => ['required', 'string', Rule::enum(DeliveryStatus::class)->only(DeliveryStatus::driverMoves())],
             /** Who took the goods; required when delivered. */

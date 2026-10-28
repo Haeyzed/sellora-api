@@ -210,4 +210,5 @@ return [
     'shipment_with_driver' => 'Un des livreurs de la boutique a cet envoi. C’est sa livraison qui le fait avancer.',
     'cash_handover_exceeds_balance' => 'C’est plus d’espèces que le livreur n’en détient dans cette devise.',
     'cash_collection_required' => 'Cette livraison comporte des espèces à encaisser. Indiquez le montant encaissé.',
+    'proof_of_delivery_required' => 'La livraison nécessite une preuve : une photo des articles remis, la signature du destinataire, ou les deux.',
 ];

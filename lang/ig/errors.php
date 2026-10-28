@@ -210,4 +210,5 @@ return [
     'shipment_with_driver' => 'Otu n\'ime ndị ọkwọ ụgbọ ụlọ ahịa nwere mbupu a. Nnyefe ya na-ebuga ya n\'ihu kama.',
     'cash_handover_exceeds_balance' => 'Nke ahụ karịrị ego onye ọkwọ ụgbọ ji n\'ego a.',
     'cash_collection_required' => 'Nnyefe a nwere ego a ga-anakọta. Kwuo ole ego a nakọtara.',
+    'proof_of_delivery_required' => 'Nnyefe chọrọ ihe akaebe: foto nke ngwongwo e nyefere, mbinye aka onye natara ya, ma ọ bụ ha abụọ.',
 ];

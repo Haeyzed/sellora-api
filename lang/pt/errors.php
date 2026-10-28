@@ -210,4 +210,5 @@ return [
     'shipment_with_driver' => 'Um dos motoristas da loja tem este envio. É a entrega dele que o faz avançar.',
     'cash_handover_exceeds_balance' => 'Isso é mais dinheiro do que o motorista tem nesta moeda.',
     'cash_collection_required' => 'Esta entrega tem dinheiro a cobrar. Indique quanto foi cobrado.',
+    'proof_of_delivery_required' => 'Entregar exige comprovação: uma foto dos artigos entregues, a assinatura do destinatário ou ambas.',
 ];

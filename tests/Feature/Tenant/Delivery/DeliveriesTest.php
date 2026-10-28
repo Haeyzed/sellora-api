@@ -67,7 +67,7 @@ it('takes a delivery from assigned to delivered, moving its shipment and stock a
 
     driverAppRequest('POST', "deliveries/{$delivery}/on-the-way", token: $this->token)->assertOk()->assertJsonPath('data.status', 'on_the_way');
     driverAppRequest('POST', "deliveries/{$delivery}/delivered", ['recipient_name' => ''], $this->token, headers: ['Idempotency-Key' => 'delivery-key-1'])->assertUnprocessable()->assertJsonValidationErrors('recipient_name');
-    driverAppRequest('POST', "deliveries/{$delivery}/delivered", ['recipient_name' => 'Ada Obi'], $this->token, headers: ['Idempotency-Key' => 'delivery-key-2'])
+    driverAppRequest('POST', "deliveries/{$delivery}/delivered", ['recipient_name' => 'Ada Obi', 'photo' => proofPhoto()], $this->token, headers: ['Idempotency-Key' => 'delivery-key-2'])
         ->assertOk()
         ->assertJsonPath('data.status', 'delivered')
         // Delivered: the driver no longer sees the address.
@@ -117,7 +117,7 @@ it('gives a driver only an own delivery that hasn\'t left, one at a time, and on
 it('moves a delivery only one step at a time, and asks why when it fails', function (): void {
     $delivery = assignedDelivery($this->store, $this->owner, $this->driver)->public_id;
 
-    driverAppRequest('POST', "deliveries/{$delivery}/delivered", ['recipient_name' => 'Ada Obi'], $this->token, headers: ['Idempotency-Key' => 'delivery-key-3'])->assertConflict()->assertJsonPath('code', 'delivery_transition_not_allowed');
+    driverAppRequest('POST', "deliveries/{$delivery}/delivered", ['recipient_name' => 'Ada Obi', 'photo' => proofPhoto()], $this->token, headers: ['Idempotency-Key' => 'delivery-key-3'])->assertConflict()->assertJsonPath('code', 'delivery_transition_not_allowed');
     driverAppRequest('POST', "deliveries/{$delivery}/failed", ['reason' => 'refused'], $this->token)->assertConflict();
     driverAppRequest('POST', "deliveries/{$delivery}/pick-up", token: $this->token)->assertOk();
     driverAppRequest('POST', "deliveries/{$delivery}/pick-up", token: $this->token)->assertConflict();
@@ -147,7 +147,7 @@ it('sends a failed delivery out again with the same driver, who still has the go
     deliveryRequest('POST', "deliveries/{$delivery}/retry", as: $this->owner)->assertConflict();
     deliveryRequest('GET', "deliveries/{$delivery}", as: $this->owner)->assertJsonPath('data.resolution', 'retried')->assertJsonPath('data.holds_goods', false);
 
-    driverAppRequest('POST', "deliveries/{$retry}/delivered", ['recipient_name' => 'Ada Obi'], $this->token, headers: ['Idempotency-Key' => 'delivery-key-4'])->assertOk();
+    driverAppRequest('POST', "deliveries/{$retry}/delivered", ['recipient_name' => 'Ada Obi', 'photo' => proofPhoto()], $this->token, headers: ['Idempotency-Key' => 'delivery-key-4'])->assertOk();
     expect($this->store->run(static fn (): string => Shipment::query()->sole()->status->value))->toBe('delivered');
 });
 
@@ -187,7 +187,7 @@ it('refuses to deactivate or erase a driver who has goods, and takes back what t
     deliveryRequest('POST', "drivers/{$this->driver->public_id}/deactivate", as: $this->owner)->assertConflict()->assertJsonPath('code', 'driver_holds_goods');
     deliveryRequest('POST', "drivers/{$this->driver->public_id}/erasure", ['password' => DELIVERY_STAFF_PASSWORD], $this->owner)->assertConflict()->assertJsonPath('code', 'driver_holds_goods');
 
-    driverAppRequest('POST', "deliveries/{$holding}/delivered", ['recipient_name' => 'Ada Obi'], $this->token, headers: ['Idempotency-Key' => 'delivery-key-5'])->assertOk();
+    driverAppRequest('POST', "deliveries/{$holding}/delivered", ['recipient_name' => 'Ada Obi', 'photo' => proofPhoto()], $this->token, headers: ['Idempotency-Key' => 'delivery-key-5'])->assertOk();
     deliveryRequest('POST', "drivers/{$this->driver->public_id}/deactivate", as: $this->owner)->assertOk();
 
     deliveryRequest('GET', "deliveries/{$waiting}", as: $this->owner)->assertJsonPath('data.status', 'cancelled');
@@ -224,7 +224,7 @@ it('lets staff move a delivery for a driver who can\'t use the app, recorded as 
     deliveryRequest('POST', "deliveries/{$delivery}/status", ['status' => 'cancelled'], $manager, headers: ['Idempotency-Key' => 'delivery-key-7'])->assertUnprocessable()->assertJsonValidationErrors('status');
     deliveryRequest('POST', "deliveries/{$delivery}/status", ['status' => 'picked_up'], $manager, headers: ['Idempotency-Key' => 'delivery-key-8'])->assertOk();
     deliveryRequest('POST', "deliveries/{$delivery}/status", ['status' => 'delivered'], $manager, headers: ['Idempotency-Key' => 'delivery-key-9'])->assertUnprocessable()->assertJsonValidationErrors('recipient_name');
-    deliveryRequest('POST', "deliveries/{$delivery}/status", ['status' => 'delivered', 'recipient_name' => 'Ada Obi'], $manager, headers: ['Idempotency-Key' => 'delivery-key-10'])->assertOk()->assertJsonPath('data.status', 'delivered');
+    deliveryRequest('POST', "deliveries/{$delivery}/status", ['status' => 'delivered', 'recipient_name' => 'Ada Obi', 'photo' => proofPhoto()], $manager, headers: ['Idempotency-Key' => 'delivery-key-10'])->assertOk()->assertJsonPath('data.status', 'delivered');
 
     $changes = deliveryRequest('GET', "deliveries/{$delivery}", as: $this->owner)->json('data.status_changes');
     expect($changes[2]['by_id'])->toBe($manager->public_id);

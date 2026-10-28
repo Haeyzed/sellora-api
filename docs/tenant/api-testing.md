@@ -60,7 +60,7 @@ admin token to a store endpoint.
 
 ## Endpoint cURL reference
 
-The following commands cover all 324 operations in the current tenant
+The following commands cover all 325 operations in the current tenant
 Scramble OpenAPI export, including the shared geography endpoints available
 on the store domain. Request bodies include required fields (or one
 representative field when all are optional); values such as IDs, email
@@ -999,6 +999,18 @@ curl.exe --request POST "${StoreBase}/staff/delivery/deliveries/${Delivery}/stat
   --data-raw '{"status":"replace-with-value"}'
 ```
 
+Moving it to `delivered` takes multipart form data, with a photo, a signature or both:
+
+```powershell
+curl.exe --request POST "${StoreBase}/staff/delivery/deliveries/${Delivery}/status" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken" `
+  --header 'Idempotency-Key: replace-with-unique-request-key' `
+  --form 'status=delivered' `
+  --form 'recipient_name=replace-with-value' `
+  --form 'signature=@C:\path\to\file.png'
+```
+
 **POST** `/staff/delivery/deliveries/{delivery}/retry` — staff bearer token. Send a failed delivery out again
 
 ```powershell
@@ -1013,6 +1025,16 @@ curl.exe --request POST "${StoreBase}/staff/delivery/deliveries/${Delivery}/retr
 curl.exe --request POST "${StoreBase}/staff/delivery/deliveries/${Delivery}/return" `
   --header 'Accept: application/json' `
   --header "Authorization: Bearer $StaffToken"
+```
+
+#### DeliveryProof
+
+**GET** `/staff/delivery/deliveries/{delivery}/proof/{kind}` — staff bearer token. Show a delivery's proof (`photo` or `signature`; the response is the image)
+
+```powershell
+curl.exe --request GET "${StoreBase}/staff/delivery/deliveries/${Delivery}/proof/photo" `
+  --header "Authorization: Bearer $StaffToken" `
+  --output proof-photo.jpg
 ```
 
 #### DiscountPreview
@@ -1169,8 +1191,8 @@ curl.exe --request POST "${StoreBase}/driver/deliveries/${Delivery}/delivered" `
   --header 'Accept: application/json' `
   --header "Authorization: Bearer $DriverToken" `
   --header 'Idempotency-Key: replace-with-unique-request-key' `
-  --header 'Content-Type: application/json' `
-  --data-raw '{"recipient_name":"replace-with-value"}'
+  --form 'recipient_name=replace-with-value' `
+  --form 'photo=@C:\path\to\file.jpg'
 ```
 
 **POST** `/driver/deliveries/{delivery}/failed` — driver bearer token. Report a delivery failed

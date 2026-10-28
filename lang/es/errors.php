@@ -210,4 +210,5 @@ return [
     'shipment_with_driver' => 'Uno de los repartidores de la tienda tiene este envío. Es su entrega la que lo hace avanzar.',
     'cash_handover_exceeds_balance' => 'Es más efectivo del que el repartidor tiene en esta moneda.',
     'cash_collection_required' => 'Esta entrega tiene efectivo por cobrar. Indica cuánto efectivo se cobró.',
+    'proof_of_delivery_required' => 'Entregar requiere una prueba: una foto de la mercancía entregada, la firma del destinatario o ambas.',
 ];

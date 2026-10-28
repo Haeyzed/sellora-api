@@ -91,7 +91,7 @@ it('writes the payment and the ledger entry together, or neither', function (): 
             'delivery_id' => $delivery->id, 'payment_public_id' => 'x', 'recorded_by_type' => 'driver', 'recorded_by_id' => $this->driver->public_id, 'created_at' => now(),
         ]);
 
-        expect(fn () => app(MoveDelivery::class)->deliver($delivery, AccountReference::to($this->driver), 'Ada Obi', $due))->toThrow(QueryException::class, 'driver_cash_entries_one_collection_per_delivery')
+        expect(fn () => app(MoveDelivery::class)->deliver($delivery, AccountReference::to($this->driver), 'Ada Obi', proofOfDelivery(), $due))->toThrow(QueryException::class, 'driver_cash_entries_one_collection_per_delivery')
             ->and(Payment::query()->sole()->status->value)->toBe('pending')
             ->and($delivery->refresh()->status->value)->toBe('picked_up');
     });
@@ -107,7 +107,7 @@ it('never takes cash for a test order into the ledger', function (): void {
 
     expect(driverAppRequest('GET', "deliveries/{$delivery->public_id}", token: $this->token)->json('data'))->toMatchArray(['is_test' => true, 'cash_to_collect' => null]);
     deliverWithCash($delivery->public_id, 5000, $this->token)->assertConflict()->assertJsonPath('code', 'payment_not_awaiting_receipt');
-    driverAppRequest('POST', "deliveries/{$delivery->public_id}/delivered", ['recipient_name' => 'Ada Obi'], $this->token, headers: ['Idempotency-Key' => 'delivered-test-order'])->assertOk();
+    driverAppRequest('POST', "deliveries/{$delivery->public_id}/delivered", ['recipient_name' => 'Ada Obi', 'photo' => proofPhoto()], $this->token, headers: ['Idempotency-Key' => 'delivered-test-order'])->assertOk();
 
     expect($this->store->run(static fn (): int => DriverCashEntry::query()->count()))->toBe(0);
 });

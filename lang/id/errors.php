@@ -210,4 +210,5 @@ return [
     'shipment_with_driver' => 'Salah satu pengemudi toko memegang pengiriman ini. Pengantarannyalah yang memajukannya.',
     'cash_handover_exceeds_balance' => 'Itu lebih banyak dari uang tunai yang dipegang pengemudi dalam mata uang ini.',
     'cash_collection_required' => 'Pengantaran ini ada uang tunai yang harus ditagih. Sebutkan berapa yang ditagih.',
+    'proof_of_delivery_required' => 'Pengantaran memerlukan bukti: foto barang yang diserahkan, tanda tangan penerima, atau keduanya.',
 ];

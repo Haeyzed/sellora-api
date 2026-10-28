@@ -23,6 +23,8 @@ return [
         'staff_invitations' => (int) env('RETENTION_STAFF_INVITATIONS_DAYS', 30),
         // Drivers' PIN setup codes, after they expire; each works once, within hours.
         'driver_setup_codes' => (int) env('RETENTION_DRIVER_SETUP_CODES_DAYS', 1),
+        // Proof of delivery files (photo, signature), counted from the delivery; the delivery and who took the goods stay.
+        'proof_of_delivery' => (int) env('RETENTION_PROOF_OF_DELIVERY_DAYS', 180),
         // Customers' verification and email-change links, after they expire.
         'customer_email_tokens' => (int) env('RETENTION_CUSTOMER_EMAIL_TOKENS_DAYS', 1),
         // Customers left in the trash are erased for good after this; restoring them before then keeps them.

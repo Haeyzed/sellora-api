@@ -7,6 +7,7 @@ use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
 use App\Tenant\Delivery\Http\Controllers\CurrentDriverCashController;
 use App\Tenant\Delivery\Http\Controllers\CurrentDriverController;
 use App\Tenant\Delivery\Http\Controllers\DeliveryController;
+use App\Tenant\Delivery\Http\Controllers\DeliveryProofController;
 use App\Tenant\Delivery\Http\Controllers\DriverCashController;
 use App\Tenant\Delivery\Http\Controllers\DriverController;
 use App\Tenant\Delivery\Http\Controllers\DriverDeliveryController;
@@ -64,6 +65,7 @@ Route::prefix('staff/delivery')
 
         Route::get('deliveries', [DeliveryController::class, 'index'])->name('deliveries.index');
         Route::get('deliveries/{delivery}', [DeliveryController::class, 'show'])->name('deliveries.show');
+        Route::get('deliveries/{delivery}/proof/{kind}', [DeliveryProofController::class, 'show'])->name('deliveries.proof.show');
         Route::post('shipments/{shipment}/deliveries', [DeliveryController::class, 'store'])->name('shipments.deliveries.store');
         Route::post('deliveries/{delivery}/reassign', [DeliveryController::class, 'reassign'])->name('deliveries.reassign');
         Route::post('deliveries/{delivery}/cancel', [DeliveryController::class, 'cancel'])->name('deliveries.cancel');

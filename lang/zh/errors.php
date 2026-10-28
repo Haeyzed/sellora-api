@@ -210,4 +210,5 @@ return [
     'shipment_with_driver' => '此货件在商店的一位司机手中。应由该司机的配送来推进它。',
     'cash_handover_exceeds_balance' => '该金额超过司机持有的此币种现金。',
     'cash_collection_required' => '此配送需要收取现金。请说明收取了多少现金。',
+    'proof_of_delivery_required' => '完成配送需要凭证：交付商品的照片、收件人签名，或两者兼有。',
 ];

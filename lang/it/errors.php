@@ -210,4 +210,5 @@ return [
     'shipment_with_driver' => 'Uno degli autisti del negozio ha questa spedizione. È la sua consegna a farla avanzare.',
     'cash_handover_exceeds_balance' => 'È più contante di quanto l’autista abbia in questa valuta.',
     'cash_collection_required' => 'Questa consegna ha contanti da incassare. Indica quanto è stato incassato.',
+    'proof_of_delivery_required' => 'La consegna richiede una prova: una foto della merce consegnata, la firma del destinatario o entrambe.',
 ];

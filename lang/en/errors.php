@@ -233,5 +233,6 @@ return [
     'shipment_with_driver' => 'One of the store\'s drivers has this shipment. Their delivery moves it along instead.',
     'cash_handover_exceeds_balance' => 'That is more cash than the driver holds in this currency.',
     'cash_collection_required' => 'This delivery has cash to collect. Say how much cash was collected.',
+    'proof_of_delivery_required' => 'Delivering needs proof: a photo of the goods handed over, the recipient\'s signature, or both.',
 
 ];

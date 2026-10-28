@@ -210,4 +210,5 @@ return [
     'shipment_with_driver' => '이 출하는 스토어 기사 중 한 명이 맡고 있습니다. 대신 그 기사의 배송으로 진행됩니다.',
     'cash_handover_exceeds_balance' => '기사가 이 통화로 가지고 있는 현금보다 많습니다.',
     'cash_collection_required' => '이 배송에는 받을 현금이 있습니다. 받은 현금 금액을 입력하세요.',
+    'proof_of_delivery_required' => '배송 완료에는 증빙이 필요합니다. 전달한 상품 사진, 수령인 서명 또는 둘 다를 제출하세요.',
 ];

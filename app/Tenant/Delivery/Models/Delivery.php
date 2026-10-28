@@ -8,6 +8,8 @@ use App\Shared\Concerns\HasPublicId;
 use App\Tenant\Delivery\Enums\DeliveryFailureReason;
 use App\Tenant\Delivery\Enums\DeliveryResolution;
 use App\Tenant\Delivery\Enums\DeliveryStatus;
+use App\Tenant\Delivery\Enums\ProofOfDeliveryKind;
+use App\Tenant\Delivery\Services\ProofOfDeliveryImages;
 use App\Tenant\Orders\Models\Shipment;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
@@ -15,6 +17,9 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
  * One of the store's own drivers taking a shipment to its buyer.
@@ -22,7 +27,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * A shipment has at most one open delivery at a time: assigned, picked up,
  * on the way, or failed and not yet resolved. A failed one stays open, with
  * the goods still with the driver, until staff resolve it with another
- * attempt or by taking the goods back.
+ * attempt or by taking the goods back. A delivered one keeps its proof: a
+ * photo, the recipient's signature, or both, on the store's private disk.
  *
  * @property int $id
  * @property string $public_id
@@ -49,11 +55,27 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read Driver $driver
  * @property-read Collection<int, DeliveryStatusChange> $statusChanges
  */
-final class Delivery extends Model
+final class Delivery extends Model implements HasMedia
 {
     use HasPublicId;
+    use InteractsWithMedia;
 
     protected $dateFormat = 'Y-m-d H:i:sP';
+
+    public function registerMediaCollections(): void
+    {
+        foreach (ProofOfDeliveryKind::cases() as $kind) {
+            $this->addMediaCollection($kind->collection())->singleFile()->useDisk(ProofOfDeliveryImages::disk());
+        }
+    }
+
+    /**
+     * Its proof of this kind; null when there is none, or it was purged.
+     */
+    public function proof(ProofOfDeliveryKind $kind): ?Media
+    {
+        return $this->getFirstMedia($kind->collection());
+    }
 
     /**
      * Whether the driver has the goods: picked up, on the way, or failed and not yet resolved.

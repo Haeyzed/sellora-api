@@ -210,4 +210,5 @@ return [
     'shipment_with_driver' => 'Een van de bezorgers van de winkel heeft deze zending. Zijn bezorging brengt haar verder.',
     'cash_handover_exceeds_balance' => 'Dat is meer contant geld dan de bezorger in deze valuta heeft.',
     'cash_collection_required' => 'Bij deze bezorging moet contant geld worden geïnd. Geef aan hoeveel er is geïnd.',
+    'proof_of_delivery_required' => 'Bezorgen vereist bewijs: een foto van de overhandigde goederen, de handtekening van de ontvanger, of beide.',
 ];

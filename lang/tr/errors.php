@@ -210,4 +210,5 @@ return [
     'shipment_with_driver' => 'Bu gönderi mağazanın sürücülerinden birinde. Onun yerine sürücünün teslimatı onu ilerletir.',
     'cash_handover_exceeds_balance' => 'Bu, sürücünün bu para biriminde elinde bulunan nakitten fazla.',
     'cash_collection_required' => 'Bu teslimatta tahsil edilecek nakit var. Ne kadar tahsil edildiğini belirtin.',
+    'proof_of_delivery_required' => 'Teslim için kanıt gerekir: teslim edilen ürünlerin fotoğrafı, alıcının imzası veya her ikisi.',
 ];

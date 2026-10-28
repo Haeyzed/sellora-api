@@ -210,4 +210,5 @@ return [
     'shipment_with_driver' => 'Tę przesyłkę ma jeden z kierowców sklepu. To jego dostawa ją przesuwa dalej.',
     'cash_handover_exceeds_balance' => 'To więcej gotówki, niż kierowca ma w tej walucie.',
     'cash_collection_required' => 'Przy tej dostawie trzeba pobrać gotówkę. Podaj, ile pobrano.',
+    'proof_of_delivery_required' => 'Doręczenie wymaga dowodu: zdjęcia przekazanego towaru, podpisu odbiorcy lub obu.',
 ];

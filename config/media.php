@@ -29,4 +29,19 @@ return [
         'max_height' => 6000,
     ],
 
+    /*
+    | Proof of delivery: the photo a driver takes of the handed-over goods
+    | and the recipient's signature. Personal data, so they stay on the
+    | store's private disk and are only ever streamed to staff. Same types as
+    | storefront images, smaller limits. Each file is re-encoded on upload,
+    | which drops its metadata (camera, GPS position, time taken).
+    */
+    'proof_of_delivery' => [
+        'disk' => env('PROOF_OF_DELIVERY_DISK', 'local'),
+        'types' => ['jpg', 'jpeg', 'png', 'webp'],
+        'max_kilobytes' => 5 * 1024,
+        'max_width' => 4096,
+        'max_height' => 4096,
+    ],
+
 ];

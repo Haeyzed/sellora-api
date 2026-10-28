@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tenant\Delivery\Http\Resources;
 
+use App\Tenant\Delivery\Enums\ProofOfDeliveryKind;
 use App\Tenant\Delivery\Models\Delivery;
 use App\Tenant\Delivery\Models\DeliveryStatusChange;
 use Illuminate\Http\Request;
@@ -45,6 +46,11 @@ final class DeliveryResource extends JsonResource
             'failure_note' => $delivery->failure_note,
             /** Who took the goods; null unless delivered. */
             'recipient_name' => $delivery->recipient_name,
+            /** Which proof of delivery it keeps; fetch each from its proof endpoint. Both false unless delivered, and again once the files are purged. */
+            'proof' => [
+                'photo' => $delivery->proof(ProofOfDeliveryKind::Photo) !== null,
+                'signature' => $delivery->proof(ProofOfDeliveryKind::Signature) !== null,
+            ],
             /** How a failed delivery was resolved: "retried" or "returned"; null until then. */
             'resolution' => $delivery->resolution?->value,
             'assigned_at' => $delivery->assigned_at->toIso8601String(),

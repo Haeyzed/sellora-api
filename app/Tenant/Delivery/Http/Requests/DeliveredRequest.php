@@ -22,7 +22,7 @@ final class DeliveredRequest extends FormRequest
     }
 
     /**
-     * @return array<string, list<string>>
+     * @return array<string, list<mixed>>
      */
     public function rules(): array
     {
@@ -31,6 +31,7 @@ final class DeliveredRequest extends FormRequest
             'recipient_name' => $this->recipientNameRules(),
             /** The cash collected, in minor units of the order's currency; required when the delivery has cash to collect, refused when it has none. */
             'cash_collected' => $this->cashCollectedRules(),
+            ...$this->proofRules(required: true),
         ];
     }
 }

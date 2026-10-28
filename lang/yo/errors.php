@@ -210,4 +210,5 @@ return [
     'shipment_with_driver' => 'Ọ̀kan nínú àwọn awakọ̀ ilé ìtajà ló ní ẹrù yìí. Ìfijíṣẹ́ rẹ̀ ni ó ń gbé e síwájú dípò.',
     'cash_handover_exceeds_balance' => 'Ìyẹn ju owó tí awakọ̀ náà ní lọ́wọ́ nínú owó yìí.',
     'cash_collection_required' => 'Ìfijíṣẹ́ yìí ní owó tí a ó gbà. Sọ iye owó tí a gbà.',
+    'proof_of_delivery_required' => 'Ìfijíṣẹ́ nílò ẹ̀rí: fọ́tò àwọn ẹrù tí a fà lé lọ́wọ́, ìbuwọ́lù ẹni tí ó gbà á, tàbí méjèèjì.',
 ];

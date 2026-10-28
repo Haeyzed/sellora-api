@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tenant\Delivery\Http\Controllers;
 
 use App\Shared\Auth\AccountReference;
+use App\Shared\Features\Exceptions\UsageLimitReachedException;
 use App\Shared\Http\Controller;
 use App\Tenant\Delivery\Actions\AssignDriver;
 use App\Tenant\Delivery\Actions\CancelDelivery;
@@ -16,6 +17,7 @@ use App\Tenant\Delivery\Exceptions\CashCollectionRequiredException;
 use App\Tenant\Delivery\Exceptions\DeliveryTransitionNotAllowedException;
 use App\Tenant\Delivery\Exceptions\DriverDeactivatedException;
 use App\Tenant\Delivery\Exceptions\DriverErasedException;
+use App\Tenant\Delivery\Exceptions\ProofOfDeliveryRequiredException;
 use App\Tenant\Delivery\Exceptions\ShipmentCannotBeAssignedException;
 use App\Tenant\Delivery\Http\Requests\ChooseDriverRequest;
 use App\Tenant\Delivery\Http\Requests\ListDeliveriesRequest;
@@ -39,7 +41,7 @@ use Illuminate\Http\Response;
  */
 final class DeliveryController extends Controller
 {
-    private const array WITH = ['shipment.order', 'driver'];
+    private const array WITH = ['shipment.order', 'driver', 'media'];
 
     /**
      * List deliveries.
@@ -119,16 +121,19 @@ final class DeliveryController extends Controller
      *
      * Needs the delivery.manage permission and an Idempotency-Key. For a
      * driver who can't use the app, such as one whose phone died: picked up,
-     * on the way, delivered (with who took the goods, and any cash the driver
-     * collected, which goes into their cash ledger) or failed (with why).
-     * Recorded as done by the staff member.
+     * on the way, delivered (as multipart form data, with who took the goods,
+     * a photo of them handed over or the recipient's signature or both, and
+     * any cash the driver collected, which goes into their cash ledger) or
+     * failed (with why). Recorded as done by the staff member.
      *
+     * @throws ProofOfDeliveryRequiredException
      * @throws DeliveryTransitionNotAllowedException
      * @throws ShipmentTransitionNotAllowedException
      * @throws InsufficientStockException
      * @throws CashCollectionRequiredException
      * @throws PaymentNotAwaitingReceiptException
      * @throws PaymentReceiptInvalidException
+     * @throws UsageLimitReachedException
      */
     #[HeaderParameter('Idempotency-Key', 'A new key for each change, 8 to 128 letters, digits, - or _. Sending the same request again with it returns the first answer instead of recording cash twice.', required: true, type: 'string', example: 'delivery-status-2f9c1a7e')]
     public function move(MoveDeliveryRequest $request, Delivery $delivery, MoveDelivery $moveDelivery): DeliveryResource
@@ -137,7 +142,7 @@ final class DeliveryController extends Controller
         $moved = match ($request->nextStatus()) {
             DeliveryStatus::PickedUp => $moveDelivery->pickUp($delivery, $by),
             DeliveryStatus::OnTheWay => $moveDelivery->onTheWay($delivery, $by),
-            DeliveryStatus::Delivered => $moveDelivery->deliver($delivery, $by, $request->recipientName(), $request->cashCollected()),
+            DeliveryStatus::Delivered => $moveDelivery->deliver($delivery, $by, $request->recipientName(), $request->proofOfDelivery(), $request->cashCollected()),
             default => $moveDelivery->fail($delivery, $by, $request->failureReason(), $request->failureNote()),
         };
 

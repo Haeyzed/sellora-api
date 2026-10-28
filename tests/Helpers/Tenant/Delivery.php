@@ -7,8 +7,11 @@ use App\Shared\Auth\AccessTokenIssuer;
 use App\Shared\Auth\AccountReference;
 use App\Shared\Auth\Models\Role;
 use App\Tenant\Delivery\Actions\AssignDriver;
+use App\Tenant\Delivery\Enums\ProofOfDeliveryKind;
 use App\Tenant\Delivery\Models\Delivery;
 use App\Tenant\Delivery\Models\Driver;
+use App\Tenant\Delivery\Services\ProofOfDelivery;
+use App\Tenant\Delivery\Services\ProofOfDeliveryImages;
 use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Orders\Actions\CreateShipment;
@@ -16,6 +19,7 @@ use App\Tenant\Orders\Models\Shipment;
 use App\Tenant\Payments\Actions\FindCashToCollect;
 use App\Tenant\Payments\Actions\StartManualPayment;
 use App\Tenant\Payments\Enums\PaymentMethod;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
@@ -159,14 +163,15 @@ function pendingOwnDelivery(StaffMember $staff, bool $payOnDelivery = false): Sh
 }
 
 /**
- * A store for the delivery tests, in Nigeria, with room for drivers, its owner, and an active driver with a token.
+ * A store for the delivery tests, in Nigeria, with room for drivers and no storage limit (proof of delivery counts towards it), its owner, and an active driver with a token.
  *
  * @return array{store: Tenant, owner: StaffMember, driver: Driver, token: string}
  */
 function deliveryStore(string $subdomain = 'first-store'): array
 {
     $store = createStore($subdomain, ['country_code' => 'NG']);
-    allowDrivers($store->getTenantKey(), 10);
+    test()->featureSource->give($store->getTenantKey(), FakeFeatureSource::snapshot(limits: ['drivers' => 10, 'storage_in_megabytes' => null]));
+    app(App\Shared\Features\Features::class)->forget($store->getTenantKey());
     [$owner, $driver] = $store->run(static function (): array {
         $owner = StaffMember::factory()->create(['password' => DELIVERY_STAFF_PASSWORD]);
         $owner->assignRole(StaffRole::Owner->value);
@@ -226,7 +231,96 @@ function deliverWithCash(string $delivery, ?int $cashCollected, string $token, ?
 {
     driverAppRequest('POST', "deliveries/{$delivery}/pick-up", token: $token);
 
-    return driverAppRequest('POST', "deliveries/{$delivery}/delivered", array_filter(['recipient_name' => 'Ada Obi', 'cash_collected' => $cashCollected], static fn (mixed $value): bool => $value !== null), $token, headers: ['Idempotency-Key' => $key ?? 'delivered-'.Str::lower((string) Str::ulid())]);
+    return driverAppRequest('POST', "deliveries/{$delivery}/delivered", array_filter(['recipient_name' => 'Ada Obi', 'photo' => proofPhoto(), 'cash_collected' => $cashCollected], static fn (mixed $value): bool => $value !== null), $token, headers: ['Idempotency-Key' => $key ?? 'delivered-'.Str::lower((string) Str::ulid())]);
+}
+
+/*
+|--------------------------------------------------------------------------
+| For ProofOfDeliveryTest.php, and every test that delivers
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * A small photo of the goods handed over, as the driver app uploads it.
+ */
+function proofPhoto(string $name = 'proof.jpg', int $width = 40, int $height = 30): UploadedFile
+{
+    return UploadedFile::fake()->image($name, $width, $height);
+}
+
+/**
+ * Proof of delivery ready for MoveDelivery, as a request hands it over: a photo, re-encoded.
+ */
+function proofOfDelivery(): ProofOfDelivery
+{
+    return new ProofOfDelivery([app(ProofOfDeliveryImages::class)->encode(ProofOfDeliveryKind::Photo, proofPhoto()) ?? throw new RuntimeException('The test photo could not be encoded.')]);
+}
+
+/**
+ * The driver handing over the test's picked-up delivery, with the recipient's name and whatever proof is given.
+ *
+ * @param  array<string, mixed>  $data
+ */
+function handOver(array $data, ?string $key = null): TestResponse
+{
+    return driverAppRequest('POST', 'deliveries/'.test()->delivery.'/delivered', ['recipient_name' => 'Ada Obi', ...$data], test()->token, headers: ['Idempotency-Key' => $key ?? 'delivered-'.Str::lower((string) Str::ulid())]);
+}
+
+/**
+ * Gives the test's store room for drivers and this much storage (null for no limit).
+ */
+function storageAllows(?int $megabytes): void
+{
+    test()->featureSource->give(test()->store->getTenantKey(), FakeFeatureSource::snapshot(limits: ['drivers' => 10, 'storage_in_megabytes' => $megabytes]));
+    app(App\Shared\Features\Features::class)->forget(test()->store->getTenantKey());
+}
+
+/**
+ * Records a store file of almost a megabyte, on the given connection, so a 1 MB plan is nearly full.
+ */
+function nearlyFullStorage(?string $connection = null): void
+{
+    DB::connection($connection)->table('media')->insert([
+        'model_type' => 'product', 'model_id' => 1, 'uuid' => (string) Str::uuid(), 'collection_name' => 'gallery',
+        'name' => 'big', 'file_name' => 'big.jpg', 'mime_type' => 'image/jpeg', 'disk' => 'public', 'size' => 1024 * 1024 - 100,
+        'manipulations' => '[]', 'custom_properties' => '[]', 'generated_conversions' => '[]', 'responsive_images' => '[]',
+    ]);
+}
+
+/**
+ * The media files on the test store's private disk (each in its media ID's folder), leaving out its other files such as invoice PDFs.
+ *
+ * @return list<string>
+ */
+function privateStoreFiles(): array
+{
+    $files = test()->store->run(static fn (): array => Illuminate\Support\Facades\Storage::disk('local')->allFiles());
+
+    return array_values(array_filter($files, static fn (string $path): bool => preg_match('#^\d+/#', $path) === 1));
+}
+
+/**
+ * A JPEG whose EXIF says the camera was turned (orientation 6: shown turned a quarter clockwise), with a comment standing in for other metadata such as a GPS position.
+ *
+ * Built by hand: GD writes no EXIF, so the segments are spliced in after the JPEG's start marker.
+ */
+function jpegWithMetadata(string $comment, int $width = 60, int $height = 20): UploadedFile
+{
+    $image = imagecreatetruecolor($width, $height);
+    ob_start();
+    imagejpeg($image);
+    $jpeg = (string) ob_get_clean();
+
+    // A little-endian TIFF header and one IFD entry: tag 0x0112 (Orientation), type SHORT, count 1, value 6.
+    $tiff = "II\x2A\x00\x08\x00\x00\x00"."\x01\x00"."\x12\x01\x03\x00\x01\x00\x00\x00\x06\x00\x00\x00"."\x00\x00\x00\x00";
+    $exif = "Exif\x00\x00".$tiff;
+    $app1 = "\xFF\xE1".pack('n', strlen($exif) + 2).$exif;
+    $com = "\xFF\xFE".pack('n', strlen($comment) + 2).$comment;
+
+    $path = (string) tempnam(sys_get_temp_dir(), 'exif');
+    file_put_contents($path, substr($jpeg, 0, 2).$app1.$com.substr($jpeg, 2));
+
+    return new UploadedFile($path, 'turned.jpg', 'image/jpeg', null, true);
 }
 
 /**

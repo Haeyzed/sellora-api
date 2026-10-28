@@ -210,4 +210,5 @@ return [
     'shipment_with_driver' => 'この出荷はストアのドライバーが担当しています。代わりにそのドライバーの配達で進めてください。',
     'cash_handover_exceeds_balance' => 'ドライバーがこの通貨で持っている現金より多い金額です。',
     'cash_collection_required' => 'この配達には集金があります。集金した金額を入力してください。',
+    'proof_of_delivery_required' => '配達完了には証拠が必要です。受け渡した商品の写真、受取人の署名、またはその両方を提出してください。',
 ];

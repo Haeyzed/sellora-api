@@ -115,6 +115,7 @@ use App\Tenant\Customers\Privacy\SocialIdentityData;
 use App\Tenant\Customers\SocialSignInAttemptRetention;
 use App\Tenant\Customers\SocialSignInTicketRetention;
 use App\Tenant\Customers\TrashedCustomerRetention;
+use App\Tenant\Delivery\DeliveryStoreFiles;
 use App\Tenant\Delivery\DeliveryStoreTables;
 use App\Tenant\Delivery\DriverSetupCodeRetention;
 use App\Tenant\Delivery\Enums\DeliveryPermission;
@@ -125,6 +126,7 @@ use App\Tenant\Delivery\OpenDeliveries;
 use App\Tenant\Delivery\Privacy\DriverAccountData;
 use App\Tenant\Delivery\Privacy\DriverCashData;
 use App\Tenant\Delivery\Privacy\DriverDataSubject;
+use App\Tenant\Delivery\ProofOfDeliveryRetention;
 use App\Tenant\Identity\Enums\StaffPermission;
 use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\IdentityStoreTables;
@@ -521,6 +523,7 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(AuditRetention::class);
             $registry->register(StaffInvitationRetention::class);
             $registry->register(DriverSetupCodeRetention::class);
+            $registry->register(ProofOfDeliveryRetention::class);
             $registry->register(CustomerEmailTokenRetention::class);
             $registry->register(TrashedCustomerRetention::class);
             $registry->register(CustomerDataExportRetention::class);
@@ -554,6 +557,7 @@ final class AppServiceProvider extends ServiceProvider
 
             $registry->addFileSource(SettingsStoreFiles::class);
             $registry->addFileSource(CatalogStoreFiles::class);
+            $registry->addFileSource(DeliveryStoreFiles::class);
 
             return $registry;
         });

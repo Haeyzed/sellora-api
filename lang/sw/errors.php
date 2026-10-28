@@ -210,4 +210,5 @@ return [
     'shipment_with_driver' => 'Mmoja wa madereva wa duka ana usafirishaji huu. Uwasilishaji wake ndio unaousogeza mbele.',
     'cash_handover_exceeds_balance' => 'Hiyo ni pesa taslimu zaidi ya alizonazo dereva kwa sarafu hii.',
     'cash_collection_required' => 'Uwasilishaji huu una pesa taslimu za kukusanya. Sema ni kiasi gani kilikusanywa.',
+    'proof_of_delivery_required' => 'Kuwasilisha kunahitaji uthibitisho: picha ya bidhaa zilizokabidhiwa, sahihi ya mpokeaji, au vyote viwili.',
 ];

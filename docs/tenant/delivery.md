@@ -54,7 +54,8 @@ database guarantees.
   can move one for a driver who can't. Every change, and who made it, is
   kept in an append-only history.
 - Picking up ships the shipment: its stock leaves the shelf. Delivering needs
-  the name of who took the goods, and delivers the shipment.
+  the name of who took the goods and proof (below), and delivers the
+  shipment.
 - Failing needs a reason: recipient not available, address not found,
   refused, unsafe, recipient asked to reschedule, or other (with a note). The
   goods stay with the driver until staff send the delivery out again (the
@@ -72,6 +73,31 @@ database guarantees.
 - A driver sees only their own deliveries: where to collect them, what they
   hold, where they go, and how much cash to collect. The recipient's address
   and phone are shown only while the delivery is under way.
+
+### Proof of delivery
+
+Handing a delivery over always needs a photo of the goods handed over, the
+recipient's signature (as an image), or both, sent as multipart form data
+with the recipient's name. Staff moving a delivery to delivered for a driver
+need the same.
+
+- Images are JPEG, PNG or WebP, never SVG, at most 5 MB and 4096 pixels on
+  either side (`config/media.php`). Dimensions are read from the file's
+  header before it is ever decoded.
+- Each image is decoded and encoded again, which drops its metadata: camera,
+  GPS position, time taken, comments. A photo its camera marked as turned is
+  turned upright first. It is kept as `photo` or `signature`, never under the
+  name it was uploaded with.
+- The files are personal data. They go on the store's private disk, count
+  towards the plan's storage (checked under its lock, so two uploads can't
+  both take the last space), and are saved in the same transaction as the
+  delivery: if anything fails, nothing is delivered and no file stays behind.
+- Staff with `delivery.view` see which proof a delivery has and fetch each
+  file through the API, never cached; there is no public link. Drivers and
+  customers never see proof.
+- The files are purged 180 days after the delivery
+  (`RETENTION_PROOF_OF_DELIVERY_DAYS`); the delivery and who took the goods
+  stay. Until then they are in the store export.
 
 ### Cash held by drivers
 
@@ -104,8 +130,7 @@ routes.
 
 Not built yet:
 
-- proof of delivery (photo or signature);
-- driver location during an active delivery.
+- driver location during an active delivery, and customers following it.
 
 ## Action flow and domain handoffs
 
@@ -121,6 +146,7 @@ calls it through `MoveDelivery` (ship on pick-up, deliver on delivery) and
 `ResolveFailedDelivery` (return to store), and cancels a delivery when its
 shipment is cancelled. Orders asks Delivery, through its `ShipmentDrivers`
 contract, whether a driver has a shipment before staff ship or deliver it.
-Locks go driver, then delivery, then order, then shipment, then payment. See
+Locks go driver, then delivery, then order, then shipment, then payment,
+then the storage limit's advisory lock for proof of delivery. See
 [Shipping](shipping.md) for customer-facing delivery choices and
 [Sellora business flows](business-flows.md) for the current fulfillment path.
