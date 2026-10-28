@@ -76,4 +76,8 @@ return [
     'drivers' => [
         'manage' => 'Ƙara, canza, dakatar da goge direbobi, kuma ba su lambobi don zaɓar PIN.',
     ],
+    'returns' => [
+        'view' => 'Duba kayan da aka dawo, hotunansu da tarihinsu, da saitunan dawowa.',
+        'manage' => 'Fara, amince, ƙi, karɓa, duba da soke dawowar kaya, da canza saitunan dawowa.',
+    ],
 ];

@@ -76,4 +76,8 @@ return [
     'drivers' => [
         'manage' => 'Ṣàfikún, yí padà, dá dúró kí o sì pa àwọn awakọ̀ rẹ́, kí o sì fún wọn ní kóòdù láti yan PIN.',
     ],
+    'returns' => [
+        'view' => 'Wo àwọn ọjà tí wọ́n dá padà, àwọn fọ́tò wọn àti ìtàn wọn, àti ètò ìdápadà.',
+        'manage' => 'Bẹ̀rẹ̀, fọwọ́ sí, kọ̀, gbà, ṣàyẹ̀wò àti fagilé ìdápadà, kí o sì yí ètò ìdápadà padà.',
+    ],
 ];

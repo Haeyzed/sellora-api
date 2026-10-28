@@ -76,4 +76,8 @@ return [
     'drivers' => [
         'manage' => 'Tambah, ubah, nonaktifkan, dan hapus pengemudi, serta beri mereka kode untuk memilih PIN.',
     ],
+    'returns' => [
+        'view' => 'Melihat retur, foto dan riwayatnya, serta pengaturan retur.',
+        'manage' => 'Membuat, menyetujui, menolak, menerima, memeriksa, dan membatalkan retur, serta mengubah pengaturan retur.',
+    ],
 ];

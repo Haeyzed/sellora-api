@@ -76,4 +76,8 @@ return [
     'drivers' => [
         'manage' => 'Adicionar, alterar, desativar e apagar motoristas, e dar-lhes códigos para escolher um PIN.',
     ],
+    'returns' => [
+        'view' => 'Ver as devoluções, as suas fotos e histórico, e as definições de devolução.',
+        'manage' => 'Iniciar, aprovar, rejeitar, receber, inspecionar e cancelar devoluções, e alterar as definições de devolução.',
+    ],
 ];

@@ -76,4 +76,8 @@ return [
     'drivers' => [
         'manage' => 'Sürücü ekleyin, değiştirin, devre dışı bırakın ve silin; PIN seçmeleri için kod verin.',
     ],
+    'returns' => [
+        'view' => 'İadeleri, fotoğraflarını ve geçmişini, ayrıca iade ayarlarını görüntüleme.',
+        'manage' => 'İade başlatma, onaylama, reddetme, teslim alma, inceleme ve iptal etme ile iade ayarlarını değiştirme.',
+    ],
 ];

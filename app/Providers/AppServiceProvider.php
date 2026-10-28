@@ -231,6 +231,10 @@ use App\Tenant\Promotions\PromotionDiscountSource;
 use App\Tenant\Promotions\PromotionPricedRecords;
 use App\Tenant\Promotions\PromotionStoreTables;
 use App\Tenant\Promotions\ReleasedPromotionUseRetention;
+use App\Tenant\Returns\Enums\ReturnPermission;
+use App\Tenant\Returns\Models\OrderReturn;
+use App\Tenant\Returns\Models\ReturnSettings;
+use App\Tenant\Returns\ReturnStoreTables;
 use App\Tenant\Settings\Enums\SettingsPermission;
 use App\Tenant\Settings\Models\StoreSettings;
 use App\Tenant\Settings\Policies\StoreLifecyclePolicy;
@@ -380,6 +384,7 @@ final class AppServiceProvider extends ServiceProvider
             $catalogue->register(OrderPermission::class);
             $catalogue->register(PaymentPermission::class);
             $catalogue->register(DeliveryPermission::class);
+            $catalogue->register(ReturnPermission::class);
 
             return $catalogue;
         });
@@ -558,7 +563,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->singleton(StoreExportRegistry::class, static function (Application $app): StoreExportRegistry {
             $registry = new StoreExportRegistry;
 
-            foreach ([SharedStoreTables::class, IdentityStoreTables::class, SettingsStoreTables::class, CustomerStoreTables::class, DeliveryStoreTables::class, CatalogStoreTables::class, InventoryStoreTables::class, PricingStoreTables::class, PromotionStoreTables::class, CartStoreTables::class, CheckoutStoreTables::class, ShippingStoreTables::class, OrderStoreTables::class, PaymentStoreTables::class] as $storeTables) {
+            foreach ([SharedStoreTables::class, IdentityStoreTables::class, SettingsStoreTables::class, CustomerStoreTables::class, DeliveryStoreTables::class, CatalogStoreTables::class, InventoryStoreTables::class, PricingStoreTables::class, PromotionStoreTables::class, CartStoreTables::class, CheckoutStoreTables::class, ShippingStoreTables::class, OrderStoreTables::class, PaymentStoreTables::class, ReturnStoreTables::class] as $storeTables) {
                 $app->make($storeTables)->classify($registry);
             }
 
@@ -585,6 +590,8 @@ final class AppServiceProvider extends ServiceProvider
             'customer_group' => CustomerGroup::class,
             'driver' => Driver::class,
             'delivery' => Delivery::class,
+            'return' => OrderReturn::class,
+            'return_settings' => ReturnSettings::class,
             'staff_invitation' => StaffInvitation::class,
             'role' => Role::class,
             'store' => Tenant::class,

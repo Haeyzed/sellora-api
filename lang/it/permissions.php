@@ -76,4 +76,8 @@ return [
     'drivers' => [
         'manage' => 'Aggiungere, modificare, disattivare e cancellare autisti, e dare loro codici per scegliere un PIN.',
     ],
+    'returns' => [
+        'view' => 'Vedere i resi, le loro foto e la loro cronologia, e le impostazioni dei resi.',
+        'manage' => 'Avviare, approvare, rifiutare, ricevere, controllare e annullare i resi, e modificare le impostazioni dei resi.',
+    ],
 ];

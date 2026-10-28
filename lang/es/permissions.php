@@ -76,4 +76,8 @@ return [
     'drivers' => [
         'manage' => 'Añadir, cambiar, desactivar y borrar repartidores, y darles códigos para elegir un PIN.',
     ],
+    'returns' => [
+        'view' => 'Ver las devoluciones, sus fotos y su historial, y los ajustes de devoluciones.',
+        'manage' => 'Iniciar, aprobar, rechazar, recibir, revisar y cancelar devoluciones, y cambiar los ajustes de devoluciones.',
+    ],
 ];

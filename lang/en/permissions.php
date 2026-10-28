@@ -97,4 +97,9 @@ return [
         'manage' => 'Add, change, deactivate and erase drivers, and give them codes to choose a PIN with.',
     ],
 
+    'returns' => [
+        'view' => 'See returns, their photos and history, and the return settings.',
+        'manage' => 'Start, approve, reject, receive, inspect and cancel returns, and change the return settings.',
+    ],
+
 ];

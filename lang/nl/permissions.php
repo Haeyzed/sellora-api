@@ -76,4 +76,8 @@ return [
     'drivers' => [
         'manage' => 'Bezorgers toevoegen, wijzigen, deactiveren en wissen, en hun codes geven om een pincode te kiezen.',
     ],
+    'returns' => [
+        'view' => 'Retouren met hun foto\'s en geschiedenis bekijken, en de retourinstellingen.',
+        'manage' => 'Retouren starten, goedkeuren, afwijzen, ontvangen, controleren en annuleren, en de retourinstellingen wijzigen.',
+    ],
 ];

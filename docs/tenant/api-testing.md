@@ -2091,6 +2091,26 @@ curl.exe --request POST "${StoreBase}/staff/catalog/products/${Product}/variants
   --header "Authorization: Bearer $StaffToken"
 ```
 
+#### ReturnSettings
+
+**GET** `/staff/returns/settings` — staff bearer token. Show the return settings
+
+```powershell
+curl.exe --request GET "${StoreBase}/staff/returns/settings" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
+**PATCH** `/staff/returns/settings` — staff bearer token. Change the return settings
+
+```powershell
+curl.exe --request PATCH "${StoreBase}/staff/returns/settings" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw '{"window_days":30,"customer_requests":true,"photos_required":false}'
+```
+
 #### Shipment
 
 **GET** `/staff/orders/{order}/shipments` — staff bearer token. List an order's shipments

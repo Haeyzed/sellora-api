@@ -76,4 +76,8 @@ return [
     'drivers' => [
         'manage' => 'Ajoutez, modifiez, désactivez et effacez des livreurs, et donnez-leur des codes pour choisir un code PIN.',
     ],
+    'returns' => [
+        'view' => 'Voir les retours, leurs photos et leur historique, ainsi que les réglages des retours.',
+        'manage' => 'Créer, approuver, refuser, réceptionner, contrôler et annuler des retours, et modifier les réglages des retours.',
+    ],
 ];

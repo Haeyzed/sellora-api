@@ -76,4 +76,8 @@ return [
     'drivers' => [
         'manage' => 'Fahrer hinzufügen, ändern, deaktivieren und löschen und ihnen Codes zur Wahl einer PIN geben.',
     ],
+    'returns' => [
+        'view' => 'Retouren mit Fotos und Verlauf sowie die Retoureneinstellungen ansehen.',
+        'manage' => 'Retouren anlegen, genehmigen, ablehnen, annehmen, prüfen und stornieren und die Retoureneinstellungen ändern.',
+    ],
 ];

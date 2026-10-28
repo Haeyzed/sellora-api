@@ -76,4 +76,8 @@ return [
     'drivers' => [
         'manage' => 'Dodawanie, zmienianie, dezaktywowanie i usuwanie kierowców oraz dawanie im kodów do wyboru PIN-u.',
     ],
+    'returns' => [
+        'view' => 'Przeglądanie zwrotów, ich zdjęć i historii oraz ustawień zwrotów.',
+        'manage' => 'Tworzenie, zatwierdzanie, odrzucanie, przyjmowanie, sprawdzanie i anulowanie zwrotów oraz zmiana ustawień zwrotów.',
+    ],
 ];

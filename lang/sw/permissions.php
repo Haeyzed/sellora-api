@@ -76,4 +76,8 @@ return [
     'drivers' => [
         'manage' => 'Ongeza, badilisha, zima na futa madereva, na uwape misimbo ya kuchagua PIN.',
     ],
+    'returns' => [
+        'view' => 'Kuona marejesho, picha na historia yake, na mipangilio ya marejesho.',
+        'manage' => 'Kuanzisha, kuidhinisha, kukataa, kupokea, kukagua na kughairi marejesho, na kubadilisha mipangilio ya marejesho.',
+    ],
 ];

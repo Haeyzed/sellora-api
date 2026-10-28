@@ -76,4 +76,8 @@ return [
     'drivers' => [
         'manage' => 'Tinye, gbanwee, gbanyụọ ma hichapụ ndị ọkwọ ụgbọ, ma nye ha koodu iji họrọ PIN.',
     ],
+    'returns' => [
+        'view' => 'Hụ ngwa ahịa e weghachiri, foto ha na akụkọ ha, na ntọala nlọghachi.',
+        'manage' => 'Malite, kwado, jụ, nata, nyochaa ma kagbuo nlọghachi, ma gbanwee ntọala nlọghachi.',
+    ],
 ];
