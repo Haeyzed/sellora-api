@@ -80,7 +80,10 @@ tokens; a token for one never works for another.
    cash. An invoice is issued once an order counts as a sale.
 5. **Fulfilment.** Staff create shipments, which move from pending to shipped
    and delivered, or to ready for pickup and then handed over. Stock leaves
-   the shelf only then.
+   the shelf only then. A store with its own drivers gives each delivery to
+   a driver, who picks it up, hands it over with proof (and collects any
+   cash on delivery) or reports it failed; the buyer can follow it while it
+   is on the way. See [Delivery](tenant/delivery.md).
 6. **Refunds and cancellations.** Staff refund through the original payment
    method; a refund that reduces a sale gets a credit note. Cancelling an
    unshipped order releases its stock and promotion uses.
@@ -97,9 +100,6 @@ tokens; a token for one never works for another.
 These are in the approved build order (CLAUDE.md section 17) but don't exist
 yet:
 
-- **Step 17, Delivery:** staff managing drivers, assigning deliveries,
-  delivery status and proof of delivery, cash collection. Only driver sign-in
-  exists today ([Delivery](tenant/delivery.md)).
 - **Step 18, Returns:** returns with a refund or an exchange. Today a refund
   doesn't put stock back.
 - **Step 19, Storefront:** content pages, menus, banners, SEO, wishlists,

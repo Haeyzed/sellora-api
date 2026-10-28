@@ -63,9 +63,10 @@ flowchart LR
 6. [Payments](payments.md) confirms online or staff-recorded payment.
    [Shipping](shipping.md) determines what the shopper selected;
    Orders creates shipments and advances their fulfillment.
-7. [Delivery](delivery.md) currently supports driver sign-in only; it does
-   not yet assign shipments. [Messaging](messaging.md) is also not yet a
-   central tenant domain.
+7. [Delivery](delivery.md) runs the store's own drivers: staff give a
+   shipment to a driver, who picks it up and hands it over with proof (and
+   any cash on delivery), and the buyer can follow it while it is on the way.
+   [Messaging](messaging.md) is not yet a central tenant domain.
 
 For the action-by-action end-to-end map, read
 [Sellora business flows](business-flows.md).

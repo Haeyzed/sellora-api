@@ -95,8 +95,13 @@ physical lines, staff use `CreateShipment` to split unshipped quantities
 across shipments. `MoveShipment` validates each state transition, records an
 order event, commits reserved stock when the goods leave or are collected,
 and recomputes fulfillment. Shipping provides the chosen method; Inventory
-provides the stock balance and reservation. Delivery currently does not
-assign drivers.
+provides the stock balance and reservation. For the store's own deliveries,
+Delivery moves the shipment through `MoveShipment` (shipped on pick-up,
+delivered on hand-over, returned when a failed delivery comes back); while a
+driver has a shipment, staff can't ship or deliver it here (Orders asks
+through its `ShipmentDrivers` contract). An own-delivery order counts as
+fulfilled only once delivered, and a returned shipment's stock is back on
+the shelf, held for the order, whose payment deadline starts again.
 
 Before fulfillment leaves, `CancelOrder` cancels eligible open shipments and
 releases active inventory and promotion holds. Payments handles any refund

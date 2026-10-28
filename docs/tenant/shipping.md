@@ -63,8 +63,9 @@ promotion can reduce shipping to zero.
 
 Shipping decides what a shopper can choose and what that choice costs.
 Orders owns shipment records and statuses. Inventory identifies the stock
-location tied to pickup or fulfillment. The separate Delivery area currently
-supports driver sign-in, but it does not yet assign shipments to drivers.
+location tied to pickup or fulfillment. The separate [Delivery](delivery.md)
+area gives a "delivered by the store" shipment to one of the store's own
+drivers and moves it along as the driver works.
 
 ## Action flow and domain handoffs
 
@@ -81,7 +82,8 @@ charge before Pricing calculates tax. At order placement, Orders copies the
 selected method, fulfillment type, price, tax, pickup/carrier details and
 estimate into its immutable shipping snapshot. Orders then creates and moves
 shipment records; Inventory commits stock at shipping or pickup collection.
-Delivery currently only signs drivers in and does not assign these shipments.
+For a "delivered by the store" shipment, Delivery gives it to one of the
+store's drivers and moves the shipment along as the driver works.
 
 See [Sellora business flows](business-flows.md) for the full path from quote
 to fulfillment.

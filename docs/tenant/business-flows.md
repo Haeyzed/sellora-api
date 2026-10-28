@@ -61,9 +61,15 @@ detail.
    carrier or own-delivery shipment commits reserved stock when marked
    shipped; pickup stock is committed when the buyer collects it. Order
    fulfillment progress is recalculated after each transition.
-4. [Delivery](delivery.md) currently authenticates drivers, but does not
-   dispatch or assign shipments. For store-run delivery today, the shipment
-   lifecycle is owned by Orders and changed by authorized actors.
+4. For the store's own deliveries, [Delivery](delivery.md) gives a pending
+   shipment to a driver (`AssignDriver`). The driver's pick-up ships it and
+   their hand-over (with the recipient's name, proof, and any cash on
+   delivery, which pays the order through Payments) delivers it, both
+   through `MoveShipment`; while a driver has it, staff can't ship or
+   deliver it in Orders. A failed delivery is retried by the same driver or
+   returned to the store (`MoveShipment::returnToStore`), which puts its
+   stock back on the shelf, still held for the order. Without a driver,
+   staff move own-delivery shipments in Orders as before.
 5. An order is completed when payment and fulfillment are both complete, or
    when no physical fulfillment is required.
 
