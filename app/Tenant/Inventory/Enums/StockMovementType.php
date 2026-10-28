@@ -29,4 +29,13 @@ enum StockMovementType: string
 
     /** Stock that left for an order came back undelivered: on hand again, and held for the order once more. */
     case Returned = 'returned';
+
+    /** Units the buyer sent back (a return, Step 18) went back on the shelf, ready to sell again. */
+    case Restocked = 'restocked';
+
+    /** Units the buyer sent back came back damaged: recorded as they arrive, then written off at once. */
+    case ReturnedDamaged = 'returned_damaged';
+
+    /** Units taken off the books because they can't be sold, such as returned units that came back damaged. */
+    case WrittenOff = 'written_off';
 }
