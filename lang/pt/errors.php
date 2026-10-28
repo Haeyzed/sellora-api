@@ -211,4 +211,5 @@ return [
     'cash_handover_exceeds_balance' => 'Isso é mais dinheiro do que o motorista tem nesta moeda.',
     'cash_collection_required' => 'Esta entrega tem dinheiro a cobrar. Indique quanto foi cobrado.',
     'proof_of_delivery_required' => 'Entregar exige comprovação: uma foto dos artigos entregues, a assinatura do destinatário ou ambas.',
+    'delivery_not_under_way' => 'Esta entrega não foi recolhida nem está a caminho, por isso a sua localização não é registada para ela.',
 ];

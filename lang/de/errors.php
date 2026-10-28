@@ -211,4 +211,5 @@ return [
     'cash_handover_exceeds_balance' => 'Das ist mehr Bargeld, als der Fahrer in dieser Währung hat.',
     'cash_collection_required' => 'Bei dieser Lieferung ist Bargeld zu kassieren. Geben Sie an, wie viel kassiert wurde.',
     'proof_of_delivery_required' => 'Die Zustellung braucht einen Nachweis: ein Foto der übergebenen Ware, die Unterschrift des Empfängers oder beides.',
+    'delivery_not_under_way' => 'Diese Lieferung ist weder abgeholt noch unterwegs, daher wird Ihr Standort dafür nicht erfasst.',
 ];

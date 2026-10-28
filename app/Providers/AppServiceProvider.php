@@ -117,6 +117,7 @@ use App\Tenant\Customers\SocialSignInTicketRetention;
 use App\Tenant\Customers\TrashedCustomerRetention;
 use App\Tenant\Delivery\DeliveryStoreFiles;
 use App\Tenant\Delivery\DeliveryStoreTables;
+use App\Tenant\Delivery\DriverLocationRetention;
 use App\Tenant\Delivery\DriverSetupCodeRetention;
 use App\Tenant\Delivery\Enums\DeliveryPermission;
 use App\Tenant\Delivery\Listeners\CancelDeliveriesWhenShipmentCancelled;
@@ -524,6 +525,7 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(StaffInvitationRetention::class);
             $registry->register(DriverSetupCodeRetention::class);
             $registry->register(ProofOfDeliveryRetention::class);
+            $registry->register(DriverLocationRetention::class);
             $registry->register(CustomerEmailTokenRetention::class);
             $registry->register(TrashedCustomerRetention::class);
             $registry->register(CustomerDataExportRetention::class);

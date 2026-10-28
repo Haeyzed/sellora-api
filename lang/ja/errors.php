@@ -211,4 +211,5 @@ return [
     'cash_handover_exceeds_balance' => 'ドライバーがこの通貨で持っている現金より多い金額です。',
     'cash_collection_required' => 'この配達には集金があります。集金した金額を入力してください。',
     'proof_of_delivery_required' => '配達完了には証拠が必要です。受け渡した商品の写真、受取人の署名、またはその両方を提出してください。',
+    'delivery_not_under_way' => 'この配達は集荷済みでも配達中でもないため、位置情報は記録されません。',
 ];

@@ -211,4 +211,5 @@ return [
     'cash_handover_exceeds_balance' => 'Dat is meer contant geld dan de bezorger in deze valuta heeft.',
     'cash_collection_required' => 'Bij deze bezorging moet contant geld worden geïnd. Geef aan hoeveel er is geïnd.',
     'proof_of_delivery_required' => 'Bezorgen vereist bewijs: een foto van de overhandigde goederen, de handtekening van de ontvanger, of beide.',
+    'delivery_not_under_way' => 'Deze bezorging is niet opgehaald en niet onderweg, dus je locatie wordt er niet voor vastgelegd.',
 ];

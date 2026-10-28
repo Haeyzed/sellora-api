@@ -211,4 +211,5 @@ return [
     'cash_handover_exceeds_balance' => 'Nke ahụ karịrị ego onye ọkwọ ụgbọ ji n\'ego a.',
     'cash_collection_required' => 'Nnyefe a nwere ego a ga-anakọta. Kwuo ole ego a nakọtara.',
     'proof_of_delivery_required' => 'Nnyefe chọrọ ihe akaebe: foto nke ngwongwo e nyefere, mbinye aka onye natara ya, ma ọ bụ ha abụọ.',
+    'delivery_not_under_way' => 'A naghị ebute nnyefe a, ọ nọghịkwa n\'ụzọ, ya mere anaghị edekọ ebe ị nọ maka ya.',
 ];

@@ -68,6 +68,13 @@ final class RateLimitServiceProvider extends ServiceProvider
             $this->perMinute('guest_order')->by($this->orderTokenKey('guest-order', $request)),
             $this->perMinute('guest_order_ip_ceiling')->by($this->ipKey('guest-order-ip-ceiling', $request)),
         ]);
+        // Polling a delivery's location: per signed-in customer or per guest order token (hashed), under a ceiling per address.
+        RateLimiter::for('delivery-tracking', fn (Request $request): array => [
+            $this->perMinute('delivery_tracking')->by($this->trackerKey('delivery-tracking', $request)),
+            $this->perMinute('delivery_tracking_ip_ceiling')->by($this->ipKey('delivery-tracking-ip-ceiling', $request)),
+        ]);
+        // A driver's app sending their location, per driver (requests here are always signed in as one).
+        RateLimiter::for('driver-location', fn (Request $request): Limit => $this->perMinute('driver_location')->by($this->requesterKey('driver-location', $request)));
         RateLimiter::for('cart-creation', fn (Request $request): Limit => $this->perMinute('cart_creation_ip_ceiling')->by($this->ipKey('cart-creation', $request)));
         // The ceiling for promotion codes entered from one address; each cart or customer's own limit is counted where the code is checked (FindPromotionCode).
         RateLimiter::for('coupon-redemption', fn (Request $request): Limit => $this->perMinute('coupon_redemption_ip_ceiling')->by($this->ipKey('coupon-redemption-ip-ceiling', $request)));
@@ -87,6 +94,16 @@ final class RateLimitServiceProvider extends ServiceProvider
         $token = (string) $request->headers->get(CartToken::HEADER, '');
 
         return $token === '' ? $this->ipKey($limitName, $request) : TenantScopedKey::forIdentifier($limitName, $token);
+    }
+
+    /**
+     * The signed-in customer, or else the guest's order by its token (hashed: it is a secret), or else the IP address.
+     */
+    private function trackerKey(string $limitName, Request $request): string
+    {
+        $customerId = $request->bearerToken() === null ? null : Auth::guard(Customer::GUARD)->id();
+
+        return $customerId === null ? $this->orderTokenKey($limitName, $request) : TenantScopedKey::make($limitName, Customer::GUARD, (string) $customerId);
     }
 
     private function orderTokenKey(string $limitName, Request $request): string

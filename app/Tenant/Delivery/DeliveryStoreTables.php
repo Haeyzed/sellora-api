@@ -8,7 +8,7 @@ use App\Shared\Privacy\Contracts\ClassifiesStoreTables;
 use App\Shared\Privacy\StoreExportRegistry;
 
 /**
- * How drivers, their deliveries and the cash they hold appear in a store export. Their PINs and setup codes never leave the store.
+ * How drivers, their deliveries, where they went and the cash they hold appear in a store export. Their PINs and setup codes never leave the store.
  */
 final class DeliveryStoreTables implements ClassifiesStoreTables
 {
@@ -35,6 +35,8 @@ final class DeliveryStoreTables implements ClassifiesStoreTables
         $registry->table('driver_cash_entries', include: [
             'id', 'public_id', 'driver_id', 'type', 'cash_amount', 'cash_currency', 'delivery_id', 'payment_public_id', 'recorded_by_type', 'recorded_by_id', 'created_at',
         ]);
+
+        $registry->table('driver_locations', include: ['id', 'delivery_id', 'driver_id', 'latitude', 'longitude', 'accuracy_meters', 'created_at']);
 
         $registry->table('delivery_status_changes', include: ['id', 'delivery_id', 'from_status', 'to_status', 'changed_by_type', 'changed_by_id', 'created_at']);
     }

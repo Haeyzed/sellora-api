@@ -211,4 +211,5 @@ return [
     'cash_handover_exceeds_balance' => 'To więcej gotówki, niż kierowca ma w tej walucie.',
     'cash_collection_required' => 'Przy tej dostawie trzeba pobrać gotówkę. Podaj, ile pobrano.',
     'proof_of_delivery_required' => 'Doręczenie wymaga dowodu: zdjęcia przekazanego towaru, podpisu odbiorcy lub obu.',
+    'delivery_not_under_way' => 'Ta dostawa nie została odebrana ani nie jest w drodze, więc Twoja lokalizacja nie jest dla niej zapisywana.',
 ];

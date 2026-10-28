@@ -211,4 +211,5 @@ return [
     'cash_handover_exceeds_balance' => '기사가 이 통화로 가지고 있는 현금보다 많습니다.',
     'cash_collection_required' => '이 배송에는 받을 현금이 있습니다. 받은 현금 금액을 입력하세요.',
     'proof_of_delivery_required' => '배송 완료에는 증빙이 필요합니다. 전달한 상품 사진, 수령인 서명 또는 둘 다를 제출하세요.',
+    'delivery_not_under_way' => '이 배송은 픽업되었거나 배송 중이 아니므로 위치가 기록되지 않습니다.',
 ];

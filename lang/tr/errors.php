@@ -211,4 +211,5 @@ return [
     'cash_handover_exceeds_balance' => 'Bu, sürücünün bu para biriminde elinde bulunan nakitten fazla.',
     'cash_collection_required' => 'Bu teslimatta tahsil edilecek nakit var. Ne kadar tahsil edildiğini belirtin.',
     'proof_of_delivery_required' => 'Teslim için kanıt gerekir: teslim edilen ürünlerin fotoğrafı, alıcının imzası veya her ikisi.',
+    'delivery_not_under_way' => 'Bu teslimat alınmadı veya yolda değil, bu yüzden konumunuz onun için kaydedilmez.',
 ];

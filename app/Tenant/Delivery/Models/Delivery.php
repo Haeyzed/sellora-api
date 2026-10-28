@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -54,6 +55,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * @property-read Shipment $shipment
  * @property-read Driver $driver
  * @property-read Collection<int, DeliveryStatusChange> $statusChanges
+ * @property-read DriverLocation|null $latestLocation
  */
 final class Delivery extends Model implements HasMedia
 {
@@ -115,6 +117,34 @@ final class Delivery extends Model implements HasMedia
     public function statusChanges(): HasMany
     {
         return $this->hasMany(DeliveryStatusChange::class)->orderBy('id');
+    }
+
+    /**
+     * Where its driver was while it was under way.
+     *
+     * @return HasMany<DriverLocation, $this>
+     */
+    public function locations(): HasMany
+    {
+        return $this->hasMany(DriverLocation::class);
+    }
+
+    /**
+     * Where its driver was last seen while it was under way.
+     *
+     * @return HasOne<DriverLocation, $this>
+     */
+    public function latestLocation(): HasOne
+    {
+        return $this->hasOne(DriverLocation::class)->latestOfMany();
+    }
+
+    /**
+     * Whether it is picked up or on the way: the only time its driver's location is taken.
+     */
+    public function isUnderWay(): bool
+    {
+        return in_array($this->status, [DeliveryStatus::PickedUp, DeliveryStatus::OnTheWay], true);
     }
 
     /**

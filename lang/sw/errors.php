@@ -211,4 +211,5 @@ return [
     'cash_handover_exceeds_balance' => 'Hiyo ni pesa taslimu zaidi ya alizonazo dereva kwa sarafu hii.',
     'cash_collection_required' => 'Uwasilishaji huu una pesa taslimu za kukusanya. Sema ni kiasi gani kilikusanywa.',
     'proof_of_delivery_required' => 'Kuwasilisha kunahitaji uthibitisho: picha ya bidhaa zilizokabidhiwa, sahihi ya mpokeaji, au vyote viwili.',
+    'delivery_not_under_way' => 'Uwasilishaji huu haujachukuliwa wala hauko njiani, kwa hivyo mahali ulipo hapachukuliwi kwa ajili yake.',
 ];

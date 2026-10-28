@@ -70,6 +70,11 @@ return [
         // A guest's order, per access token, under a ceiling per IP address.
         'guest_order' => (int) env('RATE_LIMIT_GUEST_ORDER', 60),
         'guest_order_ip_ceiling' => (int) env('RATE_LIMIT_GUEST_ORDER_IP_CEILING', 300),
+        // A buyer polling their delivery's location, per customer or per guest order token, under a ceiling per IP address.
+        'delivery_tracking' => (int) env('RATE_LIMIT_DELIVERY_TRACKING', 30),
+        'delivery_tracking_ip_ceiling' => (int) env('RATE_LIMIT_DELIVERY_TRACKING_IP_CEILING', 300),
+        // A driver's app sending their location, per driver: one point every 5 seconds is plenty.
+        'driver_location' => (int) env('RATE_LIMIT_DRIVER_LOCATION', 12),
         'tenant_webhooks' => (int) env('RATE_LIMIT_TENANT_WEBHOOKS', 300),
         // Per webhook endpoint of a store (a gateway's mode), within the store's own limit above.
         'tenant_webhook_endpoints' => (int) env('RATE_LIMIT_TENANT_WEBHOOK_ENDPOINTS', 120),

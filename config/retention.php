@@ -25,6 +25,8 @@ return [
         'driver_setup_codes' => (int) env('RETENTION_DRIVER_SETUP_CODES_DAYS', 1),
         // Proof of delivery files (photo, signature), counted from the delivery; the delivery and who took the goods stay.
         'proof_of_delivery' => (int) env('RETENTION_PROOF_OF_DELIVERY_DAYS', 180),
+        // Drivers' locations, counted from when their delivery ended (delivered, or failed and resolved).
+        'driver_locations' => (int) env('RETENTION_DRIVER_LOCATIONS_DAYS', 30),
         // Customers' verification and email-change links, after they expire.
         'customer_email_tokens' => (int) env('RETENTION_CUSTOMER_EMAIL_TOKENS_DAYS', 1),
         // Customers left in the trash are erased for good after this; restoring them before then keeps them.

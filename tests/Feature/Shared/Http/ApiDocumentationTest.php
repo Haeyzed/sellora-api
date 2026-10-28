@@ -48,7 +48,7 @@ const PAGE_NUMBER_LISTS = [
 ];
 
 const CURSOR_LISTS = [
-    'default' => ['/staff/catalog/products', '/catalog/products', '/staff/inventory/levels', '/staff/inventory/variants/{variant}/movements', '/staff/customers', '/staff/customers/{customer}/notes', '/staff/customers/{customer}/marketing-consents', '/staff/customer-groups/{customerGroup}/members', '/staff/promotions/{promotion}/codes', '/staff/orders', '/staff/customers/{customer}/orders', '/staff/shipments', '/customer/orders', '/staff/payments', '/staff/refunds', '/staff/invoices', '/staff/credit-notes', '/staff/delivery/deliveries', '/staff/delivery/drivers/{driver}/cash-entries', '/driver/deliveries'],
+    'default' => ['/staff/catalog/products', '/catalog/products', '/staff/inventory/levels', '/staff/inventory/variants/{variant}/movements', '/staff/customers', '/staff/customers/{customer}/notes', '/staff/customers/{customer}/marketing-consents', '/staff/customer-groups/{customerGroup}/members', '/staff/promotions/{promotion}/codes', '/staff/orders', '/staff/customers/{customer}/orders', '/staff/shipments', '/customer/orders', '/staff/payments', '/staff/refunds', '/staff/invoices', '/staff/credit-notes', '/staff/delivery/deliveries', '/staff/delivery/deliveries/{delivery}/locations', '/staff/delivery/drivers/{driver}/cash-entries', '/driver/deliveries'],
     'platform' => ['/exchange-rates'],
 ];
 

@@ -211,4 +211,5 @@ return [
     'cash_handover_exceeds_balance' => 'Wannan kuɗi ya fi abin da direban ke riƙe da shi a wannan kuɗin.',
     'cash_collection_required' => 'Wannan isarwar tana da kuɗin da za a karɓa. Faɗi nawa aka karɓa.',
     'proof_of_delivery_required' => 'Isarwa tana buƙatar shaida: hoton kayan da aka miƙa, sa hannun wanda ya karɓa, ko duka biyun.',
+    'delivery_not_under_way' => 'Ba a ɗauki wannan isarwar ba kuma ba ta kan hanya, don haka ba a ɗaukar wurin da kake don ita.',
 ];

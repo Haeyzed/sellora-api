@@ -6,6 +6,7 @@ use App\Landlord\Tenancy\Models\Tenant;
 use App\Shared\Auth\AccessTokenIssuer;
 use App\Shared\Auth\AccountReference;
 use App\Shared\Auth\Models\Role;
+use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Delivery\Actions\AssignDriver;
 use App\Tenant\Delivery\Enums\ProofOfDeliveryKind;
 use App\Tenant\Delivery\Models\Delivery;
@@ -297,6 +298,34 @@ function privateStoreFiles(): array
     $files = test()->store->run(static fn (): array => Illuminate\Support\Facades\Storage::disk('local')->allFiles());
 
     return array_values(array_filter($files, static fn (string $path): bool => preg_match('#^\d+/#', $path) === 1));
+}
+
+/*
+|--------------------------------------------------------------------------
+| For DriverLocationTest.php
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * A delivery of a paid own-delivery order placed by the signed-in customer, assigned to the driver by the staff member, in the given store.
+ */
+function customerOwnDelivery(Tenant $store, StaffMember $staff, Driver $driver, Customer $customer): Delivery
+{
+    return $store->run(static function () use ($staff, $driver, $customer): Delivery {
+        $draft = orderDraft([[cartVariant(10000, stock: 5), 1]], orderShippingMethod(App\Tenant\Shipping\Enums\ShippingFulfilment::OwnDelivery, 'Same day'), buyer: App\Tenant\Orders\Data\OrderBuyer::customer($customer));
+        $order = markPaid(placeOrder($draft))->load('lines');
+        $shipment = app(CreateShipment::class)->handle($order, [$order->lines[0]->public_id => 1], AccountReference::to($staff));
+
+        return app(AssignDriver::class)->handle($staff, $shipment, $driver);
+    });
+}
+
+/**
+ * The driver's app sending a position for the delivery, with the driver's token or none.
+ */
+function sendLocation(string $delivery, ?string $token, float $latitude = 6.4541, float $longitude = 3.3947, ?int $accuracy = 12): TestResponse
+{
+    return driverAppRequest('POST', "deliveries/{$delivery}/locations", array_filter(['latitude' => $latitude, 'longitude' => $longitude, 'accuracy_meters' => $accuracy], static fn (mixed $value): bool => $value !== null), $token);
 }
 
 /**

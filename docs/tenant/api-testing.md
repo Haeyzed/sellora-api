@@ -60,7 +60,7 @@ admin token to a store endpoint.
 
 ## Endpoint cURL reference
 
-The following commands cover all 325 operations in the current tenant
+The following commands cover all 329 operations in the current tenant
 Scramble OpenAPI export, including the shared geography endpoints available
 on the store domain. Request bodies include required fields (or one
 representative field when all are optional); values such as IDs, email
@@ -1027,6 +1027,16 @@ curl.exe --request POST "${StoreBase}/staff/delivery/deliveries/${Delivery}/retu
   --header "Authorization: Bearer $StaffToken"
 ```
 
+#### DeliveryLocation
+
+**GET** `/staff/delivery/deliveries/{delivery}/locations` — staff bearer token. List a delivery's locations
+
+```powershell
+curl.exe --request GET "${StoreBase}/staff/delivery/deliveries/${Delivery}/locations" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
 #### DeliveryProof
 
 **GET** `/staff/delivery/deliveries/{delivery}/proof/{kind}` — staff bearer token. Show a delivery's proof (`photo` or `signature`; the response is the image)
@@ -1035,6 +1045,24 @@ curl.exe --request POST "${StoreBase}/staff/delivery/deliveries/${Delivery}/retu
 curl.exe --request GET "${StoreBase}/staff/delivery/deliveries/${Delivery}/proof/photo" `
   --header "Authorization: Bearer $StaffToken" `
   --output proof-photo.jpg
+```
+
+#### DeliveryTracking
+
+**GET** `/customer/orders/{order}/delivery-tracking` — customer bearer token. Follow my order's delivery
+
+```powershell
+curl.exe --request GET "${StoreBase}/customer/orders/${Order}/delivery-tracking" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $CustomerToken"
+```
+
+**GET** `/guest/orders/{order}/delivery-tracking` — guest order token. Follow my guest order's delivery
+
+```powershell
+curl.exe --request GET "${StoreBase}/guest/orders/${Order}/delivery-tracking" `
+  --header 'Accept: application/json' `
+  --header "X-Order-Token: $OrderToken"
 ```
 
 #### DiscountPreview
@@ -1203,6 +1231,18 @@ curl.exe --request POST "${StoreBase}/driver/deliveries/${Delivery}/failed" `
   --header "Authorization: Bearer $DriverToken" `
   --header 'Content-Type: application/json' `
   --data-raw '{"reason":"replace-with-value"}'
+```
+
+#### DriverLocation
+
+**POST** `/driver/deliveries/{delivery}/locations` — driver bearer token. Send my location
+
+```powershell
+curl.exe --request POST "${StoreBase}/driver/deliveries/${Delivery}/locations" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $DriverToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw '{"latitude":6.4541,"longitude":3.3947}'
 ```
 
 #### DriverPin

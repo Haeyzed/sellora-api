@@ -211,4 +211,5 @@ return [
     'cash_handover_exceeds_balance' => 'Ìyẹn ju owó tí awakọ̀ náà ní lọ́wọ́ nínú owó yìí.',
     'cash_collection_required' => 'Ìfijíṣẹ́ yìí ní owó tí a ó gbà. Sọ iye owó tí a gbà.',
     'proof_of_delivery_required' => 'Ìfijíṣẹ́ nílò ẹ̀rí: fọ́tò àwọn ẹrù tí a fà lé lọ́wọ́, ìbuwọ́lù ẹni tí ó gbà á, tàbí méjèèjì.',
+    'delivery_not_under_way' => 'A kò tíì gbé ìfijíṣẹ́ yìí, kò sì sí lójú ọ̀nà, nítorí náà a kò gba ibi tí o wà fún un.',
 ];

@@ -234,5 +234,6 @@ return [
     'cash_handover_exceeds_balance' => 'That is more cash than the driver holds in this currency.',
     'cash_collection_required' => 'This delivery has cash to collect. Say how much cash was collected.',
     'proof_of_delivery_required' => 'Delivering needs proof: a photo of the goods handed over, the recipient\'s signature, or both.',
+    'delivery_not_under_way' => 'This delivery isn\'t picked up or on the way, so your location isn\'t taken for it.',
 
 ];

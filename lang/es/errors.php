@@ -211,4 +211,5 @@ return [
     'cash_handover_exceeds_balance' => 'Es más efectivo del que el repartidor tiene en esta moneda.',
     'cash_collection_required' => 'Esta entrega tiene efectivo por cobrar. Indica cuánto efectivo se cobró.',
     'proof_of_delivery_required' => 'Entregar requiere una prueba: una foto de la mercancía entregada, la firma del destinatario o ambas.',
+    'delivery_not_under_way' => 'Esta entrega no se ha recogido ni está en camino, así que no se registra tu ubicación para ella.',
 ];

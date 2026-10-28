@@ -211,4 +211,5 @@ return [
     'cash_handover_exceeds_balance' => 'Itu lebih banyak dari uang tunai yang dipegang pengemudi dalam mata uang ini.',
     'cash_collection_required' => 'Pengantaran ini ada uang tunai yang harus ditagih. Sebutkan berapa yang ditagih.',
     'proof_of_delivery_required' => 'Pengantaran memerlukan bukti: foto barang yang diserahkan, tanda tangan penerima, atau keduanya.',
+    'delivery_not_under_way' => 'Pengantaran ini belum diambil atau sedang dalam perjalanan, jadi lokasi Anda tidak dicatat untuknya.',
 ];

@@ -99,6 +99,25 @@ need the same.
   (`RETENTION_PROOF_OF_DELIVERY_DAYS`); the delivery and who took the goods
   stay. Until then they are in the store export.
 
+### Driver location and following a delivery
+
+The driver app sends where the driver is while a delivery is picked up or on
+the way (at most 12 points a minute per driver, `RATE_LIMIT_DRIVER_LOCATION`).
+At any other time, or for another driver's delivery, nothing is stored: a
+delivery that isn't under way answers 409 `delivery_not_under_way`, and a
+point sent while the delivery is being delivered waits for it and is then
+refused, so no point is ever kept after a delivery ends.
+
+- Staff with `delivery.view` see a delivery's whole trail, oldest first.
+- The order's buyer (a signed-in customer, or a guest with the order's token
+  in the `X-Order-Token` header, never the URL) polls the order's delivery
+  tracking. It shows only deliveries on the way right now, each with the
+  driver's first name and latest point: never the trail, the driver's full
+  name or phone, or proof of delivery. Rate limited per customer or order
+  token, under a ceiling per address (`RATE_LIMIT_DELIVERY_TRACKING`).
+- Locations are personal data, purged 30 days after their delivery ends
+  (delivered, or failed and resolved; `RETENTION_DRIVER_LOCATIONS_DAYS`).
+
 ### Cash held by drivers
 
 For an order paid in cash on delivery, the driver app shows how much cash to
@@ -130,7 +149,10 @@ routes.
 
 Not built yet:
 
-- driver location during an active delivery, and customers following it.
+- the driver's deliveries and locations in their personal data export, and
+  their locations deleted when they are erased;
+- recipients' names, failure notes, proof and the drivers' locations near
+  them cleared when an order is anonymised.
 
 ## Action flow and domain handoffs
 
