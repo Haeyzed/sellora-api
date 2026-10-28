@@ -32,6 +32,8 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property Money $shipping_tax
  * @property RefundPurpose $purpose Whether it reduces the sale, which gets a credit note, or returns money that was never part of it.
  * @property string|null $reason
+ * @property Money $withheld What staff kept back from the lines given back (Returns, Step 18); their amounts are already less this. Zero when nothing was.
+ * @property string|null $withheld_reason Why it was kept back; set exactly when something was.
  * @property string|null $idempotency_key The client's.
  * @property string $requested_by_type By morph name.
  * @property string $requested_by_id
@@ -88,6 +90,7 @@ final class Refund extends Model implements AuditableContract
             'amount' => MoneyCast::class.':currency',
             'shipping' => MoneyCast::class.':currency',
             'shipping_tax' => MoneyCast::class.':currency',
+            'withheld' => MoneyCast::class.':currency',
             'purpose' => RefundPurpose::class,
             'created_at' => 'immutable_datetime',
         ];

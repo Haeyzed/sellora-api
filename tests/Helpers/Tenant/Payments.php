@@ -254,13 +254,16 @@ function gatewayPaidOrder(?array $lines = null): array
 }
 
 /**
- * Staff (the owner unless another is given) refunding an order: an amount in minor units of its currency, or lines (units by line public ID) and shipping; from one payment when given, and with a purpose when given.
+ * Staff (the owner unless another is given) refunding an order: an amount in minor units of its currency, or lines (units by line public ID) and shipping; from one payment when given, with a purpose when given, and keeping back part of the lines (in minor units) with its reason when given.
  *
  * @param  array<string, int>  $lines
  */
-function refundOrder(Order $order, ?int $amount = null, array $lines = [], bool $shipping = false, ?Payment $from = null, ?string $idempotencyKey = null, ?StaffMember $as = null, ?RefundPurpose $purpose = null): Refund
+function refundOrder(Order $order, ?int $amount = null, array $lines = [], bool $shipping = false, ?Payment $from = null, ?string $idempotencyKey = null, ?StaffMember $as = null, ?RefundPurpose $purpose = null, ?int $withheld = null, ?string $withheldReason = null): Refund
 {
-    $request = new RefundRequest($amount === null ? null : Money::ofMinor($amount, $order->currency), $lines, $shipping, $from?->public_id, 'Changed their mind', $idempotencyKey, $purpose);
+    $request = new RefundRequest(
+        $amount === null ? null : Money::ofMinor($amount, $order->currency), $lines, $shipping, $from?->public_id, 'Changed their mind', $idempotencyKey, $purpose,
+        $withheld === null ? null : Money::ofMinor($withheld, $order->currency), $withheldReason,
+    );
 
     return test()->store->run(static fn (): Refund => app(RefundOrder::class)->handle($as ?? test()->owner, $order, $request));
 }

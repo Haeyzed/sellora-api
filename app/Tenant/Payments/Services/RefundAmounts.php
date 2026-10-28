@@ -58,6 +58,39 @@ final readonly class RefundAmounts
     }
 
     /**
+     * The lines with an amount kept back from them (Returns, Step 18): spread across them by what each is worth, by largest remainder, each line's tax going down in the same proportion. Must be less than the lines are worth.
+     *
+     * @param  list<RefundedLine>  $lines
+     * @return list<RefundedLine>
+     *
+     * @throws RefundInvalidException When there are no lines, or it isn't positive, or is at least what the lines are worth.
+     */
+    public function withhold(array $lines, Money $withheld): array
+    {
+        if ($lines === []) {
+            throw new RefundInvalidException;
+        }
+
+        $worth = Money::sum($withheld->currency(), array_map(static fn (RefundedLine $line): Money => $line->amount, $lines));
+
+        if (! $withheld->isPositive() || ! $withheld->hasSameCurrencyAs($worth) || ! $withheld->isLessThan($worth)) {
+            throw new RefundInvalidException;
+        }
+
+        $parts = $withheld->allocate(array_map(static fn (RefundedLine $line): int => $line->amount->minorAmount(), $lines));
+        $kept = [];
+
+        foreach ($lines as $index => $line) {
+            $part = $parts[$index];
+            // The tax kept back is the line's share of tax in what is kept back from it.
+            $taxPart = $line->amount->isZero() ? Money::zero($line->tax->currency()) : $part->allocate([$line->tax->minorAmount(), $line->amount->minorAmount() - $line->tax->minorAmount()])[0];
+            $kept[] = new RefundedLine($line->line, $line->quantity, $line->amount->subtract($part), $line->tax->subtract($taxPart));
+        }
+
+        return $kept;
+    }
+
+    /**
      * What was charged for shipping and its tax, when asked for; throws when nothing was charged or it was already given back.
      *
      * @return array{Money, Money} The shipping, tax included, and its tax; zero when not asked for.

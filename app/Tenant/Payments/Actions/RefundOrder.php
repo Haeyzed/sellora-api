@@ -61,6 +61,11 @@ use Illuminate\Support\Str;
  * an order that was sold is a price reduction unless staff say it gives back
  * the overpayment. Reductions never add up to more than the order's total,
  * nor overpayments given back to more than was paid over it.
+ *
+ * Returns (Step 18) may keep part of a refund of lines back, with a reason,
+ * when a return breaks the condition a discount depended on: it comes off the
+ * lines themselves (RefundAmounts::withhold), so their credit note credits
+ * only what went back.
  */
 final readonly class RefundOrder
 {
@@ -104,7 +109,7 @@ final readonly class RefundOrder
     }
 
     /**
-     * An amount, or lines and shipping, never both and never nothing.
+     * An amount, or lines and shipping, never both and never nothing. Anything kept back is kept from lines, and always says why.
      *
      * @throws RefundInvalidException
      */
@@ -112,8 +117,11 @@ final readonly class RefundOrder
     {
         $byItems = $request->lines !== [] || $request->shipping;
         $amountIsValid = $request->amount === null || $request->amount->isPositive();
+        $withholdingIsValid = $request->withheld === null
+            ? $request->withheldReason === null
+            : $request->lines !== [] && $request->withheld->isPositive() && trim((string) $request->withheldReason) !== '';
 
-        if ($byItems === $request->isByAmount() || ! $amountIsValid) {
+        if ($byItems === $request->isByAmount() || ! $amountIsValid || ! $withholdingIsValid) {
             throw new RefundInvalidException;
         }
     }
@@ -140,6 +148,7 @@ final readonly class RefundOrder
         $this->ensureOrderHoldsMoney($locked);
         $purpose = $this->purpose($locked, $request);
         $lines = $this->refundAmounts->lines($locked, $request);
+        $lines = $request->withheld === null ? $lines : $this->refundAmounts->withhold($lines, $request->withheld);
         [$shipping, $shippingTax] = $this->refundAmounts->shipping($locked, $request);
         $amount = $request->amount ?? Money::sum($locked->currency, [$shipping, ...array_map(static fn (RefundedLine $line): Money => $line->amount, $lines)]);
 
@@ -356,6 +365,8 @@ final readonly class RefundOrder
             'shipping_tax' => $shippingTax,
             'purpose' => $purpose,
             'reason' => $request->reason,
+            'withheld' => $request->withheld ?? Money::zero($order->currency),
+            'withheld_reason' => $request->withheld === null ? null : trim((string) $request->withheldReason),
             'idempotency_key' => $request->idempotencyKey,
             'requested_by_type' => $actor->type,
             'requested_by_id' => $actor->publicId,

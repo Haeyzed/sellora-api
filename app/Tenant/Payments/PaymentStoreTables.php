@@ -32,8 +32,8 @@ final class PaymentStoreTables implements ClassifiesStoreTables
         $registry->table('payment_method_settings', include: ['id', 'method', 'enabled', 'deadline_hours', 'collection_alert_hours', 'instructions', 'created_at', 'updated_at']);
         $registry->table('payment_events', include: ['id', 'payment_id', 'type', 'data', 'actor_type', 'actor_id', 'created_at']);
         $registry->table('refunds', include: [
-            'id', 'public_id', 'order_id', 'currency', 'amount_amount', 'shipping_amount', 'shipping_tax_amount', 'purpose', 'reason', 'idempotency_key',
-            'requested_by_type', 'requested_by_id', 'created_at',
+            'id', 'public_id', 'order_id', 'currency', 'amount_amount', 'shipping_amount', 'shipping_tax_amount', 'purpose', 'reason', 'withheld_amount',
+            'withheld_reason', 'idempotency_key', 'requested_by_type', 'requested_by_id', 'created_at',
         ]);
         $registry->table('refund_lines', include: ['id', 'refund_id', 'order_line_id', 'quantity', 'currency', 'amount_amount', 'tax_amount', 'created_at']);
         $registry->table('payment_refunds', include: [
