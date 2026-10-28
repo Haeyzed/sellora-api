@@ -328,6 +328,20 @@ function sendLocation(string $delivery, ?string $token, float $latitude = 6.4541
     return driverAppRequest('POST', "deliveries/{$delivery}/locations", array_filter(['latitude' => $latitude, 'longitude' => $longitude, 'accuracy_meters' => $accuracy], static fn (mixed $value): bool => $value !== null), $token);
 }
 
+/*
+|--------------------------------------------------------------------------
+| For DeliveryPrivacyTest.php
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * The driver reporting the test's delivery failed, with a note that names someone near the buyer.
+ */
+function failWithNote(): void
+{
+    driverAppRequest('POST', 'deliveries/'.test()->delivery.'/failed', ['reason' => 'other', 'note' => 'Gate locked, neighbour Mrs Bello said call later'], test()->token)->assertOk();
+}
+
 /**
  * A JPEG whose EXIF says the camera was turned (orientation 6: shown turned a quarter clockwise), with a comment standing in for other metadata such as a GPS position.
  *

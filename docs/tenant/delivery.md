@@ -39,8 +39,11 @@ code and a PIN of their own choosing in the driver app; that signs them in.
 - A new phone number clears the PIN and signs the driver out, so staff issue
   a new code.
 - Staff answer a driver's data-protection request: see everything held about
-  them, or erase them with their own password. Erasing clears the name, phone
-  and PIN and keeps the row, so past deliveries still point at someone.
+  them (their account, their deliveries without anything about the buyers,
+  the status changes they made, their locations and their cash ledger), or
+  erase them with their own password. Erasing clears the name, phone and PIN
+  and deletes their locations; the row, deliveries and cash ledger stay as
+  business records, still pointing at the erased driver.
 
 ### Deliveries
 
@@ -145,14 +148,15 @@ phone in that store for a while, so a short PIN is hard to guess. A
 deactivated driver can't sign in. The access token works only on driver
 routes.
 
-## Planned (Step 17, Delivery)
+### Buyers' data in deliveries
 
-Not built yet:
-
-- the driver's deliveries and locations in their personal data export, and
-  their locations deleted when they are erased;
-- recipients' names, failure notes, proof and the drivers' locations near
-  them cleared when an order is anonymised.
+When an order is anonymised (its customer or guest buyer is erased, or its
+retention ends), its deliveries lose who took the goods, failure notes,
+proof of delivery and the driver's locations, in the same erasure run; the
+deliveries keep their statuses and times and are marked anonymised. Proof
+files are deleted once that run commits, so one that rolls back loses
+nothing. A delivered delivery without who took the goods is refused by the
+database unless it has been anonymised.
 
 ## Action flow and domain handoffs
 

@@ -28,7 +28,7 @@ final class DeliveryStoreTables implements ClassifiesStoreTables
 
         $registry->table('deliveries', include: [
             'id', 'public_id', 'shipment_id', 'driver_id', 'attempt', 'status', 'failure_reason', 'failure_note', 'recipient_name',
-            'assigned_at', 'picked_up_at', 'on_the_way_at', 'delivered_at', 'failed_at', 'cancelled_at', 'resolved_at', 'resolution',
+            'assigned_at', 'picked_up_at', 'on_the_way_at', 'delivered_at', 'failed_at', 'cancelled_at', 'resolved_at', 'resolution', 'anonymised_at',
             'assigned_by_type', 'assigned_by_id', 'created_at', 'updated_at',
         ]);
 

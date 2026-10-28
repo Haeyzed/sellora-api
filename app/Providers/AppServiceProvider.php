@@ -121,12 +121,15 @@ use App\Tenant\Delivery\DriverLocationRetention;
 use App\Tenant\Delivery\DriverSetupCodeRetention;
 use App\Tenant\Delivery\Enums\DeliveryPermission;
 use App\Tenant\Delivery\Listeners\CancelDeliveriesWhenShipmentCancelled;
+use App\Tenant\Delivery\Listeners\ForgetRecipientsWhenOrderAnonymised;
 use App\Tenant\Delivery\Models\Delivery;
 use App\Tenant\Delivery\Models\Driver;
 use App\Tenant\Delivery\OpenDeliveries;
 use App\Tenant\Delivery\Privacy\DriverAccountData;
 use App\Tenant\Delivery\Privacy\DriverCashData;
 use App\Tenant\Delivery\Privacy\DriverDataSubject;
+use App\Tenant\Delivery\Privacy\DriverDeliveryData;
+use App\Tenant\Delivery\Privacy\DriverLocationData;
 use App\Tenant\Delivery\ProofOfDeliveryRetention;
 use App\Tenant\Identity\Enums\StaffPermission;
 use App\Tenant\Identity\Enums\StaffRole;
@@ -496,6 +499,8 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(GuestDataSubject::TYPE, 'tax_documents', TaxDocumentData::class);
             $registry->register(GuestDataSubject::TYPE, 'checkouts', CheckoutData::class);
 
+            $registry->register(DriverDataSubject::TYPE, 'deliveries', DriverDeliveryData::class);
+            $registry->register(DriverDataSubject::TYPE, 'locations', DriverLocationData::class);
             $registry->register(DriverDataSubject::TYPE, 'cash', DriverCashData::class);
             $registry->register(DriverDataSubject::TYPE, 'account', DriverAccountData::class);
 
@@ -734,6 +739,7 @@ final class AppServiceProvider extends ServiceProvider
         Event::listen(OrderCancelled::class, RefundCommittedPaymentHoldsWhenOrderCancelled::class);
         Event::listen([InvoiceIssued::class, CreditNoteIssued::class], RenderPdfWhenTaxDocumentIssued::class);
         Event::listen(OrderAnonymised::class, ForgetCardDetailsWhenOrderAnonymised::class);
+        Event::listen(OrderAnonymised::class, ForgetRecipientsWhenOrderAnonymised::class);
         Event::listen(ShipmentCancelled::class, CancelDeliveriesWhenShipmentCancelled::class);
     }
 

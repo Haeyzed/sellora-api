@@ -48,6 +48,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * @property CarbonImmutable|null $cancelled_at
  * @property CarbonImmutable|null $resolved_at
  * @property DeliveryResolution|null $resolution
+ * @property CarbonImmutable|null $anonymised_at When its order was anonymised: who took the goods, failure notes, proof and locations were cleared.
  * @property string $assigned_by_type
  * @property string $assigned_by_id
  * @property CarbonImmutable|null $created_at
@@ -190,6 +191,7 @@ final class Delivery extends Model implements HasMedia
             'failed_at' => 'immutable_datetime',
             'cancelled_at' => 'immutable_datetime',
             'resolved_at' => 'immutable_datetime',
+            'anonymised_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];

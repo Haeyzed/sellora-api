@@ -44,7 +44,7 @@ final class DeliveryResource extends JsonResource
             /** "recipient_not_available", "address_not_found", "refused", "unsafe", "recipient_asked_to_reschedule" or "other"; null unless it failed. */
             'failure_reason' => $delivery->failure_reason?->value,
             'failure_note' => $delivery->failure_note,
-            /** Who took the goods; null unless delivered. */
+            /** Who took the goods; null unless delivered, and again once the order is anonymised. */
             'recipient_name' => $delivery->recipient_name,
             /** Which proof of delivery it keeps; fetch each from its proof endpoint. Both false unless delivered, and again once the files are purged. */
             'proof' => [
