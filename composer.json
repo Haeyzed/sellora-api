@@ -97,6 +97,29 @@
             "@php artisan config:clear --ansi @no_additional_args",
             "@php artisan test --parallel --processes=4"
         ],
+        "ci": [
+            "@ci:pint",
+            "@ci:stan",
+            "@ci:audit",
+            "@ci:docs",
+            "@ci:test"
+        ],
+        "ci:pint": "@php vendor/bin/pint --test",
+        "ci:stan": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php vendor/bin/phpstan clear-result-cache --no-interaction @no_additional_args",
+            "@php vendor/bin/phpstan analyse --memory-limit=2G --no-progress"
+        ],
+        "ci:audit": "@composer audit --locked",
+        "ci:docs": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php .github/scripts/scramble-check.php"
+        ],
+        "ci:test": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php artisan config:clear --ansi @no_additional_args",
+            "@php vendor/bin/pest --parallel"
+        ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"
@@ -116,6 +139,14 @@
         "pre-package-uninstall": [
             "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
         ]
+    },
+    "scripts-descriptions": {
+        "ci": "Runs every check CI runs, with the same settings: Pint, Larastan, composer audit, the Scramble docs check, Pest.",
+        "ci:pint": "CI's Pint check (no changes made).",
+        "ci:stan": "CI's Larastan check, from an empty result cache.",
+        "ci:audit": "CI's composer audit of the lock file.",
+        "ci:docs": "CI's Scramble check of the API docs (needs a migrated central database).",
+        "ci:test": "CI's full Pest suite, in parallel."
     },
     "extra": {
         "laravel": {

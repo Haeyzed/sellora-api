@@ -2,6 +2,11 @@
 # isolation included), composer audit and Scramble's analysis of the API
 # docs on every push. Nothing is merged while it fails.
 #
+# Every check runs through a `composer ci:*` script (composer.json), the same
+# ones `composer ci` runs locally, so no check is stricter here than there.
+# This file only provides what a check needs to run: PHP, the services, an
+# .env and, for the docs, a migrated central database.
+#
 # Runs on pushes to every branch only. Checks belong to the commit, so a pull
 # request from a branch of this repository shows the push run's checks; a
 # pull_request trigger as well would run everything twice for the same commit.
@@ -60,13 +65,13 @@ jobs:
         run: composer install --no-interaction --no-progress --prefer-dist
 
       - name: Pint
-        run: vendor/bin/pint --test
+        run: composer ci:pint
 
       - name: Larastan (level 8)
-        run: vendor/bin/phpstan analyse --memory-limit=2G --no-progress
+        run: composer ci:stan
 
       - name: composer audit
-        run: composer audit --locked
+        run: composer ci:audit
 
   api-docs:
     name: Scramble (API documentation)
@@ -132,7 +137,7 @@ jobs:
       # for store models (store tables exist only in store databases); prints
       # that accepted list.
       - name: Scramble analysis
-        run: php .github/scripts/scramble-check.php
+        run: composer ci:docs
 
   tests:
     name: Pest (parallel, PostgreSQL 18, Redis)
@@ -209,11 +214,12 @@ jobs:
           PGPASSWORD: ci-run-${{ github.run_id }}-${{ github.run_attempt }}
         run: psql -h 127.0.0.1 -U postgres -d sellora_central_testing -c "select name, default_version from pg_available_extensions where name = 'pg_trgm'" | grep pg_trgm
 
+      # The JUnit report and the log copy only feed the annotations step below.
       - name: Pest
         shell: bash
         run: |
           mkdir -p build
-          vendor/bin/pest --parallel --log-junit build/junit.xml 2>&1 | tee build/pest.log
+          composer ci:test -- --log-junit build/junit.xml 2>&1 | tee build/pest.log
 
       - name: Show failed tests as annotations
         if: failure()
