@@ -21,7 +21,7 @@ final readonly class CheckoutQuote
 {
     /**
      * @param  list<OfferedPaymentMethod>  $paymentMethods  Every way to pay offered: core's, then modules'.
-     * @param  OfferedPaymentMethod|null  $paymentMethod  Core's method chosen to pay what is left, while it is offered.
+     * @param  OfferedPaymentMethod|null  $paymentMethod  Core's method chosen to pay what is left, while it is offered and something is left for it to pay.
      * @param  array<string, Money>  $moduleCovers  What each chosen module method covers, by key, in the order applied.
      * @param  list<CheckoutIssue>  $issues  What stops it becoming an order; none when it can.
      * @param  bool  $taxIdRequired  Whether the store requires the buyer's tax ID.

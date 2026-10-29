@@ -27,7 +27,9 @@ here.
   itself. A module method left with nothing to cover (the ones before it
   covered everything, or it has nothing to give) gets no hold and isn't
   listed as chosen in the quote; the shopper's choice is kept, so it applies
-  again if the basket grows.
+  again if the basket grows. Likewise, when module methods cover the whole
+  order, the core method chosen is not used: no payment is started (nothing
+  to collect in cash on delivery), and the order is paid at once.
 - Each hold is committed or released on its own, so a payment method that
   fails (it throws, or its module is no longer installed) never holds up the
   others. The failure is recorded on that hold and logged, and the hourly

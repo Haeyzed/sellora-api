@@ -2,10 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Shared\Money\Money;
 use App\Tenant\Checkout\CheckoutExtensions;
 use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Orders\Actions\CancelExpiredOrders;
+use App\Tenant\Orders\Models\Order;
+use App\Tenant\Payments\Actions\FindCashToCollect;
 use App\Tenant\Payments\Enums\PaymentMethod;
 use App\Tenant\Payments\Jobs\CheckPaymentWithGateway;
 use App\Tenant\Payments\Jobs\CheckRefundWithGateway;
@@ -86,6 +89,46 @@ it('holds nothing for a module left with nothing to cover, and doesn\'t list it 
     'nothing to give' => [5000, 0, 'bank_transfer', [FakeGiftCardPaymentMethod::KEY]],
     // Both still have something to cover.
     'both cover a part' => [5000, 3000, 'bank_transfer', [FakeGiftCardPaymentMethod::KEY, FakeWalletPaymentMethod::KEY]],
+]);
+
+it('starts no core payment when modules cover the whole order, whatever core method was chosen, and the order is paid at once', function (string $coreMethod): void {
+    if (str_starts_with($coreMethod, 'gateway:')) {
+        useFakeGateway();
+        connectFakeGateway('live');
+    }
+
+    offerManualMethod(PaymentMethod::CashOnDelivery);
+    FakeGiftCardPaymentMethod::reset(balance: 10_000_000);
+    $token = checkoutCart();
+    $checkout = readyCheckout($token, changes: ['module_payment_methods' => [FakeGiftCardPaymentMethod::KEY], 'payment_method' => $coreMethod]);
+
+    placeCheckout($checkout['id'], $checkout['version'], token: $token, returnUrl: 'https://shop.example.com/thanks')->assertCreated()
+        ->assertJsonPath('data.order.payment_status', 'paid')
+        ->assertJsonPath('data.payment_method', null)
+        ->assertJsonPath('data.payment', null);
+
+    $order = $this->store->run(static fn (): Order => Order::query()->sole());
+
+    expect($this->store->run(static fn (): int => Payment::query()->count()))->toBe(0)
+        ->and(paymentHolds())->toBe([FakeGiftCardPaymentMethod::KEY => ['committed', $order->total->minorAmount()]])
+        ->and(FakeGiftCardPaymentMethod::$steps)->toBe(['hold:'.$order->total->minorAmount(), "commit:gc_{$order->public_id}"])
+        // Nothing to collect in cash.
+        ->and($order->pay_on_delivery)->toBeFalse()
+        ->and($this->store->run(static fn (): ?Money => app(FindCashToCollect::class)->handle($order)))->toBeNull();
+
+    // Placing it again under another key finds the same order, still with no core method.
+    placeCheckout($checkout['id'], $checkout['version'], token: $token, key: 'place-order-0002', returnUrl: 'https://shop.example.com/thanks')->assertOk()
+        ->assertJsonPath('data.order.id', $order->public_id)
+        ->assertJsonPath('data.payment_method', null);
+
+    // Days later, the hourly sweep finds no cash overdue and starts nothing.
+    $this->travel(5)->days();
+    $this->artisan('payments:check-pending')->assertSuccessful();
+    expect($this->store->run(static fn (): int => Payment::query()->count()))->toBe(0);
+})->with([
+    'a card through a gateway' => ['gateway:'.FakePaymentGateway::KEY],
+    'a bank transfer' => ['bank_transfer'],
+    'cash on delivery' => ['cash_on_delivery'],
 ]);
 
 it('releases both modules\' holds when the order expires unpaid', function (): void {

@@ -194,7 +194,8 @@ final readonly class PlaceCheckoutOrder
         $order = Order::query()->findOrFail($checkout->order_id);
         $chosen = null;
 
-        if ($checkout->payment_method !== null) {
+        // Core's method chosen, unless modules covered it all and it was never used.
+        if ($checkout->payment_method !== null && CheckoutPaymentHold::query()->where('order_id', $order->id)->where('method', $checkout->payment_method)->exists()) {
             $chosen = GatewayPaymentMethods::gatewayOf($checkout->payment_method) !== null
                 ? new OfferedPaymentMethod($checkout->payment_method, PaymentMethodKind::Gateway, isTest: $order->is_test)
                 : new OfferedPaymentMethod($checkout->payment_method, PaymentMethodKind::Manual, payOnDelivery: $order->pay_on_delivery);

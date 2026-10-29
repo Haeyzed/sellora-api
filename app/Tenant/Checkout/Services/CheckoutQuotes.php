@@ -307,6 +307,11 @@ final readonly class CheckoutQuotes
             $issues[] = new CheckoutIssue('payment_method_required', 'payment_method');
         }
 
+        // Modules' methods covered it all: core's method has nothing to pay, so none is used (no payment, deadline or cash on delivery), and the order is paid at once.
+        if (! $due->isPositive()) {
+            $chosen = null;
+        }
+
         return [$chosen, $covers, $issues];
     }
 
