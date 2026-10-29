@@ -84,6 +84,12 @@ uses, creates the immutable Orders record and payment holds, records
 explicitly selected marketing consent, provides guest order access if
 needed, and clears the Cart. Gateway calls are made after commit by Payments.
 
+Modules add their payment methods (such as a gift card) through
+`CheckoutExtensions` from their service providers. Each method names the
+keys it uses, and every key belongs to one method only: a module whose
+method would share a key with one already registered stops the app at boot
+with an error naming both, so a hold is never settled by the wrong method.
+
 Thus, saving checkout details does not reserve stock; pressing confirm and
 passing the quote checks does. See [Sellora business flows](business-flows.md)
 for what happens after the order exists.

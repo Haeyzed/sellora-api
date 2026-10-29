@@ -43,6 +43,11 @@ final readonly class ManualPaymentMethods implements CheckoutPaymentMethod
         return $offers;
     }
 
+    public function keys(): array
+    {
+        return array_values(array_map(static fn (PaymentMethod $method): string => $method->value, array_filter(PaymentMethod::cases(), static fn (PaymentMethod $method): bool => $method->isManual())));
+    }
+
     public function handles(string $key): bool
     {
         return self::methodOf($key) !== null;

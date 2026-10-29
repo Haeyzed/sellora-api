@@ -12,6 +12,7 @@ use App\Tenant\Checkout\Data\OfferedPaymentMethod;
 use App\Tenant\Checkout\Enums\PaymentMethodKind;
 use App\Tenant\Checkout\Models\CheckoutPaymentHold;
 use App\Tenant\Orders\Models\Order;
+use App\Tenant\Payments\PaymentGatewayRegistry;
 use App\Tenant\Payments\PaymentGatewayResolver;
 
 /**
@@ -23,7 +24,10 @@ final readonly class GatewayPaymentMethods implements CheckoutPaymentMethod
 {
     public const string PREFIX = 'gateway:';
 
-    public function __construct(private PaymentGatewayResolver $resolver) {}
+    public function __construct(
+        private PaymentGatewayResolver $resolver,
+        private PaymentGatewayRegistry $registry,
+    ) {}
 
     public function offers(CheckoutContext $context): array
     {
@@ -36,6 +40,14 @@ final readonly class GatewayPaymentMethods implements CheckoutPaymentMethod
         }
 
         return $offers;
+    }
+
+    /**
+     * One for each gateway the platform has. It also handles keys of gateways since removed, which no other method may use either.
+     */
+    public function keys(): array
+    {
+        return array_map(static fn (string $gateway): string => self::PREFIX.$gateway, $this->registry->keys());
     }
 
     public function handles(string $key): bool

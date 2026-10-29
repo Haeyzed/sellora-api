@@ -52,10 +52,8 @@ it('wires in core\'s own payment methods first, gateways then those paid by hand
         ->and($extensions->paymentMethodFor('bank_transfer'))->toBeInstanceOf(ManualPaymentMethods::class)
         ->and($extensions->paymentMethodFor('gift_card'))->toBeNull();
 
-    // A class that isn't a payment method is a wiring mistake, never silently skipped.
-    $wrong = new CheckoutExtensions(app());
-    $wrong->addPaymentMethod(stdClass::class);
-    expect(fn () => $this->store->run(static fn (): array => $wrong->paymentMethods()))->toThrow(LogicException::class);
+    // A class that isn't a payment method is a wiring mistake, refused as it is registered, never silently skipped.
+    expect(static fn () => (new CheckoutExtensions(app()))->addPaymentMethod(stdClass::class))->toThrow(LogicException::class, 'stdClass is not a checkout payment method.');
 });
 
 it('limits checking out per cart, under a ceiling per IP address, each store counted apart', function (): void {

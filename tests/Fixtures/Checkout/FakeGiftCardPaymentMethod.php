@@ -60,6 +60,11 @@ final class FakeGiftCardPaymentMethod implements CheckoutPaymentMethod, Checkout
         return [new OfferedPaymentMethod(self::KEY, PaymentMethodKind::Module, covers: Money::ofMinor(self::$balance, $context->currency()))];
     }
 
+    public function keys(): array
+    {
+        return [self::KEY];
+    }
+
     public function handles(string $key): bool
     {
         return $key === self::KEY;

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Tenant\Cart\CartToken;
 use App\Tenant\Cart\Models\Cart;
 use App\Tenant\Catalog\Models\ProductVariant;
+use App\Tenant\Checkout\CheckoutExtensions;
 use App\Tenant\Checkout\Models\Checkout;
 use App\Tenant\Checkout\Models\CheckoutPaymentHold;
 use App\Tenant\Customers\Models\Customer;
@@ -14,8 +15,10 @@ use App\Tenant\Orders\Models\Order;
 use App\Tenant\Payments\Enums\GatewayPaymentState;
 use App\Tenant\Payments\Models\Payment;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
+use Tests\Fixtures\Checkout\FakeClashingPaymentMethod;
 use Tests\Fixtures\Checkout\FakeGiftCardPaymentMethod;
 use Tests\Fixtures\Checkout\FakeWalletPaymentMethod;
 
@@ -154,6 +157,20 @@ function giftCardPaidOrder(): Order
     placeCheckout($checkout['id'], $checkout['version'], token: $token)->assertCreated()->assertJsonPath('data.order.payment_status', 'paid');
 
     return test()->store->run(static fn (): Order => Order::query()->sole());
+}
+
+/**
+ * A module's service provider registering the clashing fake payment method, as a module would at boot.
+ */
+function clashingModuleProvider(): ServiceProvider
+{
+    return new class(app()) extends ServiceProvider
+    {
+        public function boot(CheckoutExtensions $checkoutExtensions): void
+        {
+            $checkoutExtensions->addPaymentMethod(FakeClashingPaymentMethod::class, 'clashing_module');
+        }
+    };
 }
 
 /**

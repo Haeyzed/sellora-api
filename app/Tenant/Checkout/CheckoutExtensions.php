@@ -29,11 +29,29 @@ final class CheckoutExtensions
     public function __construct(private readonly Container $container) {}
 
     /**
+     * Registers a payment method, refusing one that would share a key with a method already registered: a hold saved under that key could otherwise be committed, released or given back by the wrong one. Modules register from their service providers, so a clash stops the app at boot.
+     *
      * @param  class-string<CheckoutPaymentMethod>  $method
      * @param  string|null  $featureKey  The module's; null for core's own.
+     *
+     * @throws LogicException When it shares a key with a method already registered.
      */
     public function addPaymentMethod(string $method, ?string $featureKey = null): void
     {
+        $new = $this->paymentMethod($method);
+
+        foreach ($this->paymentMethods as [$registered]) {
+            $existing = $this->paymentMethod($registered);
+            $shared = [
+                ...array_filter($new->keys(), $existing->handles(...)),
+                ...array_filter($existing->keys(), $new->handles(...)),
+            ];
+
+            if ($shared !== []) {
+                throw new LogicException("The payment methods {$registered} and {$method} both use the key \"{$shared[array_key_first($shared)]}\": each key must belong to one payment method only.");
+            }
+        }
+
         $this->paymentMethods[] = [$method, $featureKey];
     }
 
@@ -99,6 +117,16 @@ final class CheckoutExtensions
         }
 
         return null;
+    }
+
+    /**
+     * @param  class-string<CheckoutPaymentMethod>  $class
+     */
+    private function paymentMethod(string $class): CheckoutPaymentMethod
+    {
+        $method = $this->container->make($class);
+
+        return $method instanceof CheckoutPaymentMethod ? $method : throw new LogicException("{$class} is not a checkout payment method.");
     }
 
     /**

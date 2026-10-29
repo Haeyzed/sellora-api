@@ -30,6 +30,13 @@ interface CheckoutPaymentMethod
     public function offers(CheckoutContext $context): array;
 
     /**
+     * Every payment method key it can offer, as its offers name them. No other method may claim one of them: registering two that do is refused at boot.
+     *
+     * @return list<string>
+     */
+    public function keys(): array;
+
+    /**
      * Whether a payment method key is one of its own, as it offers them: what commits and releases a hold saved under that key, even once the module is turned off (money already held is always looked after).
      */
     public function handles(string $key): bool;
