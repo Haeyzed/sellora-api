@@ -235,7 +235,8 @@ function guideProblems(): array
             }
         }
 
-        preg_match_all('/`([A-Z][a-z]+(?:[A-Z][a-z0-9]*)+)`/', $text, $classMatches);
+        // The roadmap names what isn't built yet, so its names aren't checked against the code.
+        preg_match_all('/`([A-Z][a-z]+(?:[A-Z][a-z0-9]*)+)`/', $guide === 'docs/roadmap.md' ? '' : $text, $classMatches);
 
         foreach (array_unique($classMatches[1]) as $name) {
             if (! isset($names[$name])) {
@@ -263,7 +264,7 @@ function guideProblems(): array
 
 /**
  * Names a guide may put in backticks as code: every class, enum, interface or trait file in the code, every enum case,
- * and the modules named in CLAUDE.md's catalogue, which may be on the roadmap only.
+ * and the modules named in CLAUDE.md's catalogue or in a heading of docs/roadmap.md, which may be on the roadmap only.
  *
  * @return array<string, true>
  */
@@ -293,6 +294,14 @@ function knownCodeNames(): array
     preg_match_all('/^\|\s*`(\w+)`/m', (string) file_get_contents(base_path('CLAUDE.md')), $modules);
 
     foreach ($modules[1] as $module) {
+        $names[$module] = true;
+    }
+
+    $roadmap = base_path('docs/roadmap.md');
+    preg_match_all('/^##\s.*$/m', is_file($roadmap) ? (string) file_get_contents($roadmap) : '', $headings);
+    preg_match_all('/`(\w+)`/', implode("\n", $headings[0]), $roadmapModules);
+
+    foreach ($roadmapModules[1] as $module) {
         $names[$module] = true;
     }
 
