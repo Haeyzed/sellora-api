@@ -7,6 +7,7 @@ namespace App\Tenant\Orders\Documents;
 use App\Tenant\Orders\Models\CreditNote;
 use App\Tenant\Orders\Models\Invoice;
 use Illuminate\Contracts\View\Factory as ViewFactory;
+use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\File;
 use Mpdf\Container\SimpleContainer;
 use Mpdf\Mpdf;
@@ -56,13 +57,10 @@ final readonly class TaxDocumentPdf
      */
     public function fromHtml(string $html, string $direction = 'ltr', bool $isTest = false, string $title = ''): string
     {
-        $tempDir = config()->string('orders.pdf_working_dir');
-        File::ensureDirectoryExists($tempDir);
-
         $mpdf = new Mpdf([
             'mode' => 'utf-8',
             'format' => 'A4',
-            'tempDir' => $tempDir,
+            'tempDir' => self::workingDirectory(),
             'default_font' => 'dejavusans',
             'autoScriptToLang' => true,
             'autoLangToFont' => true,
@@ -85,5 +83,28 @@ final readonly class TaxDocumentPdf
         $mpdf->WriteHTML($html);
 
         return $mpdf->Output('', Destination::STRING_RETURN);
+    }
+
+    /**
+     * This process's own folder for mPDF, under the configured one, removed when the process ends.
+     *
+     * After every render mPDF deletes the files in its folder older than an
+     * hour; two processes doing so in one folder at once both try to delete
+     * the same file, and the second fails. Its font cache lives in the same
+     * folder, so fonts are prepared once per process.
+     */
+    private static function workingDirectory(): string
+    {
+        static $directory = null;
+
+        if ($directory === null) {
+            $directory = config()->string('orders.pdf_working_dir').DIRECTORY_SEPARATOR.'process-'.getmypid();
+            // Not through the facade: by the time the process ends, the application may be gone.
+            register_shutdown_function(static fn (): bool => (new Filesystem)->deleteDirectory($directory));
+        }
+
+        File::ensureDirectoryExists($directory);
+
+        return $directory;
     }
 }

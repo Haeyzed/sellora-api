@@ -82,7 +82,7 @@ return [
 
     'documents_disk' => env('TAX_DOCUMENTS_DISK', 'local'),
 
-    // mPDF's font cache and working files, shared by every store: read here, before any store's storage path applies, so fonts are prepared once rather than per store. Holds no store data once a render ends.
+    // Where mPDF keeps its font cache and working files, shared by every store: read here, before any store's storage path applies, so fonts are prepared once per process rather than per store. Each process works in a folder of its own under it, removed when the process ends. Holds no store data once a render ends.
     'pdf_working_dir' => env('TAX_DOCUMENTS_PDF_WORKING_DIR', storage_path('framework/cache/mpdf')),
 
 ];
