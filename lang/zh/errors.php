@@ -212,4 +212,12 @@ return [
     'cash_collection_required' => '此配送需要收取现金。请说明收取了多少现金。',
     'proof_of_delivery_required' => '完成配送需要凭证：交付商品的照片、收件人签名，或两者兼有。',
     'delivery_not_under_way' => '此配送尚未取件也不在途中，因此不会为其记录您的位置。',
+    'returns_not_offered' => '本店只通过店员办理退货。如需退货，请联系本店。',
+    'order_not_returnable' => '此订单无法退货：从未全额付款，或已取消。',
+    'return_window_closed' => '这些商品的退货期限已过。如仍需退货，请联系本店。',
+    'return_photo_required' => '此原因需要添加商品照片。',
+    'return_quantity_too_high' => '部分商品行可退的数量少于您申请的数量。',
+    'return_quantity_left' => '此商品行只能再退 :left 件。',
+    'return_staff_reason_required' => '请说明此退货为何超出买家可申请的范围。',
+    'return_transition_not_allowed' => '此退货在当前状态下无法这样更改。',
 ];

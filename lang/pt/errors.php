@@ -212,4 +212,12 @@ return [
     'cash_collection_required' => 'Esta entrega tem dinheiro a cobrar. Indique quanto foi cobrado.',
     'proof_of_delivery_required' => 'Entregar exige comprovação: uma foto dos artigos entregues, a assinatura do destinatário ou ambas.',
     'delivery_not_under_way' => 'Esta entrega não foi recolhida nem está a caminho, por isso a sua localização não é registada para ela.',
+    'returns_not_offered' => 'Esta loja só aceita devoluções através da sua equipa. Contacte a loja para devolver artigos.',
+    'order_not_returnable' => 'Esta encomenda não pode ser devolvida: nunca foi paga na totalidade, ou foi cancelada.',
+    'return_window_closed' => 'O prazo para devolver estes artigos já passou. Contacte a loja se ainda precisar de os devolver.',
+    'return_photo_required' => 'Adicione uma foto dos artigos para este motivo.',
+    'return_quantity_too_high' => 'Algumas linhas têm menos unidades por devolver do que as pedidas.',
+    'return_quantity_left' => 'Só é possível devolver mais :left desta linha.',
+    'return_staff_reason_required' => 'Indique porque é que esta devolução vai além do que um comprador poderia pedir.',
+    'return_transition_not_allowed' => 'Esta devolução não pode ser alterada assim a partir do estado em que está.',
 ];

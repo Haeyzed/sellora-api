@@ -212,4 +212,12 @@ return [
     'cash_collection_required' => 'Pengantaran ini ada uang tunai yang harus ditagih. Sebutkan berapa yang ditagih.',
     'proof_of_delivery_required' => 'Pengantaran memerlukan bukti: foto barang yang diserahkan, tanda tangan penerima, atau keduanya.',
     'delivery_not_under_way' => 'Pengantaran ini belum diambil atau sedang dalam perjalanan, jadi lokasi Anda tidak dicatat untuknya.',
+    'returns_not_offered' => 'Toko ini hanya menerima retur melalui stafnya. Hubungi toko untuk mengembalikan barang.',
+    'order_not_returnable' => 'Pesanan ini tidak dapat diretur: belum pernah dibayar lunas, atau sudah dibatalkan.',
+    'return_window_closed' => 'Batas waktu untuk mengembalikan barang ini sudah lewat. Hubungi toko jika Anda masih perlu mengembalikannya.',
+    'return_photo_required' => 'Tambahkan foto barang untuk alasan ini.',
+    'return_quantity_too_high' => 'Beberapa baris memiliki sisa unit untuk diretur yang lebih sedikit dari yang Anda minta.',
+    'return_quantity_left' => 'Hanya :left dari baris ini yang masih bisa diretur.',
+    'return_staff_reason_required' => 'Jelaskan mengapa retur ini melampaui apa yang bisa diminta pembeli.',
+    'return_transition_not_allowed' => 'Retur ini tidak dapat diubah dengan cara itu dari statusnya sekarang.',
 ];

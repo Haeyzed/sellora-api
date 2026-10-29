@@ -212,4 +212,12 @@ return [
     'cash_collection_required' => 'Bu teslimatta tahsil edilecek nakit var. Ne kadar tahsil edildiğini belirtin.',
     'proof_of_delivery_required' => 'Teslim için kanıt gerekir: teslim edilen ürünlerin fotoğrafı, alıcının imzası veya her ikisi.',
     'delivery_not_under_way' => 'Bu teslimat alınmadı veya yolda değil, bu yüzden konumunuz onun için kaydedilmez.',
+    'returns_not_offered' => 'Bu mağaza iadeleri yalnızca çalışanları aracılığıyla kabul ediyor. Ürünleri iade etmek için mağazayla iletişime geçin.',
+    'order_not_returnable' => 'Bu sipariş iade edilemez: hiç tamamen ödenmedi ya da iptal edildi.',
+    'return_window_closed' => 'Bu ürünleri iade etme süresi geçti. Yine de iade etmeniz gerekiyorsa mağazayla iletişime geçin.',
+    'return_photo_required' => 'Bu neden için ürünlerin bir fotoğrafını ekleyin.',
+    'return_quantity_too_high' => 'Bazı satırlarda iade edilebilecek adet istediğinizden az.',
+    'return_quantity_left' => 'Bu satırdan yalnızca :left adet daha iade edilebilir.',
+    'return_staff_reason_required' => 'Bu iadenin bir alıcının isteyebileceğinin ötesine neden geçtiğini belirtin.',
+    'return_transition_not_allowed' => 'Bu iade şu anki durumundan bu şekilde değiştirilemez.',
 ];

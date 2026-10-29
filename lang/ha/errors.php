@@ -212,4 +212,12 @@ return [
     'cash_collection_required' => 'Wannan isarwar tana da kuɗin da za a karɓa. Faɗi nawa aka karɓa.',
     'proof_of_delivery_required' => 'Isarwa tana buƙatar shaida: hoton kayan da aka miƙa, sa hannun wanda ya karɓa, ko duka biyun.',
     'delivery_not_under_way' => 'Ba a ɗauki wannan isarwar ba kuma ba ta kan hanya, don haka ba a ɗaukar wurin da kake don ita.',
+    'returns_not_offered' => 'Wannan shago yana karɓar dawowar kaya ta hannun ma\'aikatansa kawai. Tuntuɓi shagon don dawo da kaya.',
+    'order_not_returnable' => 'Ba za a iya dawo da wannan oda ba: ba a taɓa biyan ta gaba ɗaya ba, ko an soke ta.',
+    'return_window_closed' => 'Lokacin dawo da waɗannan kayan ya wuce. Tuntuɓi shagon idan har yanzu kana buƙatar dawo da su.',
+    'return_photo_required' => 'Ƙara hoton kayan don wannan dalili.',
+    'return_quantity_too_high' => 'Wasu layuka suna da ƙasa da adadin da ka nema na dawowa.',
+    'return_quantity_left' => ':left kawai na wannan layi za a iya dawo da su.',
+    'return_staff_reason_required' => 'Faɗi dalilin da yasa wannan dawowar ta wuce abin da mai saye zai iya nema.',
+    'return_transition_not_allowed' => 'Ba za a iya canza wannan dawowar haka ba daga inda take yanzu.',
 ];

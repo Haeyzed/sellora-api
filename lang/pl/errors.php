@@ -212,4 +212,12 @@ return [
     'cash_collection_required' => 'Przy tej dostawie trzeba pobrać gotówkę. Podaj, ile pobrano.',
     'proof_of_delivery_required' => 'Doręczenie wymaga dowodu: zdjęcia przekazanego towaru, podpisu odbiorcy lub obu.',
     'delivery_not_under_way' => 'Ta dostawa nie została odebrana ani nie jest w drodze, więc Twoja lokalizacja nie jest dla niej zapisywana.',
+    'returns_not_offered' => 'Ten sklep przyjmuje zwroty tylko przez swoich pracowników. Skontaktuj się ze sklepem, aby zwrócić produkty.',
+    'order_not_returnable' => 'Tego zamówienia nie można zwrócić: nigdy nie zostało w pełni opłacone albo zostało anulowane.',
+    'return_window_closed' => 'Minął czas na zwrot tych produktów. Skontaktuj się ze sklepem, jeśli nadal musisz je zwrócić.',
+    'return_photo_required' => 'Dodaj zdjęcie produktów dla tego powodu.',
+    'return_quantity_too_high' => 'W niektórych pozycjach zostało mniej sztuk do zwrotu, niż prosisz.',
+    'return_quantity_left' => 'Z tej pozycji można jeszcze zwrócić tylko :left.',
+    'return_staff_reason_required' => 'Podaj, dlaczego ten zwrot wykracza poza to, o co mógłby poprosić kupujący.',
+    'return_transition_not_allowed' => 'Tego zwrotu nie można tak zmienić z jego obecnego stanu.',
 ];

@@ -212,4 +212,12 @@ return [
     'cash_collection_required' => 'Ìfijíṣẹ́ yìí ní owó tí a ó gbà. Sọ iye owó tí a gbà.',
     'proof_of_delivery_required' => 'Ìfijíṣẹ́ nílò ẹ̀rí: fọ́tò àwọn ẹrù tí a fà lé lọ́wọ́, ìbuwọ́lù ẹni tí ó gbà á, tàbí méjèèjì.',
     'delivery_not_under_way' => 'A kò tíì gbé ìfijíṣẹ́ yìí, kò sì sí lójú ọ̀nà, nítorí náà a kò gba ibi tí o wà fún un.',
+    'returns_not_offered' => 'Ilé ìtajà yìí ń gba ìdápadà nípasẹ̀ àwọn òṣìṣẹ́ rẹ̀ nìkan. Kàn sí ilé ìtajà láti dá ọjà padà.',
+    'order_not_returnable' => 'A kò lè dá ìbéèrè yìí padà: wọn kò sanwó rẹ̀ ní kíkún rí, tàbí wọ́n ti fagilé e.',
+    'return_window_closed' => 'Àkókò láti dá àwọn ọjà wọ̀nyí padà ti kọjá. Kàn sí ilé ìtajà tí o bá ṣì nílò láti dá wọn padà.',
+    'return_photo_required' => 'Fi fọ́tò àwọn ọjà kún un fún ìdí yìí.',
+    'return_quantity_too_high' => 'Àwọn ìlà kan ní ẹyọ tí ó kù láti dá padà tí kò tó èyí tí o béèrè.',
+    'return_quantity_left' => ':left nìkan ni a ṣì lè dá padà nínú ìlà yìí.',
+    'return_staff_reason_required' => 'Sọ ìdí tí ìdápadà yìí fi kọjá ohun tí olùrà lè béèrè.',
+    'return_transition_not_allowed' => 'A kò lè yí ìdápadà yìí padà bẹ́ẹ̀ láti ibi tí ó wà báyìí.',
 ];

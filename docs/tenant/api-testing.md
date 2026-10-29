@@ -100,6 +100,7 @@ $Promotion = 'replace-with-promotion'
 $Provider = 'replace-with-provider'
 $Reference = 'replace-with-reference'
 $Refund = 'replace-with-refund'
+$Return = 'replace-with-return'
 $Shipment = 'replace-with-shipment'
 $Slug = 'replace-with-slug'
 $StaffInvitation = 'replace-with-staff-invitation'
@@ -888,6 +889,45 @@ curl.exe --request GET "${StoreBase}/customer/account/data-exports/${Export}/dow
   --header "Authorization: Bearer $CustomerToken"
 ```
 
+#### CustomerReturn
+
+**POST** `/customer/orders/{order}/returns` — customer bearer token. Ask to return units of an order
+
+```powershell
+curl.exe --request POST "${StoreBase}/customer/orders/${Order}/returns" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $CustomerToken" `
+  --form "lines[0][line]=$Line" `
+  --form 'lines[0][quantity]=1' `
+  --form 'reason=damaged' `
+  --form 'note=The box was crushed' `
+  --form 'photos[]=@damage.jpg'
+```
+
+**GET** `/customer/returns` — customer bearer token. List my returns
+
+```powershell
+curl.exe --request GET "${StoreBase}/customer/returns" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $CustomerToken"
+```
+
+**GET** `/customer/returns/{return}` — customer bearer token. Show one of my returns
+
+```powershell
+curl.exe --request GET "${StoreBase}/customer/returns/${Return}" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $CustomerToken"
+```
+
+**POST** `/customer/returns/{return}/cancel` — customer bearer token. Call off one of my returns
+
+```powershell
+curl.exe --request POST "${StoreBase}/customer/returns/${Return}/cancel" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $CustomerToken"
+```
+
 #### CustomerTaxDocument
 
 **GET** `/customer/orders/{order}/credit-notes/{creditNote}` — customer bearer token. Show one of your order's credit notes
@@ -1422,6 +1462,42 @@ curl.exe --request POST "${StoreBase}/staff/guest-personal-data/erasure" `
   --header "Authorization: Bearer $StaffToken" `
   --header 'Content-Type: application/json' `
   --data-raw '{"email":"owner@example.com"}'
+```
+
+#### GuestReturn
+
+**POST** `/guest/orders/{order}/returns` — guest order token. Ask to return units of my order
+
+```powershell
+curl.exe --request POST "${StoreBase}/guest/orders/${Order}/returns" `
+  --header 'Accept: application/json' `
+  --header "X-Order-Token: $OrderToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw "{`"lines`":[{`"line`":`"$Line`",`"quantity`":1}],`"reason`":`"does_not_fit`"}"
+```
+
+**GET** `/guest/orders/{order}/returns` — guest order token. List my order's returns
+
+```powershell
+curl.exe --request GET "${StoreBase}/guest/orders/${Order}/returns" `
+  --header 'Accept: application/json' `
+  --header "X-Order-Token: $OrderToken"
+```
+
+**GET** `/guest/orders/{order}/returns/{return}` — guest order token. Show one of my order's returns
+
+```powershell
+curl.exe --request GET "${StoreBase}/guest/orders/${Order}/returns/${Return}" `
+  --header 'Accept: application/json' `
+  --header "X-Order-Token: $OrderToken"
+```
+
+**POST** `/guest/orders/{order}/returns/{return}/cancel` — guest order token. Call off one of my order's returns
+
+```powershell
+curl.exe --request POST "${StoreBase}/guest/orders/${Order}/returns/${Return}/cancel" `
+  --header 'Accept: application/json' `
+  --header "X-Order-Token: $OrderToken"
 ```
 
 #### GuestTaxDocument
@@ -2089,6 +2165,44 @@ curl.exe --request POST "${StoreBase}/staff/catalog/products/${Product}/restore"
 curl.exe --request POST "${StoreBase}/staff/catalog/products/${Product}/variants/${Variant}/restore" `
   --header 'Accept: application/json' `
   --header "Authorization: Bearer $StaffToken"
+```
+
+#### Return
+
+**POST** `/staff/orders/{order}/returns` — staff bearer token. Start a return for the buyer
+
+```powershell
+curl.exe --request POST "${StoreBase}/staff/orders/${Order}/returns" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw "{`"lines`":[{`"line`":`"$Line`",`"quantity`":1}],`"reason`":`"damaged`",`"outside_window_reason`":`"Buyer was travelling`"}"
+```
+
+**GET** `/staff/returns` — staff bearer token. List returns
+
+```powershell
+curl.exe --request GET "${StoreBase}/staff/returns?status=requested" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
+**GET** `/staff/returns/{return}` — staff bearer token. Show a return
+
+```powershell
+curl.exe --request GET "${StoreBase}/staff/returns/${Return}" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
+#### ReturnReason
+
+**GET** `/returns/reasons` — no token. List return reasons
+
+```powershell
+curl.exe --request GET "${StoreBase}/returns/reasons" `
+  --header 'Accept: application/json' `
+  --header 'Accept-Language: fr'
 ```
 
 #### ReturnSettings

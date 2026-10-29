@@ -212,4 +212,12 @@ return [
     'cash_collection_required' => 'Esta entrega tiene efectivo por cobrar. Indica cuánto efectivo se cobró.',
     'proof_of_delivery_required' => 'Entregar requiere una prueba: una foto de la mercancía entregada, la firma del destinatario o ambas.',
     'delivery_not_under_way' => 'Esta entrega no se ha recogido ni está en camino, así que no se registra tu ubicación para ella.',
+    'returns_not_offered' => 'Esta tienda solo acepta devoluciones a través de su personal. Contacta con la tienda para devolver artículos.',
+    'order_not_returnable' => 'Este pedido no se puede devolver: nunca se pagó por completo o se canceló.',
+    'return_window_closed' => 'Ha pasado el plazo para devolver estos artículos. Contacta con la tienda si aún necesitas devolverlos.',
+    'return_photo_required' => 'Añade una foto de los artículos para este motivo.',
+    'return_quantity_too_high' => 'Algunas líneas tienen menos unidades por devolver de las que pediste.',
+    'return_quantity_left' => 'Solo se pueden devolver :left de esta línea.',
+    'return_staff_reason_required' => 'Indica por qué esta devolución va más allá de lo que un comprador podría pedir.',
+    'return_transition_not_allowed' => 'Esta devolución no se puede cambiar así desde su estado actual.',
 ];

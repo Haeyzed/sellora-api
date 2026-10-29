@@ -212,4 +212,12 @@ return [
     'cash_collection_required' => 'Nnyefe a nwere ego a ga-anakọta. Kwuo ole ego a nakọtara.',
     'proof_of_delivery_required' => 'Nnyefe chọrọ ihe akaebe: foto nke ngwongwo e nyefere, mbinye aka onye natara ya, ma ọ bụ ha abụọ.',
     'delivery_not_under_way' => 'A naghị ebute nnyefe a, ọ nọghịkwa n\'ụzọ, ya mere anaghị edekọ ebe ị nọ maka ya.',
+    'returns_not_offered' => 'Ụlọ ahịa a na-anabata nlọghachi naanị site n\'aka ndị ọrụ ya. Kpọtụrụ ụlọ ahịa ka i weghachi ngwa ahịa.',
+    'order_not_returnable' => 'Enweghị ike iweghachi iwu a: akwụbeghị ụgwọ ya niile, ma ọ bụ a kagbuola ya.',
+    'return_window_closed' => 'Oge iweghachi ngwa ahịa ndị a agafeela. Kpọtụrụ ụlọ ahịa ma ọ bụrụ na ị ka chọrọ iweghachi ha.',
+    'return_photo_required' => 'Tinye foto nke ngwa ahịa maka ihe kpatara a.',
+    'return_quantity_too_high' => 'Ụfọdụ ahịrị nwere obere ihe fọdụrụ maka nlọghachi karịa ihe ị rịọrọ.',
+    'return_quantity_left' => 'Naanị :left nke ahịrị a ka a ka nwere ike iweghachi.',
+    'return_staff_reason_required' => 'Kwuo ihe mere nlọghachi a ji gafere ihe onye zụrụ ahịa nwere ike ịrịọ.',
+    'return_transition_not_allowed' => 'Enweghị ike ịgbanwe nlọghachi a otu ahụ site n\'ọnọdụ ọ nọ ugbu a.',
 ];

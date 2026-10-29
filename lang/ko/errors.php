@@ -212,4 +212,12 @@ return [
     'cash_collection_required' => '이 배송에는 받을 현금이 있습니다. 받은 현금 금액을 입력하세요.',
     'proof_of_delivery_required' => '배송 완료에는 증빙이 필요합니다. 전달한 상품 사진, 수령인 서명 또는 둘 다를 제출하세요.',
     'delivery_not_under_way' => '이 배송은 픽업되었거나 배송 중이 아니므로 위치가 기록되지 않습니다.',
+    'returns_not_offered' => '이 스토어는 직원을 통해서만 반품을 받습니다. 상품을 반품하려면 스토어에 문의하세요.',
+    'order_not_returnable' => '이 주문은 반품할 수 없습니다. 전액 결제된 적이 없거나 취소되었습니다.',
+    'return_window_closed' => '이 상품의 반품 기간이 지났습니다. 그래도 반품해야 한다면 스토어에 문의하세요.',
+    'return_photo_required' => '이 사유에는 상품 사진을 추가해 주세요.',
+    'return_quantity_too_high' => '일부 항목은 반품할 수 있는 수량이 요청한 수량보다 적습니다.',
+    'return_quantity_left' => '이 항목은 :left개만 더 반품할 수 있습니다.',
+    'return_staff_reason_required' => '이 반품이 구매자가 요청할 수 있는 범위를 넘는 이유를 입력하세요.',
+    'return_transition_not_allowed' => '이 반품은 현재 상태에서 그렇게 변경할 수 없습니다.',
 ];

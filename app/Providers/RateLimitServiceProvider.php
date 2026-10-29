@@ -73,6 +73,11 @@ final class RateLimitServiceProvider extends ServiceProvider
             $this->perMinute('delivery_tracking')->by($this->trackerKey('delivery-tracking', $request)),
             $this->perMinute('delivery_tracking_ip_ceiling')->by($this->ipKey('delivery-tracking-ip-ceiling', $request)),
         ]);
+        // Asking for a return (photos and all): per signed-in customer or per guest order token (hashed), under a ceiling per address.
+        RateLimiter::for('return-requests', fn (Request $request): array => [
+            $this->perMinute('return_requests')->by($this->trackerKey('return-requests', $request)),
+            $this->perMinute('return_requests_ip_ceiling')->by($this->ipKey('return-requests-ip-ceiling', $request)),
+        ]);
         // A driver's app sending their location, per driver (requests here are always signed in as one).
         RateLimiter::for('driver-location', fn (Request $request): Limit => $this->perMinute('driver_location')->by($this->requesterKey('driver-location', $request)));
         RateLimiter::for('cart-creation', fn (Request $request): Limit => $this->perMinute('cart_creation_ip_ceiling')->by($this->ipKey('cart-creation', $request)));

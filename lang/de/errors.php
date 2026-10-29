@@ -212,4 +212,12 @@ return [
     'cash_collection_required' => 'Bei dieser Lieferung ist Bargeld zu kassieren. Geben Sie an, wie viel kassiert wurde.',
     'proof_of_delivery_required' => 'Die Zustellung braucht einen Nachweis: ein Foto der übergebenen Ware, die Unterschrift des Empfängers oder beides.',
     'delivery_not_under_way' => 'Diese Lieferung ist weder abgeholt noch unterwegs, daher wird Ihr Standort dafür nicht erfasst.',
+    'returns_not_offered' => 'Dieser Shop nimmt Retouren nur über seine Mitarbeitenden an. Wende dich an den Shop, um Artikel zurückzugeben.',
+    'order_not_returnable' => 'Diese Bestellung kann nicht zurückgegeben werden: Sie wurde nie vollständig bezahlt oder wurde storniert.',
+    'return_window_closed' => 'Die Frist für die Rückgabe dieser Artikel ist abgelaufen. Wende dich an den Shop, wenn du sie trotzdem zurückgeben musst.',
+    'return_photo_required' => 'Füge für diesen Grund ein Foto der Artikel hinzu.',
+    'return_quantity_too_high' => 'Bei einigen Positionen können weniger Einheiten zurückgegeben werden als angefragt.',
+    'return_quantity_left' => 'Von dieser Position können nur noch :left zurückgegeben werden.',
+    'return_staff_reason_required' => 'Gib an, warum diese Retoure über das hinausgeht, was ein Käufer beantragen könnte.',
+    'return_transition_not_allowed' => 'Diese Retoure kann von ihrem aktuellen Stand aus nicht so geändert werden.',
 ];

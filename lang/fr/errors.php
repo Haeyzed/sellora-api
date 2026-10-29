@@ -212,4 +212,12 @@ return [
     'cash_collection_required' => 'Cette livraison comporte des espèces à encaisser. Indiquez le montant encaissé.',
     'proof_of_delivery_required' => 'La livraison nécessite une preuve : une photo des articles remis, la signature du destinataire, ou les deux.',
     'delivery_not_under_way' => 'Cette livraison n’est ni récupérée ni en route : votre position n’est donc pas enregistrée pour elle.',
+    'returns_not_offered' => 'Cette boutique accepte les retours uniquement par son équipe. Contactez la boutique pour retourner des articles.',
+    'order_not_returnable' => 'Cette commande ne peut pas être retournée : elle n\'a jamais été entièrement payée, ou elle a été annulée.',
+    'return_window_closed' => 'Le délai pour retourner ces articles est dépassé. Contactez la boutique si vous devez encore les retourner.',
+    'return_photo_required' => 'Ajoutez une photo des articles pour ce motif.',
+    'return_quantity_too_high' => 'Certaines lignes ont moins d’unités à retourner que demandé.',
+    'return_quantity_left' => 'Seulement :left de cette ligne peuvent encore être retournés.',
+    'return_staff_reason_required' => 'Indiquez pourquoi ce retour va au-delà de ce qu’un acheteur pourrait demander.',
+    'return_transition_not_allowed' => 'Ce retour ne peut pas être modifié ainsi depuis son état actuel.',
 ];

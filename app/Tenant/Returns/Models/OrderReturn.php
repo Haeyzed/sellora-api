@@ -5,16 +5,20 @@ declare(strict_types=1);
 namespace App\Tenant\Returns\Models;
 
 use App\Shared\Concerns\HasPublicId;
+use App\Shared\Media\PrivateImages;
 use App\Tenant\Inventory\Models\StockLocation;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Returns\Enums\ReturnReason;
 use App\Tenant\Returns\Enums\ReturnResolution;
 use App\Tenant\Returns\Enums\ReturnStatus;
+use App\Tenant\Returns\Services\ReturnPhotos;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
 /**
  * A buyer, or staff for them, sending units of an order's lines back to be refunded (Step 18). Named OrderReturn because "return" is a PHP keyword.
@@ -50,13 +54,19 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read Collection<int, ReturnLine> $lines
  * @property-read Collection<int, ReturnStatusChange> $statusChanges
  */
-final class OrderReturn extends Model
+final class OrderReturn extends Model implements HasMedia
 {
     use HasPublicId;
+    use InteractsWithMedia;
 
     protected $table = 'returns';
 
     protected $dateFormat = 'Y-m-d H:i:sP';
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection(ReturnPhotos::COLLECTION)->useDisk(PrivateImages::disk(ReturnPhotos::KIND));
+    }
 
     /**
      * How it is shown: its order's number and its own, such as "#1042-R1".

@@ -212,4 +212,12 @@ return [
     'cash_collection_required' => 'この配達には集金があります。集金した金額を入力してください。',
     'proof_of_delivery_required' => '配達完了には証拠が必要です。受け渡した商品の写真、受取人の署名、またはその両方を提出してください。',
     'delivery_not_under_way' => 'この配達は集荷済みでも配達中でもないため、位置情報は記録されません。',
+    'returns_not_offered' => 'このストアはスタッフ経由でのみ返品を受け付けています。返品するにはストアにお問い合わせください。',
+    'order_not_returnable' => 'この注文は返品できません。全額が支払われていないか、キャンセルされています。',
+    'return_window_closed' => 'これらの商品の返品期限は過ぎています。それでも返品が必要な場合はストアにお問い合わせください。',
+    'return_photo_required' => 'この理由の場合は商品の写真を追加してください。',
+    'return_quantity_too_high' => '一部の明細で、返品できる数量が依頼した数量より少なくなっています。',
+    'return_quantity_left' => 'この明細で返品できるのは残り :left 点だけです。',
+    'return_staff_reason_required' => 'この返品が購入者の依頼できる範囲を超える理由を入力してください。',
+    'return_transition_not_allowed' => 'この返品は現在の状態からそのように変更できません。',
 ];

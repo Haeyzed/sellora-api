@@ -212,4 +212,12 @@ return [
     'cash_collection_required' => 'Uwasilishaji huu una pesa taslimu za kukusanya. Sema ni kiasi gani kilikusanywa.',
     'proof_of_delivery_required' => 'Kuwasilisha kunahitaji uthibitisho: picha ya bidhaa zilizokabidhiwa, sahihi ya mpokeaji, au vyote viwili.',
     'delivery_not_under_way' => 'Uwasilishaji huu haujachukuliwa wala hauko njiani, kwa hivyo mahali ulipo hapachukuliwi kwa ajili yake.',
+    'returns_not_offered' => 'Duka hili linapokea marejesho kupitia wafanyakazi wake tu. Wasiliana na duka ili kurejesha bidhaa.',
+    'order_not_returnable' => 'Agizo hili haliwezi kurejeshwa: halijawahi kulipwa kikamilifu, au lilighairiwa.',
+    'return_window_closed' => 'Muda wa kurejesha bidhaa hizi umepita. Wasiliana na duka kama bado unahitaji kuzirejesha.',
+    'return_photo_required' => 'Ongeza picha ya bidhaa kwa sababu hii.',
+    'return_quantity_too_high' => 'Baadhi ya mistari ina vipande vichache vilivyobaki kurejeshwa kuliko ulivyoomba.',
+    'return_quantity_left' => 'Ni :left tu za mstari huu zinazoweza kurejeshwa bado.',
+    'return_staff_reason_required' => 'Eleza kwa nini marejesho haya yanazidi kile mnunuzi angeweza kuomba.',
+    'return_transition_not_allowed' => 'Marejesho haya hayawezi kubadilishwa hivyo kutoka hali yalipo sasa.',
 ];

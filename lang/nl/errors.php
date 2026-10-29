@@ -212,4 +212,12 @@ return [
     'cash_collection_required' => 'Bij deze bezorging moet contant geld worden geïnd. Geef aan hoeveel er is geïnd.',
     'proof_of_delivery_required' => 'Bezorgen vereist bewijs: een foto van de overhandigde goederen, de handtekening van de ontvanger, of beide.',
     'delivery_not_under_way' => 'Deze bezorging is niet opgehaald en niet onderweg, dus je locatie wordt er niet voor vastgelegd.',
+    'returns_not_offered' => 'Deze winkel neemt retouren alleen aan via medewerkers. Neem contact op met de winkel om artikelen terug te sturen.',
+    'order_not_returnable' => 'Deze bestelling kan niet worden geretourneerd: ze is nooit volledig betaald, of ze is geannuleerd.',
+    'return_window_closed' => 'De termijn om deze artikelen terug te sturen is verstreken. Neem contact op met de winkel als je ze toch moet terugsturen.',
+    'return_photo_required' => 'Voeg voor deze reden een foto van de artikelen toe.',
+    'return_quantity_too_high' => 'Bij sommige regels zijn er minder eenheden over om te retourneren dan je vroeg.',
+    'return_quantity_left' => 'Van deze regel kunnen nog maar :left worden geretourneerd.',
+    'return_staff_reason_required' => 'Geef aan waarom deze retour verder gaat dan een koper zou kunnen vragen.',
+    'return_transition_not_allowed' => 'Deze retour kan vanuit de huidige status niet zo worden gewijzigd.',
 ];

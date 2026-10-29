@@ -44,4 +44,18 @@ return [
         'max_height' => 4096,
     ],
 
+    /*
+    | Return photos: what a buyer shows of the items they send back, such as
+    | damage. Personal data, kept on the store's private disk and only ever
+    | streamed to staff, re-encoded on upload like proof of delivery, at most
+    | config('returns.max_photos') per return.
+    */
+    'return_photos' => [
+        'disk' => env('RETURN_PHOTOS_DISK', 'local'),
+        'types' => ['jpg', 'jpeg', 'png', 'webp'],
+        'max_kilobytes' => 5 * 1024,
+        'max_width' => 4096,
+        'max_height' => 4096,
+    ],
+
 ];

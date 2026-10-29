@@ -73,6 +73,9 @@ return [
         // A buyer polling their delivery's location, per customer or per guest order token, under a ceiling per IP address.
         'delivery_tracking' => (int) env('RATE_LIMIT_DELIVERY_TRACKING', 30),
         'delivery_tracking_ip_ceiling' => (int) env('RATE_LIMIT_DELIVERY_TRACKING_IP_CEILING', 300),
+        // A buyer asking for returns (with up to 5 photos each), per customer or per guest order token, under a ceiling per IP address.
+        'return_requests' => (int) env('RATE_LIMIT_RETURN_REQUESTS', 5),
+        'return_requests_ip_ceiling' => (int) env('RATE_LIMIT_RETURN_REQUESTS_IP_CEILING', 60),
         // A driver's app sending their location, per driver: one point every 5 seconds is plenty.
         'driver_location' => (int) env('RATE_LIMIT_DRIVER_LOCATION', 12),
         'tenant_webhooks' => (int) env('RATE_LIMIT_TENANT_WEBHOOKS', 300),

@@ -235,5 +235,13 @@ return [
     'cash_collection_required' => 'This delivery has cash to collect. Say how much cash was collected.',
     'proof_of_delivery_required' => 'Delivering needs proof: a photo of the goods handed over, the recipient\'s signature, or both.',
     'delivery_not_under_way' => 'This delivery isn\'t picked up or on the way, so your location isn\'t taken for it.',
+    'returns_not_offered' => 'This store takes returns only through its staff. Contact the store to return items.',
+    'order_not_returnable' => 'This order can\'t be returned: it was never paid in full, or it was cancelled.',
+    'return_window_closed' => 'The time to return these items has passed. Contact the store if you still need to return them.',
+    'return_photo_required' => 'Add a photo of the items for this reason.',
+    'return_quantity_too_high' => 'Some lines have fewer units left to return than you asked for.',
+    'return_quantity_left' => 'Only :left of this line can still be returned.',
+    'return_staff_reason_required' => 'Say why this return goes past what a buyer could ask for.',
+    'return_transition_not_allowed' => 'This return can\'t be changed that way from where it stands.',
 
 ];

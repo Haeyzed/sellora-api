@@ -212,4 +212,12 @@ return [
     'cash_collection_required' => 'Questa consegna ha contanti da incassare. Indica quanto è stato incassato.',
     'proof_of_delivery_required' => 'La consegna richiede una prova: una foto della merce consegnata, la firma del destinatario o entrambe.',
     'delivery_not_under_way' => 'Questa consegna non è stata ritirata né è in viaggio, quindi la tua posizione non viene registrata.',
+    'returns_not_offered' => 'Questo negozio accetta resi solo tramite il suo staff. Contatta il negozio per restituire gli articoli.',
+    'order_not_returnable' => 'Questo ordine non può essere reso: non è mai stato pagato per intero, oppure è stato annullato.',
+    'return_window_closed' => 'Il periodo per restituire questi articoli è scaduto. Contatta il negozio se devi ancora restituirli.',
+    'return_photo_required' => 'Aggiungi una foto degli articoli per questo motivo.',
+    'return_quantity_too_high' => 'Alcune righe hanno meno unità da restituire di quante ne hai chieste.',
+    'return_quantity_left' => 'Di questa riga se ne possono restituire solo :left.',
+    'return_staff_reason_required' => 'Spiega perché questo reso va oltre ciò che un acquirente potrebbe chiedere.',
+    'return_transition_not_allowed' => 'Questo reso non può essere modificato così dallo stato in cui si trova.',
 ];
