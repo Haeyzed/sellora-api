@@ -157,6 +157,24 @@ unchanged. On-hand cannot be adjusted below zero. A recount can result in
 on-hand falling below reserved, recording the real count even if that means
 the store is now short against its holds.
 
+### 7. Units a buyer sent back (Returns)
+
+When staff inspect a [return](returns.md) at a location, Inventory records
+what came back, with the return as the source and nothing held for anyone:
+
+- a resellable unit is `restocked`: `on_hand_delta = +1`;
+- a damaged unit is recorded as it arrives, `returned_damaged` (`+1`), and
+  written off at once, `written_off` (`-1`), so the ledger shows every unit
+  that came back even when none can be sold.
+
+If staff then reject the return and the goods go back to the buyer, nothing
+is edited: written-off units have their write-off reversed
+(`write_off_reversed`, `+n`) and every unit leaves again (`sent_back`,
+`-n`), so on hand ends where it was before the inspection. If restocked
+units were sold or held since (fewer are free than are to leave), that is
+refused and nothing changes. Variants whose stock isn't counted are left
+out throughout.
+
 ## Transfers and cost: important distinctions
 
 - **Stock transfer:** there is no physical location-to-location transfer
@@ -188,6 +206,10 @@ order without moving physical stock. Cancelling or expiring a holder releases
 the hold. The Orders workflow commits the reservation when physical goods
 leave: when a shipping/own-delivery shipment is shipped, when a pickup is
 collected, or when a paid line does not require shipping.
+
+Returns calls `RestockReturnedUnits` and `WriteOffReturnedUnits` when a
+return is inspected, and `SendReturnedUnitsBack` when an inspected return is
+rejected, each inside Returns' transaction and after its lock on the return.
 
 These action handoffs explain why `reserved_delta` changes availability
 without changing physical `on_hand`, and why `on_hand_delta` becomes

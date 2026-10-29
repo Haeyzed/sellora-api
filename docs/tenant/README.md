@@ -67,6 +67,9 @@ flowchart LR
    shipment to a driver, who picks it up and hands it over with proof (and
    any cash on delivery), and the buyer can follow it while it is on the way.
    [Messaging](messaging.md) is not yet a central tenant domain.
+8. [Returns](returns.md) lets the buyer send delivered units back: staff
+   approve, receive and inspect them, Inventory puts them back on the shelf
+   or writes them off, and Payments refunds the buyer.
 
 For the action-by-action end-to-end map, read
 [Sellora business flows](business-flows.md).
@@ -86,6 +89,7 @@ For the action-by-action end-to-end map, read
 - [Payment gateway integrations](payment-gateways.md)
 - [Pricing](pricing.md)
 - [Promotions](promotions.md)
+- [Returns](returns.md)
 - [Settings](settings.md)
 - [Shipping](shipping.md)
 

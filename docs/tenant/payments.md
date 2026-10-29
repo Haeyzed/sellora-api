@@ -47,6 +47,12 @@ several, such as a gift-card portion followed by a gateway payment.
   through its original gateway or is recorded as returned by hand, and is
   pending, succeeded or failed.
 
+- A refund of lines can keep part back, with a reason (for [Returns](returns.md),
+  when a return breaks the condition a discount depended on). It comes off
+  the lines themselves, spread by what each was worth, tax split the same
+  way, so their credit note credits only what went back. It is never as much
+  as the lines are worth, and only ever with a reason.
+
 Refund requests and their amounts never change. Gateway outcomes are
 checked, and unclear cases go to staff review rather than being declared
 successful.
@@ -90,8 +96,12 @@ For a refund, staff use `RefundOrder`. The action checks the order and
 payment/refundable balances under locks, records the refund and its payment
 parts, and sends pending gateway parts after commit. Refunds affect Payments
 and may affect whether Orders issues a credit note, but they do not return
-physical goods to Inventory. A stock return requires a separate Returns
-workflow, which is not described as implemented here.
+physical goods to Inventory: [Returns](returns.md) does that, and refunds a
+return by calling `RefundOrder` outside its own transaction with the key
+`return:{return id}:{attempt}`. Returns reads which units were refunded by
+line through `FindRefundedUnits`, and follows `RefundSucceeded`,
+`RefundFailed` and `RefundNeedsReview` (after Payments commits) to complete
+its returns.
 
 See [Sellora business flows](business-flows.md) for the transitions from
 checkout through payment and fulfillment.

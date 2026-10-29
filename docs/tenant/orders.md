@@ -71,6 +71,9 @@ Order amounts and copies are financial records and are never overwritten.
    be cancelled.
 6. If money is returned, Payments records refunds. If the refund reduces a
    paid sale, the system can issue a credit note against the invoice.
+7. After delivery, the buyer can send units back through
+   [Returns](returns.md), which refunds them through Payments and puts them
+   back on the shelf through Inventory; the order itself stays as it was.
 
 ## Historical and privacy rules
 
@@ -107,5 +110,7 @@ Before fulfillment leaves, `CancelOrder` cancels eligible open shipments and
 releases active inventory and promotion holds. Payments handles any refund
 that is owed. `IssueInvoice` and `IssueCreditNote` create immutable sale
 documents when the order/refund qualifies; refunds themselves are handled by
-Payments. For the complete lifecycle see
+Payments. Returns reads an order's shipments (what was delivered and when)
+to decide what can be returned, and listens to `OrderAnonymised` to clear
+its returns' notes and photos. For the complete lifecycle see
 [Sellora business flows](business-flows.md).
