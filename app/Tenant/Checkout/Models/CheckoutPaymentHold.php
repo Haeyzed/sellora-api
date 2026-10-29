@@ -29,6 +29,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property CarbonImmutable|null $refunded_at
  * @property CarbonImmutable|null $refund_failed_at When giving it back last failed; cleared once it is given back.
  * @property string|null $refund_failure Why giving it back last failed, as a code.
+ * @property CarbonImmutable|null $settle_failed_at When committing or releasing it last failed; cleared once it is settled.
+ * @property string|null $settle_failure Why committing or releasing it last failed, as a code.
+ * @property int $settle_failures How many tries to commit or release it failed in a row.
+ * @property CarbonImmutable|null $settle_alerted_at When staff were alerted that it keeps failing; only once.
+ * @property CarbonImmutable|null $settle_recovered_at When a retry settled it after it had failed.
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property-read Order $order
@@ -60,6 +65,10 @@ final class CheckoutPaymentHold extends Model
             'released_at' => 'immutable_datetime',
             'refunded_at' => 'immutable_datetime',
             'refund_failed_at' => 'immutable_datetime',
+            'settle_failed_at' => 'immutable_datetime',
+            'settle_failures' => 'integer',
+            'settle_alerted_at' => 'immutable_datetime',
+            'settle_recovered_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];

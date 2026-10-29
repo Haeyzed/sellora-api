@@ -9,17 +9,23 @@ use App\Tenant\Checkout\CheckoutExtensions;
 use App\Tenant\Checkout\Contracts\CheckoutPaymentMethod;
 use App\Tenant\Checkout\Enums\PaymentHoldStatus;
 use App\Tenant\Checkout\Events\CommittedPaymentRefundFailed;
+use App\Tenant\Checkout\Events\PaymentHoldKeepsFailing;
 use App\Tenant\Checkout\Models\CheckoutPaymentHold;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Payments\Actions\RecalculateOrderPayments;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use LogicException;
 use Throwable;
 
 /**
- * Takes what payment methods held for an order at placement through the rest of its life (section 13): committed once the order is paid, released once it expires or is cancelled unpaid, and refunded, by the method giving it back, once it is cancelled after it was paid. Each hold once, under its row lock, so running again (a retried job, both events) does nothing more.
+ * Takes what payment methods held for an order at placement through the rest of its life (section 13): committed once the order is paid, released once it expires or is cancelled unpaid, and refunded, by the method giving it back, once it is cancelled after it was paid. Each hold once, under its row lock, so running again (a retried job, both events, the hourly retry) does nothing more.
+ *
+ * Each hold is settled on its own: a method that throws, or is no longer
+ * registered, never stops the others. Its failure is recorded on its hold,
+ * logged, and tried again by the hourly payments sweep until it settles;
+ * staff are alerted once when it has failed checkout.hold_settle_alert_after
+ * tries in a row.
  */
 final readonly class PaymentHolds
 {
@@ -30,22 +36,32 @@ final readonly class PaymentHolds
 
     /**
      * Makes every hold still held final: the order is paid.
+     *
+     * @return int How many were committed.
      */
-    public function commit(Order $order): void
+    public function commit(Order $order): int
     {
-        $this->settle($order, PaymentHoldStatus::Committed, static function (CheckoutPaymentMethod $method, CheckoutPaymentHold $hold): void {
+        return $this->settle($order, PaymentHoldStatus::Committed, static function (CheckoutPaymentMethod $method, CheckoutPaymentHold $hold): void {
             $method->commit($hold);
         });
     }
 
     /**
-     * Gives back every hold still held: the order expired or was cancelled before it was paid.
+     * Gives back every hold still held: the order expired or was cancelled before it was paid. When it had counted as paid (its commit failed before it was cancelled), the order's payment status moves through Payments, so what was released stops counting.
+     *
+     * @return int How many were released.
      */
-    public function release(Order $order): void
+    public function release(Order $order): int
     {
-        $this->settle($order, PaymentHoldStatus::Released, static function (CheckoutPaymentMethod $method, CheckoutPaymentHold $hold): void {
+        $released = $this->settle($order, PaymentHoldStatus::Released, static function (CheckoutPaymentMethod $method, CheckoutPaymentHold $hold): void {
             $method->release($hold);
         });
+
+        if ($released > 0 && $order->refresh()->payment_status->holdsMoney()) {
+            $this->recalculateOrderPayments->handle($order);
+        }
+
+        return $released;
     }
 
     /**
@@ -141,27 +157,110 @@ final readonly class PaymentHolds
     }
 
     /**
+     * Settles each hold still held, each in a transaction of its own under its row lock, so one failing never stops the others.
+     *
      * @param  callable(CheckoutPaymentMethod, CheckoutPaymentHold): void  $step
+     * @return int How many were settled.
      */
-    private function settle(Order $order, PaymentHoldStatus $to, callable $step): void
+    private function settle(Order $order, PaymentHoldStatus $to, callable $step): int
     {
         $ids = CheckoutPaymentHold::query()->where('order_id', $order->id)->where('status', PaymentHoldStatus::Held->value)->orderBy('id')->pluck('id');
+        $settled = 0;
 
         foreach ($ids as $id) {
-            DB::transaction(function () use ($id, $to, $step): void {
-                $hold = CheckoutPaymentHold::query()->whereKey($id)->lockForUpdate()->firstOrFail();
-
-                if ($hold->status !== PaymentHoldStatus::Held) {
-                    return;
+            try {
+                $outcome = DB::transaction(fn (): bool|string => $this->settleOne($id, $to, $step));
+            } catch (Throwable $exception) {
+                // What it says, for staff; anything it didn't mean to throw goes to the error tracker too.
+                if (! $exception instanceof DomainException) {
+                    report($exception);
                 }
 
-                $step($this->checkoutExtensions->paymentMethodFor($hold->method) ?? throw new LogicException("No payment method handles \"{$hold->method}\" any more."), $hold);
+                $outcome = $exception instanceof DomainException ? $exception->errorCode() : 'payment_method_settle_failed';
+            }
 
-                $hold->forceFill([
-                    'status' => $to,
-                    $to === PaymentHoldStatus::Committed ? 'committed_at' : 'released_at' => CarbonImmutable::now(),
-                ])->save();
-            });
+            if (is_string($outcome)) {
+                $this->recordSettleFailure($id, $to, $outcome);
+            }
+
+            $settled += $outcome === true ? 1 : 0;
+        }
+
+        return $settled;
+    }
+
+    /**
+     * @param  callable(CheckoutPaymentMethod, CheckoutPaymentHold): void  $step
+     * @return bool|string Whether it was settled now (false when it already was), or why it couldn't be.
+     */
+    private function settleOne(int $id, PaymentHoldStatus $to, callable $step): bool|string
+    {
+        $hold = CheckoutPaymentHold::query()->whereKey($id)->lockForUpdate()->firstOrFail();
+
+        if ($hold->status !== PaymentHoldStatus::Held) {
+            return false;
+        }
+
+        $method = $this->checkoutExtensions->paymentMethodFor($hold->method);
+
+        if ($method === null) {
+            return 'payment_method_not_registered';
+        }
+
+        $step($method, $hold);
+        $recovered = $hold->settle_failed_at !== null;
+
+        $hold->forceFill([
+            'status' => $to,
+            $to === PaymentHoldStatus::Committed ? 'committed_at' : 'released_at' => CarbonImmutable::now(),
+            'settle_failed_at' => null,
+            'settle_failure' => null,
+            ...($recovered ? ['settle_recovered_at' => CarbonImmutable::now()] : []),
+        ])->save();
+
+        if ($recovered) {
+            Log::info('A payment hold that had failed to settle is now settled.', ['order' => $hold->order->public_id, 'method' => $hold->method, 'status' => $to->value, 'tries_failed' => $hold->settle_failures]);
+        }
+
+        return true;
+    }
+
+    /**
+     * Records why a hold couldn't be committed or released, while it is still held, and alerts staff once when it has failed checkout.hold_settle_alert_after tries in a row.
+     */
+    private function recordSettleFailure(int $id, PaymentHoldStatus $to, string $reason): void
+    {
+        $recorded = DB::transaction(static function () use ($id, $reason): ?array {
+            $locked = CheckoutPaymentHold::query()->whereKey($id)->lockForUpdate()->firstOrFail();
+
+            // Settled meanwhile, by another try that worked.
+            if ($locked->status !== PaymentHoldStatus::Held) {
+                return null;
+            }
+
+            $failures = $locked->settle_failures + 1;
+            $alert = $locked->settle_alerted_at === null && $failures >= config()->integer('checkout.hold_settle_alert_after');
+
+            $locked->forceFill([
+                'settle_failed_at' => CarbonImmutable::now(),
+                'settle_failure' => mb_substr($reason, 0, 64),
+                'settle_failures' => $failures,
+                ...($alert ? ['settle_alerted_at' => CarbonImmutable::now()] : []),
+            ])->save();
+
+            return [$locked, $alert];
+        });
+
+        if ($recorded === null) {
+            return;
+        }
+
+        [$hold, $alert] = $recorded;
+        // Only public IDs and the method's key: staff find the rest from there.
+        Log::warning('A payment method could not settle what it holds for an order; it is tried again hourly.', ['order' => $hold->order->public_id, 'method' => $hold->method, 'to' => $to->value, 'reason' => $reason, 'tries_failed' => $hold->settle_failures]);
+
+        if ($alert) {
+            PaymentHoldKeepsFailing::dispatch($hold);
         }
     }
 }

@@ -25,6 +25,14 @@ here.
   for its share of the order, in minor units. A hold is held, then committed
   or released. A zero share is allowed for a method that holds no money
   itself.
+- Each hold is committed or released on its own, so a payment method that
+  fails (it throws, or its module is no longer installed) never holds up the
+  others. The failure is recorded on that hold and logged, and the hourly
+  payments sweep tries again until it settles: committed for a paid order,
+  released for an expired or cancelled one. Staff are alerted once when a
+  hold has failed `CHECKOUT_HOLD_SETTLE_ALERT_AFTER` tries in a row (3 by
+  default); once a retry settles it, the failure is cleared and the time it
+  recovered is kept.
 
 ## Buyer journey
 

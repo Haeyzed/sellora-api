@@ -67,6 +67,7 @@ use App\Shared\Tenancy\Contracts\StoreStockLedger;
 use App\Shared\Tenancy\Contracts\StoreStockReservations;
 use App\Shared\Tenancy\Contracts\StoreTaxDocuments;
 use App\Shared\Tenancy\Contracts\StoreUnpaidOrders;
+use App\Shared\Tenancy\Contracts\StoreUnsettledPaymentHolds;
 use App\Tenant\Cart\CartStoreTables;
 use App\Tenant\Cart\CustomerCartRetention;
 use App\Tenant\Cart\GuestCartRetention;
@@ -96,6 +97,7 @@ use App\Tenant\Checkout\Models\Checkout;
 use App\Tenant\Checkout\PaymentMethods\GatewayPaymentMethods;
 use App\Tenant\Checkout\PaymentMethods\ManualPaymentMethods;
 use App\Tenant\Checkout\Privacy\CheckoutData;
+use App\Tenant\Checkout\UnsettledPaymentHoldSweep;
 use App\Tenant\Customers\CustomerDataExportRetention;
 use App\Tenant\Customers\CustomerEmailTokenRetention;
 use App\Tenant\Customers\CustomerStoreTables;
@@ -352,6 +354,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(PaymentWebhooks::class, PaymentWebhookReceiver::class);
         $this->app->bind(StorePaymentChecks::class, PendingPaymentSweep::class);
         $this->app->bind(StoreCommittedPaymentRefunds::class, CommittedPaymentRefundSweep::class);
+        $this->app->bind(StoreUnsettledPaymentHolds::class, UnsettledPaymentHoldSweep::class);
         // Orders asks Payments for one last check before an order expires.
         $this->app->bind(PaymentCheckBeforeExpiry::class, GatewayCheckBeforeExpiry::class);
         $this->app->bind(ShipmentDrivers::class, OpenDeliveries::class);

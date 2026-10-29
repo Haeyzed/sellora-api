@@ -33,4 +33,21 @@ return [
 
     'refund_retries_per_run' => (int) env('CHECKOUT_REFUND_RETRIES_PER_RUN', 100),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Settling What Payment Methods Hold
+    |--------------------------------------------------------------------------
+    |
+    | What a payment method holds for an order is committed once the order is
+    | paid, and released once it expires or is cancelled unpaid. When that
+    | fails, the hourly payments sweep tries again, for this many orders per
+    | store each run, until it settles. Staff are alerted once a hold has
+    | failed this many tries in a row; it is still tried hourly after that.
+    |
+    */
+
+    'hold_settle_retries_per_run' => (int) env('CHECKOUT_HOLD_SETTLE_RETRIES_PER_RUN', 100),
+
+    'hold_settle_alert_after' => (int) env('CHECKOUT_HOLD_SETTLE_ALERT_AFTER', 3),
+
 ];

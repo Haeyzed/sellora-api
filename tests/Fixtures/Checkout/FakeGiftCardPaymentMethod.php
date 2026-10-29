@@ -35,6 +35,9 @@ final class FakeGiftCardPaymentMethod implements CheckoutPaymentMethod, Checkout
     /** What giving back throws, as when the card service can't be reached or refuses; null when it works. */
     public static ?Throwable $refundFailure = null;
 
+    /** What committing or releasing a hold throws, as when the card service can't be reached; null when it works. */
+    public static ?Throwable $settleFailure = null;
+
     /** @var list<int> The database transaction level each time it was asked to give back: core asks outside any. */
     public static array $refundTransactionLevels = [];
 
@@ -47,6 +50,7 @@ final class FakeGiftCardPaymentMethod implements CheckoutPaymentMethod, Checkout
         self::$steps = [];
         self::$holdsShortBy = 0;
         self::$refundFailure = null;
+        self::$settleFailure = null;
         self::$refundTransactionLevels = [];
         self::$refunded = [];
     }
@@ -71,11 +75,19 @@ final class FakeGiftCardPaymentMethod implements CheckoutPaymentMethod, Checkout
 
     public function commit(CheckoutPaymentHold $hold): void
     {
+        if (self::$settleFailure !== null) {
+            throw self::$settleFailure;
+        }
+
         self::$steps[] = 'commit:'.$hold->reference;
     }
 
     public function release(CheckoutPaymentHold $hold): void
     {
+        if (self::$settleFailure !== null) {
+            throw self::$settleFailure;
+        }
+
         self::$steps[] = 'release:'.$hold->reference;
     }
 

@@ -87,6 +87,26 @@ final class SecondConnection
     }
 
     /**
+     * Runs the application's own code on this connection, inside its transaction, as a concurrent request would: it is the default connection until the work returns, so what the work locks and writes stays locked and unseen until commit() or rollBack().
+     *
+     * @template TResult
+     *
+     * @param  Closure(): TResult  $work
+     * @return TResult
+     */
+    public function act(Closure $work): mixed
+    {
+        $main = DB::getDefaultConnection();
+        DB::setDefaultConnection(self::NAME);
+
+        try {
+            return $work();
+        } finally {
+            DB::setDefaultConnection($main);
+        }
+    }
+
+    /**
      * Whether work on the main connection has to wait for a lock this connection holds. Waits are cut short after the timeout and the work's transaction is rolled back.
      *
      * Any other failure is rethrown, so a test can't mistake it for waiting.

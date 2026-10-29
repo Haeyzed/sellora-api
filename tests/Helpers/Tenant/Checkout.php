@@ -192,6 +192,35 @@ function paymentHolds(): array
 }
 
 /**
+ * Where settling the test store's hold for a payment method stands: its status, why settling it last failed, how many tries in a row failed, and whether staff were alerted and it recovered.
+ *
+ * @return array{status: string, failure: string|null, failures: int, alerted: bool, recovered: bool}
+ */
+function holdSettling(string $method): array
+{
+    return test()->store->run(static function () use ($method): array {
+        $hold = CheckoutPaymentHold::query()->where('method', $method)->sole();
+
+        return [
+            'status' => $hold->status->value,
+            'failure' => $hold->settle_failure,
+            'failures' => $hold->settle_failures,
+            'alerted' => $hold->settle_alerted_at !== null,
+            'recovered' => $hold->settle_recovered_at !== null,
+        ];
+    });
+}
+
+/**
+ * Staff recording the bank transfer for the rest of the test store's only order: the order is then paid.
+ */
+function receiveTheRest(): void
+{
+    $payment = test()->store->run(static fn (): Payment => Payment::query()->sole());
+    recordReceived($payment, $payment->amount->minorAmount());
+}
+
+/**
  * The test store's only order and its payment holds as they stand, for comparing.
  *
  * @return array{status: string, payment_status: string, refund_due: bool, holds: array<string, array{status: string, refund_failure: string|null}>}
