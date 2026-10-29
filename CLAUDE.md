@@ -401,7 +401,7 @@ sellora-api/
 │   ├── Unit/
 │   ├── Pest.php
 │   └── TestCase.php
-├── docs/                             # hand-written guides only: README.md (product guide), landlord/ and tenant/ API guides; never generated files
+├── docs/                             # hand-written guides only: README.md (product guide), roadmap.md (decided module rules), landlord/ and tenant/ API guides; never generated files
 ├── api-docs/                         # git-ignored output of `composer docs:export` (OpenAPI JSON for Postman)
 ├── composer.json
 ├── phpunit.xml                       # includes module and integration test folders
@@ -1368,25 +1368,29 @@ These decisions came out of the legacy review. Follow them, and don't build anyt
 
 | Module | Status | Notes |
 |---|---|---|
-| `Hr` | roadmap | classes named without an `Hr` prefix (`Employee`, not `HrEmployee`); only tables get `hr_` |
-| `Restaurant` | roadmap | tables, reservations, modifiers, kitchen display |
+| `Hr` | roadmap | people, payroll, leave; only tables get the `hr_` prefix |
+| `Restaurant` | roadmap | tables, reservations, modifiers, kitchen display; built on `Pos` as a declared dependency (one POS, not two) |
 | `Manufacturing` | roadmap | bills of materials, work orders |
-| `AdvancedReporting` | roadmap | includes "Store insights" (legacy AiAssistant, which is not AI) |
-| `Accounting` | roadmap | ledger, expenses and income (legacy Expenses; "Biller" becomes "Payee") |
-| `Pos` | roadmap | point of sale; terminal providers are integrations; a customer's tag or card (NFC or similar) only identifies their wallet, never holds the balance, and needs a signed challenge or a PIN, instant blocking and spending limits |
-| `GiftCards`, `Loyalty` (RewardPoints), `Installments` | roadmap | plug into checkout through extension points (section 6) |
-| `RecurringOrders` (ProductSubscriptions) | roadmap | renamed to avoid confusion with platform subscriptions |
+| `AdvancedReporting` | roadmap | full analytics, including "Store insights" (legacy AiAssistant) |
+| `Accounting` | roadmap | ledger, expenses and income (legacy Expenses) |
+| `Pos` | roadmap | counter selling with extension points for industry modules; terminal providers are integrations |
+| `GiftCards`, `Loyalty` (RewardPoints) | roadmap | plug into checkout through extension points (section 6) |
+| `Installments` | roadmap | one order paid in a fixed schedule; first version: goods released only after the last part |
+| `RecurringOrders` (ProductSubscriptions) | roadmap | repeat orders on a schedule |
 | `MultiLocation` | roadmap | multiple warehouses, transfers, per-location stock; a single location is core |
 | `Purchasing`, `B2B` (SalesQuotations), `SalesCommissions` (SalesAgents) | roadmap | back-office add-ons |
 | `Booking`, `ApprovalWorkflows`, `Engagement` (BackInStock; also back-in-stock and price-drop alerts for wishlist items), `ContentMarketing` (blog, FAQ), `Helpdesk` (customer Support) | roadmap | optional add-ons |
-| `DigitalProducts` | roadmap | downloadable files and licence keys; secure, expiring download links; files linked to variants in the module's own tables |
-| `Bundles` | roadmap | one item sold, stock taken from several variants (kits, gift sets) |
-| `Wallet` | roadmap | store credit: a customer funds it with a real, verified payment and spends it at that store only (closed loop: no cash-out, no transfers between customers). An append-only ledger is the source of truth and the balance can never go negative (tested under contention). It plugs into checkout as a payment method through the extension points (hold, commit, release, give back). Top-ups are not sales: no tax and no invoice until the credit pays for an order. Balances stay spendable or refundable if the module is Locked or Disabled. Closing a store requires outstanding balances to be settled first. Needs a Payments extension point for payments that are not for an order, and may later be a refund resolution for Returns. Stored value can be regulated: check the rules of the merchants' countries before launch. Separate from `Loyalty` (rewards the store grants, not money) and `GiftCards` (anonymous codes) |
-| `Recommendations` | roadmap | "frequently bought together" (pairs counted from each store's own paid, non-test orders by a scheduled job on the `bulk` queue, shown only above a minimum number of purchases) and personalised "you may also like". Behaviour data about a person is personal data: registered with the privacy registry, with a retention period. Core keeps the simple versions (merchant-picked links, automatic similar products, best sellers) |
-| `Reviews` | roadmap | ratings and reviews, which also unlocks "top rated". Only customers who bought the item can review, with moderation; reviewer details go in the privacy registry |
+| `DigitalProducts` | roadmap | downloadable files and licence keys |
+| `Bundles` | roadmap | one item sold, stock taken from several variants |
+| `Wallet` | roadmap | closed-loop store credit the store owes the customer; append-only ledger, never negative; first version without linked wallets |
+| `AccountCredit` | roadmap | buy now, pay the store later; its own ledger, never shared with `Wallet`; staff approve every customer |
+| `Recommendations` | roadmap | "frequently bought together" and personalised suggestions |
+| `Reviews` | roadmap | ratings and reviews from verified buyers, with moderation |
 | `Marketplace` | later | multi-vendor; adds a `seller` guard only when built |
-| `Repair` | later | postponed until there's demand |
+| `Repair` | later | postponed until there is demand |
 | `Projects` | **dropped** | not commerce; don't port |
+
+**The detailed rules decided so far for each module live in `docs/roadmap.md`.** Read a module's entry there before planning it, and only then; it is not needed for core work. **First versions stay small:** build only what merchants need first, and add the rest when they ask.
 
 **Integrations:** payment gateways (Stripe, Paystack, Flutterwave, PayPal), SMS providers (Termii, Africa's Talking, Twilio, BulkSMSNigeria), WhatsApp, push notifications, POS terminals (Moniepoint, OPay, PalmPay, Kuda Business; each is built only if the provider offers merchants a usable terminal API, confirmed when it is planned), WooCommerce sync and social commerce. Each is its own folder in `integrations/`, never inside `app/Shared`. Country-specific tax rules (such as India's GST split) are plug-ins behind `TaxCalculator`, never inside core: rule-only plug-ins are modules, outside tax services are integrations (section 3.3). Open Exchange Rates is the platform's market-rate provider, behind `ExchangeRateSource`.
 
