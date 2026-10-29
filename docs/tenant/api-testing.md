@@ -2195,6 +2195,60 @@ curl.exe --request GET "${StoreBase}/staff/returns/${Return}" `
   --header "Authorization: Bearer $StaffToken"
 ```
 
+**GET** `/staff/returns/{return}/photos/{position}` — staff bearer token. Show a return's photo (by position from 1; the response is the image)
+
+```powershell
+curl.exe --request GET "${StoreBase}/staff/returns/${Return}/photos/1" `
+  --header "Authorization: Bearer $StaffToken" `
+  --output return-photo-1.jpg
+```
+
+**POST** `/staff/returns/{return}/approve` — staff bearer token. Approve a return (`keep_items` refunds without the items coming back, and needs `payments.refund` too)
+
+```powershell
+curl.exe --request POST "${StoreBase}/staff/returns/${Return}/approve" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw '{"keep_items":false}'
+```
+
+**POST** `/staff/returns/{return}/reject` — staff bearer token. Reject a return
+
+```powershell
+curl.exe --request POST "${StoreBase}/staff/returns/${Return}/reject" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw '{"reason":"Worn and washed"}'
+```
+
+**POST** `/staff/returns/{return}/receive` — staff bearer token. Mark a return's items received
+
+```powershell
+curl.exe --request POST "${StoreBase}/staff/returns/${Return}/receive" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
+**POST** `/staff/returns/{return}/inspect` — staff bearer token. Inspect a return's items (at the default location when `location` is left out)
+
+```powershell
+curl.exe --request POST "${StoreBase}/staff/returns/${Return}/inspect" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw "{`"lines`":[{`"line`":`"$Line`",`"restocked`":1,`"written_off`":0}]}"
+```
+
+**POST** `/staff/returns/{return}/cancel` — staff bearer token. Cancel a return
+
+```powershell
+curl.exe --request POST "${StoreBase}/staff/returns/${Return}/cancel" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
 #### ReturnReason
 
 **GET** `/returns/reasons` — no token. List return reasons

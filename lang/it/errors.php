@@ -220,4 +220,5 @@ return [
     'return_quantity_left' => 'Di questa riga se ne possono restituire solo :left.',
     'return_staff_reason_required' => 'Spiega perché questo reso va oltre ciò che un acquirente potrebbe chiedere.',
     'return_transition_not_allowed' => 'Questo reso non può essere modificato così dallo stato in cui si trova.',
+    'return_inspection_mismatch' => 'Indica cosa è successo a ogni unità tornata: per ogni riga, le unità rimesse a magazzino e quelle stralciate devono sommare alla sua quantità.',
 ];

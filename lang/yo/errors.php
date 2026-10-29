@@ -220,4 +220,5 @@ return [
     'return_quantity_left' => ':left nìkan ni a ṣì lè dá padà nínú ìlà yìí.',
     'return_staff_reason_required' => 'Sọ ìdí tí ìdápadà yìí fi kọjá ohun tí olùrà lè béèrè.',
     'return_transition_not_allowed' => 'A kò lè yí ìdápadà yìí padà bẹ́ẹ̀ láti ibi tí ó wà báyìí.',
+    'return_inspection_mismatch' => 'Sọ ohun tí ó ṣẹlẹ̀ sí ẹyọ kọ̀ọ̀kan tí ó padà: fún ìlà kọ̀ọ̀kan, àwọn tí a dá padà sí ọjà àti àwọn tí a pa rẹ́ gbọ́dọ̀ jẹ́ iye rẹ̀ lápapọ̀.',
 ];

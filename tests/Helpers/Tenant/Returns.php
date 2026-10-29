@@ -8,13 +8,22 @@ use App\Shared\Auth\Models\Role;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
+use App\Tenant\Inventory\Models\StockItem;
+use App\Tenant\Inventory\Models\StockLocation;
 use App\Tenant\Orders\Actions\CreateShipment;
 use App\Tenant\Orders\Actions\MoveShipment;
 use App\Tenant\Orders\Data\OrderBuyer;
 use App\Tenant\Orders\Models\Order;
+use App\Tenant\Orders\Models\OrderLine;
 use App\Tenant\Orders\Models\Shipment;
 use App\Tenant\Payments\Enums\GatewayMode;
 use App\Tenant\Payments\Enums\GatewayPaymentState;
+use App\Tenant\Returns\Actions\ApproveReturn;
+use App\Tenant\Returns\Actions\ReceiveReturn;
+use App\Tenant\Returns\Actions\RequestReturn;
+use App\Tenant\Returns\Data\ReturnRequester;
+use App\Tenant\Returns\Enums\ReturnReason;
+use App\Tenant\Returns\Models\OrderReturn;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -99,6 +108,45 @@ function returnableOrder(array $lines = [[10000, 2]], ?Customer $customer = null
 
         return $order->refresh()->load(['lines' => static fn ($query) => $query->orderBy('position')]);
     });
+}
+
+/**
+ * A return of the test store's order, requested by staff for the buyer: of the units given by order line public ID, or of every unit of every line.
+ *
+ * @param  array<string, int>|null  $units
+ */
+function requestedReturn(Order $order, ?array $units = null, ReturnReason $reason = ReturnReason::ChangedMind): OrderReturn
+{
+    $units ??= $order->lines->mapWithKeys(static fn ($line): array => [$line->public_id => $line->quantity])->all();
+
+    return test()->store->run(static fn (): OrderReturn => app(RequestReturn::class)->handle(ReturnRequester::staff(StaffMember::query()->firstOrFail()), $order, $units, $reason));
+}
+
+/**
+ * A return as requestedReturn() makes it, then approved and its items received, ready to inspect.
+ *
+ * @param  array<string, int>|null  $units
+ */
+function receivedReturn(Order $order, ?array $units = null, ReturnReason $reason = ReturnReason::ChangedMind): OrderReturn
+{
+    $return = requestedReturn($order, $units, $reason);
+
+    return test()->store->run(static function () use ($return): OrderReturn {
+        $staff = AccountReference::to(StaffMember::query()->firstOrFail());
+
+        return app(ReceiveReturn::class)->handle(app(ApproveReturn::class)->handle($return, $staff), $staff);
+    });
+}
+
+/**
+ * On hand of an order line's variant at the test store's default location.
+ */
+function onHandAtDefaultLocation(OrderLine $line): int
+{
+    return test()->store->run(static fn (): int => StockItem::query()
+        ->where('product_variant_id', $line->product_variant_id)
+        ->where('stock_location_id', StockLocation::query()->where('is_default', true)->value('id'))
+        ->sole()->on_hand);
 }
 
 /**

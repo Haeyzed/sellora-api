@@ -220,4 +220,5 @@ return [
     'return_quantity_left' => 'Seulement :left de cette ligne peuvent encore être retournés.',
     'return_staff_reason_required' => 'Indiquez pourquoi ce retour va au-delà de ce qu’un acheteur pourrait demander.',
     'return_transition_not_allowed' => 'Ce retour ne peut pas être modifié ainsi depuis son état actuel.',
+    'return_inspection_mismatch' => 'Indiquez ce qu\'il est advenu de chaque unité retournée : pour chaque ligne, les unités remises en stock et celles passées en perte doivent totaliser sa quantité.',
 ];

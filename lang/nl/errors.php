@@ -220,4 +220,5 @@ return [
     'return_quantity_left' => 'Van deze regel kunnen nog maar :left worden geretourneerd.',
     'return_staff_reason_required' => 'Geef aan waarom deze retour verder gaat dan een koper zou kunnen vragen.',
     'return_transition_not_allowed' => 'Deze retour kan vanuit de huidige status niet zo worden gewijzigd.',
+    'return_inspection_mismatch' => 'Geef aan wat er met elke teruggekomen eenheid is gebeurd: per regel moeten terug op voorraad en afgeschreven samen de hoeveelheid vormen.',
 ];

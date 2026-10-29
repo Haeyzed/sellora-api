@@ -220,4 +220,5 @@ return [
     'return_quantity_left' => 'この明細で返品できるのは残り :left 点だけです。',
     'return_staff_reason_required' => 'この返品が購入者の依頼できる範囲を超える理由を入力してください。',
     'return_transition_not_allowed' => 'この返品は現在の状態からそのように変更できません。',
+    'return_inspection_mismatch' => '戻ってきた各単位の扱いを指定してください。各行で、在庫に戻した数と廃棄した数の合計がその数量と一致する必要があります。',
 ];

@@ -53,5 +53,11 @@ Route::middleware(['auth:'.StaffMember::GUARD, EnsureTwoFactorWhenRequired::clas
         Route::patch('settings', [ReturnSettingsController::class, 'update'])->name('settings.update');
         Route::get('/', [ReturnController::class, 'index'])->name('index');
         Route::get('{return}', [ReturnController::class, 'show'])->name('show');
+        Route::get('{return}/photos/{position}', [ReturnController::class, 'photo'])->whereNumber('position')->name('photos.show');
+        Route::post('{return}/approve', [ReturnController::class, 'approve'])->name('approve');
+        Route::post('{return}/reject', [ReturnController::class, 'reject'])->name('reject');
+        Route::post('{return}/receive', [ReturnController::class, 'receive'])->name('receive');
+        Route::post('{return}/inspect', [ReturnController::class, 'inspect'])->name('inspect');
+        Route::post('{return}/cancel', [ReturnController::class, 'cancel'])->name('cancel');
     });
 });

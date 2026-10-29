@@ -220,4 +220,5 @@ return [
     'return_quantity_left' => 'Solo se pueden devolver :left de esta línea.',
     'return_staff_reason_required' => 'Indica por qué esta devolución va más allá de lo que un comprador podría pedir.',
     'return_transition_not_allowed' => 'Esta devolución no se puede cambiar así desde su estado actual.',
+    'return_inspection_mismatch' => 'Indica qué pasó con cada unidad devuelta: en cada línea, las repuestas y las dadas de baja deben sumar su cantidad.',
 ];

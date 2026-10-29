@@ -220,4 +220,5 @@ return [
     'return_quantity_left' => 'Z tej pozycji można jeszcze zwrócić tylko :left.',
     'return_staff_reason_required' => 'Podaj, dlaczego ten zwrot wykracza poza to, o co mógłby poprosić kupujący.',
     'return_transition_not_allowed' => 'Tego zwrotu nie można tak zmienić z jego obecnego stanu.',
+    'return_inspection_mismatch' => 'Podaj, co stało się z każdą zwróconą sztuką: dla każdej pozycji sztuki przywrócone na stan i spisane muszą sumować się do jej ilości.',
 ];

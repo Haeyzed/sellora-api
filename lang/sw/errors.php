@@ -220,4 +220,5 @@ return [
     'return_quantity_left' => 'Ni :left tu za mstari huu zinazoweza kurejeshwa bado.',
     'return_staff_reason_required' => 'Eleza kwa nini marejesho haya yanazidi kile mnunuzi angeweza kuomba.',
     'return_transition_not_allowed' => 'Marejesho haya hayawezi kubadilishwa hivyo kutoka hali yalipo sasa.',
+    'return_inspection_mismatch' => 'Sema kilichotokea kwa kila kipande kilichorudi: kwa kila mstari, vilivyorudishwa stoo na vilivyofutwa lazima vijumlishe idadi yake.',
 ];

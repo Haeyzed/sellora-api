@@ -220,4 +220,5 @@ return [
     'return_quantity_left' => 'Hanya :left dari baris ini yang masih bisa diretur.',
     'return_staff_reason_required' => 'Jelaskan mengapa retur ini melampaui apa yang bisa diminta pembeli.',
     'return_transition_not_allowed' => 'Retur ini tidak dapat diubah dengan cara itu dari statusnya sekarang.',
+    'return_inspection_mismatch' => 'Sebutkan apa yang terjadi pada setiap unit yang kembali: untuk setiap baris, jumlah yang dikembalikan ke stok dan yang dihapusbukukan harus sama dengan kuantitasnya.',
 ];

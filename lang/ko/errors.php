@@ -220,4 +220,5 @@ return [
     'return_quantity_left' => '이 항목은 :left개만 더 반품할 수 있습니다.',
     'return_staff_reason_required' => '이 반품이 구매자가 요청할 수 있는 범위를 넘는 이유를 입력하세요.',
     'return_transition_not_allowed' => '이 반품은 현재 상태에서 그렇게 변경할 수 없습니다.',
+    'return_inspection_mismatch' => '돌아온 모든 단위의 처리를 지정하세요. 각 줄마다 재입고 수량과 폐기 수량의 합이 그 수량과 같아야 합니다.',
 ];

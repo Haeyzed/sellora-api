@@ -220,4 +220,5 @@ return [
     'return_quantity_left' => 'Naanị :left nke ahịrị a ka a ka nwere ike iweghachi.',
     'return_staff_reason_required' => 'Kwuo ihe mere nlọghachi a ji gafere ihe onye zụrụ ahịa nwere ike ịrịọ.',
     'return_transition_not_allowed' => 'Enweghị ike ịgbanwe nlọghachi a otu ahụ site n\'ọnọdụ ọ nọ ugbu a.',
+    'return_inspection_mismatch' => 'Kwuo ihe mere otu ọ bụla laghachiri: maka ahịrị ọ bụla, ndị eweghachiri n\'ngwongwo na ndị ehichapụrụ ga-ahakọta ọnụ ọgụgụ ya.',
 ];

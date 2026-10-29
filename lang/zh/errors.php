@@ -220,4 +220,5 @@ return [
     'return_quantity_left' => '此商品行只能再退 :left 件。',
     'return_staff_reason_required' => '请说明此退货为何超出买家可申请的范围。',
     'return_transition_not_allowed' => '此退货在当前状态下无法这样更改。',
+    'return_inspection_mismatch' => '请说明每件退回商品的去向：每一行中，重新入库和报废的数量之和必须等于其数量。',
 ];

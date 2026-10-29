@@ -220,4 +220,5 @@ return [
     'return_quantity_left' => 'Bu satırdan yalnızca :left adet daha iade edilebilir.',
     'return_staff_reason_required' => 'Bu iadenin bir alıcının isteyebileceğinin ötesine neden geçtiğini belirtin.',
     'return_transition_not_allowed' => 'Bu iade şu anki durumundan bu şekilde değiştirilemez.',
+    'return_inspection_mismatch' => 'Geri gelen her birime ne olduğunu belirtin: her satırda stoğa geri konan ve zarar yazılan birimlerin toplamı miktarına eşit olmalıdır.',
 ];

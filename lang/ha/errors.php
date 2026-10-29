@@ -220,4 +220,5 @@ return [
     'return_quantity_left' => ':left kawai na wannan layi za a iya dawo da su.',
     'return_staff_reason_required' => 'Faɗi dalilin da yasa wannan dawowar ta wuce abin da mai saye zai iya nema.',
     'return_transition_not_allowed' => 'Ba za a iya canza wannan dawowar haka ba daga inda take yanzu.',
+    'return_inspection_mismatch' => 'Faɗi abin da ya faru da kowace naúra da ta dawo: ga kowane layi, waɗanda aka mayar cikin kaya da waɗanda aka soke dole su kai yawansa.',
 ];
