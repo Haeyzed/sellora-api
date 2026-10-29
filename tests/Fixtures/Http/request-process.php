@@ -3,9 +3,9 @@
 declare(strict_types=1);
 
 /*
- * One shopper placing an order, in a PHP process of its own, for the tests of
- * placing orders at the same moment (CheckoutContentionTest): each process
- * has its own database connection, as two real requests would.
+ * One POST request, in a PHP process of its own, for the tests of requests
+ * sent at the same moment (requestsAtOnce(), such as CheckoutContentionTest):
+ * each process has its own database connection, as two real requests would.
  *
  * Reads a JSON file naming the request (url, headers, body), when to send it
  * (start_at, a Unix time with microseconds, so every process sends at once)

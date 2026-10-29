@@ -12,10 +12,8 @@ use App\Tenant\Inventory\Models\StockReservation;
 use App\Tenant\Orders\Actions\CancelOrder;
 use App\Tenant\Orders\Models\Order;
 use Carbon\CarbonImmutable;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
-use Symfony\Component\Process\Process;
 use Tests\Fixtures\Checkout\FakeGiftCardPaymentMethod;
 
 /*
@@ -232,37 +230,9 @@ function reservedStock(array $variants): array
  */
 function placeAtOnce(array $placements, string $subdomain = 'cart-store'): array
 {
-    $startAt = microtime(true) + 4;
-    $processes = [];
-    $connection = config()->string('database.default');
-    // A parallel test process works in databases of its own (TestCase): the placing processes must use the same ones.
-    $databases = [
-        "database.connections.{$connection}.database" => config()->string("database.connections.{$connection}.database"),
-        'tenancy.database.prefix' => config()->string('tenancy.database.prefix'),
-    ];
-
-    foreach ($placements as $index => $placement) {
-        $specPath = storage_path("framework/testing/place-order-{$index}.json");
-        File::ensureDirectoryExists(dirname($specPath));
-        File::put($specPath, (string) json_encode([
-            'url' => storeUrl($subdomain, '/api/v1/checkout/orders'),
-            'headers' => [CartToken::HEADER => $placement['token'], 'Idempotency-Key' => $placement['key']],
-            'body' => ['checkout' => $placement['checkout'], 'version' => $placement['version']],
-            'start_at' => $startAt,
-            'config' => $databases,
-        ]));
-
-        $process = new Process([PHP_BINARY, base_path('tests/Fixtures/Checkout/place-order-process.php'), $specPath], base_path(), timeout: 60);
-        $process->start();
-        $processes[] = [$process, $specPath];
-    }
-
-    return array_map(static function (array $running): array {
-        [$process, $specPath] = $running;
-        $process->wait();
-        File::delete($specPath);
-        $result = json_decode($process->getOutput(), true);
-
-        return is_array($result) ? $result : throw new LogicException('A placing process failed: '.$process->getErrorOutput().$process->getOutput());
-    }, $processes);
+    return requestsAtOnce(array_map(static fn (array $placement): array => [
+        'url' => storeUrl($subdomain, '/api/v1/checkout/orders'),
+        'headers' => [CartToken::HEADER => $placement['token'], 'Idempotency-Key' => $placement['key']],
+        'body' => ['checkout' => $placement['checkout'], 'version' => $placement['version']],
+    ], $placements));
 }

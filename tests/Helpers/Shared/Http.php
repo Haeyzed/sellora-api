@@ -6,6 +6,53 @@ use Dedoc\Scramble\CacheableGenerator;
 use Dedoc\Scramble\Generator;
 use Dedoc\Scramble\GeneratorResult;
 use Dedoc\Scramble\Scramble;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
+use Symfony\Component\Process\Process;
+
+/*
+|--------------------------------------------------------------------------
+| For tests of requests sent at the same moment
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Sends several POST requests at the same moment, each from a PHP process of its own with its own database connection (as separate requests would be), and returns each response's status and JSON body, in the order given.
+ *
+ * @param  list<array{url: string, headers: array<string, string>, body: array<string, mixed>}>  $requests
+ * @return list<array{status: int, body: array<string, mixed>}>
+ */
+function requestsAtOnce(array $requests): array
+{
+    $startAt = microtime(true) + 4;
+    $processes = [];
+    $connection = config()->string('database.default');
+    // A parallel test process works in databases of its own (TestCase): the requests' processes must use the same ones.
+    $databases = [
+        "database.connections.{$connection}.database" => config()->string("database.connections.{$connection}.database"),
+        'tenancy.database.prefix' => config()->string('tenancy.database.prefix'),
+    ];
+
+    foreach ($requests as $request) {
+        // Named apart, as parallel test processes share the folder.
+        $specPath = storage_path('framework/testing/request-'.Str::lower(Str::random(16)).'.json');
+        File::ensureDirectoryExists(dirname($specPath));
+        File::put($specPath, (string) json_encode([...$request, 'start_at' => $startAt, 'config' => $databases]));
+
+        $process = new Process([PHP_BINARY, base_path('tests/Fixtures/Http/request-process.php'), $specPath], base_path(), timeout: 60);
+        $process->start();
+        $processes[] = [$process, $specPath];
+    }
+
+    return array_map(static function (array $running): array {
+        [$process, $specPath] = $running;
+        $process->wait();
+        File::delete($specPath);
+        $result = json_decode($process->getOutput(), true);
+
+        return is_array($result) ? $result : throw new LogicException('A request\'s process failed: '.$process->getErrorOutput().$process->getOutput());
+    }, $processes);
+}
 
 /*
 |--------------------------------------------------------------------------

@@ -21,6 +21,7 @@ use App\Tenant\Payments\Jobs\CheckRefundWithGateway;
 use App\Tenant\Payments\Models\Payment;
 use App\Tenant\Payments\Models\PaymentRefund;
 use App\Tenant\Payments\Models\Refund;
+use App\Tenant\Payments\Models\RefundLine;
 use App\Tenant\Returns\Actions\RefundReturn;
 use App\Tenant\Returns\Enums\ReturnReason;
 use App\Tenant\Returns\Enums\ReturnRefundStatus;
@@ -355,30 +356,48 @@ it('waits on the order\'s lock inside Payments with its attempt already saved, s
     });
 });
 
-it('records Payments\' refusal and stays inspected when a direct refund took the same units first', function (): void {
-    $order = returnableOrder([[10000, 1]], $this->customer, paidByGateway: true);
+it('gives a unit back once when a return\'s refund and a direct refund of the same unit are sent at the same moment', function (): void {
+    $order = returnableOrder([[10000, 1]], $this->customer, paidByHand: true);
     $return = inspectedReturn($order);
-    refundOrder($order, lines: [$order->lines[0]->public_id => 1]);
+    $line = $order->lines[0]->public_id;
 
-    $code = refundReturnAs($return, $this->owner)->assertUnprocessable()->json('code');
+    // Two staff requests, each from a process and connection of its own.
+    [$returnRefund, $directRefund] = requestsAtOnce([
+        returnRefundRequest($return, staffTokenFor($this->owner, 'first-store')),
+        orderRefundRequest($order, staffTokenFor($this->owner, 'first-store'), ['lines' => [['line' => $line, 'quantity' => 1]]]),
+    ]);
+    $returnWon = $returnRefund['status'] === 200;
+    // Exactly one gave it back; Payments refused the other.
+    expect([$returnRefund['status'], $directRefund['status']])->toBe($returnWon ? [200, 422] : [422, 201]);
 
-    expect($code)->toBeString();
-    $this->store->run(static fn () => expect(ReturnRefund::query()->sole())->status->toBe(ReturnRefundStatus::Refused)->refusal_code->toBe($code)
-        ->and(OrderReturn::query()->sole()->status->value)->toBe('inspected')
-        ->and(Refund::query()->count())->toBe(1));
+    $this->store->run(static function () use ($returnWon, $order): void {
+        $attempt = ReturnRefund::query()->sole();
+
+        expect([Refund::query()->count(), (int) RefundLine::query()->sum('quantity'), OrderReturn::query()->sole()->status->value, $attempt->status])
+            ->toBe([1, 1, $returnWon ? 'completed' : 'inspected', $returnWon ? ReturnRefundStatus::Succeeded : ReturnRefundStatus::Refused])
+            ->and((int) PaymentRefund::query()->whereIn('status', RefundStatus::holdingMoney())->sum('amount_amount'))->toBeLessThanOrEqual($order->total->minorAmount());
+    });
 });
 
-it('never gives back more than was paid when a return\'s refund follows a direct refund by amount', function (): void {
-    $order = returnableOrder([[10000, 1]], $this->customer, paidByGateway: true);
+it('never gives back more than was paid when a return\'s refund and a refund by amount are sent at the same moment', function (): void {
+    $order = returnableOrder([[10000, 1]], $this->customer, paidByHand: true);
     $return = inspectedReturn($order);
-    $direct = $order->total->minorAmount() - 1000;
+    // With the return's ₦100, more than was paid.
+    $byAmount = $order->total->minorAmount() - 5000;
 
-    refundOrder($order, $direct);
-    refundReturnAs($return, $this->owner)->assertUnprocessable();
+    [$returnRefund, $amountRefund] = requestsAtOnce([
+        returnRefundRequest($return, staffTokenFor($this->owner, 'first-store')),
+        orderRefundRequest($order, staffTokenFor($this->owner, 'first-store'), ['amount' => $byAmount]),
+    ]);
+    $returnWon = $returnRefund['status'] === 200;
 
-    $this->store->run(static function () use ($direct): void {
+    expect([$returnRefund['status'], $amountRefund['status']])->toBe($returnWon ? [200, 422] : [422, 201]);
+
+    $this->store->run(static function () use ($returnWon, $byAmount): void {
         $given = (int) PaymentRefund::query()->whereIn('status', RefundStatus::holdingMoney())->sum('amount_amount');
 
-        expect($given)->toBe($direct)->toBeLessThanOrEqual(Payment::query()->sole()->received?->minorAmount() ?? 0);
+        expect($given)->toBe($returnWon ? 10000 : $byAmount)
+            ->toBeLessThanOrEqual(Payment::query()->sole()->received?->minorAmount() ?? 0)
+            ->and(Refund::query()->count())->toBe(1);
     });
 });

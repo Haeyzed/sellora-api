@@ -16,8 +16,12 @@ use App\Tenant\Orders\Data\OrderBuyer;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Orders\Models\OrderLine;
 use App\Tenant\Orders\Models\Shipment;
+use App\Tenant\Payments\Actions\ChangeManualPaymentMethod;
+use App\Tenant\Payments\Actions\RecordManualPayment;
+use App\Tenant\Payments\Actions\StartManualPayment;
 use App\Tenant\Payments\Enums\GatewayMode;
 use App\Tenant\Payments\Enums\GatewayPaymentState;
+use App\Tenant\Payments\Enums\PaymentMethod;
 use App\Tenant\Payments\Models\PaymentRefund;
 use App\Tenant\Returns\Actions\ApproveReturn;
 use App\Tenant\Returns\Actions\InspectReturn;
@@ -79,25 +83,33 @@ function returnsStore(string $subdomain = 'first-store'): array
 }
 
 /**
- * A paid order in the test store, by the customer given or else a guest, whose lines each shipped in one shipment: delivered (at the time given, or now), or only shipped when $deliver is false. Paid through the fake gateway (connected first, in test mode for a test order) when asked, so it can be refunded; else only marked paid. Returns it freshly read with its lines, by position.
+ * A paid order in the test store, by the customer given or else a guest, whose lines each shipped in one shipment: delivered (at the time given, or now), or only shipped when $deliver is false. Paid through the fake gateway (connected first, in test mode for a test order) when asked, or by a bank transfer staff recorded as received, so it can be refunded; else only marked paid. Returns it freshly read with its lines, by position.
+ *
+ * A bank transfer is refunded by hand, at once, without a gateway: what a
+ * request handled in a process of its own (requestsAtOnce()) can refund.
  *
  * @param  list<array{0: int, 1: int}>  $lines  Each line's unit price and quantity.
  */
-function returnableOrder(array $lines = [[10000, 2]], ?Customer $customer = null, bool $deliver = true, ?CarbonImmutable $deliveredAt = null, bool $isTest = false, bool $paidByGateway = false): Order
+function returnableOrder(array $lines = [[10000, 2]], ?Customer $customer = null, bool $deliver = true, ?CarbonImmutable $deliveredAt = null, bool $isTest = false, bool $paidByGateway = false, bool $paidByHand = false): Order
 {
-    return test()->store->run(static function () use ($lines, $customer, $deliver, $deliveredAt, $isTest, $paidByGateway): Order {
+    return test()->store->run(static function () use ($lines, $customer, $deliver, $deliveredAt, $isTest, $paidByGateway, $paidByHand): Order {
         $variants = array_map(static fn (array $line): array => [cartVariant($line[0], stock: 20), $line[1]], $lines);
-        $order = placeOrder(orderDraft($variants, orderShippingMethod(), buyer: $customer === null ? null : OrderBuyer::customer($customer), isTest: $isTest));
+        $order = placeOrder(orderDraft($variants, orderShippingMethod(), buyer: $customer === null ? null : OrderBuyer::customer($customer), paymentDueAt: $paidByHand ? CarbonImmutable::now()->addDay() : null, isTest: $isTest));
+        $owner = StaffMember::query()->firstOrFail();
 
         if ($paidByGateway) {
             $payment = startFakePayment($order);
             gatewayAnswers($payment, GatewayPaymentState::Succeeded, $order->total, $isTest ? GatewayMode::Test : GatewayMode::Live);
             verifyFakePayment($payment);
             $order = $order->refresh()->load('lines');
+        } elseif ($paidByHand) {
+            app(ChangeManualPaymentMethod::class)->handle($owner, PaymentMethod::BankTransfer, ['enabled' => true]);
+            app(RecordManualPayment::class)->handle($owner, app(StartManualPayment::class)->handle($order, PaymentMethod::BankTransfer), $order->total);
+            $order = $order->refresh()->load('lines');
         } else {
             $order = markPaid($order)->load('lines');
         }
-        $staff = AccountReference::to(StaffMember::query()->firstOrFail());
+        $staff = AccountReference::to($owner);
         $shipment = app(CreateShipment::class)->handle($order, $order->lines->mapWithKeys(static fn ($line): array => [$line->public_id => $line->quantity])->all(), $staff, 'TRK');
         $shipment = app(MoveShipment::class)->ship($shipment, $staff);
 
@@ -165,6 +177,35 @@ function inspectedReturn(Order $order, ?array $units = null, ReturnReason $reaso
 function refundReturnAs(OrderReturn $return, StaffMember $as, array $data = [], ?string $idempotencyKey = null): TestResponse
 {
     return returnsRequest('POST', "{$return->public_id}/refund", $data, as: $as, headers: ['Idempotency-Key' => $idempotencyKey ?? 'return-refund-'.Str::lower(Str::random(16))]);
+}
+
+/**
+ * Staff refunding a return, as a request for requestsAtOnce(), with the staff access token given and a new Idempotency-Key.
+ *
+ * @return array{url: string, headers: array<string, string>, body: array<string, mixed>}
+ */
+function returnRefundRequest(OrderReturn $return, string $token, string $subdomain = 'first-store'): array
+{
+    return [
+        'url' => storeUrl($subdomain, "/api/v1/staff/returns/{$return->public_id}/refund"),
+        'headers' => ['Authorization' => "Bearer {$token}", 'Idempotency-Key' => 'return-refund-'.Str::lower(Str::random(16))],
+        'body' => [],
+    ];
+}
+
+/**
+ * Staff refunding an order directly through Payments, as a request for requestsAtOnce(), with the staff access token given and a new Idempotency-Key.
+ *
+ * @param  array<string, mixed>  $body
+ * @return array{url: string, headers: array<string, string>, body: array<string, mixed>}
+ */
+function orderRefundRequest(Order $order, string $token, array $body, string $subdomain = 'first-store'): array
+{
+    return [
+        'url' => storeUrl($subdomain, "/api/v1/staff/orders/{$order->public_id}/refunds"),
+        'headers' => ['Authorization' => "Bearer {$token}", 'Idempotency-Key' => 'order-refund-'.Str::lower(Str::random(16))],
+        'body' => $body,
+    ];
 }
 
 /**
