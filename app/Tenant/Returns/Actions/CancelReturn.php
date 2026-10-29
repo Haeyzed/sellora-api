@@ -9,6 +9,7 @@ use App\Tenant\Returns\Enums\ReturnStatus;
 use App\Tenant\Returns\Exceptions\ReturnTransitionNotAllowedException;
 use App\Tenant\Returns\Models\OrderReturn;
 use App\Tenant\Returns\Services\ReturnProgress;
+use App\Tenant\Returns\Services\ReturnRefundAttempts;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -19,10 +20,13 @@ use Illuminate\Support\Facades\DB;
  */
 final readonly class CancelReturn
 {
-    public function __construct(private ReturnProgress $returnProgress) {}
+    public function __construct(
+        private ReturnProgress $returnProgress,
+        private ReturnRefundAttempts $attempts,
+    ) {}
 
     /**
-     * @throws ReturnTransitionNotAllowedException When it can't be cancelled from where it stands, or not by this requester.
+     * @throws ReturnTransitionNotAllowedException When it can't be cancelled from where it stands, or not by this requester, or its refund may have given money back.
      */
     public function handle(OrderReturn $return, ReturnRequester $requester): OrderReturn
     {
@@ -30,7 +34,8 @@ final readonly class CancelReturn
             $locked = $this->returnProgress->lock($return);
             $allowed = $requester->isStaff ? [ReturnStatus::Requested, ReturnStatus::Approved] : [ReturnStatus::Requested];
 
-            if (! in_array($locked->status, $allowed, true)) {
+            // An approved return whose buyer keeps the items may already have been refunded.
+            if (! in_array($locked->status, $allowed, true) || $this->attempts->mayHaveRefunded($locked)) {
                 throw new ReturnTransitionNotAllowedException;
             }
 

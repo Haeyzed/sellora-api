@@ -221,4 +221,6 @@ return [
     'return_staff_reason_required' => '이 반품이 구매자가 요청할 수 있는 범위를 넘는 이유를 입력하세요.',
     'return_transition_not_allowed' => '이 반품은 현재 상태에서 그렇게 변경할 수 없습니다.',
     'return_inspection_mismatch' => '돌아온 모든 단위의 처리를 지정하세요. 각 줄마다 재입고 수량과 폐기 수량의 합이 그 수량과 같아야 합니다.',
+    'returned_units_no_longer_on_hand' => '이 반품에서 재입고한 일부 단위가 그 후 판매되었거나 예약되어 구매자에게 돌려보낼 수 없습니다.',
+    'return_refund_module_held' => '이 주문의 일부는 주문 전체가 취소될 때만 환불되는 방법으로 결제되었습니다. 나머지 결제분은 주문의 결제에서 금액으로 환불하세요.',
 ];

@@ -38,4 +38,10 @@ enum StockMovementType: string
 
     /** Units taken off the books because they can't be sold, such as returned units that came back damaged. */
     case WrittenOff = 'written_off';
+
+    /** Units written off when a return was inspected, counted again because its rejection sends them back to the buyer. */
+    case WriteOffReversed = 'write_off_reversed';
+
+    /** Units of a rejected return left for the buyer, after inspection had put them on the shelf or written them off. */
+    case SentBack = 'sent_back';
 }

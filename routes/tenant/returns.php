@@ -58,6 +58,7 @@ Route::middleware(['auth:'.StaffMember::GUARD, EnsureTwoFactorWhenRequired::clas
         Route::post('{return}/reject', [ReturnController::class, 'reject'])->name('reject');
         Route::post('{return}/receive', [ReturnController::class, 'receive'])->name('receive');
         Route::post('{return}/inspect', [ReturnController::class, 'inspect'])->name('inspect');
+        Route::post('{return}/refund', [ReturnController::class, 'refund'])->middleware('idempotent')->name('refund');
         Route::post('{return}/cancel', [ReturnController::class, 'cancel'])->name('cancel');
     });
 });

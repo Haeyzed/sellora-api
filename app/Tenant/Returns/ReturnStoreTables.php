@@ -8,7 +8,7 @@ use App\Shared\Privacy\Contracts\ClassifiesStoreTables;
 use App\Shared\Privacy\StoreExportRegistry;
 
 /**
- * How returns, their lines, their history and the return settings appear in a store export. Nothing in them is a secret.
+ * How returns, their lines, their history, their refund attempts and the return settings appear in a store export. Nothing in them is a secret.
  */
 final class ReturnStoreTables implements ClassifiesStoreTables
 {
@@ -23,6 +23,11 @@ final class ReturnStoreTables implements ClassifiesStoreTables
         $registry->table('return_lines', include: ['id', 'return_id', 'order_line_id', 'quantity', 'restocked_quantity', 'written_off_quantity', 'created_at', 'updated_at']);
 
         $registry->table('return_status_changes', include: ['id', 'return_id', 'from_status', 'to_status', 'changed_by_type', 'changed_by_id', 'created_at']);
+
+        $registry->table('return_refunds', include: [
+            'id', 'return_id', 'attempt', 'idempotency_key', 'refund_id', 'status', 'refusal_code', 'shipping', 'withheld_amount', 'withheld_reason',
+            'requested_by_type', 'requested_by_id', 'created_at', 'updated_at',
+        ]);
 
         $registry->table('return_settings', include: ['id', 'window_days', 'customer_requests', 'photos_required', 'created_at', 'updated_at']);
     }

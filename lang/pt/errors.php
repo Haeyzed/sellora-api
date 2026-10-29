@@ -221,4 +221,6 @@ return [
     'return_staff_reason_required' => 'Indique porque é que esta devolução vai além do que um comprador poderia pedir.',
     'return_transition_not_allowed' => 'Esta devolução não pode ser alterada assim a partir do estado em que está.',
     'return_inspection_mismatch' => 'Indique o que aconteceu a cada unidade devolvida: em cada linha, as repostas em estoque e as baixadas devem somar a sua quantidade.',
+    'returned_units_no_longer_on_hand' => 'Algumas unidades desta devolução repostas na prateleira foram vendidas ou reservadas desde então, por isso não podem voltar para o comprador.',
+    'return_refund_module_held' => 'Parte deste pedido foi paga com um método que só devolve dinheiro se o pedido inteiro for cancelado. Reembolse o resto como valor a partir dos pagamentos do pedido.',
 ];

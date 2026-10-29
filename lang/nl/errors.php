@@ -221,4 +221,6 @@ return [
     'return_staff_reason_required' => 'Geef aan waarom deze retour verder gaat dan een koper zou kunnen vragen.',
     'return_transition_not_allowed' => 'Deze retour kan vanuit de huidige status niet zo worden gewijzigd.',
     'return_inspection_mismatch' => 'Geef aan wat er met elke teruggekomen eenheid is gebeurd: per regel moeten terug op voorraad en afgeschreven samen de hoeveelheid vormen.',
+    'returned_units_no_longer_on_hand' => 'Sommige eenheden uit deze retour die terug op voorraad zijn gezet, zijn sindsdien verkocht of gereserveerd en kunnen niet terug naar de koper.',
+    'return_refund_module_held' => 'Een deel van deze bestelling is betaald met een methode die alleen geld teruggeeft als de hele bestelling wordt geannuleerd. Betaal de rest terug als bedrag via de betalingen van de bestelling.',
 ];

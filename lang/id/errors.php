@@ -221,4 +221,6 @@ return [
     'return_staff_reason_required' => 'Jelaskan mengapa retur ini melampaui apa yang bisa diminta pembeli.',
     'return_transition_not_allowed' => 'Retur ini tidak dapat diubah dengan cara itu dari statusnya sekarang.',
     'return_inspection_mismatch' => 'Sebutkan apa yang terjadi pada setiap unit yang kembali: untuk setiap baris, jumlah yang dikembalikan ke stok dan yang dihapusbukukan harus sama dengan kuantitasnya.',
+    'returned_units_no_longer_on_hand' => 'Beberapa unit dari retur ini yang dikembalikan ke rak sudah terjual atau ditahan sejak itu, jadi tidak bisa dikembalikan ke pembeli.',
+    'return_refund_module_held' => 'Sebagian pesanan ini dibayar dengan metode yang hanya mengembalikan uang jika seluruh pesanan dibatalkan. Kembalikan yang dibayar dengan cara lain sebagai jumlah dari pembayaran pesanan.',
 ];

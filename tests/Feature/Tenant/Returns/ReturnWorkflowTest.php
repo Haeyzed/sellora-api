@@ -100,15 +100,45 @@ it('rejects a requested return with a reason the buyer sees, freeing its units t
     expect(requestedReturn($order)->sequence)->toBe(2);
 });
 
-it('rejects an inspected return when nothing is owed, leaving its stock where inspection put it', function (): void {
-    $order = returnableOrder(customer: $this->customer);
+it('rejects an inspected return by sending its units back through Inventory, so on hand is where it was before inspection', function (): void {
+    $order = returnableOrder([[10000, 3], [5000, 2]], $this->customer);
+    [$shirts, $socks] = [$order->lines[0], $order->lines[1]];
     $return = receivedReturn($order);
-    returnsRequest('POST', "{$return->public_id}/inspect", ['lines' => [['line' => $order->lines[0]->public_id, 'restocked' => 2, 'written_off' => 0]]], as: $this->owner)->assertOk();
-    $onHand = onHandAtDefaultLocation($order->lines[0]);
+    $before = [onHandAtDefaultLocation($shirts), onHandAtDefaultLocation($socks)];
+    returnsRequest('POST', "{$return->public_id}/inspect", ['lines' => [
+        ['line' => $shirts->public_id, 'restocked' => 2, 'written_off' => 1],
+        ['line' => $socks->public_id, 'restocked' => 0, 'written_off' => 2],
+    ]], as: $this->owner)->assertOk();
 
     returnsRequest('POST', "{$return->public_id}/reject", ['reason' => 'Worn and washed'], as: $this->owner)->assertOk()->assertJsonPath('data.status', 'rejected');
 
+    expect([onHandAtDefaultLocation($shirts), onHandAtDefaultLocation($socks)])->toBe($before);
+    $this->store->run(function () use ($return, $shirts, $socks): void {
+        $movements = static fn (int $variant): array => StockMovement::query()->where('source_type', 'return')->where('source_id', $return->public_id)->where('product_variant_id', $variant)
+            ->orderBy('id')->get()->map(static fn (StockMovement $movement): array => [$movement->type->value, $movement->on_hand_delta])->all();
+
+        // Inspection's movements stay as they were; the rejection adds its own.
+        expect($movements($shirts->product_variant_id))->toBe([['restocked', 2], ['returned_damaged', 1], ['written_off', -1], ['write_off_reversed', 1], ['sent_back', -3]])
+            ->and($movements($socks->product_variant_id))->toBe([['returned_damaged', 2], ['written_off', -2], ['write_off_reversed', 2], ['sent_back', -2]])
+            ->and(StockMovement::query()->where('type', 'sent_back')->pluck('causer_id')->unique()->all())->toBe([$this->owner->public_id]);
+    });
+
+    expect(Artisan::call('inventory:reconcile'))->toBe(0);
+});
+
+it('refuses to reject an inspected return whose restocked units were sold since, changing nothing', function (): void {
+    $order = returnableOrder([[10000, 2]], $this->customer);
+    $return = receivedReturn($order);
+    returnsRequest('POST', "{$return->public_id}/inspect", ['lines' => [['line' => $order->lines[0]->public_id, 'restocked' => 2, 'written_off' => 0]]], as: $this->owner)->assertOk();
+    // Everything on the shelf is now held for other orders.
+    $this->store->run(static fn () => StockItem::query()->where('product_variant_id', $order->lines[0]->product_variant_id)->update(['reserved' => DB::raw('on_hand')]));
+    $onHand = onHandAtDefaultLocation($order->lines[0]);
+
+    returnsRequest('POST', "{$return->public_id}/reject", ['reason' => 'Worn and washed'], as: $this->owner)->assertConflict()->assertJsonPath('code', 'returned_units_no_longer_on_hand');
+
     expect(onHandAtDefaultLocation($order->lines[0]))->toBe($onHand);
+    $this->store->run(static fn () => expect(OrderReturn::query()->sole()->status->value)->toBe('inspected')
+        ->and(StockMovement::query()->where('type', 'sent_back')->exists())->toBeFalse());
 });
 
 it('refuses to reject an approved or received return, which is on its way back or already here', function (): void {
@@ -278,6 +308,30 @@ it('queues two approvals of the same return on its lock, so only one happens', f
             ->and(ReturnStatusChange::query()->where('return_id', $return->id)->where('to_status', 'approved')->count())->toBe(0);
     });
 });
+
+it('queues two rejections or cancellations of the same return on its lock, so only one happens', function (string $step, array $change): void {
+    $return = requestedReturn(returnableOrder(customer: $this->customer));
+
+    $this->store->run(function () use ($return, $step, $change): void {
+        $act = fn () => $step === 'reject'
+            ? app(App\Tenant\Returns\Actions\RejectReturn::class)->handle($return, 'Too late', AccountReference::to($this->owner))
+            : app(App\Tenant\Returns\Actions\CancelReturn::class)->handle($return, App\Tenant\Returns\Data\ReturnRequester::staff($this->owner));
+
+        // Another request holds the return and has changed it the same way, not yet committed.
+        $otherRequest = SecondConnection::open()->holdRowLock(OrderReturn::query()->whereKey($return->id)->sole());
+        $otherRequest->run(fn () => DB::connection(SecondConnection::NAME)->table('returns')->where('id', $return->id)->update($change));
+
+        expect($otherRequest->blockedStatement($act))->toContain('"returns"')->toContain('for update');
+
+        $otherRequest->commit();
+
+        expect($act)->toThrow(ReturnTransitionNotAllowedException::class)
+            ->and(ReturnStatusChange::query()->where('return_id', $return->id)->count())->toBe(1);
+    });
+})->with([
+    'two rejections' => ['reject', ['status' => 'rejected', 'rejected_at' => now(), 'rejection_reason' => 'No']],
+    'two cancellations' => ['cancel', ['status' => 'cancelled', 'cancelled_at' => now()]],
+]);
 
 it('queues two inspections of the same return on its lock, so stock moves only once', function (): void {
     $order = returnableOrder([[10000, 2]], $this->customer);

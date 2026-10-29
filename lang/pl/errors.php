@@ -221,4 +221,6 @@ return [
     'return_staff_reason_required' => 'Podaj, dlaczego ten zwrot wykracza poza to, o co mógłby poprosić kupujący.',
     'return_transition_not_allowed' => 'Tego zwrotu nie można tak zmienić z jego obecnego stanu.',
     'return_inspection_mismatch' => 'Podaj, co stało się z każdą zwróconą sztuką: dla każdej pozycji sztuki przywrócone na stan i spisane muszą sumować się do jej ilości.',
+    'returned_units_no_longer_on_hand' => 'Część sztuk z tego zwrotu przywróconych na półkę została od tego czasu sprzedana lub zarezerwowana, więc nie mogą wrócić do kupującego.',
+    'return_refund_module_held' => 'Część tego zamówienia opłacono metodą, która zwraca pieniądze tylko po anulowaniu całego zamówienia. Zwróć resztę jako kwotę z płatności zamówienia.',
 ];

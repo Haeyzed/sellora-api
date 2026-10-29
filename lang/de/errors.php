@@ -221,4 +221,6 @@ return [
     'return_staff_reason_required' => 'Gib an, warum diese Retoure über das hinausgeht, was ein Käufer beantragen könnte.',
     'return_transition_not_allowed' => 'Diese Retoure kann von ihrem aktuellen Stand aus nicht so geändert werden.',
     'return_inspection_mismatch' => 'Gib für jede zurückgekommene Einheit an, was mit ihr geschah: Pro Position müssen wieder eingelagerte und abgeschriebene Einheiten zusammen ihre Menge ergeben.',
+    'returned_units_no_longer_on_hand' => 'Einige aus dieser Retoure wieder eingelagerte Einheiten wurden inzwischen verkauft oder reserviert und können nicht an den Käufer zurückgehen.',
+    'return_refund_module_held' => 'Ein Teil dieser Bestellung wurde mit einer Methode bezahlt, die Geld nur bei Stornierung der ganzen Bestellung zurückgibt. Erstatte das anders Bezahlte als Betrag über die Zahlungen der Bestellung.',
 ];

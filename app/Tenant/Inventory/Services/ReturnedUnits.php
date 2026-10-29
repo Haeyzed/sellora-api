@@ -7,12 +7,13 @@ namespace App\Tenant\Inventory\Services;
 use App\Shared\Auth\AccountReference;
 use App\Tenant\Inventory\Data\StockSource;
 use App\Tenant\Inventory\Enums\StockMovementType;
+use App\Tenant\Inventory\Exceptions\ReturnedUnitsNoLongerOnHandException;
 use App\Tenant\Inventory\Models\InventoryItem;
 use App\Tenant\Inventory\Models\StockItem;
 use App\Tenant\Inventory\Models\StockLocation;
 
 /**
- * Records units a buyer sent back (Step 18) at a location: back on the shelf, or written off as damaged.
+ * Records units a buyer sent back (Step 18) at a location: back on the shelf, or written off as damaged; and, when the return is then rejected, the same units going back to the buyer.
  *
  * A variant whose stock isn't counted never left the shelf, so nothing of it
  * is recorded. Levels are locked by location then variant, as everywhere.
@@ -53,6 +54,55 @@ final readonly class ReturnedUnits
             }
 
             return array_sum($quantities);
+        });
+    }
+
+    /**
+     * Sends a rejected return's units back to the buyer from the location they were inspected at, as new movements: each restocked unit leaves the shelf again, and each written-off unit has its write-off reversed and leaves. On hand ends where it was before the inspection.
+     *
+     * @param  array<int, int>  $restocked  Units put back on the shelf, by variant ID.
+     * @param  array<int, int>  $writtenOff  Units written off, by variant ID.
+     * @return int How many units were sent back.
+     *
+     * @throws ReturnedUnitsNoLongerOnHandException When fewer restocked units are free on the shelf than are to leave.
+     */
+    public function sendBack(StockSource $source, StockLocation $location, array $restocked, array $writtenOff, ?AccountReference $causer): int
+    {
+        $restocked = array_filter($restocked, static fn (int $quantity): bool => $quantity > 0);
+        $writtenOff = array_filter($writtenOff, static fn (int $quantity): bool => $quantity > 0);
+        $variants = array_unique([...array_keys($restocked), ...array_keys($writtenOff)]);
+        $uncounted = array_flip(InventoryItem::query()->whereIn('product_variant_id', $variants)->where('tracks_stock', false)->pluck('product_variant_id')->all());
+        $restocked = array_diff_key($restocked, $uncounted);
+        $writtenOff = array_diff_key($writtenOff, $uncounted);
+        $variants = array_values(array_unique([...array_keys($restocked), ...array_keys($writtenOff)]));
+        sort($variants);
+
+        if ($variants === []) {
+            return 0;
+        }
+
+        return StockItem::query()->getConnection()->transaction(function () use ($source, $location, $restocked, $writtenOff, $variants, $causer): int {
+            $items = $this->stockLedger->lock(array_map(static fn (int $variant): array => ['location' => $location->id, 'variant' => $variant], $variants));
+
+            foreach ($restocked as $variant => $quantity) {
+                $item = $items["{$location->id}:{$variant}"];
+
+                if ($item->on_hand - $item->reserved < $quantity) {
+                    throw new ReturnedUnitsNoLongerOnHandException;
+                }
+            }
+
+            foreach ($variants as $variant) {
+                $item = $items["{$location->id}:{$variant}"];
+
+                if (($writtenOff[$variant] ?? 0) > 0) {
+                    $this->stockLedger->record($item, StockMovementType::WriteOffReversed, $writtenOff[$variant], causer: $causer, source: $source);
+                }
+
+                $this->stockLedger->record($item, StockMovementType::SentBack, -(($restocked[$variant] ?? 0) + ($writtenOff[$variant] ?? 0)), causer: $causer, source: $source);
+            }
+
+            return array_sum($restocked) + array_sum($writtenOff);
         });
     }
 }

@@ -7,29 +7,40 @@ namespace App\Tenant\Returns\Http\Controllers;
 use App\Shared\Auth\AccountReference;
 use App\Shared\Features\Exceptions\UsageLimitReachedException;
 use App\Shared\Http\Controller;
+use App\Tenant\Inventory\Exceptions\ReturnedUnitsNoLongerOnHandException;
 use App\Tenant\Orders\Models\Order;
+use App\Tenant\Payments\Exceptions\OrderNotRefundableException;
+use App\Tenant\Payments\Exceptions\PartialRefundNotSupportedException;
+use App\Tenant\Payments\Exceptions\PaymentGatewayNotConnectedException;
+use App\Tenant\Payments\Exceptions\RefundExceedsRefundableException;
+use App\Tenant\Payments\Exceptions\RefundExceedsSaleException;
+use App\Tenant\Payments\Exceptions\RefundInvalidException;
 use App\Tenant\Returns\Actions\ApproveReturn;
 use App\Tenant\Returns\Actions\CancelReturn;
 use App\Tenant\Returns\Actions\InspectReturn;
 use App\Tenant\Returns\Actions\ReceiveReturn;
+use App\Tenant\Returns\Actions\RefundReturn;
 use App\Tenant\Returns\Actions\RejectReturn;
 use App\Tenant\Returns\Actions\RequestReturn;
 use App\Tenant\Returns\Data\ReturnRequester;
 use App\Tenant\Returns\Exceptions\OrderNotReturnableException;
 use App\Tenant\Returns\Exceptions\ReturnInspectionMismatchException;
 use App\Tenant\Returns\Exceptions\ReturnQuantityTooHighException;
+use App\Tenant\Returns\Exceptions\ReturnRefundModuleHeldException;
 use App\Tenant\Returns\Exceptions\ReturnStaffReasonRequiredException;
 use App\Tenant\Returns\Exceptions\ReturnTransitionNotAllowedException;
 use App\Tenant\Returns\Http\Requests\ApproveReturnRequest;
 use App\Tenant\Returns\Http\Requests\InspectReturnRequest;
 use App\Tenant\Returns\Http\Requests\ListReturnsRequest;
 use App\Tenant\Returns\Http\Requests\ManageReturnRequest;
+use App\Tenant\Returns\Http\Requests\RefundReturnRequest;
 use App\Tenant\Returns\Http\Requests\RejectReturnRequest;
 use App\Tenant\Returns\Http\Requests\StaffReturnRequest;
 use App\Tenant\Returns\Http\Requests\ViewReturnRequest;
 use App\Tenant\Returns\Http\Resources\ReturnResource;
 use App\Tenant\Returns\Models\OrderReturn;
 use App\Tenant\Returns\Services\ReturnPhotos;
+use Dedoc\Scramble\Attributes\HeaderParameter;
 use Illuminate\Contracts\Filesystem\Factory as FilesystemFactory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -64,7 +75,7 @@ final class ReturnController extends Controller
      */
     public function show(ViewReturnRequest $request, OrderReturn $return): ReturnResource
     {
-        return new ReturnResource($return->load([...self::WITH, 'statusChanges']));
+        return new ReturnResource($return->load([...self::WITH, 'statusChanges', 'refunds.refund']));
     }
 
     /**
@@ -114,10 +125,14 @@ final class ReturnController extends Controller
      * Reject a return.
      *
      * Needs the returns.manage permission. While it is requested, or once
-     * inspected when nothing is owed; the buyer sees the reason. Stock moved
-     * at inspection stays where it went.
+     * inspected when nothing is owed and the items go back to the buyer; the
+     * buyer sees the reason. Rejecting an inspected return takes its units
+     * back out of stock (on hand ends where it was before the inspection),
+     * and is refused if restocked units were sold or held since. Never once
+     * its refund may have given money back.
      *
      * @throws ReturnTransitionNotAllowedException
+     * @throws ReturnedUnitsNoLongerOnHandException
      */
     public function reject(RejectReturnRequest $request, OrderReturn $return, RejectReturn $rejectReturn): ReturnResource
     {
@@ -151,6 +166,38 @@ final class ReturnController extends Controller
     public function inspect(InspectReturnRequest $request, OrderReturn $return, InspectReturn $inspectReturn): ReturnResource
     {
         return new ReturnResource($inspectReturn->handle($return, $request->stockLocation(), $request->outcomes(), AccountReference::to($request->actor()))->load(self::WITH));
+    }
+
+    /**
+     * Refund a return.
+     *
+     * Needs the returns.manage and payments.refund permissions. Once
+     * inspected, or once approved when the buyer keeps the items. Refunds
+     * every unit that came back at what the buyer paid for it, with shipping
+     * when `shipping` is true (by default when the reason is damaged or the
+     * wrong item), less `withheld` (minor units) with a `withheld_reason`.
+     * The return completes when the refund has gone back in full.
+     *
+     * Asking again never refunds twice: while the last attempt is pending,
+     * in staff review, or partly refunded, it is shown as it stands; a new
+     * attempt is made only once the last one was refused or failed in full.
+     * The same Idempotency-Key returns the same response.
+     *
+     * @throws ReturnTransitionNotAllowedException
+     * @throws ReturnRefundModuleHeldException
+     * @throws OrderNotRefundableException
+     * @throws RefundExceedsRefundableException
+     * @throws RefundExceedsSaleException
+     * @throws RefundInvalidException
+     * @throws PartialRefundNotSupportedException
+     * @throws PaymentGatewayNotConnectedException
+     */
+    #[HeaderParameter('Idempotency-Key', 'A new key for each request to refund, 8 to 128 letters, digits, - or _. Sending the same request again with it returns the first answer.', required: true, type: 'string', example: 'return-refund-2f9c1a7e')]
+    public function refund(RefundReturnRequest $request, OrderReturn $return, RefundReturn $refundReturn): ReturnResource
+    {
+        $refundReturn->handle($return, $request->actor(), $request->shipping(), $request->withheld($return), $request->withheldReason());
+
+        return new ReturnResource($return->refresh()->load([...self::WITH, 'refunds.refund']));
     }
 
     /**

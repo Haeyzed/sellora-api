@@ -53,6 +53,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
  * @property-read StockLocation|null $stockLocation
  * @property-read Collection<int, ReturnLine> $lines
  * @property-read Collection<int, ReturnStatusChange> $statusChanges
+ * @property-read Collection<int, ReturnRefund> $refunds Its refund attempts, oldest first.
  */
 final class OrderReturn extends Model implements HasMedia
 {
@@ -106,6 +107,14 @@ final class OrderReturn extends Model implements HasMedia
     public function statusChanges(): HasMany
     {
         return $this->hasMany(ReturnStatusChange::class, 'return_id')->orderBy('id');
+    }
+
+    /**
+     * @return HasMany<ReturnRefund, $this>
+     */
+    public function refunds(): HasMany
+    {
+        return $this->hasMany(ReturnRefund::class, 'return_id')->orderBy('attempt');
     }
 
     /**

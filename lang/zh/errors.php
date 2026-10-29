@@ -221,4 +221,6 @@ return [
     'return_staff_reason_required' => '请说明此退货为何超出买家可申请的范围。',
     'return_transition_not_allowed' => '此退货在当前状态下无法这样更改。',
     'return_inspection_mismatch' => '请说明每件退回商品的去向：每一行中，重新入库和报废的数量之和必须等于其数量。',
+    'returned_units_no_longer_on_hand' => '此退货中重新上架的部分商品此后已售出或被预留，因此无法退回给买家。',
+    'return_refund_module_held' => '此订单的一部分使用了只有在整单取消时才能退款的方式支付。其余部分请从订单的付款中按金额退款。',
 ];

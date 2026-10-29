@@ -244,5 +244,7 @@ return [
     'return_staff_reason_required' => 'Say why this return goes past what a buyer could ask for.',
     'return_transition_not_allowed' => 'This return can\'t be changed that way from where it stands.',
     'return_inspection_mismatch' => 'Say what became of every unit that came back: for each line, restocked and written off must add up to its quantity.',
+    'returned_units_no_longer_on_hand' => 'Some units put back on the shelf from this return were sold or held since, so they can\'t go back to the buyer.',
+    'return_refund_module_held' => 'Part of this order was paid with a method that can only give money back when the whole order is cancelled. Refund what was paid otherwise by amount from the order\'s payments.',
 
 ];

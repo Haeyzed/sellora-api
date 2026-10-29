@@ -221,4 +221,6 @@ return [
     'return_staff_reason_required' => 'Eleza kwa nini marejesho haya yanazidi kile mnunuzi angeweza kuomba.',
     'return_transition_not_allowed' => 'Marejesho haya hayawezi kubadilishwa hivyo kutoka hali yalipo sasa.',
     'return_inspection_mismatch' => 'Sema kilichotokea kwa kila kipande kilichorudi: kwa kila mstari, vilivyorudishwa stoo na vilivyofutwa lazima vijumlishe idadi yake.',
+    'returned_units_no_longer_on_hand' => 'Baadhi ya vipande vya marejesho haya vilivyorudishwa rafuni vimeuzwa au kuhifadhiwa tangu hapo, kwa hivyo haviwezi kurudi kwa mnunuzi.',
+    'return_refund_module_held' => 'Sehemu ya oda hii ililipwa kwa njia inayorudisha pesa tu oda nzima ikighairiwa. Rudisha kilicholipwa kwa njia nyingine kama kiasi kutoka kwa malipo ya oda.',
 ];

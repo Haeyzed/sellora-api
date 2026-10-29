@@ -221,4 +221,6 @@ return [
     'return_staff_reason_required' => 'Faɗi dalilin da yasa wannan dawowar ta wuce abin da mai saye zai iya nema.',
     'return_transition_not_allowed' => 'Ba za a iya canza wannan dawowar haka ba daga inda take yanzu.',
     'return_inspection_mismatch' => 'Faɗi abin da ya faru da kowace naúra da ta dawo: ga kowane layi, waɗanda aka mayar cikin kaya da waɗanda aka soke dole su kai yawansa.',
+    'returned_units_no_longer_on_hand' => 'An sayar ko an riƙe wasu naúrori daga wannan dawowar da aka mayar kan shiryayye tun daga lokacin, don haka ba za su iya komawa ga mai saye ba.',
+    'return_refund_module_held' => 'An biya wani ɓangare na wannan oda da hanyar da ke mayar da kuɗi ne kawai idan an soke odar gaba ɗaya. Mayar da abin da aka biya ta wasu hanyoyi a matsayin adadi daga biyan kuɗin odar.',
 ];

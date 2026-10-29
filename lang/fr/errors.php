@@ -221,4 +221,6 @@ return [
     'return_staff_reason_required' => 'Indiquez pourquoi ce retour va au-delà de ce qu’un acheteur pourrait demander.',
     'return_transition_not_allowed' => 'Ce retour ne peut pas être modifié ainsi depuis son état actuel.',
     'return_inspection_mismatch' => 'Indiquez ce qu\'il est advenu de chaque unité retournée : pour chaque ligne, les unités remises en stock et celles passées en perte doivent totaliser sa quantité.',
+    'returned_units_no_longer_on_hand' => 'Certaines unités de ce retour remises en rayon ont été vendues ou réservées depuis : elles ne peuvent pas retourner à l\'acheteur.',
+    'return_refund_module_held' => 'Une partie de cette commande a été payée avec un moyen qui ne rembourse qu\'à l\'annulation de toute la commande. Remboursez le reste par montant depuis les paiements de la commande.',
 ];

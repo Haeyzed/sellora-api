@@ -6,6 +6,7 @@ namespace App\Tenant\Returns\Http\Resources;
 
 use App\Tenant\Returns\Models\OrderReturn;
 use App\Tenant\Returns\Models\ReturnLine;
+use App\Tenant\Returns\Models\ReturnRefund;
 use App\Tenant\Returns\Models\ReturnStatusChange;
 use App\Tenant\Returns\Services\ReturnPhotos;
 use Illuminate\Http\Request;
@@ -77,6 +78,21 @@ final class ReturnResource extends JsonResource
             'completed_at' => $this->completed_at?->toIso8601String(),
             'rejected_at' => $this->rejected_at?->toIso8601String(),
             'cancelled_at' => $this->cancelled_at?->toIso8601String(),
+            /**
+             * Each attempt to refund it, oldest first, when showing one return or after refunding it. "started": Payments not yet heard from; "refused": Payments refused it (refusal_code says why); "pending": not gone through yet; "in_review": Payments can't tell whether part went through, and staff must look; "succeeded"; "failed": nothing went back, so it can be tried again; "mixed": part went back and part failed, for staff to settle from the refund.
+             *
+             * @var list<array{attempt: int, status: string, refusal_code: string|null, refund: string|null, shipping: bool, withheld: int, withheld_reason: string|null, at: string}>
+             */
+            'refunds' => $this->whenLoaded('refunds', fn (): array => array_values($this->refunds->map(static fn (ReturnRefund $attempt): array => [
+                'attempt' => $attempt->attempt,
+                'status' => $attempt->status->value,
+                'refusal_code' => $attempt->refusal_code,
+                'refund' => $attempt->refund?->public_id,
+                'shipping' => $attempt->shipping,
+                'withheld' => $attempt->withheld_amount,
+                'withheld_reason' => $attempt->withheld_reason,
+                'at' => $attempt->created_at?->toIso8601String() ?? '',
+            ])->all())),
             /**
              * Every change of its status, oldest first, when showing one return.
              *

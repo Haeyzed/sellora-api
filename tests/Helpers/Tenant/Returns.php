@@ -18,7 +18,9 @@ use App\Tenant\Orders\Models\OrderLine;
 use App\Tenant\Orders\Models\Shipment;
 use App\Tenant\Payments\Enums\GatewayMode;
 use App\Tenant\Payments\Enums\GatewayPaymentState;
+use App\Tenant\Payments\Models\PaymentRefund;
 use App\Tenant\Returns\Actions\ApproveReturn;
+use App\Tenant\Returns\Actions\InspectReturn;
 use App\Tenant\Returns\Actions\ReceiveReturn;
 use App\Tenant\Returns\Actions\RequestReturn;
 use App\Tenant\Returns\Data\ReturnRequester;
@@ -27,6 +29,7 @@ use App\Tenant\Returns\Models\OrderReturn;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Spatie\Permission\Models\Permission;
 use Tests\Fixtures\Features\FakeFeatureSource;
@@ -76,7 +79,7 @@ function returnsStore(string $subdomain = 'first-store'): array
 }
 
 /**
- * A paid order in the test store, by the customer given or else a guest, whose lines each shipped in one shipment: delivered (at the time given, or now), or only shipped when $deliver is false. Paid through the fake gateway (connected first) when asked, so it can be refunded; else only marked paid. Returns it freshly read with its lines, by position.
+ * A paid order in the test store, by the customer given or else a guest, whose lines each shipped in one shipment: delivered (at the time given, or now), or only shipped when $deliver is false. Paid through the fake gateway (connected first, in test mode for a test order) when asked, so it can be refunded; else only marked paid. Returns it freshly read with its lines, by position.
  *
  * @param  list<array{0: int, 1: int}>  $lines  Each line's unit price and quantity.
  */
@@ -88,7 +91,7 @@ function returnableOrder(array $lines = [[10000, 2]], ?Customer $customer = null
 
         if ($paidByGateway) {
             $payment = startFakePayment($order);
-            gatewayAnswers($payment, GatewayPaymentState::Succeeded, $order->total, GatewayMode::Live);
+            gatewayAnswers($payment, GatewayPaymentState::Succeeded, $order->total, $isTest ? GatewayMode::Test : GatewayMode::Live);
             verifyFakePayment($payment);
             $order = $order->refresh()->load('lines');
         } else {
@@ -136,6 +139,40 @@ function receivedReturn(Order $order, ?array $units = null, ReturnReason $reason
 
         return app(ReceiveReturn::class)->handle(app(ApproveReturn::class)->handle($return, $staff), $staff);
     });
+}
+
+/**
+ * A return as receivedReturn() makes it, then inspected at the store's default location with every unit back on the shelf, ready to refund.
+ *
+ * @param  array<string, int>|null  $units
+ */
+function inspectedReturn(Order $order, ?array $units = null, ReturnReason $reason = ReturnReason::ChangedMind): OrderReturn
+{
+    $return = receivedReturn($order, $units, $reason);
+
+    return test()->store->run(static function () use ($return): OrderReturn {
+        $outcomes = $return->lines()->with('orderLine')->get()->mapWithKeys(static fn ($line): array => [$line->orderLine->public_id => ['restocked' => $line->quantity, 'written_off' => 0]])->all();
+
+        return app(InspectReturn::class)->handle($return, StockLocation::query()->where('is_default', true)->sole(), $outcomes, AccountReference::to(StaffMember::query()->firstOrFail()));
+    });
+}
+
+/**
+ * Staff refunding a return through the API, as the staff member given, with the Idempotency-Key given, or a new one each time.
+ *
+ * @param  array<string, mixed>  $data
+ */
+function refundReturnAs(OrderReturn $return, StaffMember $as, array $data = [], ?string $idempotencyKey = null): TestResponse
+{
+    return returnsRequest('POST', "{$return->public_id}/refund", $data, as: $as, headers: ['Idempotency-Key' => $idempotencyKey ?? 'return-refund-'.Str::lower(Str::random(16))]);
+}
+
+/**
+ * The only refund part in the test store, freshly read.
+ */
+function soleRefundPart(): PaymentRefund
+{
+    return test()->store->run(static fn (): PaymentRefund => PaymentRefund::query()->sole());
 }
 
 /**

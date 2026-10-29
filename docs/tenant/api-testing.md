@@ -2241,6 +2241,17 @@ curl.exe --request POST "${StoreBase}/staff/returns/${Return}/inspect" `
   --data-raw "{`"lines`":[{`"line`":`"$Line`",`"restocked`":1,`"written_off`":0}]}"
 ```
 
+**POST** `/staff/returns/{return}/refund` — staff bearer token. Refund a return (needs `payments.refund` too; asking again never refunds twice)
+
+```powershell
+curl.exe --request POST "${StoreBase}/staff/returns/${Return}/refund" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken" `
+  --header 'Content-Type: application/json' `
+  --header 'Idempotency-Key: return-refund-0001' `
+  --data-raw '{"shipping":true}'
+```
+
 **POST** `/staff/returns/{return}/cancel` — staff bearer token. Cancel a return
 
 ```powershell
