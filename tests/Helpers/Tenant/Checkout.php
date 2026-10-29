@@ -11,10 +11,13 @@ use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Inventory\Models\StockReservation;
 use App\Tenant\Orders\Actions\CancelOrder;
 use App\Tenant\Orders\Models\Order;
+use App\Tenant\Payments\Enums\GatewayPaymentState;
+use App\Tenant\Payments\Models\Payment;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Tests\Fixtures\Checkout\FakeGiftCardPaymentMethod;
+use Tests\Fixtures\Checkout\FakeWalletPaymentMethod;
 
 /*
 |--------------------------------------------------------------------------
@@ -151,6 +154,41 @@ function giftCardPaidOrder(): Order
     placeCheckout($checkout['id'], $checkout['version'], token: $token)->assertCreated()->assertJsonPath('data.order.payment_status', 'paid');
 
     return test()->store->run(static fn (): Order => Order::query()->sole());
+}
+
+/**
+ * A guest's order placed through checkout in the cart store, paid by two modules (the fake gift card's ₦50, then the fake wallet's ₦30) and by core's method given for the rest, not yet paid. Both modules must be registered first.
+ */
+function twoModulesOrder(string $paymentMethod = 'bank_transfer'): Order
+{
+    FakeGiftCardPaymentMethod::$balance = 5000;
+    FakeWalletPaymentMethod::$balance = 3000;
+    $token = checkoutCart();
+    $checkout = readyCheckout($token, changes: ['module_payment_methods' => [FakeGiftCardPaymentMethod::KEY, FakeWalletPaymentMethod::KEY], 'payment_method' => $paymentMethod]);
+    placeCheckout($checkout['id'], $checkout['version'], token: $token, returnUrl: 'https://shop.example.com/thanks')->assertCreated();
+
+    return test()->store->run(static fn (): Order => Order::query()->sole());
+}
+
+/**
+ * The fake gateway confirming the test store's only payment in full, and the buyer coming back to check it.
+ */
+function payAtFakeGateway(): void
+{
+    $payment = test()->store->run(static fn (): Payment => Payment::query()->sole());
+    gatewayAnswers($payment, GatewayPaymentState::Succeeded, $payment->amount);
+    test()->getJson(storeUrl('cart-store', "/api/v1/checkout/payments/{$payment->reference}"))->assertOk()->assertJsonPath('data.status', 'succeeded');
+}
+
+/**
+ * Each payment hold of the test store's only order, by method: its status and what it covers.
+ *
+ * @return array<string, array{string, int}>
+ */
+function paymentHolds(): array
+{
+    return test()->store->run(static fn (): array => CheckoutPaymentHold::query()->orderBy('id')->get()
+        ->mapWithKeys(static fn (CheckoutPaymentHold $hold): array => [$hold->method => [$hold->status->value, $hold->amount->minorAmount()]])->all());
 }
 
 /**
