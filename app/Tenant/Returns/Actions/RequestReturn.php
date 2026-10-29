@@ -76,7 +76,8 @@ final readonly class RequestReturn
                 $settings = ReturnSettings::current();
                 $this->ensureBuyerMayAsk($requester, $settings, $reason, $photos);
 
-                if ($order->status === OrderStatus::Cancelled || ! $order->hasBeenSold()) {
+                // An anonymised order's buyer is gone: nothing new about them is kept.
+                if ($order->status === OrderStatus::Cancelled || ! $order->hasBeenSold() || $order->anonymised_at !== null) {
                     throw new OrderNotReturnableException;
                 }
 

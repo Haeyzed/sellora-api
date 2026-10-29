@@ -234,9 +234,14 @@ use App\Tenant\Promotions\PromotionPricedRecords;
 use App\Tenant\Promotions\PromotionStoreTables;
 use App\Tenant\Promotions\ReleasedPromotionUseRetention;
 use App\Tenant\Returns\Enums\ReturnPermission;
+use App\Tenant\Returns\Listeners\ForgetReturnsWhenOrderAnonymised;
 use App\Tenant\Returns\Listeners\SettleReturnRefundWhenRefundChanges;
 use App\Tenant\Returns\Models\OrderReturn;
 use App\Tenant\Returns\Models\ReturnSettings;
+use App\Tenant\Returns\Privacy\CustomerReturnData;
+use App\Tenant\Returns\Privacy\GuestReturnData;
+use App\Tenant\Returns\ReturnPhotoRetention;
+use App\Tenant\Returns\ReturnStoreFiles;
 use App\Tenant\Returns\ReturnStoreTables;
 use App\Tenant\Settings\Enums\SettingsPermission;
 use App\Tenant\Settings\Models\StoreSettings;
@@ -499,11 +504,13 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(CustomerDataSubject::TYPE, 'cart', CustomerCartData::class);
             $registry->register(CustomerDataSubject::TYPE, 'checkouts', CheckoutData::class);
             $registry->register(CustomerDataSubject::TYPE, 'orders', CustomerOrderData::class);
+            $registry->register(CustomerDataSubject::TYPE, 'returns', CustomerReturnData::class);
             $registry->register(CustomerDataSubject::TYPE, 'tax_documents', TaxDocumentData::class);
             $registry->register(CustomerDataSubject::TYPE, 'social_identities', SocialIdentityData::class);
             $registry->register(CustomerDataSubject::TYPE, 'account', CustomerAccountData::class);
-            // A guest has only their orders, found by the email they were placed with, those orders' tax documents, and their checkouts.
+            // A guest has only their orders, found by the email they were placed with, those orders' returns and tax documents, and their checkouts.
             $registry->register(GuestDataSubject::TYPE, 'orders', GuestOrderData::class);
+            $registry->register(GuestDataSubject::TYPE, 'returns', GuestReturnData::class);
             $registry->register(GuestDataSubject::TYPE, 'tax_documents', TaxDocumentData::class);
             $registry->register(GuestDataSubject::TYPE, 'checkouts', CheckoutData::class);
 
@@ -538,6 +545,7 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(StaffInvitationRetention::class);
             $registry->register(DriverSetupCodeRetention::class);
             $registry->register(ProofOfDeliveryRetention::class);
+            $registry->register(ReturnPhotoRetention::class);
             $registry->register(DriverLocationRetention::class);
             $registry->register(CustomerEmailTokenRetention::class);
             $registry->register(TrashedCustomerRetention::class);
@@ -573,6 +581,7 @@ final class AppServiceProvider extends ServiceProvider
             $registry->addFileSource(SettingsStoreFiles::class);
             $registry->addFileSource(CatalogStoreFiles::class);
             $registry->addFileSource(DeliveryStoreFiles::class);
+            $registry->addFileSource(ReturnStoreFiles::class);
 
             return $registry;
         });
@@ -751,6 +760,7 @@ final class AppServiceProvider extends ServiceProvider
         Event::listen([InvoiceIssued::class, CreditNoteIssued::class], RenderPdfWhenTaxDocumentIssued::class);
         Event::listen(OrderAnonymised::class, ForgetCardDetailsWhenOrderAnonymised::class);
         Event::listen(OrderAnonymised::class, ForgetRecipientsWhenOrderAnonymised::class);
+        Event::listen(OrderAnonymised::class, ForgetReturnsWhenOrderAnonymised::class);
         Event::listen(ShipmentCancelled::class, CancelDeliveriesWhenShipmentCancelled::class);
     }
 

@@ -240,6 +240,19 @@ function startReturnAsStaff(Order $order, array $data, StaffMember $as, string $
 }
 
 /**
+ * A customer's return of their order's first line, damaged, with a note and a photo; returns its public ID.
+ */
+function returnWithPhoto(Order $order, Customer $customer): string
+{
+    return customerReturnRequest('POST', "orders/{$order->public_id}/returns", $customer, [
+        'lines' => returnLinesPayload([$order->lines[0]->public_id => 1]),
+        'reason' => 'damaged',
+        'note' => 'Arrived cracked, call me on 0803 000 0000',
+        'photos' => [returnPhoto()],
+    ])->assertCreated()->json('data.id');
+}
+
+/**
  * A small JPEG upload for a return photo.
  */
 function returnPhoto(string $name = 'damage.jpg'): UploadedFile

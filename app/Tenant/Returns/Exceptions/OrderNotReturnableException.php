@@ -8,7 +8,7 @@ use App\Shared\Exceptions\DomainException;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Raised when a return is asked for on an order that was never sold (never paid in full while open), so nothing it holds can be given back by a return.
+ * Raised when a return is asked for on an order that was never sold (never paid in full while open), so nothing it holds can be given back by a return, or whose personal data was anonymised.
  */
 final class OrderNotReturnableException extends DomainException
 {
