@@ -67,6 +67,27 @@ it('splits an order between a gift card, a wallet and a gateway, and commits bot
         ->and([FakeGiftCardPaymentMethod::$steps, FakeWalletPaymentMethod::$steps])->toBe([['hold:5000', 'commit:gc_'.$order->public_id], ['hold:3000', 'commit:wl_'.$order->public_id]]);
 });
 
+it('holds nothing for a module left with nothing to cover, and doesn\'t list it as chosen', function (int $giftCardBalance, int $walletBalance, ?string $paymentMethod, array $chosen): void {
+    FakeGiftCardPaymentMethod::reset(balance: $giftCardBalance);
+    FakeWalletPaymentMethod::reset(balance: $walletBalance);
+    $token = checkoutCart();
+    $checkout = readyCheckout($token, changes: ['module_payment_methods' => [FakeGiftCardPaymentMethod::KEY, FakeWalletPaymentMethod::KEY], 'payment_method' => $paymentMethod]);
+
+    expect(checkoutRequest('GET', token: $token)->json('data.module_payment_methods'))->toBe($chosen);
+
+    placeCheckout($checkout['id'], $checkout['version'], token: $token)->assertCreated();
+
+    expect(array_keys(paymentHolds()))->toBe([...$chosen, ...($paymentMethod === null ? [] : [$paymentMethod])])
+        ->and(FakeWalletPaymentMethod::$steps)->toBe(in_array(FakeWalletPaymentMethod::KEY, $chosen, true) ? ['hold:'.$walletBalance] : []);
+})->with([
+    // The gift card covers it all: nothing is left for the wallet, nor for a core method.
+    'covered before it' => [10_000_000, 3000, null, [FakeGiftCardPaymentMethod::KEY]],
+    // An empty wallet has nothing to give.
+    'nothing to give' => [5000, 0, 'bank_transfer', [FakeGiftCardPaymentMethod::KEY]],
+    // Both still have something to cover.
+    'both cover a part' => [5000, 3000, 'bank_transfer', [FakeGiftCardPaymentMethod::KEY, FakeWalletPaymentMethod::KEY]],
+]);
+
 it('releases both modules\' holds when the order expires unpaid', function (): void {
     $order = twoModulesOrder();
 

@@ -7,6 +7,7 @@ namespace App\Tenant\Checkout\Data;
 use App\Shared\Money\Money;
 use App\Tenant\Cart\Data\PricedCart;
 use App\Tenant\Checkout\Contracts\CheckoutPaymentMethod;
+use App\Tenant\Checkout\Enums\PaymentMethodKind;
 use App\Tenant\Checkout\Models\Checkout;
 use LogicException;
 
@@ -80,6 +81,24 @@ final readonly class CheckoutQuote
         }
 
         return $due;
+    }
+
+    /**
+     * The modules' methods the shopper chose, in the order applied, less any left with nothing to cover: those hold nothing and aren't chosen. One that isn't offered stays, as its issue says.
+     *
+     * @return list<string>
+     */
+    public function chosenModulePaymentMethods(): array
+    {
+        $offeredModules = [];
+
+        foreach ($this->paymentMethods as $offer) {
+            if ($offer->kind === PaymentMethodKind::Module) {
+                $offeredModules[$offer->key] = true;
+            }
+        }
+
+        return array_values(array_filter($this->checkout->module_payment_methods, fn (string $key): bool => isset($this->moduleCovers[$key]) || ! isset($offeredModules[$key])));
     }
 
     /**

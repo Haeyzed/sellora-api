@@ -24,7 +24,10 @@ here.
 - When the order is placed, each chosen payment method gets a payment hold
   for its share of the order, in minor units. A hold is held, then committed
   or released. A zero share is allowed for a method that holds no money
-  itself.
+  itself. A module method left with nothing to cover (the ones before it
+  covered everything, or it has nothing to give) gets no hold and isn't
+  listed as chosen in the quote; the shopper's choice is kept, so it applies
+  again if the basket grows.
 - Each hold is committed or released on its own, so a payment method that
   fails (it throws, or its module is no longer installed) never holds up the
   others. The failure is recorded on that hold and logged, and the hourly

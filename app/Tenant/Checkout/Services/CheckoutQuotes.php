@@ -285,6 +285,12 @@ final readonly class CheckoutQuotes
             }
 
             $covered = $offer->covers === null || $offer->covers->isGreaterThan($due) ? $due : $offer->covers;
+
+            // Nothing left for it to cover (the methods before it covered it all, or it has nothing to give): it holds nothing and isn't chosen.
+            if (! $covered->isPositive()) {
+                continue;
+            }
+
             $covers[$key] = $covered;
             $due = $due->subtract($covered);
         }

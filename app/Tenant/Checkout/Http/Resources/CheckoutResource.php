@@ -133,8 +133,12 @@ final class CheckoutResource extends JsonResource
             ], $quote->paymentMethods),
             /** The method chosen to pay what is left; null before one is chosen. */
             'payment_method' => $checkout->payment_method,
-            /** Modules' methods applied first, in order. */
-            'module_payment_methods' => $checkout->module_payment_methods,
+            /**
+             * Modules' methods applied first, in order. One chosen with nothing left to cover (those before it covered it all) isn't listed: it holds nothing.
+             *
+             * @var list<string>
+             */
+            'module_payment_methods' => $quote->chosenModulePaymentMethods(),
         ];
     }
 
