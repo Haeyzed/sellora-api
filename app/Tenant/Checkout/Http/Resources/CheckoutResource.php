@@ -131,8 +131,11 @@ final class CheckoutResource extends JsonResource
                 'payment_due_at' => $method->paymentDueAt?->toIso8601String(),
                 'instructions' => $method->instructions,
             ], $quote->paymentMethods),
-            /** The method chosen to pay what is left; null before one is chosen. */
-            'payment_method' => $checkout->payment_method,
+            /**
+             * The method chosen to pay what is left; null before one is chosen, and while module_payment_methods leave nothing to pay (the choice is kept, and
+             * shown again once something is left).
+             */
+            'payment_method' => $quote->chosenPaymentMethod(),
             /**
              * Modules' methods applied first, in order. One chosen with nothing left to cover (those before it covered it all) isn't listed: it holds nothing.
              *

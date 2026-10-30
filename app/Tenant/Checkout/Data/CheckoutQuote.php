@@ -84,6 +84,26 @@ final readonly class CheckoutQuote
     }
 
     /**
+     * Core's method the shopper chose, or null while the modules' methods leave nothing for it to pay: it isn't used, though the choice is kept for when the basket grows. One that isn't offered stays, as its issue says.
+     */
+    public function chosenPaymentMethod(): ?string
+    {
+        $key = $this->checkout->payment_method;
+
+        if ($key === null || $this->paymentMethod !== null || $this->priced->basket === null) {
+            return $key;
+        }
+
+        foreach ($this->paymentMethods as $offer) {
+            if ($offer->key === $key && $offer->kind->paysWhatIsLeft()) {
+                return $this->amountDue()->isPositive() ? $key : null;
+            }
+        }
+
+        return $key;
+    }
+
+    /**
      * The modules' methods the shopper chose, in the order applied, less any left with nothing to cover: those hold nothing and aren't chosen. One that isn't offered stays, as its issue says.
      *
      * @return list<string>

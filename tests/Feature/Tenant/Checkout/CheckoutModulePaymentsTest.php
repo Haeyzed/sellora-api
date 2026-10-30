@@ -102,10 +102,16 @@ it('starts no core payment when modules cover the whole order, whatever core met
     $token = checkoutCart();
     $checkout = readyCheckout($token, changes: ['module_payment_methods' => [FakeGiftCardPaymentMethod::KEY], 'payment_method' => $coreMethod]);
 
+    // The quote shows no core method, as it has nothing to pay.
+    checkoutRequest('GET', token: $token)->assertOk()->assertJsonPath('data.payment_method', null);
+
     placeCheckout($checkout['id'], $checkout['version'], token: $token, returnUrl: 'https://shop.example.com/thanks')->assertCreated()
         ->assertJsonPath('data.order.payment_status', 'paid')
         ->assertJsonPath('data.payment_method', null)
         ->assertJsonPath('data.payment', null);
+    // Sent again with the same key, it answers the same.
+    placeCheckout($checkout['id'], $checkout['version'], token: $token, returnUrl: 'https://shop.example.com/thanks')->assertCreated()
+        ->assertJsonPath('data.payment_method', null);
 
     $order = $this->store->run(static fn (): Order => Order::query()->sole());
 
@@ -130,6 +136,25 @@ it('starts no core payment when modules cover the whole order, whatever core met
     'a bank transfer' => ['bank_transfer'],
     'cash on delivery' => ['cash_on_delivery'],
 ]);
+
+it('keeps the core method chosen while modules cover everything, and uses it again once the basket grows past them', function (): void {
+    FakeGiftCardPaymentMethod::reset(balance: 10_000_000);
+    $token = checkoutCart();
+    $checkout = readyCheckout($token, changes: ['module_payment_methods' => [FakeGiftCardPaymentMethod::KEY], 'payment_method' => 'bank_transfer']);
+
+    $covered = checkoutRequest('GET', token: $token)->assertOk()->assertJsonPath('data.payment_method', null);
+    expect(checkoutIssues($covered))->toBe([]);
+
+    $variant = $this->store->run(static fn (): string => cartVariant(price: 20_000_000)->public_id);
+    cartRequest('POST', '/lines', ['variant' => $variant, 'quantity' => 1], token: $token)->assertOk();
+
+    $grown = checkoutRequest('GET', token: $token)->assertOk()->assertJsonPath('data.payment_method', 'bank_transfer');
+    expect(checkoutIssues($grown))->toBe([]);
+
+    placeCheckout($checkout['id'], (int) $grown->json('data.version'), token: $token)->assertCreated()
+        ->assertJsonPath('data.payment_method.key', 'bank_transfer');
+    expect(paymentHolds())->toBe([FakeGiftCardPaymentMethod::KEY => ['held', 10_000_000], 'bank_transfer' => ['held', 0]]);
+});
 
 it('releases both modules\' holds when the order expires unpaid', function (): void {
     $order = twoModulesOrder();
