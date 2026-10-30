@@ -179,6 +179,7 @@ return [
     'partial_refund_not_supported' => 'Bramka tej płatności zwraca wyłącznie całe płatności. Zwróć całość lub skorzystaj z innej płatności.',
     'webhook_signature_invalid' => 'Ten webhook nie jest podpisany kluczami konta, na które został wysłany.',
     'order_not_payable' => 'To zamówienie nie oczekuje na płatność: zostało anulowane, zrealizowane, już opłacone lub po terminie płatności.',
+    'nothing_left_to_pay' => 'Za to zamówienie nie pozostało nic do zapłaty.',
     'payment_in_progress' => 'Płatność za to zamówienie jest nadal w toku. Zakończ go lub poczekaj kilka minut, aż zakończy się niepowodzeniem lub wygaśnie, a następnie spróbuj ponownie.',
     'payment_gateway_not_available' => 'Ten sposób płatności nie jest dostępny w przypadku tego zamówienia.',
     'payment_refused_by_gateway' => 'Dostawca usług płatniczych odmówił rozpoczęcia tej płatności. Nic nie zostało naliczone; spróbuj ponownie lub wybierz inny sposób płatności.',

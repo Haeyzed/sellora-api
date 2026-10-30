@@ -179,6 +179,7 @@ return [
     'partial_refund_not_supported' => 'La passerelle de paiement ne rembourse que la totalité des paiements. Remboursez la totalité ou utilisez un autre paiement.',
     'webhook_signature_invalid' => 'Ce webhook n\'est pas signé avec les clés du compte auquel il a été envoyé.',
     'order_not_payable' => 'Cette commande n\'est pas en attente de paiement : elle est annulée, finalisée, déjà payée ou dépassée son délai de paiement.',
+    'nothing_left_to_pay' => 'Il ne reste rien à payer sur cette commande.',
     'payment_in_progress' => 'Un paiement pour cette commande est toujours en cours. Terminez-le ou attendez quelques minutes jusqu\'à ce qu\'il échoue ou expire, puis réessayez.',
     'payment_gateway_not_available' => 'Ce mode de paiement n\'est pas disponible pour cette commande.',
     'payment_refused_by_gateway' => 'Le prestataire de paiement a refusé de lancer ce paiement. Rien n\'a été facturé ; réessayez ou choisissez un autre moyen de paiement.',

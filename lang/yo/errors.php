@@ -179,6 +179,7 @@ return [
     'partial_refund_not_supported' => 'Ẹnu-ọna isanwo yii nikan funni ni agbapada ti gbogbo sisanwo. Pada gbogbo rẹ pada, tabi lo sisanwo miiran.',
     'webhook_signature_invalid' => 'Webhook yii ko ni ibuwolu pẹlu awọn bọtini ti akọọlẹ ti a firanṣẹ si.',
     'order_not_payable' => 'Aṣẹ yii ko duro de sisanwo: o ti fagile, pari, ti sanwo tẹlẹ, tabi ti kọja akoko ipari sisanwo rẹ.',
+    'nothing_left_to_pay' => 'Ko si ohun ti o ku lati san lori aṣẹ yii.',
     'payment_in_progress' => 'Isanwo fun aṣẹ yii tun wa ni ilọsiwaju. Pari rẹ, tabi duro fun iṣẹju diẹ titi yoo fi kuna tabi pari, lẹhinna gbiyanju lẹẹkansi.',
     'payment_gateway_not_available' => 'Ọna yii lati sanwo ko si fun aṣẹ yii.',
     'payment_refused_by_gateway' => 'Olupese owo sisan kọ lati bẹrẹ sisanwo yii. Ko si ohun ti a gba agbara; gbiyanju lẹẹkansi tabi yan ọna miiran lati sanwo.',

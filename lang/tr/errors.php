@@ -179,6 +179,7 @@ return [
     'partial_refund_not_supported' => 'Bu ödemenin ağ geçidi yalnızca ödemelerin tamamını iade eder. Tamamını iade edin veya başka bir ödeme alın.',
     'webhook_signature_invalid' => 'Bu webhook, gönderildiği hesabın anahtarlarıyla imzalanmadı.',
     'order_not_payable' => 'Bu sipariş ödemeyi beklemiyor: iptal edilmiş, tamamlanmış, ödemesi yapılmış veya son ödeme tarihi geçmiş.',
+    'nothing_left_to_pay' => 'Bu sipariş için ödenecek bir şey kalmadı.',
     'payment_in_progress' => 'Bu siparişe ilişkin ödeme işlemi hâlâ devam ediyor. Bitirin veya başarısız olana veya süresi dolana kadar birkaç dakika bekleyip tekrar deneyin.',
     'payment_gateway_not_available' => 'Bu sipariş için bu ödeme yöntemi kullanılamıyor.',
     'payment_refused_by_gateway' => 'Ödeme sağlayıcısı bu ödemeyi başlatmayı reddetti. Hiçbir şey tahsil edilmedi; tekrar deneyin veya ödemenin başka bir yolunu seçin.',

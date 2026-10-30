@@ -179,6 +179,7 @@ return [
     'partial_refund_not_supported' => 'Lango la malipo haya hurejesha tu malipo yote. Rejesha pesa zote, au utumie malipo mengine.',
     'webhook_signature_invalid' => 'Mtandao huu haujatiwa saini kwa funguo za akaunti uliyotumwa.',
     'order_not_payable' => 'Agizo hili halisubiri malipo: limeghairiwa, limekamilika, tayari limelipwa au kupita makataa yake ya malipo.',
+    'nothing_left_to_pay' => 'Hakuna kilichobaki kulipwa kwa agizo hili.',
     'payment_in_progress' => 'Malipo ya agizo hili bado yanaendelea. Ikamilishe, au subiri dakika chache hadi muda wake ushindwe au uishe, kisha ujaribu tena.',
     'payment_gateway_not_available' => 'Njia hii ya kulipa haipatikani kwa agizo hili.',
     'payment_refused_by_gateway' => 'Mtoa huduma wa malipo alikataa kuanza malipo haya. Hakuna chochote kilichoshtakiwa; jaribu tena au chagua njia nyingine ya kulipa.',

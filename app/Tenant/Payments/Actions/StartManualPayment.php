@@ -8,6 +8,7 @@ use App\Tenant\Orders\Models\Order;
 use App\Tenant\Payments\Enums\PaymentEventType;
 use App\Tenant\Payments\Enums\PaymentMethod;
 use App\Tenant\Payments\Enums\PaymentStatus;
+use App\Tenant\Payments\Exceptions\NothingLeftToPayException;
 use App\Tenant\Payments\Exceptions\OrderNotPayableException;
 use App\Tenant\Payments\Exceptions\PaymentInProgressException;
 use App\Tenant\Payments\Exceptions\PaymentMethodNotAvailableException;
@@ -35,6 +36,7 @@ final readonly class StartManualPayment
     /**
      * @throws PaymentMethodNotAvailableException
      * @throws OrderNotPayableException
+     * @throws NothingLeftToPayException
      * @throws PaymentInProgressException
      */
     public function handle(Order $order, PaymentMethod $method): Payment
@@ -54,13 +56,20 @@ final readonly class StartManualPayment
                 return $inMotion->method === $method ? $inMotion : throw new PaymentInProgressException;
             }
 
+            $amount = $this->orderPayments->balance($locked);
+
+            // Even if the order's payment status is behind its payments: never a payment of nothing.
+            if (! $amount->isPositive()) {
+                throw new NothingLeftToPayException;
+            }
+
             $payment = new Payment;
             $payment->forceFill([
                 'order_id' => $locked->id,
                 'method' => $method,
                 'is_test' => false,
                 'status' => PaymentStatus::Pending,
-                'amount' => $this->orderPayments->balance($locked),
+                'amount' => $amount,
                 'reference' => 'pay_'.Str::lower((string) Str::ulid()),
             ])->save();
             $this->paymentEventLog->record($payment, PaymentEventType::Started, ['method' => $method->value]);

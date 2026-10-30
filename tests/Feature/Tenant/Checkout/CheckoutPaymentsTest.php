@@ -19,6 +19,7 @@ use App\Tenant\Orders\Models\Order;
 use App\Tenant\Payments\Enums\GatewayPaymentState;
 use App\Tenant\Payments\Enums\PaymentMethod;
 use App\Tenant\Payments\Models\Payment;
+use Illuminate\Support\Facades\DB;
 use Tests\Fixtures\Checkout\FakeGiftCardPaymentMethod;
 use Tests\Fixtures\Features\FakeFeatureSource;
 use Tests\Fixtures\Payments\FakePaymentGateway;
@@ -190,6 +191,32 @@ it('lets a customer pay again for their unpaid order, another way', function ():
     expect($paid->json('data.redirect_url'))->toStartWith('https://pay.fake.test/')
         ->and(app(Tests\Fixtures\Payments\FakeGatewayScript::class)->startedInTransactionLevels)->each->toBe(0);
 });
+
+it('refuses to start a payment of nothing, even when the order\'s payment status says it is still unpaid', function (string $method): void {
+    $gateway = useFakeGateway();
+    // Live, as the order is: a bank transfer is never a test payment.
+    connectFakeGateway('live');
+    [$ada, $variant] = $this->store->run(static fn (): array => [Customer::factory()->create(), cartVariant(10000)->public_id]);
+    cartRequest('POST', as: $ada)->assertCreated();
+    cartRequest('POST', '/lines', ['variant' => $variant, 'quantity' => 1], as: $ada)->assertOk();
+    $checkout = readyCheckout(as: $ada);
+    $order = placeCheckout($checkout['id'], $checkout['version'], as: $ada)->assertCreated()->json('data.order.id');
+    $transfer = $this->store->run(static fn (): Payment => Payment::query()->sole());
+    recordReceived($transfer, $transfer->amount->minorAmount());
+    // Paid in full, but the order's payment status is behind: it still says unpaid.
+    $this->store->run(static fn (): int => DB::table('orders')->update(['payment_status' => 'unpaid', 'paid_at' => null]));
+
+    test()->withHeaders(['Idempotency-Key' => 'pay-again-0001'])->withToken(customerTokenFor($ada, 'cart-store'))
+        ->postJson(storeUrl('cart-store', "/api/v1/customer/orders/{$order}/payments"), ['payment_method' => $method, 'return_url' => 'https://shop.example.com/thanks'])
+        ->assertConflict()->assertJsonPath('code', 'nothing_left_to_pay');
+
+    // No payment row, and the gateway never asked.
+    expect($this->store->run(static fn (): array => Payment::query()->pluck('id')->all()))->toBe([$transfer->id])
+        ->and($gateway->timesCalled('startPayment'))->toBe(0);
+})->with([
+    'through a gateway' => ['gateway:'.FakePaymentGateway::KEY],
+    'by a bank transfer' => ['bank_transfer'],
+]);
 
 it('takes cash at a pickup, and lets the order expire, stock and all, when nobody collects it', function (): void {
     offerManualMethod(PaymentMethod::CashOnDelivery);

@@ -179,6 +179,7 @@ return [
     'partial_refund_not_supported' => '이 결제 게이트웨이는 전체 결제 금액만 환불합니다. 전액을 환불하거나 다른 결제 수단을 이용하세요.',
     'webhook_signature_invalid' => '이 웹훅은 웹훅이 전송된 계정의 키로 서명되지 않았습니다.',
     'order_not_payable' => '이 주문은 결제 대기 중이 아닙니다. 취소, 완료, 이미 결제되었거나 결제 기한이 지났습니다.',
+    'nothing_left_to_pay' => '이 주문에 남은 결제 금액이 없습니다.',
     'payment_in_progress' => '이 주문에 대한 결제가 아직 진행 중입니다. 완료하거나 실패하거나 만료될 때까지 몇 분 정도 기다린 후 다시 시도하세요.',
     'payment_gateway_not_available' => '이 주문에는 이 결제 방법을 사용할 수 없습니다.',
     'payment_refused_by_gateway' => '결제 제공업체가 이 결제 시작을 거부했습니다. 요금이 청구되지 않았습니다. 다시 시도하거나 다른 결제 방법을 선택하세요.',

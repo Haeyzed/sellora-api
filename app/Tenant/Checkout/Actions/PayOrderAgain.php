@@ -10,6 +10,7 @@ use App\Tenant\Checkout\PaymentMethods\ManualPaymentMethods;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Payments\Actions\StartManualPayment;
 use App\Tenant\Payments\Actions\StartPayment;
+use App\Tenant\Payments\Exceptions\NothingLeftToPayException;
 use App\Tenant\Payments\Exceptions\OrderNotPayableException;
 use App\Tenant\Payments\Exceptions\PaymentGatewayNotAvailableException;
 use App\Tenant\Payments\Exceptions\PaymentInProgressException;
@@ -37,6 +38,7 @@ final readonly class PayOrderAgain
      * @throws PaymentGatewayNotAvailableException
      * @throws PaymentMethodNotAvailableException
      * @throws OrderNotPayableException
+     * @throws NothingLeftToPayException
      * @throws PaymentInProgressException
      */
     public function handle(Order $order, string $methodKey, ?string $returnUrl, string $idempotencyKey): Payment

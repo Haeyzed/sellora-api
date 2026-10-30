@@ -179,6 +179,7 @@ return [
     'partial_refund_not_supported' => 'Das Gateway dieser Zahlung erstattet nur vollständige Zahlungen. Erstatten Sie den gesamten Betrag oder ziehen Sie eine andere Zahlung in Anspruch.',
     'webhook_signature_invalid' => 'Dieser Webhook ist nicht mit den Schlüsseln des Kontos signiert, an das er gesendet wurde.',
     'order_not_payable' => 'Diese Bestellung wartet nicht auf die Zahlung: Sie ist storniert, abgeschlossen, bereits bezahlt oder die Zahlungsfrist ist abgelaufen.',
+    'nothing_left_to_pay' => 'Für diese Bestellung ist nichts mehr zu bezahlen.',
     'payment_in_progress' => 'Eine Zahlung für diese Bestellung ist noch in Bearbeitung. Beenden Sie den Vorgang oder warten Sie ein paar Minuten, bis er fehlschlägt oder abgelaufen ist, und versuchen Sie es dann erneut.',
     'payment_gateway_not_available' => 'Diese Zahlungsart ist für diese Bestellung nicht verfügbar.',
     'payment_refused_by_gateway' => 'Der Zahlungsanbieter weigerte sich, diese Zahlung zu starten. Es wurde nichts berechnet; Versuchen Sie es erneut oder wählen Sie eine andere Zahlungsart.',

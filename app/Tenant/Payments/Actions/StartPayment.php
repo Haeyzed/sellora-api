@@ -12,6 +12,7 @@ use App\Tenant\Payments\Enums\PaymentMethod;
 use App\Tenant\Payments\Enums\PaymentStatus;
 use App\Tenant\Payments\Exceptions\GatewayRejectedException;
 use App\Tenant\Payments\Exceptions\GatewayUnavailableException;
+use App\Tenant\Payments\Exceptions\NothingLeftToPayException;
 use App\Tenant\Payments\Exceptions\OrderNotPayableException;
 use App\Tenant\Payments\Exceptions\PaymentGatewayNotAvailableException;
 use App\Tenant\Payments\Exceptions\PaymentGatewayUnreachableException;
@@ -59,6 +60,7 @@ final readonly class StartPayment
      *
      * @throws PaymentGatewayNotAvailableException
      * @throws OrderNotPayableException
+     * @throws NothingLeftToPayException
      * @throws PaymentInProgressException
      * @throws PaymentRefusedByGatewayException
      * @throws PaymentGatewayUnreachableException When the gateway didn't answer; the payment stays pending and is checked later.
@@ -94,6 +96,7 @@ final readonly class StartPayment
 
     /**
      * @throws OrderNotPayableException
+     * @throws NothingLeftToPayException
      * @throws PaymentInProgressException
      */
     private function createPayment(Order $order, PaymentGatewayConnection $connection, ?string $idempotencyKey): Payment
@@ -116,6 +119,13 @@ final readonly class StartPayment
                 return $inMotion->connection_id === $connection->id && $inMotion->redirect_url !== null ? $inMotion : throw new PaymentInProgressException;
             }
 
+            $amount = $this->orderPayments->balance($locked);
+
+            // Even if the order's payment status is behind its payments: never a payment of nothing, before the gateway is asked.
+            if (! $amount->isPositive()) {
+                throw new NothingLeftToPayException;
+            }
+
             $payment = new Payment;
             $payment->forceFill([
                 'order_id' => $locked->id,
@@ -124,7 +134,7 @@ final readonly class StartPayment
                 'connection_id' => $connection->id,
                 'is_test' => $connection->mode?->isTest() ?? false,
                 'status' => PaymentStatus::Pending,
-                'amount' => $this->orderPayments->balance($locked),
+                'amount' => $amount,
                 'reference' => 'pay_'.Str::lower((string) Str::ulid()),
                 'idempotency_key' => $idempotencyKey,
             ])->save();

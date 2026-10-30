@@ -179,6 +179,7 @@ return [
     'partial_refund_not_supported' => '此付款网关仅退还全部付款。退还全部款项，或提取另一笔付款。',
     'webhook_signature_invalid' => '此 Webhook 未使用其发送到的帐户的密钥进行签名。',
     'order_not_payable' => '该订单未等待付款：已取消、已完成、已付款或已超过付款截止日期。',
+    'nothing_left_to_pay' => '此订单已无需再付款。',
     'payment_in_progress' => '该订单的付款仍在进行中。完成它，或者等待几分钟，直到它失败或过期，然后重试。',
     'payment_gateway_not_available' => '此订单不支持此付款方式。',
     'payment_refused_by_gateway' => '付款提供商拒绝开始此付款。没有收取任何费用；请重试或选择其他付款方式。',

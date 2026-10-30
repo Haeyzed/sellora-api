@@ -179,6 +179,7 @@ return [
     'partial_refund_not_supported' => 'O gateway deste pagamento reembolsa apenas pagamentos inteiros. Reembolse tudo ou saque outro pagamento.',
     'webhook_signature_invalid' => 'Este webhook não está assinado com as chaves da conta para a qual foi enviado.',
     'order_not_payable' => 'Este pedido não está aguardando pagamento: foi cancelado, concluído, já pago ou ultrapassou o prazo de pagamento.',
+    'nothing_left_to_pay' => 'Não há mais nada a pagar neste pedido.',
     'payment_in_progress' => 'O pagamento deste pedido ainda está em andamento. Conclua ou espere alguns minutos até que ele falhe ou expire e tente novamente.',
     'payment_gateway_not_available' => 'Esta forma de pagamento não está disponível para este pedido.',
     'payment_refused_by_gateway' => 'O provedor de pagamento recusou-se a iniciar este pagamento. Nada foi cobrado; tente novamente ou escolha outra forma de pagamento.',

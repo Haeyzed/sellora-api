@@ -179,6 +179,7 @@ return [
     'partial_refund_not_supported' => 'Wannan ƙofa ta biya tana mayar da kuɗin duka gabaɗaya ne kawai. Maida duka, ko zana akan wani biyan kuɗi.',
     'webhook_signature_invalid' => 'Ba a sanya hannu akan wannan maɓallan asusun da aka aika zuwa gare shi ba.',
     'order_not_payable' => 'Wannan odar baya jiran biya: an soke shi, an kammala shi, an riga an biya shi, ko ya wuce wa\'adin biya.',
+    'nothing_left_to_pay' => 'Babu abin da ya rage a biya a kan wannan odar.',
     'payment_in_progress' => 'Ana ci gaba da biyan kuɗin wannan odar. Kammala shi, ko jira ƴan mintuna har sai ya kasa ko ya ƙare, sannan a sake gwadawa.',
     'payment_gateway_not_available' => 'Wannan hanyar biyan kuɗi ba ta samuwa don wannan odar.',
     'payment_refused_by_gateway' => 'Mai biyan kuɗi ya ƙi fara wannan biyan. Ba a caje komai ba; sake gwadawa ko zaɓi wata hanyar biyan kuɗi.',

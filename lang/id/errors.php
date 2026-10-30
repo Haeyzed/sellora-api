@@ -179,6 +179,7 @@ return [
     'partial_refund_not_supported' => 'Gerbang pembayaran ini hanya mengembalikan seluruh pembayaran. Kembalikan semuanya, atau tarik pembayaran lainnya.',
     'webhook_signature_invalid' => 'Webhook ini tidak ditandatangani dengan kunci akun tujuan pengirimannya.',
     'order_not_payable' => 'Pesanan ini tidak menunggu pembayaran: pesanan ini dibatalkan, diselesaikan, sudah dibayar, atau melewati batas waktu pembayarannya.',
+    'nothing_left_to_pay' => 'Tidak ada lagi yang perlu dibayar untuk pesanan ini.',
     'payment_in_progress' => 'Pembayaran untuk pesanan ini masih dalam proses. Selesaikan, atau tunggu beberapa menit hingga gagal atau habis masa berlakunya, lalu coba lagi.',
     'payment_gateway_not_available' => 'Cara pembayaran ini tidak tersedia untuk pesanan ini.',
     'payment_refused_by_gateway' => 'Penyedia pembayaran menolak untuk memulai pembayaran ini. Tidak ada yang dikenakan biaya; coba lagi atau pilih cara pembayaran lain.',

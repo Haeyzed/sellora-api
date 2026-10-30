@@ -179,6 +179,7 @@ return [
     'partial_refund_not_supported' => 'Ọnụ ụzọ ịkwụ ụgwọ a na-akwụghachi naanị ụgwọ niile. Nkwụghachi ya niile, ma ọ bụ see na ugwo ọzọ.',
     'webhook_signature_invalid' => 'Ejighi igodo nke akaụntụ ezigara ya bịanye aka na webhook a.',
     'order_not_payable' => 'Iwu a anaghị echere ịkwụ ụgwọ: kagbuo ya, dechara ya, akwụgogoro ya, ma ọ bụ gafere oge ịkwụ ụgwọ ya.',
+    'nothing_left_to_pay' => 'Ọ dịghị ihe fọdụrụ ịkwụ n\'iwu a.',
     'payment_in_progress' => 'Ịkwụ ụgwọ maka iwu a ka na-aga n\'ihu. Mechaa ya, ma ọ bụ chere nkeji ole na ole ruo mgbe ọ dara ma ọ bụ kubie ume, wee nwaa ọzọ.',
     'payment_gateway_not_available' => 'Ụzọ a iji kwụọ ụgwọ adịghị maka iwu a.',
     'payment_refused_by_gateway' => 'Onye na-eweta ugwo jụrụ ịmalite ịkwụ ụgwọ a. Ọ dịghị ihe eboro; nwaa ọzọ ma ọ bụ họrọ ụzọ ọzọ ị ga-esi akwụ ụgwọ.',

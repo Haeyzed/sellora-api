@@ -202,6 +202,7 @@ return [
     'partial_refund_not_supported' => 'This payment\'s gateway only refunds whole payments. Refund all of it, or draw on another payment.',
     'webhook_signature_invalid' => 'This webhook isn\'t signed with the keys of the account it was sent to.',
     'order_not_payable' => 'This order isn\'t waiting for payment: it is cancelled, completed, already paid, or past its payment deadline.',
+    'nothing_left_to_pay' => 'Nothing is left to pay on this order.',
     'payment_in_progress' => 'A payment for this order is still in progress. Finish it, or wait a few minutes until it has failed or expired, then try again.',
     'payment_gateway_not_available' => 'This way to pay isn\'t available for this order.',
     'payment_refused_by_gateway' => 'The payment provider refused to start this payment. Nothing was charged; try again or choose another way to pay.',

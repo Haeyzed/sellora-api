@@ -179,6 +179,7 @@ return [
     'partial_refund_not_supported' => 'De gateway van deze betaling betaalt alleen volledige betalingen terug. Het geheel terugbetalen, of gebruik maken van een andere betaling.',
     'webhook_signature_invalid' => 'Deze webhook is niet ondertekend met de sleutels van het account waarnaar deze is verzonden.',
     'order_not_payable' => 'Deze bestelling wacht niet op betaling: hij is geannuleerd, voltooid, al betaald of de betalingsdeadline is overschreden.',
+    'nothing_left_to_pay' => 'Er hoeft voor deze bestelling niets meer betaald te worden.',
     'payment_in_progress' => 'Een betaling voor deze bestelling is nog in behandeling. Maak het af, of wacht een paar minuten totdat het is mislukt of verlopen, en probeer het dan opnieuw.',
     'payment_gateway_not_available' => 'Deze manier van betalen is niet beschikbaar voor deze bestelling.',
     'payment_refused_by_gateway' => 'De betalingsprovider weigerde deze betaling te starten. Er werd niets in rekening gebracht; probeer het opnieuw of kies een andere manier van betalen.',
