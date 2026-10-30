@@ -34,6 +34,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $settle_failures How many tries to commit or release it failed in a row.
  * @property CarbonImmutable|null $settle_alerted_at When staff were alerted that it keeps failing; only once.
  * @property CarbonImmutable|null $settle_recovered_at When a retry settled it after it had failed.
+ * @property CarbonImmutable|null $order_update_failed_at When recording its order's payments after it settled last failed; cleared once that works.
+ * @property string|null $order_update_failure Why recording its order's payments last failed, as a code.
+ * @property int $order_update_failures How many tries to record its order's payments after it settled failed in a row.
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property-read Order $order
@@ -69,6 +72,8 @@ final class CheckoutPaymentHold extends Model
             'settle_failures' => 'integer',
             'settle_alerted_at' => 'immutable_datetime',
             'settle_recovered_at' => 'immutable_datetime',
+            'order_update_failed_at' => 'immutable_datetime',
+            'order_update_failures' => 'integer',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];

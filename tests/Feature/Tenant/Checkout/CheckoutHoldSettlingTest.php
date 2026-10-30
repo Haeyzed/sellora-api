@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Tenant\Checkout\CheckoutExtensions;
 use App\Tenant\Checkout\Events\PaymentHoldKeepsFailing;
+use App\Tenant\Checkout\Exceptions\OrderPaymentsNotRecordedException;
 use App\Tenant\Checkout\PaymentMethods\GatewayPaymentMethods;
 use App\Tenant\Checkout\PaymentMethods\ManualPaymentMethods;
 use App\Tenant\Checkout\Services\PaymentHolds;
@@ -15,7 +16,9 @@ use App\Tenant\Orders\Events\OrderPaid;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Payments\Enums\PaymentMethod;
 use Illuminate\Log\Events\MessageLogged;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Exceptions;
 use Tests\Fixtures\Checkout\FakeGiftCardPaymentMethod;
 use Tests\Fixtures\Checkout\FakeWalletPaymentMethod;
 use Tests\Support\SecondConnection;
@@ -206,6 +209,58 @@ it('makes a cancelled order unpaid again once the sweep releases the module hold
     // Swept again: nothing more to do, and still one credit note.
     $this->artisan('payments:check-pending')->assertSuccessful();
     expect(orderTaxDocuments($order)['credit_notes'])->toHaveCount(1);
+});
+
+it('keeps sweeping when recording one order\'s payments fails after its hold is released, records it on that hold, and records them the next hour', function (): void {
+    // Another order in the store, placed first so the sweep comes to it first, in the same state.
+    $other = modulesOnlyOrderWhoseCommitFailed();
+    cancelAsStaff($other);
+    $order = modulesOnlyOrderWhoseCommitFailed();
+    cancelAsStaff($order);
+    // Recording the other order's payments hits a real database constraint while it fails.
+    $breaks = true;
+    Order::updating(static function (Order $saving) use (&$breaks, $other): void {
+        if ($breaks && $saving->id === $other->id) {
+            DB::table('orders')->where('id', $other->id)->update(['payment_status' => 'no_such_status']);
+        }
+    });
+    Exceptions::fake();
+    $warnings = [];
+    Event::listen(MessageLogged::class, static function (MessageLogged $log) use (&$warnings): void {
+        if ($log->level === 'warning') {
+            $warnings[] = $log->message.' '.json_encode($log->context);
+        }
+    });
+
+    FakeGiftCardPaymentMethod::$settleFailure = null;
+    $this->artisan('payments:check-pending')->assertSuccessful();
+
+    // This order finished all the same.
+    expect(orderAfterHolds($order))->toBe(['status' => 'cancelled', 'payment_status' => 'unpaid', 'paid' => false, 'refund_due' => false, 'holds' => [FakeGiftCardPaymentMethod::KEY => 'released']])
+        ->and(orderTaxDocuments($order)['credit_notes'])->toHaveCount(1)
+        // The other's hold is released for good (the gift card isn't asked twice), and why its order couldn't be recorded is on it.
+        ->and(orderAfterHolds($other))->toBe(['status' => 'cancelled', 'payment_status' => 'paid', 'paid' => true, 'refund_due' => true, 'holds' => [FakeGiftCardPaymentMethod::KEY => 'released']])
+        ->and(orderUpdateAfterHolds($other))->toBe([FakeGiftCardPaymentMethod::KEY => ['failure' => 'order_payments_not_recorded', 'failures' => 1]])
+        ->and(orderTaxDocuments($other)['credit_notes'])->toBe([])
+        // Logged with public IDs only.
+        ->and($warnings)->toHaveCount(1)
+        ->and($warnings[0])->toContain($other->public_id)->toContain('"tries_failed":1')->not->toContain('ada@example.com');
+
+    // The error tracker is told what broke, without the row, the SQL or the buyer's details.
+    Exceptions::assertReported(static fn (OrderPaymentsNotRecordedException $exception): bool => $exception->order === $other->public_id
+        && str_contains($exception->getMessage(), 'SQLSTATE[23514] on constraint orders_payment_status_check')
+        && ! str_contains($exception->getMessage(), 'ada@example.com')
+        && ! str_contains($exception->getMessage(), 'update "orders"')
+        && $exception->getPrevious() === null);
+
+    // An hour later it works: the other order is recorded, its invoice credited, the failure cleared, its count kept.
+    $breaks = false;
+    $this->artisan('payments:check-pending')->assertSuccessful();
+
+    expect(orderAfterHolds($other))->toMatchArray(['payment_status' => 'unpaid', 'paid' => false, 'refund_due' => false])
+        ->and(orderUpdateAfterHolds($other))->toBe([FakeGiftCardPaymentMethod::KEY => ['failure' => null, 'failures' => 1]])
+        ->and(orderTaxDocuments($other)['credit_notes'])->toHaveCount(1)
+        ->and(FakeGiftCardPaymentMethod::$steps)->toHaveCount(4);
 });
 
 it('keeps a cancelled order owing what a module really took, once the hold that was never taken is released', function (): void {

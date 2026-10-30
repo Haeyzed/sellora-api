@@ -304,6 +304,17 @@ function orderAfterHolds(Order $order): array
 }
 
 /**
+ * Where recording an order's payments after its holds settled stands, by each hold's method: why it last failed and how many tries in a row failed.
+ *
+ * @return array<string, array{failure: string|null, failures: int}>
+ */
+function orderUpdateAfterHolds(Order $order): array
+{
+    return test()->store->run(static fn (): array => CheckoutPaymentHold::query()->where('order_id', $order->id)->orderBy('id')->get()
+        ->mapWithKeys(static fn (CheckoutPaymentHold $hold): array => [$hold->method => ['failure' => $hold->order_update_failure, 'failures' => $hold->order_update_failures]])->all());
+}
+
+/**
  * An order's invoice and credit notes, for comparing: their numbers, references, totals and tax, and each line's kind, quantity, total and tax.
  *
  * @return array{invoice: array<string, mixed>|null, credit_notes: list<array<string, mixed>>}

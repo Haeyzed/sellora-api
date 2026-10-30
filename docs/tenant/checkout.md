@@ -40,6 +40,12 @@ here.
   hold has failed `CHECKOUT_HOLD_SETTLE_ALERT_AFTER` tries in a row (3 by
   default); once a retry settles it, the failure is cleared and the time it
   recovered is kept.
+- Once holds are released or given back, the order's payments are recorded
+  again (its payment status, the refund it owes, a credit note). That is
+  isolated too: the holds stay settled (a payment method is asked only once),
+  the failure is recorded on them and logged with public IDs only, the error
+  tracker is told without personal data, and the hourly sweep records the
+  order again until it works. One order failing never stops the sweep.
 
 ## Buyer journey
 

@@ -10,6 +10,7 @@ use App\Tenant\Checkout\Contracts\CheckoutPaymentMethod;
 use App\Tenant\Checkout\Enums\PaymentHoldStatus;
 use App\Tenant\Checkout\Events\CommittedPaymentRefundFailed;
 use App\Tenant\Checkout\Events\PaymentHoldKeepsFailing;
+use App\Tenant\Checkout\Exceptions\OrderPaymentsNotRecordedException;
 use App\Tenant\Checkout\Models\CheckoutPaymentHold;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Payments\Actions\RecalculateOrderPayments;
@@ -25,7 +26,8 @@ use Throwable;
  * registered, never stops the others. Its failure is recorded on its hold,
  * logged, and tried again by the hourly payments sweep until it settles;
  * staff are alerted once when it has failed checkout.hold_settle_alert_after
- * tries in a row.
+ * tries in a row. Recording the order's payments once holds were released or
+ * given back is isolated the same way, after them.
  */
 final readonly class PaymentHolds
 {
@@ -41,13 +43,13 @@ final readonly class PaymentHolds
      */
     public function commit(Order $order): int
     {
-        return $this->settle($order, PaymentHoldStatus::Committed, static function (CheckoutPaymentMethod $method, CheckoutPaymentHold $hold): void {
+        return count($this->settle($order, PaymentHoldStatus::Committed, static function (CheckoutPaymentMethod $method, CheckoutPaymentHold $hold): void {
             $method->commit($hold);
-        });
+        }));
     }
 
     /**
-     * Gives back every hold still held: the order expired or was cancelled before it was paid. When it had counted as paid (its commit failed before it was cancelled), the order's payment status moves through Payments, so what was released stops counting.
+     * Gives back every hold still held: the order expired or was cancelled before it was paid. When it had counted as paid (its commit failed before it was cancelled), the order's payments are recorded again through Payments, so what was released stops counting; that is isolated from the release, see recordOrderPayments().
      *
      * @return int How many were released.
      */
@@ -57,11 +59,27 @@ final readonly class PaymentHolds
             $method->release($hold);
         });
 
-        if ($released > 0 && $order->refresh()->payment_status->holdsMoney()) {
-            $this->recalculateOrderPayments->handle($order);
+        if ($released !== [] && $order->refresh()->payment_status->holdsMoney()) {
+            $this->recordOrderPayments($order, $released);
         }
 
-        return $released;
+        return count($released);
+    }
+
+    /**
+     * Records again the payments of an order where that failed after its holds settled, as the hourly sweep asks.
+     *
+     * @return bool Whether they are recorded now.
+     */
+    public function retryRecordingOrderPayments(Order $order): bool
+    {
+        $holdIds = [];
+
+        foreach (CheckoutPaymentHold::query()->where('order_id', $order->id)->whereNotNull('order_update_failed_at')->orderBy('id')->get(['id']) as $hold) {
+            $holdIds[] = $hold->id;
+        }
+
+        return $holdIds === [] || $this->recordOrderPayments($order, $holdIds);
     }
 
     /**
@@ -84,17 +102,74 @@ final readonly class PaymentHolds
             ->where('amount_amount', '>', 0)
             ->orderBy('id')
             ->get();
-        $givenBack = 0;
+        $givenBack = [];
 
         foreach ($holds as $hold) {
-            $givenBack += $this->refundOne($hold) ? 1 : 0;
+            if ($this->refundOne($hold)) {
+                $givenBack[] = $hold->id;
+            }
         }
 
-        if ($givenBack > 0) {
-            $this->recalculateOrderPayments->handle($order);
+        if ($givenBack !== []) {
+            $this->recordOrderPayments($order, $givenBack);
         }
 
-        return $givenBack;
+        return count($givenBack);
+    }
+
+    /**
+     * Records the order's payments through Payments once holds settled or were given back, and anything that triggers, in a transaction of its own (a savepoint inside the caller's).
+     *
+     * The holds have settled for good (their methods are called only once), so
+     * a failure here, a database constraint included, never undoes them and
+     * never stops the caller: it is recorded on those holds, logged with public
+     * IDs only, the error tracker is told without personal data, and the
+     * hourly sweep tries again. Once it works, the failure is cleared.
+     *
+     * @param  list<int>  $holdIds
+     * @return bool Whether they are recorded.
+     */
+    private function recordOrderPayments(Order $order, array $holdIds): bool
+    {
+        try {
+            DB::transaction(fn (): Order => $this->recalculateOrderPayments->handle($order));
+        } catch (Throwable $exception) {
+            $this->recordOrderUpdateFailure($order, $holdIds, $exception);
+
+            return false;
+        }
+
+        $cleared = CheckoutPaymentHold::query()->whereKey($holdIds)->whereNotNull('order_update_failed_at')->update(['order_update_failed_at' => null, 'order_update_failure' => null, 'updated_at' => CarbonImmutable::now()]);
+
+        if ($cleared > 0) {
+            Log::info('An order\'s payments that had failed to record after its payment holds settled are now recorded.', ['order' => $order->public_id]);
+        }
+
+        return true;
+    }
+
+    /**
+     * @param  list<int>  $holdIds
+     */
+    private function recordOrderUpdateFailure(Order $order, array $holdIds, Throwable $exception): void
+    {
+        $reason = $exception instanceof DomainException ? $exception->errorCode() : 'order_payments_not_recorded';
+        $publicIds = [];
+        $methods = [];
+        $tries = 0;
+
+        DB::transaction(static function () use ($holdIds, $reason, &$publicIds, &$methods, &$tries): void {
+            foreach (CheckoutPaymentHold::query()->whereKey($holdIds)->orderBy('id')->lockForUpdate()->get() as $hold) {
+                $hold->forceFill(['order_update_failed_at' => CarbonImmutable::now(), 'order_update_failure' => $reason, 'order_update_failures' => $hold->order_update_failures + 1])->save();
+                $publicIds[] = $hold->public_id;
+                $methods[] = $hold->method;
+                $tries = max($tries, $hold->order_update_failures);
+            }
+        });
+
+        report(OrderPaymentsNotRecordedException::after($exception, $order->public_id, $publicIds));
+        // Only public IDs and the methods' keys: staff find the rest from there.
+        Log::warning('Recording an order\'s payments failed after its payment holds settled; it is tried again hourly.', ['order' => $order->public_id, 'methods' => $methods, 'reason' => $reason, 'tries_failed' => $tries]);
     }
 
     private function refundOne(CheckoutPaymentHold $hold): bool
@@ -160,12 +235,12 @@ final readonly class PaymentHolds
      * Settles each hold still held, each in a transaction of its own under its row lock, so one failing never stops the others.
      *
      * @param  callable(CheckoutPaymentMethod, CheckoutPaymentHold): void  $step
-     * @return int How many were settled.
+     * @return list<int> The IDs of those settled now.
      */
-    private function settle(Order $order, PaymentHoldStatus $to, callable $step): int
+    private function settle(Order $order, PaymentHoldStatus $to, callable $step): array
     {
         $ids = CheckoutPaymentHold::query()->where('order_id', $order->id)->where('status', PaymentHoldStatus::Held->value)->orderBy('id')->pluck('id');
-        $settled = 0;
+        $settled = [];
 
         foreach ($ids as $id) {
             try {
@@ -183,7 +258,9 @@ final readonly class PaymentHolds
                 $this->recordSettleFailure($id, $to, $outcome);
             }
 
-            $settled += $outcome === true ? 1 : 0;
+            if ($outcome === true) {
+                $settled[] = (int) $id;
+            }
         }
 
         return $settled;
