@@ -1,0 +1,15 @@
+#!/bin/sh
+# Refuses a commit whose staged PHP files fail Pint. Git runs this with its own
+# sh on every platform, Git for Windows included, even from PowerShell.
+# Install it once with: composer hooks:install
+
+root="$(git rev-parse --show-toplevel)" || exit 1
+
+for candidate in php php.exe php.bat "$HOME/.config/herd/bin/php84/php.exe"; do
+    if command -v "$candidate" >/dev/null 2>&1; then
+        exec "$candidate" "$root/.githooks/check-staged-php.php"
+    fi
+done
+
+echo "pre-commit: PHP was not found, so Pint could not check this commit." >&2
+exit 1

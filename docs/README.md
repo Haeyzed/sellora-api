@@ -113,6 +113,20 @@ yet:
   billing ([Billing](landlord/billing.md)), Stripe and other gateways, live
   updates, custom fields, and modules.
 
+## Before you commit
+
+Run this once in each clone (`composer setup` does it for you):
+
+```sh
+composer hooks:install
+```
+
+It points git at the hooks in `.githooks`. Before each commit, Pint then
+checks the staged version of every staged PHP file and refuses the commit if
+any fail. It works from PowerShell, Git Bash and any other shell, because git
+runs the hook itself. To run the same check by hand, use
+`composer hooks:check`. CI still runs Pint on everything.
+
 ## Choose a guide
 
 - [Landlord: central platform](landlord/README.md): store registration,

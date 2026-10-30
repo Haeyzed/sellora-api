@@ -74,8 +74,11 @@
             "@php artisan migrate --force",
             "@php artisan permissions:sync",
             "npm install --ignore-scripts",
-            "npm run build"
+            "npm run build",
+            "@hooks:install"
         ],
+        "hooks:install": "git config core.hooksPath .githooks",
+        "hooks:check": "@php .githooks/check-staged-php.php",
         "dev": [
             "Composer\\Config::disableProcessTimeout",
             "npx concurrently -c \"#93c5fd,#c4b5fd,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --queue=payments,default,bulk --tries=1 --timeout=0\" \"npm run dev\" --names='server,queue,vite'"
@@ -141,7 +144,9 @@
         ]
     },
     "scripts-descriptions": {
-        "ci": "Runs every check CI runs, with the same settings: Pint, Larastan, composer audit, the Scramble docs check, Pest.",
+        "hooks:install": "Points this clone's git at .githooks, so Pint checks staged PHP files before each commit.",
+        "hooks:check": "Runs the pre-commit check by hand on what is staged now.",
+        "ci":"Runs every check CI runs, with the same settings: Pint, Larastan, composer audit, the Scramble docs check, Pest.",
         "ci:pint": "CI's Pint check (no changes made).",
         "ci:stan": "CI's Larastan check, from an empty result cache.",
         "ci:audit": "CI's composer audit of the lock file.",
