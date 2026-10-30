@@ -29,7 +29,7 @@ use Illuminate\Support\Facades\DB;
 use LogicException;
 
 /**
- * Issues the credit note for one part of a refund that reduced the sale, once that part has gone back. Safe to run twice: one credit note per part.
+ * Issues the credit note for one part of a refund that reduced the sale, once that part has gone back. Safe to run twice: one credit note per part. Also credits a whole invoice when a sale is undone without a refund (undoSale()).
  *
  * Runs under the order's lock, issuing the invoice first if the queue hasn't
  * yet. Returned units and shipping are credited against their invoice lines,
@@ -85,6 +85,85 @@ final readonly class IssueCreditNote
 
             return $creditNote;
         });
+    }
+
+    /**
+     * Credits what is left of a sold order's invoice once the sale is undone without a refund: its payment status dropped from paid to unpaid after it was cancelled, because what paid for it was only held and has been released. Runs in the caller's transaction, under the order's lock. Safe to run twice: one such credit note per order.
+     *
+     * Credits every line and the shipping as invoiced, with their taxes, when
+     * nothing was credited yet; otherwise what is left, as a price reduction.
+     *
+     * @return CreditNote|null The credit note; null when the order has no invoice (it was never issued), or nothing is left on it.
+     */
+    public function undoSale(Order $order): ?CreditNote
+    {
+        return DB::transaction(function () use ($order): ?CreditNote {
+            $locked = $this->orderProgress->lock($order);
+            $existing = CreditNote::query()->where('reference', $locked->public_id)->first();
+
+            if ($existing !== null) {
+                return $existing;
+            }
+
+            // Never issued now: the order is no longer a sale.
+            $invoice = Invoice::query()->where('order_id', $locked->id)->first()?->load('lines.taxes');
+
+            if ($invoice === null) {
+                return null;
+            }
+
+            $credited = (int) CreditNote::query()->where('invoice_id', $invoice->id)->sum('total_amount');
+            $left = $invoice->total->subtract(Money::ofMinor($credited, $invoice->currency));
+
+            if (! $left->isPositive()) {
+                return null;
+            }
+
+            $request = new CreditRequest($locked->id, $locked->public_id, null, $left, [], Money::zero($invoice->currency), Money::zero($invoice->currency), Money::zero($invoice->currency));
+            $lines = $credited === 0 ? $this->wholeInvoice($invoice) : [['kind' => CreditNoteLineKind::Adjustment, 'invoiceLine' => null, 'name' => __('documents.price_reduction', locale: $invoice->locale), 'quantity' => 1, 'total' => $left, 'taxes' => $this->adjustmentTaxes($left, $invoice)]];
+            $creditNote = $this->copyOf($invoice, $locked, $request, $lines, CarbonImmutable::now());
+            $creditNote->save();
+            $this->saveLines($creditNote, $lines);
+            $this->orderEventLog->record($locked, OrderEventType::CreditNoteIssued, ['credit_note' => $creditNote->public_id, 'number' => $creditNote->number, 'refund' => null]);
+            CreditNoteIssued::dispatch($creditNote);
+
+            return $creditNote;
+        });
+    }
+
+    /**
+     * Every line of the invoice as it was invoiced, shipping included, each with all its taxes.
+     *
+     * @return list<array{kind: CreditNoteLineKind, invoiceLine: InvoiceLine|null, name: string, quantity: int, total: Money, taxes: list<array{InvoiceTax, Money}>}>
+     */
+    private function wholeInvoice(Invoice $invoice): array
+    {
+        $lines = [];
+
+        foreach ($invoice->lines->sortBy('position') as $line) {
+            $taxes = [];
+
+            foreach ($line->taxes as $invoiceTax) {
+                $taxes[] = [$invoiceTax, $invoiceTax->tax];
+            }
+
+            $lines[] = [
+                'kind' => $line->kind === InvoiceLineKind::Shipping ? CreditNoteLineKind::Shipping : CreditNoteLineKind::Item,
+                'invoiceLine' => $line,
+                'name' => $line->name,
+                'quantity' => $line->quantity,
+                'total' => $line->total,
+                'taxes' => $taxes,
+            ];
+        }
+
+        $total = Money::sum($invoice->currency, array_map(static fn (array $line): Money => $line['total'], $lines));
+
+        if (! $total->isEqualTo($invoice->total)) {
+            throw new LogicException('An invoice\'s lines must add up to its total.');
+        }
+
+        return $lines;
     }
 
     /**

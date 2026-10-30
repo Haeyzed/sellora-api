@@ -12,6 +12,8 @@ use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Inventory\Models\StockReservation;
 use App\Tenant\Orders\Actions\CancelOrder;
 use App\Tenant\Orders\Enums\OrderEventType;
+use App\Tenant\Orders\Models\CreditNote;
+use App\Tenant\Orders\Models\Invoice;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Orders\Models\OrderEvent;
 use App\Tenant\Payments\Enums\GatewayPaymentState;
@@ -297,6 +299,32 @@ function orderAfterHolds(Order $order): array
             'paid' => $order->paid_at !== null,
             'refund_due' => $order->refund_due,
             'holds' => CheckoutPaymentHold::query()->where('order_id', $order->id)->orderBy('id')->get()->mapWithKeys(static fn (CheckoutPaymentHold $hold): array => [$hold->method => $hold->status->value])->all(),
+        ];
+    });
+}
+
+/**
+ * An order's invoice and credit notes, for comparing: their numbers, references, totals and tax, and each line's kind, quantity, total and tax.
+ *
+ * @return array{invoice: array<string, mixed>|null, credit_notes: list<array<string, mixed>>}
+ */
+function orderTaxDocuments(Order $order): array
+{
+    return test()->store->run(static function () use ($order): array {
+        $lines = static fn ($lines): array => $lines->sortBy('position')->map(static fn ($line): array => [$line->kind->value, $line->quantity, $line->total->minorAmount(), $line->tax->minorAmount()])->values()->all();
+        $invoice = Invoice::query()->with('lines')->where('order_id', $order->id)->first();
+
+        return [
+            'invoice' => $invoice === null ? null : ['number' => $invoice->number, 'total' => $invoice->total->minorAmount(), 'tax' => $invoice->tax->minorAmount(), 'lines' => $lines($invoice->lines)],
+            'credit_notes' => CreditNote::query()->with('lines')->where('order_id', $order->id)->orderBy('id')->get()->map(static fn (CreditNote $creditNote): array => [
+                'number' => $creditNote->number,
+                'sequence_number' => $creditNote->sequence_number,
+                'reference' => $creditNote->reference,
+                'refund' => $creditNote->refund_reference,
+                'total' => $creditNote->total->minorAmount(),
+                'tax' => $creditNote->tax->minorAmount(),
+                'lines' => $lines($creditNote->lines),
+            ])->all(),
         ];
     });
 }

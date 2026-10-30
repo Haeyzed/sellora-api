@@ -16,12 +16,13 @@ final readonly class CreditRequest
 {
     /**
      * @param  string  $reference  The refund part's public ID: one credit note per part.
+     * @param  string|null  $refundReference  The refund's public ID; null only for a sale undone without a refund.
      * @param  list<CreditedLine>  $lines
      */
     public function __construct(
         public int $orderId,
         public string $reference,
-        public string $refundReference,
+        public ?string $refundReference,
         public Money $amount,
         public array $lines,
         public Money $shipping,

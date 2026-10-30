@@ -179,15 +179,33 @@ it('makes a cancelled order unpaid again once the sweep releases the module hold
     $order = modulesOnlyOrderWhoseCommitFailed();
     cancelAsStaff($order);
 
-    expect(orderAfterHolds($order))->toBe(['status' => 'cancelled', 'payment_status' => 'paid', 'paid' => true, 'refund_due' => true, 'holds' => [FakeGiftCardPaymentMethod::KEY => 'held']]);
+    // Paid in full while open, so it was a sale, and invoiced.
+    $invoiced = orderTaxDocuments($order);
+    expect(orderAfterHolds($order))->toBe(['status' => 'cancelled', 'payment_status' => 'paid', 'paid' => true, 'refund_due' => true, 'holds' => [FakeGiftCardPaymentMethod::KEY => 'held']])
+        ->and($invoiced['invoice'])->toMatchArray(['total' => $order->total->minorAmount()])
+        ->and($invoiced['credit_notes'])->toBe([]);
 
     // Back again: the hourly sweep releases the hold. Nothing was ever taken, so nothing is owed.
     FakeGiftCardPaymentMethod::$settleFailure = null;
     $this->artisan('payments:check-pending')->assertSuccessful();
 
     expect(orderAfterHolds($order))->toBe(['status' => 'cancelled', 'payment_status' => 'unpaid', 'paid' => false, 'refund_due' => false, 'holds' => [FakeGiftCardPaymentMethod::KEY => 'released']])
-        ->and(orderHistory($order))->toContain('paid', 'cancelled', 'payment_status_changed:paid>unpaid')
-        ->and(FakeGiftCardPaymentMethod::$steps)->toBe(['hold:'.$order->total->minorAmount(), "release:gc_{$order->public_id}"]);
+        ->and(orderHistory($order))->toContain('paid', 'invoice_issued', 'cancelled', 'payment_status_changed:paid>unpaid', 'credit_note_issued')
+        ->and(FakeGiftCardPaymentMethod::$steps)->toBe(['hold:'.$order->total->minorAmount(), "release:gc_{$order->public_id}"])
+        // The sale is undone: the whole invoice is credited, line for line, with the store's first credit note number, and no refund behind it.
+        ->and(orderTaxDocuments($order))->toBe(['invoice' => $invoiced['invoice'], 'credit_notes' => [[
+            'number' => 'CN-'.now()->year.'-000001',
+            'sequence_number' => 1,
+            'reference' => $order->public_id,
+            'refund' => null,
+            'total' => $invoiced['invoice']['total'],
+            'tax' => $invoiced['invoice']['tax'],
+            'lines' => $invoiced['invoice']['lines'],
+        ]]]);
+
+    // Swept again: nothing more to do, and still one credit note.
+    $this->artisan('payments:check-pending')->assertSuccessful();
+    expect(orderTaxDocuments($order)['credit_notes'])->toHaveCount(1);
 });
 
 it('keeps a cancelled order owing what a module really took, once the hold that was never taken is released', function (): void {

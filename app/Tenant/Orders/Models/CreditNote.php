@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * A credit note (Step 15b): reduces an invoice by what one part of a refund gave back, when that refund reduced the sale.
+ * A credit note (Step 15b): reduces an invoice by what one part of a refund gave back, when that refund reduced the sale; or credits all of it when the sale is undone without a refund (what paid for it was only held, and was released).
  *
  * Copies its invoice's seller and buyer, and its own lines (returned items,
  * shipping, or a price reduction) with their taxes. Like the invoice, the
@@ -28,8 +28,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $public_id
  * @property int $invoice_id
  * @property int $order_id
- * @property string $reference The public ID of the refund part it credits.
- * @property string $refund_reference The public ID of the refund.
+ * @property string $reference The public ID of the refund part it credits, or of the order for a sale undone without a refund.
+ * @property string|null $refund_reference The public ID of the refund; null for a sale undone without a refund.
  * @property string $number As printed, such as "CN-2026-000007"; "TEST-CN-1042-1" for a test order.
  * @property string|null $series
  * @property int|null $sequence_number

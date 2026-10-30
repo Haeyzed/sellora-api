@@ -70,7 +70,11 @@ Order amounts and copies are financial records and are never overwritten.
    fulfillment is required). A payment deadline can cause an unpaid order to
    be cancelled.
 6. If money is returned, Payments records refunds. If the refund reduces a
-   paid sale, the system can issue a credit note against the invoice.
+   paid sale, the system can issue a credit note against the invoice. A sale
+   can also be undone without a refund: an order paid in full only by what a
+   payment method held (a gift card whose commit failed) and then cancelled
+   drops back to unpaid once that hold is released. It loses its paid date,
+   owes nothing, and its invoice is credited in full.
 7. After delivery, the buyer can send units back through
    [Returns](returns.md), which refunds them through Payments and puts them
    back on the shelf through Inventory; the order itself stays as it was.
