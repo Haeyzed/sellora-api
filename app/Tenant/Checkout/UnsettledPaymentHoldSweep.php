@@ -30,7 +30,7 @@ final readonly class UnsettledPaymentHoldSweep implements StoreUnsettledPaymentH
             ->pluck('order_id');
         $settled = 0;
 
-        foreach (Order::query()->whereKey($orderIds)->get() as $order) {
+        foreach (Order::query()->whereKey($orderIds)->orderBy('id')->get() as $order) {
             $settled += $order->status === OrderStatus::Cancelled ? $this->paymentHolds->release($order) : $this->paymentHolds->commit($order);
         }
 
@@ -43,7 +43,7 @@ final readonly class UnsettledPaymentHoldSweep implements StoreUnsettledPaymentH
             ->limit(config()->integer('checkout.hold_settle_retries_per_run'))
             ->pluck('order_id');
 
-        foreach (Order::query()->whereKey($toRecord)->get() as $order) {
+        foreach (Order::query()->whereKey($toRecord)->orderBy('id')->get() as $order) {
             $this->paymentHolds->retryRecordingOrderPayments($order);
         }
 

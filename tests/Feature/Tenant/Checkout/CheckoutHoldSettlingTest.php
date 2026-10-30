@@ -235,8 +235,9 @@ it('keeps sweeping when recording one order\'s payments fails after its hold is 
     FakeGiftCardPaymentMethod::$settleFailure = null;
     $this->artisan('payments:check-pending')->assertSuccessful();
 
-    // This order finished all the same.
-    expect(orderAfterHolds($order))->toBe(['status' => 'cancelled', 'payment_status' => 'unpaid', 'paid' => false, 'refund_due' => false, 'holds' => [FakeGiftCardPaymentMethod::KEY => 'released']])
+    // The sweep did come to the failing order first, oldest first, and this order finished all the same.
+    expect(array_values(array_filter(FakeGiftCardPaymentMethod::$steps, static fn (string $step): bool => str_starts_with($step, 'release:'))))->toBe(["release:gc_{$other->public_id}", "release:gc_{$order->public_id}"])
+        ->and(orderAfterHolds($order))->toBe(['status' => 'cancelled', 'payment_status' => 'unpaid', 'paid' => false, 'refund_due' => false, 'holds' => [FakeGiftCardPaymentMethod::KEY => 'released']])
         ->and(orderTaxDocuments($order)['credit_notes'])->toHaveCount(1)
         // The other's hold is released for good (the gift card isn't asked twice), and why its order couldn't be recorded is on it.
         ->and(orderAfterHolds($other))->toBe(['status' => 'cancelled', 'payment_status' => 'paid', 'paid' => true, 'refund_due' => true, 'holds' => [FakeGiftCardPaymentMethod::KEY => 'released']])
