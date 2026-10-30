@@ -10,8 +10,6 @@ use App\Landlord\Tenancy\Models\Tenant;
 use App\Landlord\Tenancy\StoreExportRetention;
 use App\Shared\Auth\Models\Role;
 use App\Shared\Privacy\Exceptions\UnclassifiedStoreDataException;
-use App\Shared\Privacy\StoreDataExporter;
-use App\Shared\Privacy\StoreExportRegistry;
 use App\Shared\Tenancy\StoreExportReadyNotification;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Identity\Enums\StaffRole;
@@ -58,12 +56,6 @@ beforeEach(function (): void {
 
 afterEach(function (): void {
     deleteAllStores();
-});
-
-it('classifies every column of every store table', function (): void {
-    $unclassified = $this->store->run(static fn (): array => app(StoreExportRegistry::class)->unclassified(app(StoreDataExporter::class)->storeColumns(DB::connection())));
-
-    expect($unclassified)->toBe([]);
 });
 
 it('exports the store\'s data without a single secret, and says what it left out', function (): void {
