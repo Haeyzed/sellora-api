@@ -11,7 +11,9 @@ use App\Tenant\Checkout\Models\CheckoutPaymentHold;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Inventory\Models\StockReservation;
 use App\Tenant\Orders\Actions\CancelOrder;
+use App\Tenant\Orders\Enums\OrderEventType;
 use App\Tenant\Orders\Models\Order;
+use App\Tenant\Orders\Models\OrderEvent;
 use App\Tenant\Payments\Enums\GatewayPaymentState;
 use App\Tenant\Payments\Models\Payment;
 use Carbon\CarbonImmutable;
@@ -257,11 +259,57 @@ function refundState(): array
 }
 
 /**
- * The test's owner cancelling the test store's only order.
+ * The test's owner cancelling the test store's only order, or the one given.
  */
-function cancelAsStaff(): void
+function cancelAsStaff(?Order $order = null): void
 {
-    test()->store->run(static fn () => app(CancelOrder::class)->byStaff(test()->owner, Order::query()->sole()));
+    test()->store->run(static fn () => app(CancelOrder::class)->byStaff(test()->owner, $order?->refresh() ?? Order::query()->sole()));
+}
+
+/**
+ * A guest's order in the cart store paid in full at placement by modules alone (the fake gift card for everything, or the fake wallet's ₦30 then the gift card for the rest), whose gift card can't be reached from then on: its commit failed, so its hold is still held, and releasing it fails too until the test says otherwise. The fake gift card (and the wallet) must be registered first.
+ */
+function modulesOnlyOrderWhoseCommitFailed(bool $withWallet = false): Order
+{
+    FakeGiftCardPaymentMethod::$balance = 10_000_000;
+    FakeWalletPaymentMethod::$balance = 3000;
+    FakeGiftCardPaymentMethod::$settleFailure = new RuntimeException('The gift card service is down.');
+    $token = checkoutCart();
+    $checkout = readyCheckout($token, changes: ['module_payment_methods' => $withWallet ? [FakeWalletPaymentMethod::KEY, FakeGiftCardPaymentMethod::KEY] : [FakeGiftCardPaymentMethod::KEY], 'payment_method' => null]);
+    $orderId = placeCheckout($checkout['id'], $checkout['version'], token: $token)->assertCreated()->assertJsonPath('data.order.payment_status', 'paid')->json('data.order.id');
+
+    return test()->store->run(static fn (): Order => Order::query()->where('public_id', $orderId)->sole());
+}
+
+/**
+ * An order as it stands: its status, payment status, paid date, whether it owes a refund, and each hold's status by method.
+ *
+ * @return array{status: string, payment_status: string, paid: bool, refund_due: bool, holds: array<string, string>}
+ */
+function orderAfterHolds(Order $order): array
+{
+    return test()->store->run(static function () use ($order): array {
+        $order->refresh();
+
+        return [
+            'status' => $order->status->value,
+            'payment_status' => $order->payment_status->value,
+            'paid' => $order->paid_at !== null,
+            'refund_due' => $order->refund_due,
+            'holds' => CheckoutPaymentHold::query()->where('order_id', $order->id)->orderBy('id')->get()->mapWithKeys(static fn (CheckoutPaymentHold $hold): array => [$hold->method => $hold->status->value])->all(),
+        ];
+    });
+}
+
+/**
+ * An order's history, as "type" or "type:from>to" for a change of status, oldest first.
+ *
+ * @return list<string>
+ */
+function orderHistory(Order $order): array
+{
+    return test()->store->run(static fn (): array => $order->events()->orderBy('id')->get()
+        ->map(static fn (OrderEvent $event): string => $event->type->value.(isset($event->data['from'], $event->data['to']) && $event->type === OrderEventType::PaymentStatusChanged ? ":{$event->data['from']}>{$event->data['to']}" : ''))->all());
 }
 
 /*

@@ -18,6 +18,11 @@ interface OrderAmountHolds
     public function heldFor(Order $order): Money;
 
     /**
+     * What of that they really took (the order was paid and they made it final), given back since or not; what they only hold isn't taken.
+     */
+    public function takenFor(Order $order): Money;
+
+    /**
      * What of that they gave back once the order was cancelled; in the order's currency.
      */
     public function refundedFor(Order $order): Money;

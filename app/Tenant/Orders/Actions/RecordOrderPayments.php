@@ -23,7 +23,11 @@ use Illuminate\Support\Facades\Log;
  * Becoming paid in full runs MarkOrderAsPaid (promotion uses committed,
  * lines that don't ship fulfilled, completion). Money for a cancelled order
  * never revives it: the order stays cancelled and owes it back, until it is
- * all refunded. Refunds beyond what was paid (a refund that went through
+ * all refunded; what it owes is worked out again each time, from money
+ * really taken, never from what a method only holds. An order that drops
+ * below paid again (what counted as paid was released, such as a gift card
+ * hold that was never made final) loses its paid date; its events keep when
+ * it was paid. Refunds beyond what was paid (a refund that went through
  * after the gateway said it failed, and staff refunded again) are kept as
  * the gateway reports them, and the order is flagged for staff once.
  */
@@ -41,10 +45,14 @@ final readonly class RecordOrderPayments
         return DB::transaction(function () use ($order, $paid, $refunded): Order {
             $locked = $this->orderProgress->lock($order);
             $this->flagIfRefundedBeyondPaid($locked, $paid, $refunded);
+            $refundedInAll = $refunded->add($this->orderAmountHolds->refundedFor($locked));
             // What methods chosen at checkout hold for it (such as a gift card) counts as paid, and what they gave back as refunded.
-            $status = OrderPaymentStatus::forAmounts($locked->total, $paid->add($this->orderAmountHolds->heldFor($locked)), $refunded->add($this->orderAmountHolds->refundedFor($locked)));
+            $status = OrderPaymentStatus::forAmounts($locked->total, $paid->add($this->orderAmountHolds->heldFor($locked)), $refundedInAll);
+            // A cancelled order owes back only money really taken (payments, and what methods made final), not what a method merely holds.
+            $owes = $locked->status === OrderStatus::Cancelled
+                && OrderPaymentStatus::forAmounts($locked->total, $paid->add($this->orderAmountHolds->takenFor($locked)), $refundedInAll)->holdsMoney();
 
-            if ($status === $locked->payment_status) {
+            if ($status === $locked->payment_status && ($locked->status !== OrderStatus::Cancelled || $owes === $locked->refund_due)) {
                 return $locked;
             }
 
@@ -55,12 +63,21 @@ final readonly class RecordOrderPayments
             $from = $locked->payment_status;
             $locked->payment_status = $status;
 
+            // Below paid again (what counted as paid was released): it has no paid date any more. Its events keep when it was paid.
+            if (! $status->wasPaidInFull()) {
+                $locked->paid_at = null;
+            }
+
             if ($locked->status === OrderStatus::Cancelled) {
-                $this->owedBackIfAny($locked);
+                $this->owedBackIfAny($locked, $owes);
             }
 
             $locked->save();
-            $this->orderEventLog->record($locked, OrderEventType::PaymentStatusChanged, ['from' => $from->value, 'to' => $status->value]);
+
+            if ($status !== $from) {
+                $this->orderEventLog->record($locked, OrderEventType::PaymentStatusChanged, ['from' => $from->value, 'to' => $status->value]);
+            }
+
             $this->orderProgress->completeIfDone($locked);
 
             return $locked;
@@ -68,12 +85,10 @@ final readonly class RecordOrderPayments
     }
 
     /**
-     * A cancelled order owes back whatever money it still holds, and staff are told when it starts to.
+     * A cancelled order owes back whatever money was really taken for it and not yet given back, and staff are told when it starts to.
      */
-    private function owedBackIfAny(Order $locked): void
+    private function owedBackIfAny(Order $locked, bool $owes): void
     {
-        $owes = $locked->payment_status->holdsMoney();
-
         if ($owes && ! $locked->refund_due) {
             $this->orderEventLog->record($locked, OrderEventType::PaidAfterCancellation, ['reason' => $locked->cancellation_reason?->value]);
             Log::warning('A payment arrived for a cancelled order; it stays cancelled and the payment is owed back.', ['order' => $locked->public_id]);

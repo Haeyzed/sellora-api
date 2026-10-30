@@ -173,3 +173,31 @@ it('settles a hold once when the hourly sweep and the order\'s own commit race o
     expect([FakeGiftCardPaymentMethod::$steps, FakeWalletPaymentMethod::$steps])->toBe([['hold:5000', "commit:gc_{$order->public_id}"], ['hold:3000', "commit:wl_{$order->public_id}"]])
         ->and(holdSettling(FakeGiftCardPaymentMethod::KEY))->toBe(['status' => 'committed', 'failure' => null, 'failures' => 0, 'alerted' => false, 'recovered' => false]);
 });
+
+it('makes a cancelled order unpaid again once the sweep releases the module hold that was all it had, owing nothing, its history kept', function (): void {
+    // Paid by the gift card alone at placement, but its commit failed; staff cancel it while the gift card still can't be reached.
+    $order = modulesOnlyOrderWhoseCommitFailed();
+    cancelAsStaff($order);
+
+    expect(orderAfterHolds($order))->toBe(['status' => 'cancelled', 'payment_status' => 'paid', 'paid' => true, 'refund_due' => true, 'holds' => [FakeGiftCardPaymentMethod::KEY => 'held']]);
+
+    // Back again: the hourly sweep releases the hold. Nothing was ever taken, so nothing is owed.
+    FakeGiftCardPaymentMethod::$settleFailure = null;
+    $this->artisan('payments:check-pending')->assertSuccessful();
+
+    expect(orderAfterHolds($order))->toBe(['status' => 'cancelled', 'payment_status' => 'unpaid', 'paid' => false, 'refund_due' => false, 'holds' => [FakeGiftCardPaymentMethod::KEY => 'released']])
+        ->and(orderHistory($order))->toContain('paid', 'cancelled', 'payment_status_changed:paid>unpaid')
+        ->and(FakeGiftCardPaymentMethod::$steps)->toBe(['hold:'.$order->total->minorAmount(), "release:gc_{$order->public_id}"]);
+});
+
+it('keeps a cancelled order owing what a module really took, once the hold that was never taken is released', function (): void {
+    // The wallet's ₦30 was taken and can't be given back yet; the gift card's part was never taken.
+    $order = modulesOnlyOrderWhoseCommitFailed(withWallet: true);
+    FakeWalletPaymentMethod::$refundFailure = new RuntimeException('The wallet service is down.');
+    cancelAsStaff($order);
+
+    FakeGiftCardPaymentMethod::$settleFailure = null;
+    $this->artisan('payments:check-pending')->assertSuccessful();
+
+    expect(orderAfterHolds($order))->toBe(['status' => 'cancelled', 'payment_status' => 'partially_paid', 'paid' => false, 'refund_due' => true, 'holds' => [FakeWalletPaymentMethod::KEY => 'committed', FakeGiftCardPaymentMethod::KEY => 'released']]);
+});
