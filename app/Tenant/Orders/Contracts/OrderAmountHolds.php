@@ -44,4 +44,9 @@ interface OrderAmountHolds
      * What of that they gave back once the order was cancelled; in the order's currency.
      */
     public function refundedFor(Order $order): Money;
+
+    /**
+     * What they held and let go without taking it, which heldFor() no longer counts; in the order's currency.
+     */
+    public function releasedFor(Order $order): Money;
 }

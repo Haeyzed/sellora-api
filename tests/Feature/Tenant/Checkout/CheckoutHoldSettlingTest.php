@@ -18,6 +18,7 @@ use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Orders\Actions\CancelExpiredOrders;
 use App\Tenant\Orders\Actions\IssueCreditNote;
 use App\Tenant\Orders\Events\OrderPaid;
+use App\Tenant\Orders\Jobs\IssueOrderInvoice;
 use App\Tenant\Orders\Models\CreditNote;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Orders\Privacy\OrderPrivacy;
@@ -25,6 +26,7 @@ use App\Tenant\Payments\Enums\PaymentMethod;
 use App\Tenant\Payments\Exceptions\RefundExceedsRefundableException;
 use App\Tenant\Payments\Jobs\CheckPaymentWithGateway;
 use App\Tenant\Payments\Jobs\CheckRefundWithGateway;
+use App\Tenant\Payments\Jobs\IssueRefundCreditNote;
 use App\Tenant\Payments\Models\Payment;
 use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Support\Facades\Artisan;
@@ -269,6 +271,48 @@ it('credits a refunded gateway part and a released gift card so that together th
     expect($again)->toBe($released['number'])
         ->and(orderTaxDocuments($order)['credit_notes'])->toHaveCount(2)
         ->and(Artisan::call('orders:reconcile-invoices'))->toBe(0);
+});
+
+it('issues no invoice when a hold is released between the job being dispatched and running, and logs why', function (): void {
+    Queue::fake([CheckPaymentWithGateway::class, CheckRefundWithGateway::class, IssueOrderInvoice::class, IssueRefundCreditNote::class]);
+    useFakeGateway();
+    connectFakeGateway('live');
+    $order = giftCardAndMethodOrderWhoseCommitWillFail('gateway:'.FakePaymentGateway::KEY);
+    payAtFakeGateway();
+    Queue::assertPushed(IssueOrderInvoice::class);
+
+    // The gateway's part goes back and the gift card is let go, so the payment status still reads as a sale that was refunded.
+    cancelAsStaff($order);
+    refundOrder($this->store->run(static fn (): Order => $order->refresh()), $order->total->minorAmount() - 5000);
+    FakeGiftCardPaymentMethod::$settleFailure = null;
+    $this->artisan('payments:check-pending')->assertSuccessful();
+    expect(orderAfterHolds($order))->toMatchArray(['payment_status' => 'refunded'])
+        ->and(paymentHolds()[FakeGiftCardPaymentMethod::KEY][0])->toBe('released');
+
+    $logged = [];
+    Event::listen(MessageLogged::class, static function (MessageLogged $message) use (&$logged): void {
+        $logged[] = [$message->level, $message->context];
+    });
+    $this->store->run(static fn () => app()->call([new IssueOrderInvoice($order->id), 'handle']));
+
+    expect(orderTaxDocuments($order)['invoice'])->toBeNull()
+        ->and($logged)->toBe([['warning', ['order' => $order->public_id, 'payment_status' => 'refunded']]])
+        ->and(Artisan::call('orders:reconcile-invoices'))->toBe(0);
+});
+
+it('still issues the invoice when the money kept covers the order without the released hold', function (): void {
+    Queue::fake([CheckPaymentWithGateway::class, CheckRefundWithGateway::class, IssueOrderInvoice::class]);
+    $order = giftCardAndMethodOrderWhoseCommitWillFail(PaymentMethod::BankTransfer->value);
+    // The whole total comes in as well as the gift card's hold, so the order is covered even once the hold is gone.
+    recordReceived($this->store->run(static fn (): Payment => Payment::query()->sole()), $order->total->minorAmount());
+    cancelAsStaff($order);
+    FakeGiftCardPaymentMethod::$settleFailure = null;
+    $this->artisan('payments:check-pending')->assertSuccessful();
+    expect(paymentHolds()[FakeGiftCardPaymentMethod::KEY][0])->toBe('released');
+
+    $this->store->run(static fn () => app()->call([new IssueOrderInvoice($order->id), 'handle']));
+
+    expect(orderTaxDocuments($order)['invoice']['total'])->toBe($order->total->minorAmount());
 });
 
 it('rolls back recording the payments and the credit note together, keeping the numbers gap-free, and does both on the next sweep', function (): void {

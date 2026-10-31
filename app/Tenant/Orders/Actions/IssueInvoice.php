@@ -17,6 +17,7 @@ use App\Tenant\Orders\Models\OrderShipping;
 use App\Tenant\Orders\Models\OrderTax;
 use App\Tenant\Orders\Services\OrderEventLog;
 use App\Tenant\Orders\Services\OrderProgress;
+use App\Tenant\Orders\Services\OrderSaleKept;
 use App\Tenant\Orders\Services\TaxDocumentNumbers;
 use App\Tenant\Settings\Actions\FindStoreSettings;
 use App\Tenant\Settings\Models\StoreSettings;
@@ -28,8 +29,9 @@ use Illuminate\Support\Facades\DB;
  *
  * Runs under the order's lock, and takes the next invoice number in the same
  * transaction, so a failure gives the number back. An order that was never
- * sold (unpaid, paid only in part, or paid after it was cancelled) gets none.
- * A test order's invoice is numbered "TEST-" and its order number, and takes
+ * sold (unpaid, paid only in part, or paid after it was cancelled) gets none,
+ * nor does one a released hold has left short of its total, whatever its
+ * payment status still says. A test order's invoice is numbered "TEST-" and its order number, and takes
  * no number from the store's series. Everything is copied, so changing the
  * store's settings or the order's corrections later never changes it.
  */
@@ -40,6 +42,7 @@ final readonly class IssueInvoice
         private TaxDocumentNumbers $taxDocumentNumbers,
         private FindStoreSettings $findStoreSettings,
         private OrderEventLog $orderEventLog,
+        private OrderSaleKept $orderSaleKept,
     ) {}
 
     /**
@@ -51,7 +54,7 @@ final readonly class IssueInvoice
             $locked = $this->orderProgress->lock($order);
             $existing = Invoice::query()->where('order_id', $locked->id)->first();
 
-            if ($existing !== null || ! $locked->hasBeenSold()) {
+            if ($existing !== null || ! $locked->hasBeenSold() || $this->orderSaleKept->lostItsCover($locked)) {
                 return $existing;
             }
 

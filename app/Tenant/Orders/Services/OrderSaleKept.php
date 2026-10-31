@@ -22,10 +22,25 @@ final readonly class OrderSaleKept
     public function for(Order $order): Money
     {
         // What a method gave back comes off before the cap: it may be what took the order over its total.
-        $counted = $this->orderPaymentAmounts->paid($order)->add($this->orderAmountHolds->heldFor($order))->subtract($this->orderAmountHolds->refundedFor($order));
+        $counted = $this->counted($order);
         $sale = $counted->isLessThan($order->total) ? $counted : $order->total;
         $kept = $sale->subtract($this->orderPaymentAmounts->saleRefunded($order));
 
         return $kept->isNegative() ? Money::zero($order->currency) : $kept;
+    }
+
+    /**
+     * Whether what stopped counting left the order short of its total. A hold released or given back is the only thing that can take a paid order below it without a refund saying so; an order with neither stands as its payment status says.
+     */
+    public function lostItsCover(Order $order): bool
+    {
+        $stoppedCounting = $this->orderAmountHolds->releasedFor($order)->add($this->orderAmountHolds->refundedFor($order));
+
+        return $stoppedCounting->isPositive() && $this->counted($order)->isLessThan($order->total);
+    }
+
+    private function counted(Order $order): Money
+    {
+        return $this->orderPaymentAmounts->paid($order)->add($this->orderAmountHolds->heldFor($order))->subtract($this->orderAmountHolds->refundedFor($order));
     }
 }
