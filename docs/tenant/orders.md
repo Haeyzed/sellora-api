@@ -71,10 +71,16 @@ Order amounts and copies are financial records and are never overwritten.
    be cancelled.
 6. If money is returned, Payments records refunds. If the refund reduces a
    paid sale, the system can issue a credit note against the invoice. A sale
-   can also be undone without a refund: an order paid in full only by what a
-   payment method held (a gift card whose commit failed) and then cancelled
-   drops back to unpaid once that hold is released. It loses its paid date,
-   owes nothing, and its invoice is credited in full.
+   can also shrink or be undone without a refund: an order that counted what
+   a payment method held (a gift card whose commit failed) and was then
+   cancelled loses that amount once the hold is released, or once a method
+   gives back what it took. Each such amount gets a credit note of its own in
+   the same transaction, spread across the invoice's lines and shipping. An
+   order left with nothing also loses its paid date and owes nothing.
+
+   The rule for every invoiced order: its invoice less its credit notes
+   equals the sale money the store has kept. Overpayments and refunds of them
+   were never part of the sale, so they don't count.
 
    Staff see the two kinds of money on a cancelled order separately. Refund
    due (`refund_due`) counts only money really taken: payments received, and

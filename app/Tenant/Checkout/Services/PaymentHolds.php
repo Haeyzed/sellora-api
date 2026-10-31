@@ -12,6 +12,7 @@ use App\Tenant\Checkout\Events\CommittedPaymentRefundFailed;
 use App\Tenant\Checkout\Events\PaymentHoldKeepsFailing;
 use App\Tenant\Checkout\Exceptions\OrderPaymentsNotRecordedException;
 use App\Tenant\Checkout\Models\CheckoutPaymentHold;
+use App\Tenant\Orders\Actions\IssueCreditNote;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Payments\Actions\RecalculateOrderPayments;
 use Carbon\CarbonImmutable;
@@ -34,6 +35,7 @@ final readonly class PaymentHolds
     public function __construct(
         private CheckoutExtensions $checkoutExtensions,
         private RecalculateOrderPayments $recalculateOrderPayments,
+        private IssueCreditNote $issueCreditNote,
     ) {}
 
     /**
@@ -118,7 +120,7 @@ final readonly class PaymentHolds
     }
 
     /**
-     * Records the order's payments through Payments once holds settled or were given back, and anything that triggers, in a transaction of its own (a savepoint inside the caller's).
+     * Records the order's payments through Payments once holds settled or were given back, and credits on its invoice what stopped counting toward the sale, in a transaction of its own (a savepoint inside the caller's).
      *
      * The holds have settled for good (their methods are called only once), so
      * a failure here, a database constraint included, never undoes them and
@@ -132,7 +134,13 @@ final readonly class PaymentHolds
     private function recordOrderPayments(Order $order, array $holdIds): bool
     {
         try {
-            DB::transaction(fn (): Order => $this->recalculateOrderPayments->handle($order));
+            DB::transaction(function () use ($order, $holdIds): void {
+                $this->recalculateOrderPayments->handle($order);
+
+                foreach (CheckoutPaymentHold::query()->whereKey($holdIds)->whereIn('status', [PaymentHoldStatus::Released->value, PaymentHoldStatus::Refunded->value])->where('amount_amount', '>', 0)->orderBy('id')->get() as $hold) {
+                    $this->issueCreditNote->creditHeldAmount($order, $hold->public_id, $hold->amount);
+                }
+            });
         } catch (Throwable $exception) {
             $this->recordOrderUpdateFailure($order, $holdIds, $exception);
 

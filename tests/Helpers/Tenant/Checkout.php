@@ -284,6 +284,48 @@ function modulesOnlyOrderWhoseCommitFailed(bool $withWallet = false): Order
 }
 
 /**
+ * A guest's order in the cart store, the fake gift card's ₦50 held for it and the given method expected for the rest, not yet paid. The gift card can't be reached from then on, so its commit will fail once the order is paid. The fake gift card must be registered first.
+ */
+function giftCardAndMethodOrderWhoseCommitWillFail(string $paymentMethod): Order
+{
+    FakeGiftCardPaymentMethod::$balance = 5000;
+    FakeGiftCardPaymentMethod::$settleFailure = new RuntimeException('The gift card service is down.');
+    $token = checkoutCart();
+    $checkout = readyCheckout($token, changes: ['module_payment_methods' => [FakeGiftCardPaymentMethod::KEY], 'payment_method' => $paymentMethod]);
+    placeCheckout($checkout['id'], $checkout['version'], token: $token, returnUrl: 'https://shop.example.com/thanks')->assertCreated();
+
+    return test()->store->run(static fn (): Order => Order::query()->sole());
+}
+
+/**
+ * An amount shared across weights by largest remainder, worked out here on its own, to check the code's against.
+ *
+ * @param  list<int>  $weights
+ * @return list<int>
+ */
+function expectedShares(int $amount, array $weights): array
+{
+    $sum = array_sum($weights);
+    $shares = array_map(static fn (int $weight): int => intdiv($amount * $weight, $sum), $weights);
+    $remainders = array_map(static fn (int $weight): int => ($amount * $weight) % $sum, $weights);
+    arsort($remainders);
+
+    foreach (array_slice(array_keys($remainders), 0, $amount - array_sum($shares)) as $key) {
+        $shares[$key]++;
+    }
+
+    return $shares;
+}
+
+/**
+ * The public ID of an order's hold for a payment method.
+ */
+function holdReference(Order $order, string $method): string
+{
+    return test()->store->run(static fn (): string => CheckoutPaymentHold::query()->where('order_id', $order->id)->where('method', $method)->sole()->public_id);
+}
+
+/**
  * An order as it stands: its status, payment status, paid date, whether it owes a refund, and each hold's status by method.
  *
  * @return array{status: string, payment_status: string, paid: bool, refund_due: bool, holds: array<string, string>}

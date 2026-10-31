@@ -21,4 +21,9 @@ interface OrderPaymentAmounts
      * What went back from those payments; in the order's currency.
      */
     public function refunded(Order $order): Money;
+
+    /**
+     * What of that reduced the sale, so not an overpayment or money never part of it; in the order's currency.
+     */
+    public function saleRefunded(Order $order): Money;
 }

@@ -28,10 +28,9 @@ use Illuminate\Support\Facades\Log;
  * really taken, never from what a method only holds. An order that drops
  * below paid again (what counted as paid was released, such as a gift card
  * hold that was never made final) loses its paid date; its events keep when
- * it was paid. A cancelled sale that drops to unpaid that way has its invoice
- * credited in full, in the same transaction. Refunds beyond what was paid (a refund that went through
- * after the gateway said it failed, and staff refunded again) are kept as
- * the gateway reports them, and the order is flagged for staff once.
+ * it was paid. Refunds beyond what was paid (a refund that went through after
+ * the gateway said it failed, and staff refunded again) are kept as the
+ * gateway reports them, and the order is flagged for staff once.
  */
 final readonly class RecordOrderPayments
 {
@@ -41,7 +40,6 @@ final readonly class RecordOrderPayments
         private MarkOrderAsPaid $markOrderAsPaid,
         private OrderAmountHolds $orderAmountHolds,
         private OrderRefundOwed $orderRefundOwed,
-        private IssueCreditNote $issueCreditNote,
     ) {}
 
     public function handle(Order $order, Money $paid, Money $refunded): Order
@@ -75,11 +73,6 @@ final readonly class RecordOrderPayments
             }
 
             $locked->save();
-
-            // A sale undone without a refund (what paid for it was only held, and was released): its invoice is credited in full, in this transaction.
-            if ($locked->status === OrderStatus::Cancelled && $status === OrderPaymentStatus::Unpaid && $from->wasPaidInFull()) {
-                $this->issueCreditNote->undoSale($locked);
-            }
 
             if ($status !== $from) {
                 $this->orderEventLog->record($locked, OrderEventType::PaymentStatusChanged, ['from' => $from->value, 'to' => $status->value]);

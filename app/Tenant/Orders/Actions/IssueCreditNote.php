@@ -21,6 +21,7 @@ use App\Tenant\Orders\Models\InvoiceTax;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Orders\Services\OrderEventLog;
 use App\Tenant\Orders\Services\OrderProgress;
+use App\Tenant\Orders\Services\OrderSaleKept;
 use App\Tenant\Orders\Services\TaxDocumentNumbers;
 use App\Tenant\Settings\Actions\FindStoreSettings;
 use Carbon\CarbonImmutable;
@@ -29,7 +30,7 @@ use Illuminate\Support\Facades\DB;
 use LogicException;
 
 /**
- * Issues the credit note for one part of a refund that reduced the sale, once that part has gone back. Safe to run twice: one credit note per part. Also credits a whole invoice when a sale is undone without a refund (undoSale()).
+ * Issues the credit note for one part of a refund that reduced the sale, once that part has gone back. Safe to run twice: one credit note per part. Also credits a held amount that stopped counting toward the sale, with no refund behind it (creditHeldAmount()).
  *
  * Runs under the order's lock, issuing the invoice first if the queue hasn't
  * yet. Returned units and shipping are credited against their invoice lines,
@@ -47,6 +48,7 @@ final readonly class IssueCreditNote
         private TaxDocumentNumbers $taxDocumentNumbers,
         private OrderEventLog $orderEventLog,
         private FindStoreSettings $findStoreSettings,
+        private OrderSaleKept $orderSaleKept,
     ) {}
 
     /**
@@ -88,18 +90,21 @@ final readonly class IssueCreditNote
     }
 
     /**
-     * Credits what is left of a sold order's invoice once the sale is undone without a refund: its payment status dropped from paid to unpaid after it was cancelled, because what paid for it was only held and has been released. Runs in the caller's transaction, under the order's lock. Safe to run twice: one such credit note per order.
+     * Credits a held amount that counted toward an invoiced order and has stopped counting: a method released it, or gave back what it took. No refund stands behind it. Runs in the caller's transaction, under the order's lock. Safe to run twice: one credit note per reference.
      *
-     * Credits every line and the shipping as invoiced, with their taxes, when
-     * nothing was credited yet; otherwise what is left, as a price reduction.
+     * Credits only as much as the invoice now exceeds the sale money kept, so
+     * a hold that overpaid the order credits just its part in the sale. It is
+     * allocated across what is left of the invoice's lines and shipping by
+     * largest remainder.
      *
-     * @return CreditNote|null The credit note; null when the order has no invoice (it was never issued), or nothing is left on it.
+     * @param  string  $reference  What stopped counting (its public ID): one credit note for it.
+     * @return CreditNote|null The credit note; null when the order has no invoice (it was never issued), or nothing needs crediting.
      */
-    public function undoSale(Order $order): ?CreditNote
+    public function creditHeldAmount(Order $order, string $reference, Money $amount): ?CreditNote
     {
-        return DB::transaction(function () use ($order): ?CreditNote {
+        return DB::transaction(function () use ($order, $reference, $amount): ?CreditNote {
             $locked = $this->orderProgress->lock($order);
-            $existing = CreditNote::query()->where('reference', $locked->public_id)->first();
+            $existing = CreditNote::query()->where('reference', $reference)->first();
 
             if ($existing !== null) {
                 return $existing;
@@ -113,14 +118,16 @@ final readonly class IssueCreditNote
             }
 
             $credited = (int) CreditNote::query()->where('invoice_id', $invoice->id)->sum('total_amount');
-            $left = $invoice->total->subtract(Money::ofMinor($credited, $invoice->currency));
+            $excess = $invoice->total->subtract(Money::ofMinor($credited, $invoice->currency))->subtract($this->orderSaleKept->for($locked));
+            $toCredit = $excess->isLessThan($amount) ? $excess : $amount;
 
-            if (! $left->isPositive()) {
+            if (! $toCredit->isPositive()) {
                 return null;
             }
 
-            $request = new CreditRequest($locked->id, $locked->public_id, null, $left, [], Money::zero($invoice->currency), Money::zero($invoice->currency), Money::zero($invoice->currency));
-            $lines = $credited === 0 ? $this->wholeInvoice($invoice) : [['kind' => CreditNoteLineKind::Adjustment, 'invoiceLine' => null, 'name' => __('documents.price_reduction', locale: $invoice->locale), 'quantity' => 1, 'total' => $left, 'taxes' => $this->adjustmentTaxes($left, $invoice)]];
+            $zero = Money::zero($invoice->currency);
+            $request = new CreditRequest($locked->id, $reference, null, $toCredit, [], $zero, $zero, $zero);
+            $lines = $this->shareOfInvoice($invoice, $toCredit);
             $creditNote = $this->copyOf($invoice, $locked, $request, $lines, CarbonImmutable::now());
             $creditNote->save();
             $this->saveLines($creditNote, $lines);
@@ -132,38 +139,49 @@ final readonly class IssueCreditNote
     }
 
     /**
-     * Every line of the invoice as it was invoiced, shipping included, each with all its taxes.
+     * An amount shared across what is left of the invoice's lines and shipping by largest remainder, each share taking its part of the line's tax still left. A line credited whole keeps its units; a share of one has none.
      *
      * @return list<array{kind: CreditNoteLineKind, invoiceLine: InvoiceLine|null, name: string, quantity: int, total: Money, taxes: list<array{InvoiceTax, Money}>}>
      */
-    private function wholeInvoice(Invoice $invoice): array
+    private function shareOfInvoice(Invoice $invoice, Money $amount): array
     {
-        $lines = [];
+        $lines = $invoice->lines->sortBy('position')->values();
+        $alreadyCredited = CreditNoteLine::query()->whereIn('invoice_line_id', $lines->pluck('id'))->get();
+        $left = [];
+        $taxLeft = [];
 
-        foreach ($invoice->lines->sortBy('position') as $line) {
-            $taxes = [];
+        foreach ($lines as $key => $line) {
+            $credited = $alreadyCredited->where('invoice_line_id', $line->id);
+            $left[$key] = $line->total->minorAmount() - array_sum(array_map(static fn (CreditNoteLine $creditedLine): int => $creditedLine->total->minorAmount(), $credited->all()));
+            $taxLeft[$key] = $line->tax->minorAmount() - array_sum(array_map(static fn (CreditNoteLine $creditedLine): int => $creditedLine->tax->minorAmount(), $credited->all()));
+        }
 
-            foreach ($line->taxes as $invoiceTax) {
-                $taxes[] = [$invoiceTax, $invoiceTax->tax];
+        if ($left === []) {
+            throw new LogicException('An invoice with money left on it has lines.');
+        }
+
+        $shares = $amount->allocate($left);
+        $credits = [];
+
+        foreach ($lines as $key => $line) {
+            $share = $shares[$key];
+
+            if (! $share->isPositive()) {
+                continue;
             }
 
-            $lines[] = [
+            [$tax] = $share->allocate([$taxLeft[$key], $left[$key] - $taxLeft[$key]]);
+            $credits[] = [
                 'kind' => $line->kind === InvoiceLineKind::Shipping ? CreditNoteLineKind::Shipping : CreditNoteLineKind::Item,
                 'invoiceLine' => $line,
                 'name' => $line->name,
-                'quantity' => $line->quantity,
-                'total' => $line->total,
-                'taxes' => $taxes,
+                'quantity' => $share->isEqualTo($line->total) ? $line->quantity : 0,
+                'total' => $share,
+                'taxes' => $this->spread($tax, $line->taxes),
             ];
         }
 
-        $total = Money::sum($invoice->currency, array_map(static fn (array $line): Money => $line['total'], $lines));
-
-        if (! $total->isEqualTo($invoice->total)) {
-            throw new LogicException('An invoice\'s lines must add up to its total.');
-        }
-
-        return $lines;
+        return $credits;
     }
 
     /**

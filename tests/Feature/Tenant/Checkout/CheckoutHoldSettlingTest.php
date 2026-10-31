@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Shared\Money\Money;
 use App\Tenant\Checkout\CheckoutExtensions;
 use App\Tenant\Checkout\Events\PaymentHoldKeepsFailing;
 use App\Tenant\Checkout\Exceptions\OrderPaymentsNotRecordedException;
@@ -12,16 +13,23 @@ use App\Tenant\Checkout\UnsettledPaymentHoldSweep;
 use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Orders\Actions\CancelExpiredOrders;
+use App\Tenant\Orders\Actions\IssueCreditNote;
 use App\Tenant\Orders\Events\OrderPaid;
+use App\Tenant\Orders\Models\CreditNote;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Payments\Enums\PaymentMethod;
 use App\Tenant\Payments\Exceptions\RefundExceedsRefundableException;
+use App\Tenant\Payments\Jobs\CheckPaymentWithGateway;
+use App\Tenant\Payments\Jobs\CheckRefundWithGateway;
+use App\Tenant\Payments\Models\Payment;
 use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Exceptions;
+use Illuminate\Support\Facades\Queue;
 use Tests\Fixtures\Checkout\FakeGiftCardPaymentMethod;
 use Tests\Fixtures\Checkout\FakeWalletPaymentMethod;
+use Tests\Fixtures\Payments\FakePaymentGateway;
 use Tests\Support\SecondConnection;
 use Tests\Support\TruncatesCentralDatabase;
 
@@ -200,7 +208,7 @@ it('makes a cancelled order unpaid again once the sweep releases the module hold
         ->and(orderTaxDocuments($order))->toBe(['invoice' => $invoiced['invoice'], 'credit_notes' => [[
             'number' => 'CN-'.now()->year.'-000001',
             'sequence_number' => 1,
-            'reference' => $order->public_id,
+            'reference' => holdReference($order, FakeGiftCardPaymentMethod::KEY),
             'refund' => null,
             'total' => $invoiced['invoice']['total'],
             'tax' => $invoiced['invoice']['tax'],
@@ -210,6 +218,101 @@ it('makes a cancelled order unpaid again once the sweep releases the module hold
     // Swept again: nothing more to do, and still one credit note.
     $this->artisan('payments:check-pending')->assertSuccessful();
     expect(orderTaxDocuments($order)['credit_notes'])->toHaveCount(1);
+});
+
+it('credits a refunded gateway part and a released gift card so that together the credit notes equal the invoice', function (): void {
+    Queue::fake([CheckPaymentWithGateway::class, CheckRefundWithGateway::class]);
+    useFakeGateway();
+    connectFakeGateway('live');
+    $order = giftCardAndMethodOrderWhoseCommitWillFail('gateway:'.FakePaymentGateway::KEY);
+    payAtFakeGateway();
+    $gatewayPart = $order->total->minorAmount() - 5000;
+
+    // Paid in full and invoiced, but the gift card's commit failed, so cancelling leaves it held and the gateway's money owed.
+    cancelAsStaff($order);
+    $invoice = orderTaxDocuments($order)['invoice'];
+    expect(orderAfterHolds($order))->toMatchArray(['status' => 'cancelled', 'refund_due' => true])
+        ->and(paymentHolds()[FakeGiftCardPaymentMethod::KEY])->toBe(['held', 5000])
+        ->and($invoice['total'])->toBe($order->total->minorAmount());
+
+    refundOrder($this->store->run(static fn (): Order => $order->refresh()), $gatewayPart);
+    expect(array_column(orderTaxDocuments($order)['credit_notes'], 'total'))->toBe([$gatewayPart]);
+
+    FakeGiftCardPaymentMethod::$settleFailure = null;
+    $this->artisan('payments:check-pending')->assertSuccessful();
+
+    $creditNotes = orderTaxDocuments($order)['credit_notes'];
+    $released = $creditNotes[1];
+
+    expect(array_sum(array_column($creditNotes, 'total')))->toBe($invoice['total'])
+        ->and(array_column($creditNotes, 'sequence_number'))->toBe([1, 2])
+        ->and(array_column($creditNotes, 'total'))->toBe([$gatewayPart, 5000])
+        ->and($released)->toMatchArray(['reference' => holdReference($order, FakeGiftCardPaymentMethod::KEY), 'refund' => null])
+        // Shared by largest remainder across the item and the shipping, by what is left of each.
+        ->and(array_column($released['lines'], 0))->toBe(['item', 'shipping'])
+        ->and(array_column($released['lines'], 1))->toBe([0, 0])
+        ->and(array_column($released['lines'], 2))->toBe(expectedShares(5000, array_column($invoice['lines'], 2)))
+        ->and(orderAfterHolds($order))->toMatchArray(['payment_status' => 'refunded', 'paid' => true, 'refund_due' => false]);
+
+    // Swept again, or asked again for the same hold: nothing more.
+    $this->artisan('payments:check-pending')->assertSuccessful();
+    $again = $this->store->run(fn (): ?string => app(IssueCreditNote::class)->creditHeldAmount($order->refresh(), $released['reference'], Money::ofMinor(5000, 'NGN'))?->number);
+
+    expect($again)->toBe($released['number'])
+        ->and(orderTaxDocuments($order)['credit_notes'])->toHaveCount(2);
+});
+
+it('rolls back recording the payments and the credit note together, keeping the numbers gap-free, and does both on the next sweep', function (): void {
+    $order = modulesOnlyOrderWhoseCommitFailed();
+    cancelAsStaff($order);
+    $breaks = true;
+    CreditNote::creating(static function () use (&$breaks): void {
+        if ($breaks) {
+            throw new RuntimeException('The credit note could not be saved.');
+        }
+    });
+    Exceptions::fake();
+
+    FakeGiftCardPaymentMethod::$settleFailure = null;
+    $this->artisan('payments:check-pending')->assertSuccessful();
+
+    // The release stands, but the order still reads as before: neither half of the recording happened.
+    expect(orderAfterHolds($order))->toMatchArray(['payment_status' => 'paid', 'holds' => [FakeGiftCardPaymentMethod::KEY => 'released']])
+        ->and(orderTaxDocuments($order)['credit_notes'])->toBe([])
+        ->and(orderUpdateAfterHolds($order))->toBe([FakeGiftCardPaymentMethod::KEY => ['failure' => 'order_payments_not_recorded', 'failures' => 1]]);
+
+    $breaks = false;
+    $this->artisan('payments:check-pending')->assertSuccessful();
+
+    expect(orderAfterHolds($order))->toMatchArray(['payment_status' => 'unpaid'])
+        ->and(array_column(orderTaxDocuments($order)['credit_notes'], 'sequence_number'))->toBe([1]);
+});
+
+it('credits a released hold only as far as it was part of the sale when the buyer overpaid', function (): void {
+    $order = giftCardAndMethodOrderWhoseCommitWillFail('bank_transfer');
+    $payment = $this->store->run(static fn (): Payment => Payment::query()->sole());
+    // ₦20 more than was asked for: paid in full, with ₦20 over the total once the gift card counts.
+    recordReceived($payment, $payment->amount->minorAmount() + 2000);
+
+    cancelAsStaff($order);
+    FakeGiftCardPaymentMethod::$settleFailure = null;
+    $this->artisan('payments:check-pending')->assertSuccessful();
+
+    // The store keeps ₦20 toward the sale that the gift card no longer covers, so only ₦30 of its ₦50 is credited.
+    expect(array_column(orderTaxDocuments($order)['credit_notes'], 'total'))->toBe([3000]);
+});
+
+it('credits what a module gave back only as far as it was part of the sale when the buyer overpaid', function (): void {
+    $order = giftCardAndMethodOrderWhoseCommitWillFail('bank_transfer');
+    FakeGiftCardPaymentMethod::$settleFailure = null;
+    $payment = $this->store->run(static fn (): Payment => Payment::query()->sole());
+    recordReceived($payment, $payment->amount->minorAmount() + 2000);
+
+    cancelAsStaff($order);
+
+    // The gift card's ₦50 went back, which had put the order ₦20 over its total, so the sale lost only ₦30.
+    expect(paymentHolds()[FakeGiftCardPaymentMethod::KEY])->toBe(['refunded', 5000])
+        ->and(array_column(orderTaxDocuments($order)['credit_notes'], 'total'))->toBe([3000]);
 });
 
 it('shows a hold that was never taken on a cancelled order as release pending, not refund due, and refuses to refund it', function (): void {

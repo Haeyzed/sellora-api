@@ -75,6 +75,11 @@ it('gives back a gift card that paid for the whole order, and the order owes not
     expect(FakeGiftCardPaymentMethod::$steps)->toBe(['hold:160000', "commit:{$reference}", "refund:{$reference}:160000"])
         ->and(FakeGiftCardPaymentMethod::$refundTransactionLevels)->toBe([0])
         ->and(refundState())->toBe(['status' => 'cancelled', 'payment_status' => 'refunded', 'refund_due' => false, 'holds' => [FakeGiftCardPaymentMethod::KEY => ['status' => 'refunded', 'refund_failure' => null]]]);
+
+    // What it gave back stopped counting toward the sale, with no refund of the store's behind it: the invoice is credited in full.
+    $documents = orderTaxDocuments($order);
+    expect($documents['credit_notes'])->toHaveCount(1)
+        ->and($documents['credit_notes'][0])->toMatchArray(['total' => $documents['invoice']['total'], 'refund' => null, 'reference' => holdReference($order, FakeGiftCardPaymentMethod::KEY), 'lines' => $documents['invoice']['lines']]);
 });
 
 it('gives back the gift card\'s part, and leaves the gateway\'s part owed for staff', function (): void {
