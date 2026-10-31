@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Landlord\Integrations\Console\CheckPendingPaymentsCommand;
 use App\Landlord\Tenancy\Console\IssueMissingTaxDocumentsCommand;
 use App\Landlord\Tenancy\Console\PurgeClosedStoresCommand;
+use App\Landlord\Tenancy\Console\ReconcileInvoiceBalancesCommand;
 use App\Landlord\Tenancy\Console\ReconcileStockLevelsCommand;
 use App\Landlord\Tenancy\Console\ReleaseExpiredReservationsCommand;
 use App\Landlord\Tenancy\Console\SendPurgeRemindersCommand;
@@ -31,6 +32,12 @@ Schedule::command(PurgeClosedStoresCommand::class)
 // Reports any stock level that doesn't match its movement ledger (section 13).
 Schedule::command(ReconcileStockLevelsCommand::class)
     ->dailyAt('05:00')
+    ->onOneServer()
+    ->withoutOverlapping();
+
+// Reports any invoice that, less its credit notes, doesn't equal the sale money kept.
+Schedule::command(ReconcileInvoiceBalancesCommand::class)
+    ->dailyAt('05:30')
     ->onOneServer()
     ->withoutOverlapping();
 

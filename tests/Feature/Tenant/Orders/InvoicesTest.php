@@ -2,10 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Shared\Money\Money;
 use App\Shared\Privacy\PersonalDataErasure;
 use App\Tenant\Catalog\Models\ProductVariant;
 use App\Tenant\Orders\Actions\CancelOrder;
+use App\Tenant\Orders\Actions\IssueCreditNote;
 use App\Tenant\Orders\Actions\IssueInvoice;
+use App\Tenant\Orders\Data\CreditRequest;
 use App\Tenant\Orders\Jobs\IssueOrderInvoice;
 use App\Tenant\Orders\Models\DocumentSequence;
 use App\Tenant\Orders\Models\Invoice;
@@ -137,6 +140,39 @@ it('issues no invoice for an order never sold, and only one for an order paid in
     expect($cancelled->refund_due)->toBeTrue()
         ->and($this->store->run(static fn (): ?Invoice => app(IssueInvoice::class)->handle($cancelled)))->toBeNull()
         ->and($this->store->run(static fn (): array => [Invoice::query()->count(), DocumentSequence::query()->sole()->last_number]))->toBe([1, 1]);
+});
+
+it('reports by public ID any invoice that, less its credit notes, doesn\'t equal the sale money kept', function (): void {
+    [$order] = gatewayPaidOrder();
+
+    expect(Artisan::call('orders:reconcile-invoices'))->toBe(0)
+        ->and(Artisan::output())->toContain('invoices match the sale money kept');
+
+    // Planted directly: a credit note with no money given back behind it.
+    $invoiceId = $this->store->run(static function () use ($order): string {
+        $zero = Money::zero($order->currency);
+        app(IssueCreditNote::class)->handle(new CreditRequest($order->id, 'planted', 'planted-refund', Money::ofMinor(1000, $order->currency), [], $zero, $zero, Money::ofMinor(1000, $order->currency)));
+
+        return Invoice::query()->sole()->public_id;
+    });
+    $total = $order->total->minorAmount();
+
+    expect(Artisan::call('orders:reconcile-invoices'))->toBe(1)
+        ->and(Artisan::output())->toContain($order->public_id)->toContain($invoiceId)->toContain(($total - 1000).' left on the invoice, '.$total.' kept')->not->toContain('ada@example.com');
+});
+
+it('doesn\'t count an overpayment as sale money kept', function (): void {
+    [$order, $payment] = manuallyPaidOrder(PaymentMethod::BankTransfer);
+    recordReceived($payment, $order->total->minorAmount() + 2000);
+
+    expect($this->store->run(static fn (): int => Invoice::query()->count()))->toBe(1)
+        ->and(Artisan::call('orders:reconcile-invoices'))->toBe(0);
+});
+
+it('reconciles every store\'s invoices on a schedule', function (): void {
+    $scheduled = array_filter(app(Illuminate\Console\Scheduling\Schedule::class)->events(), static fn ($event): bool => str_contains((string) $event->command, 'orders:reconcile-invoices'));
+
+    expect($scheduled)->toHaveCount(1);
 });
 
 it('issues cash on delivery\'s invoice only once the cash is collected, though it was delivered before', function (): void {

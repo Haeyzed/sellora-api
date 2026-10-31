@@ -80,7 +80,10 @@ Order amounts and copies are financial records and are never overwritten.
 
    The rule for every invoiced order: its invoice less its credit notes
    equals the sale money the store has kept. Overpayments and refunds of them
-   were never part of the sale, so they don't count.
+   were never part of the sale, so they don't count. A daily check
+   (`orders:reconcile-invoices`) recalculates this for every invoiced order in
+   every store and reports each mismatch by public ID. It only reports. A
+   refund whose credit note is still on its way shows up until it is issued.
 
    Staff see the two kinds of money on a cancelled order separately. Refund
    due (`refund_due`) counts only money really taken: payments received, and
