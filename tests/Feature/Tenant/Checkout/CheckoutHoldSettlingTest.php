@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Shared\Money\Money;
 use App\Tenant\Checkout\CheckoutExtensions;
+use App\Tenant\Checkout\Events\OrderPaymentsKeepFailing;
 use App\Tenant\Checkout\Events\PaymentHoldKeepsFailing;
 use App\Tenant\Checkout\Exceptions\OrderPaymentsNotRecordedException;
 use App\Tenant\Checkout\PaymentMethods\GatewayPaymentMethods;
@@ -394,6 +395,43 @@ it('keeps sweeping when recording one order\'s payments fails after its hold is 
         ->and(orderUpdateAfterHolds($other))->toBe([FakeGiftCardPaymentMethod::KEY => ['failure' => null, 'failures' => 1]])
         ->and(orderTaxDocuments($other)['credit_notes'])->toHaveCount(1)
         ->and(FakeGiftCardPaymentMethod::$steps)->toHaveCount(4);
+});
+
+it('alerts staff exactly once when recording an order\'s payments keeps failing, and keeps trying every hour after', function (): void {
+    config(['checkout.hold_settle_alert_after' => 3]);
+    Event::fake([OrderPaymentsKeepFailing::class]);
+    Exceptions::fake();
+    $order = modulesOnlyOrderWhoseCommitFailed();
+    cancelAsStaff($order);
+    $breaks = true;
+    Order::updating(static function (Order $saving) use (&$breaks, $order): void {
+        if ($breaks && $saving->id === $order->id) {
+            DB::table('orders')->where('id', $order->id)->update(['payment_status' => 'no_such_status']);
+        }
+    });
+    FakeGiftCardPaymentMethod::$settleFailure = null;
+
+    // Two tries in a row: not yet.
+    $this->artisan('payments:check-pending')->assertSuccessful();
+    $this->artisan('payments:check-pending')->assertSuccessful();
+    Event::assertNotDispatched(OrderPaymentsKeepFailing::class);
+
+    // The third: staff are alerted, about this order.
+    $this->artisan('payments:check-pending')->assertSuccessful();
+    Event::assertDispatchedTimes(OrderPaymentsKeepFailing::class, 1);
+    Event::assertDispatched(OrderPaymentsKeepFailing::class, static fn (OrderPaymentsKeepFailing $event): bool => $event->order->id === $order->id);
+
+    // Still tried every hour, never alerted again.
+    $this->artisan('payments:check-pending')->assertSuccessful();
+    $this->artisan('payments:check-pending')->assertSuccessful();
+    expect(orderUpdateAfterHolds($order))->toBe([FakeGiftCardPaymentMethod::KEY => ['failure' => 'order_payments_not_recorded', 'failures' => 5]]);
+    Event::assertDispatchedTimes(OrderPaymentsKeepFailing::class, 1);
+
+    // Once it works, it stays quiet.
+    $breaks = false;
+    $this->artisan('payments:check-pending')->assertSuccessful();
+    expect(orderAfterHolds($order))->toMatchArray(['payment_status' => 'unpaid']);
+    Event::assertDispatchedTimes(OrderPaymentsKeepFailing::class, 1);
 });
 
 it('keeps a cancelled order owing what a module really took, once the hold that was never taken is released', function (): void {

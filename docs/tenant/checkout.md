@@ -45,7 +45,9 @@ here.
   isolated too: the holds stay settled (a payment method is asked only once),
   the failure is recorded on them and logged with public IDs only, the error
   tracker is told without personal data, and the hourly sweep records the
-  order again until it works. One order failing never stops the sweep.
+  order again until it works. One order failing never stops the sweep. Staff
+  are alerted once per order when it has failed
+  `CHECKOUT_HOLD_SETTLE_ALERT_AFTER` tries in a row.
 
 ## Buyer journey
 

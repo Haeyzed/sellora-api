@@ -37,6 +37,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property CarbonImmutable|null $order_update_failed_at When recording its order's payments after it settled last failed; cleared once that works.
  * @property string|null $order_update_failure Why recording its order's payments last failed, as a code.
  * @property int $order_update_failures How many tries to record its order's payments after it settled failed in a row.
+ * @property CarbonImmutable|null $order_update_alerted_at When staff were alerted that recording its order's payments keeps failing; only once.
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property-read Order $order
@@ -74,6 +75,7 @@ final class CheckoutPaymentHold extends Model
             'settle_recovered_at' => 'immutable_datetime',
             'order_update_failed_at' => 'immutable_datetime',
             'order_update_failures' => 'integer',
+            'order_update_alerted_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];

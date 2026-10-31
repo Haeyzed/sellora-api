@@ -9,6 +9,7 @@ use App\Tenant\Checkout\CheckoutExtensions;
 use App\Tenant\Checkout\Contracts\CheckoutPaymentMethod;
 use App\Tenant\Checkout\Enums\PaymentHoldStatus;
 use App\Tenant\Checkout\Events\CommittedPaymentRefundFailed;
+use App\Tenant\Checkout\Events\OrderPaymentsKeepFailing;
 use App\Tenant\Checkout\Events\PaymentHoldKeepsFailing;
 use App\Tenant\Checkout\Exceptions\OrderPaymentsNotRecordedException;
 use App\Tenant\Checkout\Models\CheckoutPaymentHold;
@@ -28,7 +29,7 @@ use Throwable;
  * logged, and tried again by the hourly payments sweep until it settles;
  * staff are alerted once when it has failed checkout.hold_settle_alert_after
  * tries in a row. Recording the order's payments once holds were released or
- * given back is isolated the same way, after them.
+ * given back is isolated the same way, after them, with the same alert.
  */
 final readonly class PaymentHolds
 {
@@ -165,19 +166,34 @@ final readonly class PaymentHolds
         $publicIds = [];
         $methods = [];
         $tries = 0;
+        $alert = false;
 
-        DB::transaction(static function () use ($holdIds, $reason, &$publicIds, &$methods, &$tries): void {
-            foreach (CheckoutPaymentHold::query()->whereKey($holdIds)->orderBy('id')->lockForUpdate()->get() as $hold) {
+        DB::transaction(static function () use ($order, $holdIds, $reason, &$publicIds, &$methods, &$tries, &$alert): void {
+            $holds = CheckoutPaymentHold::query()->whereKey($holdIds)->orderBy('id')->lockForUpdate()->get();
+
+            foreach ($holds as $hold) {
                 $hold->forceFill(['order_update_failed_at' => CarbonImmutable::now(), 'order_update_failure' => $reason, 'order_update_failures' => $hold->order_update_failures + 1])->save();
                 $publicIds[] = $hold->public_id;
                 $methods[] = $hold->method;
                 $tries = max($tries, $hold->order_update_failures);
+            }
+
+            // Once for the order, whichever of its holds this round failed for.
+            $alerted = CheckoutPaymentHold::query()->where('order_id', $order->id)->whereNotNull('order_update_alerted_at')->exists();
+            $alert = ! $alerted && $tries >= config()->integer('checkout.hold_settle_alert_after');
+
+            if ($alert) {
+                CheckoutPaymentHold::query()->whereKey($holdIds)->update(['order_update_alerted_at' => CarbonImmutable::now()]);
             }
         });
 
         report(OrderPaymentsNotRecordedException::after($exception, $order->public_id, $publicIds));
         // Only public IDs and the methods' keys: staff find the rest from there.
         Log::warning('Recording an order\'s payments failed after its payment holds settled; it is tried again hourly.', ['order' => $order->public_id, 'methods' => $methods, 'reason' => $reason, 'tries_failed' => $tries]);
+
+        if ($alert) {
+            OrderPaymentsKeepFailing::dispatch($order);
+        }
     }
 
     private function refundOne(CheckoutPaymentHold $hold): bool
