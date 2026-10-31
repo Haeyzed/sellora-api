@@ -67,6 +67,9 @@ jobs:
       - name: Pint
         run: composer ci:pint
 
+      - name: Pre-commit hook refuses bad PHP
+        run: composer ci:hook
+
       - name: Larastan (level 8)
         run: composer ci:stan
 

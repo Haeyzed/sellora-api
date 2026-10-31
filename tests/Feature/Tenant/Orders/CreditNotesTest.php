@@ -397,6 +397,28 @@ it('lets only a sale undone leave out the refund, and refuses both wrong combina
     });
 });
 
+it('marks credit notes issued before the kind existed: those with no refund as a sale undone, the rest as refunds', function (): void {
+    [$order] = gatewayPaidOrder();
+    refundOrder($order, 1000);
+
+    $kinds = $this->store->run(static function (): array {
+        $migration = require database_path('migrations/tenant/2026_10_31_100000_require_a_refund_on_refund_credit_notes.php');
+        $refund = CreditNote::query()->sole();
+        $migration->down();
+
+        // As the store had it then: a sale undone with no refund behind it, beside the refund's credit note.
+        $row = collect((array) DB::table('credit_notes')->where('id', $refund->id)->first())->except(['id'])->all();
+        DB::table('credit_notes')->insert([...$row, 'public_id' => strtolower((string) Str::ulid()), 'reference' => 'chd_released', 'refund_reference' => null, 'number' => 'CN-2026-000009', 'sequence_number' => 9]);
+
+        $migration->up();
+
+        return DB::table('credit_notes')->orderBy('id')->pluck('kind', 'reference')->all();
+    });
+
+    expect(array_values($kinds))->toBe(['refund', 'sale_undone'])
+        ->and(array_keys($kinds)[1])->toBe('chd_released');
+});
+
 it('keeps credit notes as issued: the database refuses changing or deleting them, and lets erasure only clear the buyer, once', function (): void {
     $this->store->run(static fn () => addTaxRate('Standard', 'NG', null, '7.5'));
     [$order] = gatewayPaidOrder();

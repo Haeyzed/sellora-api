@@ -518,6 +518,55 @@ it('alerts staff exactly once when recording an order\'s payments keeps failing,
     Event::assertDispatchedTimes(OrderPaymentsKeepFailing::class, 1);
 });
 
+it('alerts staff exactly once for an order when recording its payments keeps failing for several of its holds', function (): void {
+    config(['checkout.hold_settle_alert_after' => 3]);
+    Event::fake([OrderPaymentsKeepFailing::class]);
+    Exceptions::fake();
+    $order = modulesOnlyOrderWhoseCommitFailed(withWallet: true);
+    // Only once it is cancelled, so cancelling itself goes through.
+    Order::updating(static function (Order $saving) use ($order): void {
+        if ($saving->id === $order->id && $saving->getOriginal('status')?->value === 'cancelled') {
+            DB::table('orders')->where('id', $order->id)->update(['payment_status' => 'no_such_status']);
+        }
+    });
+
+    // The wallet gives back what it took, and recording that fails; then the gift card is released, and recording that fails too.
+    cancelAsStaff($order);
+    FakeGiftCardPaymentMethod::$settleFailure = null;
+
+    foreach (range(1, 5) as $hour) {
+        $this->artisan('payments:check-pending')->assertSuccessful();
+    }
+
+    expect(array_column(orderUpdateAfterHolds($order), 'failure'))->toBe(['order_payments_not_recorded', 'order_payments_not_recorded'])
+        ->and(max(array_column(orderUpdateAfterHolds($order), 'failures')))->toBeGreaterThanOrEqual(3);
+    Event::assertDispatchedTimes(OrderPaymentsKeepFailing::class, 1);
+    Event::assertDispatched(OrderPaymentsKeepFailing::class, static fn (OrderPaymentsKeepFailing $event): bool => $event->order->id === $order->id);
+});
+
+it('doesn\'t alert again when another of the order\'s holds starts failing after staff were alerted about the first', function (): void {
+    config(['checkout.hold_settle_alert_after' => 1]);
+    Event::fake([OrderPaymentsKeepFailing::class]);
+    Exceptions::fake();
+    $order = modulesOnlyOrderWhoseCommitFailed(withWallet: true);
+    Order::updating(static function (Order $saving) use ($order): void {
+        if ($saving->id === $order->id && $saving->getOriginal('status')?->value === 'cancelled') {
+            DB::table('orders')->where('id', $order->id)->update(['payment_status' => 'no_such_status']);
+        }
+    });
+
+    // Recording the wallet's refund fails first, and staff are alerted, while the gift card still can't be released.
+    cancelAsStaff($order);
+    Event::assertDispatchedTimes(OrderPaymentsKeepFailing::class, 1);
+
+    // Now the gift card is released, and recording that fails on its own.
+    FakeGiftCardPaymentMethod::$settleFailure = null;
+    $this->artisan('payments:check-pending')->assertSuccessful();
+
+    expect(orderUpdateAfterHolds($order)[FakeGiftCardPaymentMethod::KEY]['failure'])->toBe('order_payments_not_recorded');
+    Event::assertDispatchedTimes(OrderPaymentsKeepFailing::class, 1);
+});
+
 it('keeps a cancelled order owing what a module really took, once the hold that was never taken is released', function (): void {
     // The wallet's ₦30 was taken and can't be given back yet; the gift card's part was never taken.
     $order = modulesOnlyOrderWhoseCommitFailed(withWallet: true);

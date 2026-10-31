@@ -102,12 +102,14 @@
         ],
         "ci": [
             "@ci:pint",
+            "@ci:hook",
             "@ci:stan",
             "@ci:audit",
             "@ci:docs",
             "@ci:test"
         ],
         "ci:pint": "@php vendor/bin/pint --test",
+        "ci:hook": "@php .github/scripts/pre-commit-check.php",
         "ci:stan": [
             "Composer\\Config::disableProcessTimeout",
             "@php vendor/bin/phpstan clear-result-cache --no-interaction @no_additional_args",
@@ -146,8 +148,9 @@
     "scripts-descriptions": {
         "hooks:install": "Points this clone's git at .githooks, so Pint checks staged PHP files before each commit.",
         "hooks:check": "Runs the pre-commit check by hand on what is staged now.",
-        "ci":"Runs every check CI runs, with the same settings: Pint, Larastan, composer audit, the Scramble docs check, Pest.",
+        "ci":"Runs every check CI runs, with the same settings: Pint, the pre-commit hook check, Larastan, composer audit, the Scramble docs check, Pest.",
         "ci:pint": "CI's Pint check (no changes made).",
+        "ci:hook": "CI's check that the pre-commit hook refuses badly formatted PHP.",
         "ci:stan": "CI's Larastan check, from an empty result cache.",
         "ci:audit": "CI's composer audit of the lock file.",
         "ci:docs": "CI's Scramble check of the API docs (needs a migrated central database).",
