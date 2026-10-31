@@ -20,13 +20,13 @@ use App\Tenant\Orders\Models\Invoice;
 use App\Tenant\Orders\Models\InvoiceLine;
 use App\Tenant\Orders\Models\InvoiceTax;
 use App\Tenant\Orders\Models\Order;
+use App\Tenant\Orders\Services\InvoiceCreditsLeft;
 use App\Tenant\Orders\Services\OrderEventLog;
 use App\Tenant\Orders\Services\OrderProgress;
 use App\Tenant\Orders\Services\OrderSaleKept;
 use App\Tenant\Orders\Services\TaxDocumentNumbers;
 use App\Tenant\Settings\Actions\FindStoreSettings;
 use Carbon\CarbonImmutable;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use LogicException;
 
@@ -34,11 +34,11 @@ use LogicException;
  * Issues the credit note for one part of a refund that reduced the sale, once that part has gone back. Safe to run twice: one credit note per part. Also credits a held amount that stopped counting toward the sale, with no refund behind it (creditHeldAmount()).
  *
  * Runs under the order's lock, issuing the invoice first if the queue hasn't
- * yet. Returned units and shipping are credited against their invoice lines,
- * their tax split across each line's own taxes. A price reduction is an
- * adjustment line: its tax is the invoice's share of tax in the amount, split
- * across the invoice's rates by largest remainder. Credit notes never add up
- * to more than the invoice. A test order's credit notes are numbered
+ * yet. Returned units and shipping are credited against their invoice lines;
+ * a price reduction is an adjustment line. Their tax comes from what is left
+ * of the invoice's (InvoiceCreditsLeft), so credited tax adds up exactly and
+ * never passes a line or a rate. Credit notes never add up to more than the
+ * invoice. A test order's credit notes are numbered
  * "TEST-CN-", the order number and a count, and take no number.
  */
 final readonly class IssueCreditNote
@@ -127,7 +127,7 @@ final readonly class IssueCreditNote
             }
 
             $zero = Money::zero($invoice->currency);
-            $request = new CreditRequest($locked->id, $reference, null, $toCredit, [], $zero, $zero, $zero);
+            $request = new CreditRequest($locked->id, $reference, null, $toCredit, [], $zero, $zero);
             $lines = $this->shareOfInvoice($invoice, $toCredit);
             $creditNote = $this->copyOf($invoice, $locked, $request, $lines, CarbonImmutable::now());
             $creditNote->save();
@@ -146,39 +146,17 @@ final readonly class IssueCreditNote
      */
     private function shareOfInvoice(Invoice $invoice, Money $amount): array
     {
-        $lines = $invoice->lines->sortBy('position')->values();
-        $alreadyCredited = CreditNoteLine::query()->whereIn('invoice_line_id', $lines->pluck('id'))->get();
-        $left = [];
-        $taxLeft = [];
-
-        foreach ($lines as $key => $line) {
-            $credited = $alreadyCredited->where('invoice_line_id', $line->id);
-            $left[$key] = $line->total->minorAmount() - array_sum(array_map(static fn (CreditNoteLine $creditedLine): int => $creditedLine->total->minorAmount(), $credited->all()));
-            $taxLeft[$key] = $line->tax->minorAmount() - array_sum(array_map(static fn (CreditNoteLine $creditedLine): int => $creditedLine->tax->minorAmount(), $credited->all()));
-        }
-
-        if ($left === []) {
-            throw new LogicException('An invoice with money left on it has lines.');
-        }
-
-        $shares = $amount->allocate($left);
+        $left = InvoiceCreditsLeft::of($invoice);
         $credits = [];
 
-        foreach ($lines as $key => $line) {
-            $share = $shares[$key];
-
-            if (! $share->isPositive()) {
-                continue;
-            }
-
-            [$tax] = $share->allocate([$taxLeft[$key], $left[$key] - $taxLeft[$key]]);
+        foreach ($left->shares($amount) as [$line, $share]) {
             $credits[] = [
                 'kind' => $line->kind === InvoiceLineKind::Shipping ? CreditNoteLineKind::Shipping : CreditNoteLineKind::Item,
                 'invoiceLine' => $line,
                 'name' => $line->name,
                 'quantity' => $share->isEqualTo($line->total) ? $line->quantity : 0,
                 'total' => $share,
-                'taxes' => $this->spread($tax, $line->taxes),
+                'taxes' => $left->credit($line, $share),
             ];
         }
 
@@ -186,26 +164,27 @@ final readonly class IssueCreditNote
     }
 
     /**
-     * The credit note's lines, in order: returned units, shipping, then a price reduction.
+     * The credit note's lines, in order: returned units, shipping, then a price reduction. Their tax comes from what is left of the invoice's.
      *
      * @return list<array{kind: CreditNoteLineKind, invoiceLine: InvoiceLine|null, name: string, quantity: int, total: Money, taxes: list<array{InvoiceTax, Money}>}>
      */
     private function linesFor(CreditRequest $request, Invoice $invoice): array
     {
+        $left = InvoiceCreditsLeft::of($invoice);
         $lines = [];
 
         foreach ($request->lines as $credited) {
             $invoiceLine = $this->invoiceLineFor($invoice, $credited);
-            $lines[] = ['kind' => CreditNoteLineKind::Item, 'invoiceLine' => $invoiceLine, 'name' => $invoiceLine->name, 'quantity' => $credited->quantity, 'total' => $credited->amount, 'taxes' => $this->spread($credited->tax, $invoiceLine->taxes)];
+            $lines[] = ['kind' => CreditNoteLineKind::Item, 'invoiceLine' => $invoiceLine, 'name' => $invoiceLine->name, 'quantity' => $credited->quantity, 'total' => $credited->amount, 'taxes' => $left->credit($invoiceLine, $credited->amount)];
         }
 
         if ($request->shipping->isPositive()) {
             $shipping = $invoice->lines->firstWhere('kind', InvoiceLineKind::Shipping) ?? throw new LogicException('Shipping was refunded on an order whose invoice has none.');
-            $lines[] = ['kind' => CreditNoteLineKind::Shipping, 'invoiceLine' => $shipping, 'name' => $shipping->name, 'quantity' => 1, 'total' => $request->shipping, 'taxes' => $this->spread($request->shippingTax, $shipping->taxes)];
+            $lines[] = ['kind' => CreditNoteLineKind::Shipping, 'invoiceLine' => $shipping, 'name' => $shipping->name, 'quantity' => 1, 'total' => $request->shipping, 'taxes' => $left->credit($shipping, $request->shipping)];
         }
 
         if ($request->adjustment->isPositive()) {
-            $lines[] = ['kind' => CreditNoteLineKind::Adjustment, 'invoiceLine' => null, 'name' => __('documents.price_reduction', locale: $invoice->locale), 'quantity' => 1, 'total' => $request->adjustment, 'taxes' => $this->adjustmentTaxes($request->adjustment, $invoice)];
+            $lines[] = ['kind' => CreditNoteLineKind::Adjustment, 'invoiceLine' => null, 'name' => __('documents.price_reduction', locale: $invoice->locale), 'quantity' => 1, 'total' => $request->adjustment, 'taxes' => $left->creditPriceReduction($request->adjustment)];
         }
 
         $total = Money::sum($request->amount->currency(), array_map(static fn (array $line): Money => $line['total'], $lines));
@@ -221,68 +200,6 @@ final readonly class IssueCreditNote
     {
         return $invoice->lines->firstWhere('order_line_id', $credited->orderLineId)
             ?? throw new LogicException('A refunded line is not on the order\'s invoice.');
-    }
-
-    /**
-     * Splits a line's credited tax across its own taxes, by what each charged.
-     *
-     * @param  Collection<int, InvoiceTax>  $taxes
-     * @return list<array{InvoiceTax, Money}>
-     */
-    private function spread(Money $tax, Collection $taxes): array
-    {
-        $weights = [];
-
-        foreach ($taxes as $key => $invoiceTax) {
-            $weights[$key] = $invoiceTax->tax->minorAmount();
-        }
-
-        if ($tax->isZero() || $weights === []) {
-            return [];
-        }
-
-        // A line charged nothing at its rates still credits evenly across them.
-        $parts = array_sum($weights) > 0 ? $tax->allocate($weights) : $tax->allocate(array_map(static fn (): int => 1, $weights));
-        $spread = [];
-
-        foreach ($taxes as $key => $invoiceTax) {
-            $spread[] = [$invoiceTax, $parts[$key]];
-        }
-
-        return $spread;
-    }
-
-    /**
-     * A price reduction's tax: the invoice's share of tax in the amount, split across the invoice's rates by what each charged, by largest remainder.
-     *
-     * @return list<array{InvoiceTax, Money}>
-     */
-    private function adjustmentTaxes(Money $amount, Invoice $invoice): array
-    {
-        $rates = [];
-        $weights = [];
-
-        foreach ($invoice->lines as $line) {
-            foreach ($line->taxes as $invoiceTax) {
-                $key = implode('|', [$invoiceTax->name, $invoiceTax->country_code, $invoiceTax->state_code, $invoiceTax->rate_percent->toString()]);
-                $rates[$key] ??= $invoiceTax;
-                $weights[$key] = ($weights[$key] ?? 0) + $invoiceTax->tax->minorAmount();
-            }
-        }
-
-        if ($weights === [] || $invoice->tax->isZero()) {
-            return [];
-        }
-
-        [$tax] = $amount->allocate([$invoice->tax->minorAmount(), $invoice->total->minorAmount() - $invoice->tax->minorAmount()]);
-        $parts = $tax->allocate($weights);
-        $taxes = [];
-
-        foreach ($rates as $key => $invoiceTax) {
-            $taxes[] = [$invoiceTax, $parts[$key]];
-        }
-
-        return $taxes;
     }
 
     /**

@@ -60,7 +60,7 @@ it('lets the store turn guest checkout off and require a buyer tax ID', function
 it('copies the buyer\'s tax ID onto the order, its invoice and its credit notes, and prints it', function (): void {
     [$order, $invoice, $creditNote] = $this->store->run(static function (): array {
         $order = markPaid(placeOrder(orderDraft([[cartVariant(10000), 1]], orderShippingMethod(), buyer: OrderBuyer::guest('ada@example.com', 'Ada Obi', taxId: new BuyerTaxId('12345678-0001', 'NG')))));
-        $creditNote = app(App\Tenant\Orders\Actions\IssueCreditNote::class)->handle(new App\Tenant\Orders\Data\CreditRequest($order->id, 'rfd_1', 'rf_1', App\Shared\Money\Money::ofMinor(1000, 'NGN'), [], App\Shared\Money\Money::zero('NGN'), App\Shared\Money\Money::zero('NGN'), App\Shared\Money\Money::ofMinor(1000, 'NGN')));
+        $creditNote = app(App\Tenant\Orders\Actions\IssueCreditNote::class)->handle(new App\Tenant\Orders\Data\CreditRequest($order->id, 'rfd_1', 'rf_1', App\Shared\Money\Money::ofMinor(1000, 'NGN'), [], App\Shared\Money\Money::zero('NGN'), App\Shared\Money\Money::ofMinor(1000, 'NGN')));
 
         return [$order, App\Tenant\Orders\Models\Invoice::query()->where('order_id', $order->id)->sole(), $creditNote];
     });

@@ -24,10 +24,11 @@ use LogicException;
  *
  * A refund's lines, shipping and any price reduction are shared across its
  * payment parts in order: each part's amount is split across what is still
- * left of them by largest remainder, and their tax and units go with it, so
- * each part's credit note adds up to exactly what that part gave back, and
- * all of them to the whole refund, whichever part goes back first. A refund
- * that returned money never part of the sale credits nothing.
+ * left of them by largest remainder, and their units go with it, so each
+ * part's credit note adds up to exactly what that part gave back, and all of
+ * them to the whole refund, whichever part goes back first. Orders works out
+ * the tax. A refund that returned money never part of the sale credits
+ * nothing.
  */
 final readonly class RefundCredits implements RefundsAwaitingCreditNotes
 {
@@ -47,11 +48,11 @@ final readonly class RefundCredits implements RefundsAwaitingCreditNotes
         $lines = [];
 
         foreach ($refund->lines as $line) {
-            [$amount, $tax, $quantity] = $share['line-'.$line->id];
-            $lines[] = new CreditedLine($line->order_line_id, $quantity, $amount, $tax);
+            [$amount, $quantity] = $share['line-'.$line->id];
+            $lines[] = new CreditedLine($line->order_line_id, $quantity, $amount);
         }
 
-        return new CreditRequest($refund->order_id, $part->public_id, $refund->public_id, $part->amount, $lines, $share['shipping'][0], $share['shipping'][1], $share['adjustment'][0]);
+        return new CreditRequest($refund->order_id, $part->public_id, $refund->public_id, $part->amount, $lines, $share['shipping'][0], $share['adjustment'][0]);
     }
 
     public function wentBackBefore(CarbonImmutable $time, int $limit): array
@@ -71,33 +72,32 @@ final readonly class RefundCredits implements RefundsAwaitingCreditNotes
     }
 
     /**
-     * The part's share of each of the refund's lines, its shipping and any price reduction (keyed "line-{id}", "shipping" and "adjustment"): the amount, its tax and its units.
+     * The part's share of each of the refund's lines, its shipping and any price reduction (keyed "line-{id}", "shipping" and "adjustment"): the amount and its units.
      *
-     * @return array<string, array{Money, Money, int}>
+     * @return array<string, array{Money, int}>
      */
     private function shareOf(Refund $refund, PaymentRefund $part): array
     {
         $currency = $refund->currency;
-        /** @var array<string, array{int, int, int}> $left Amount, tax and units still to share out, by component. */
+        /** @var array<string, array{int, int}> $left Amount and units still to share out, by component. */
         $left = [];
 
         foreach ($refund->lines as $line) {
-            $left['line-'.$line->id] = [$line->amount->minorAmount(), $line->tax->minorAmount(), $line->quantity];
+            $left['line-'.$line->id] = [$line->amount->minorAmount(), $line->quantity];
         }
 
-        $left['shipping'] = [$refund->shipping->minorAmount(), $refund->shipping_tax->minorAmount(), 1];
-        $left['adjustment'] = [$refund->amount->minorAmount() - array_sum(array_column($left, 0)), 0, 1];
+        $left['shipping'] = [$refund->shipping->minorAmount(), 1];
+        $left['adjustment'] = [$refund->amount->minorAmount() - array_sum(array_column($left, 0)), 1];
 
         foreach ($refund->paymentRefunds as $earlier) {
             $share = [];
 
             foreach ($earlier->amount->allocate(array_map(static fn (array $component): int => $component[0], $left)) as $key => $amount) {
-                [$amountLeft, $taxLeft, $unitsLeft] = $left[$key];
-                // Tax and units go with the amount, the last part taking what is left.
-                $tax = $this->sameShare($taxLeft, $amount->minorAmount(), $amountLeft, $currency);
+                [$amountLeft, $unitsLeft] = $left[$key];
+                // Units go with the amount, the last part taking what is left.
                 $units = $this->sameShare($unitsLeft, $amount->minorAmount(), $amountLeft, $currency);
-                $share[$key] = [$amount, Money::ofMinor($tax, $currency), $units];
-                $left[$key] = [$amountLeft - $amount->minorAmount(), $taxLeft - $tax, $unitsLeft - $units];
+                $share[$key] = [$amount, $units];
+                $left[$key] = [$amountLeft - $amount->minorAmount(), $unitsLeft - $units];
             }
 
             if ($earlier->id === $part->id) {
@@ -109,7 +109,7 @@ final readonly class RefundCredits implements RefundsAwaitingCreditNotes
     }
 
     /**
-     * The share of a whole (tax or units) that a share is of another whole, by largest remainder: all of it when the share is all of the other.
+     * The share of a line's units that a share is of its amount, by largest remainder: all of them when the share is all of the amount.
      */
     private function sameShare(int $whole, int $share, int $of, string $currency): int
     {

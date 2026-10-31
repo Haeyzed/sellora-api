@@ -117,7 +117,7 @@ function invoicedOrder(?Customer $customer = null): array
 {
     return test()->store->run(static function () use ($customer): array {
         $order = markPaid(placeOrder(orderDraft([[cartVariant(10000), 1]], orderShippingMethod(), buyer: $customer === null ? OrderBuyer::guest('guest@example.com') : OrderBuyer::customer($customer))));
-        $creditNote = app(IssueCreditNote::class)->handle(new CreditRequest($order->id, 'rfd_'.$order->number, 'rf_'.$order->number, Money::ofMinor(1000, 'NGN'), [], Money::zero('NGN'), Money::zero('NGN'), Money::ofMinor(1000, 'NGN')));
+        $creditNote = app(IssueCreditNote::class)->handle(new CreditRequest($order->id, 'rfd_'.$order->number, 'rf_'.$order->number, Money::ofMinor(1000, 'NGN'), [], Money::zero('NGN'), Money::ofMinor(1000, 'NGN')));
 
         if ($creditNote === null) {
             throw new RuntimeException('The order has no invoice to credit.');
@@ -125,6 +125,22 @@ function invoicedOrder(?Customer $customer = null): array
 
         return [$order, Invoice::query()->where('order_id', $order->id)->sole(), $creditNote];
     });
+}
+
+/**
+ * Splits each tax on an order into two rates, a third of it to a levy, as a country's tax calculator can: what each line was charged stays the same. The calculators core ships give a line one rate, so this makes the other case. Inside the store's context.
+ */
+function splitOrderTaxesIntoTwoRates(Order $order): void
+{
+    DB::statement('alter table order_taxes disable trigger user');
+
+    foreach (DB::table('order_taxes')->where('order_id', $order->id)->get() as $tax) {
+        $levy = intdiv((int) $tax->tax_amount, 3);
+        DB::table('order_taxes')->where('id', $tax->id)->update(['tax_amount' => (int) $tax->tax_amount - $levy]);
+        DB::table('order_taxes')->insert([...collect((array) $tax)->except('id')->all(), 'name' => 'Levy', 'rate_percent' => '2.5', 'tax_amount' => $levy]);
+    }
+
+    DB::statement('alter table order_taxes enable trigger user');
 }
 
 /**

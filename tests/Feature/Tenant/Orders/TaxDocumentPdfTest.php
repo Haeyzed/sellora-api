@@ -177,7 +177,7 @@ it('writes a document in its own language\'s direction, and marks a test order\'
     $rtl = app(TaxDocumentPdf::class)->fromHtml('<p>فاتورة</p>', 'rtl');
     [$test, $creditNote] = $this->store->run(static function (): array {
         $order = markPaid(unpaidOrder(isTest: true));
-        app(IssueCreditNote::class)->handle(new CreditRequest($order->id, 'rfd_test', 'rf_test', Money::ofMinor(1000, 'NGN'), [], Money::zero('NGN'), Money::zero('NGN'), Money::ofMinor(1000, 'NGN')));
+        app(IssueCreditNote::class)->handle(new CreditRequest($order->id, 'rfd_test', 'rf_test', Money::ofMinor(1000, 'NGN'), [], Money::zero('NGN'), Money::ofMinor(1000, 'NGN')));
 
         return [app(TaxDocumentPdf::class)->html(Invoice::query()->sole()), app(TaxDocumentPdf::class)->html(CreditNote::query()->sole())];
     });

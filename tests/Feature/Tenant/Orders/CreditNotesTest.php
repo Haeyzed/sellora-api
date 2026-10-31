@@ -7,8 +7,11 @@ use App\Shared\Privacy\PersonalDataErasure;
 use App\Tenant\Catalog\Models\ProductVariant;
 use App\Tenant\Orders\Actions\CancelOrder;
 use App\Tenant\Orders\Actions\IssueCreditNote;
+use App\Tenant\Orders\Actions\IssueInvoice;
+use App\Tenant\Orders\Data\CreditedLine;
 use App\Tenant\Orders\Data\CreditRequest;
 use App\Tenant\Orders\Enums\CreditNoteKind;
+use App\Tenant\Orders\Enums\InvoiceLineKind;
 use App\Tenant\Orders\Exceptions\CreditNoteExceedsInvoiceException;
 use App\Tenant\Orders\Models\CreditNote;
 use App\Tenant\Orders\Models\CreditNoteLine;
@@ -241,7 +244,7 @@ it('never credits more than the invoice, in the action or the database', functio
 
     $this->store->run(static function () use ($order): void {
         $note = CreditNote::query()->sole();
-        $request = new CreditRequest($order->id, 'rfd_other', 'rf_other', Money::ofMinor(501, 'NGN'), [], Money::zero('NGN'), Money::zero('NGN'), Money::ofMinor(501, 'NGN'));
+        $request = new CreditRequest($order->id, 'rfd_other', 'rf_other', Money::ofMinor(501, 'NGN'), [], Money::zero('NGN'), Money::ofMinor(501, 'NGN'));
 
         expect(static fn () => app(IssueCreditNote::class)->handle($request))->toThrow(CreditNoteExceedsInvoiceException::class)
             ->and(CreditNote::query()->count())->toBe(1);
@@ -261,12 +264,116 @@ it('never credits more than the invoice, in the action or the database', functio
 it('credits a test order\'s invoice with credit notes marked TEST that take no number', function (): void {
     $numbers = $this->store->run(static function (): array {
         $order = markPaid(unpaidOrder(isTest: true));
-        $credit = static fn (string $reference): ?CreditNote => app(IssueCreditNote::class)->handle(new CreditRequest($order->id, $reference, 'rf_test', Money::ofMinor(1000, 'NGN'), [], Money::zero('NGN'), Money::zero('NGN'), Money::ofMinor(1000, 'NGN')));
+        $credit = static fn (string $reference): ?CreditNote => app(IssueCreditNote::class)->handle(new CreditRequest($order->id, $reference, 'rf_test', Money::ofMinor(1000, 'NGN'), [], Money::zero('NGN'), Money::ofMinor(1000, 'NGN')));
 
         return [$order->number, $credit('rfd_one')?->number, $credit('rfd_two')?->number, $credit('rfd_one')?->number, DocumentSequence::query()->count()];
     });
 
     expect($numbers)->toBe([$numbers[0], "TEST-CN-{$numbers[0]}-1", "TEST-CN-{$numbers[0]}-2", "TEST-CN-{$numbers[0]}-1", 0]);
+});
+
+it('takes each credit\'s tax from what is left of the line, so partial credits and a price reduction add up exactly to the invoice, per line and per rate', function (string $currency, int $price): void {
+    [$lineTax, $rateTaxes, $invoiceTax, $creditedTax, $credited, $total] = $this->store->run(static function () use ($currency, $price): array {
+        offerStoreCurrency('KWD', '0.002');
+        addTaxRate('Standard', 'NG', null, '7.5');
+        $order = unpaidOrder($price, $currency === 'NGN' ? null : $currency);
+        splitOrderTaxesIntoTwoRates($order);
+        $order = markPaid($order);
+        $invoice = app(IssueInvoice::class)->handle($order)?->load('lines.taxes');
+        $item = $invoice->lines->firstWhere('kind', InvoiceLineKind::Item);
+        $shipping = $invoice->lines->firstWhere('kind', InvoiceLineKind::Shipping);
+        $money = static fn (int $minor): Money => Money::ofMinor($minor, $currency);
+        $zero = Money::zero($currency);
+        $credit = static fn (string $reference, array $lines, Money $amount, Money $shippingAmount, Money $adjustment): ?CreditNote => app(IssueCreditNote::class)->handle(new CreditRequest($order->id, $reference, 'rf_'.$reference, $amount, $lines, $shippingAmount, $adjustment));
+        $itemCredit = static fn (int $minor): CreditedLine => new CreditedLine($order->lines()->sole()->id, 0, $money($minor));
+
+        // The shipping goes first, so the price reduction that follows can only come off the item.
+        $credit('rfd_shipping', [], $shipping->total, $shipping->total, $zero);
+        $third = intdiv($item->total->minorAmount(), 3);
+        $seventh = intdiv($item->total->minorAmount(), 7);
+        $reduction = intdiv($item->total->minorAmount(), 11);
+        $credit('rfd_first', [$itemCredit($third)], $money($third), $zero, $zero);
+        $credit('rfd_second', [$itemCredit($seventh)], $money($seventh), $zero, $zero);
+        $credit('rfd_reduction', [], $money($reduction), $zero, $money($reduction));
+        // Credits this small each round their tax down, so only what is left can bring it back.
+        $tiny = 6;
+
+        foreach (range(1, 6) as $count) {
+            $credit("rfd_tiny_{$count}", [$itemCredit($tiny)], $money($tiny), $zero, $zero);
+            $credit("rfd_tiny_reduction_{$count}", [], $money($tiny), $zero, $money($tiny));
+        }
+
+        // The final credit brings the line to what was invoiced for it.
+        $final = $item->total->minorAmount() - $third - $seventh - $reduction - 12 * $tiny;
+        $credit('rfd_final', [$itemCredit($final)], $money($final), $zero, $zero);
+
+        $notes = CreditNote::query()->with('lines.taxes')->get();
+        $taxLines = $notes->flatMap->lines;
+        $byRate = static fn ($taxes): array => $taxes->groupBy('name')->map(static fn ($rows): int => $rows->sum(static fn ($row): int => $row->tax->minorAmount()))->sortKeys()->all();
+
+        return [
+            [$taxLines->where('invoice_line_id', '!==', $shipping->id)->sum(static fn ($line): int => $line->tax->minorAmount()), $item->tax->minorAmount()],
+            [$byRate($taxLines->flatMap->taxes), $byRate($invoice->lines->flatMap->taxes)],
+            $invoice->tax->minorAmount(),
+            $notes->sum(static fn (CreditNote $note): int => $note->tax->minorAmount()),
+            $notes->sum(static fn (CreditNote $note): int => $note->total->minorAmount()),
+            $invoice->total->minorAmount(),
+        ];
+    });
+
+    expect($lineTax[0])->toBe($lineTax[1])
+        ->and($rateTaxes[0])->toBe($rateTaxes[1])
+        ->and(array_keys($rateTaxes[0]))->toBe(['Levy', 'VAT'])
+        ->and($creditedTax)->toBe($invoiceTax)
+        ->and($credited)->toBe($total)
+        ->and($invoiceTax)->toBeGreaterThan(0);
+})->with([
+    'naira, two decimals' => ['NGN', 10007],
+    'dinar, three decimals' => ['KWD', 12345],
+]);
+
+it('never takes more tax than is left when a line is credited whole after a price reduction', function (): void {
+    [$taxes, $invoiceTax, $itemTax] = $this->store->run(static function (): array {
+        addTaxRate('Standard', 'NG', null, '7.5');
+        $order = markPaid(unpaidOrder(10000));
+        $invoice = app(IssueInvoice::class)->handle($order)?->load('lines');
+        $item = $invoice->lines->firstWhere('kind', InvoiceLineKind::Item);
+        $zero = Money::zero('NGN');
+        // The reduction comes off the shipping too, so the whole line is more than the tracked part of it left.
+        app(IssueCreditNote::class)->handle(new CreditRequest($order->id, 'rfd_reduction', 'rf_reduction', Money::ofMinor(1000, 'NGN'), [], $zero, Money::ofMinor(1000, 'NGN')));
+        app(IssueCreditNote::class)->handle(new CreditRequest($order->id, 'rfd_line', 'rf_line', $item->total, [new CreditedLine($order->lines()->sole()->id, 1, $item->total)], $zero, $zero));
+
+        return [CreditNote::query()->orderBy('id')->get()->map(static fn (CreditNote $note): int => $note->tax->minorAmount())->all(), $invoice->tax->minorAmount(), $item->tax->minorAmount()];
+    });
+
+    expect(array_sum($taxes))->toBeLessThanOrEqual($invoiceTax)
+        ->and($taxes[1])->toBeLessThanOrEqual($itemTax);
+});
+
+it('never carries more tax than a credit comes to, even when an earlier credit left its tax behind', function (): void {
+    [$amount, $tax, $net] = $this->store->run(static function (): array {
+        addTaxRate('Standard', 'NG', null, '7.5');
+        $order = markPaid(unpaidOrder(10000));
+        $invoice = app(IssueInvoice::class)->handle($order)?->load('lines');
+        $item = $invoice->lines->firstWhere('kind', InvoiceLineKind::Item);
+        $zero = Money::zero('NGN');
+        $orderLine = $order->lines()->sole()->id;
+        $first = Money::ofMinor((int) ($item->total->minorAmount() * 0.95), 'NGN');
+        app(IssueCreditNote::class)->handle(new CreditRequest($order->id, 'rfd_first', 'rf_first', $first, [new CreditedLine($orderLine, 0, $first)], $zero, $zero));
+
+        // As a credit note worked out another way could stand: most of the line's money, none of its tax.
+        DB::statement('alter table credit_note_taxes disable trigger user');
+        DB::table('credit_note_taxes')->delete();
+        DB::statement('alter table credit_note_taxes enable trigger user');
+
+        $rest = $item->total->subtract($first);
+        $note = app(IssueCreditNote::class)->handle(new CreditRequest($order->id, 'rfd_rest', 'rf_rest', $rest, [new CreditedLine($orderLine, 0, $rest)], $zero, $zero));
+
+        return [$rest->minorAmount(), $note?->tax->minorAmount(), $note?->net->minorAmount()];
+    });
+
+    expect($tax)->toBe($amount)
+        ->and($net)->toBe(0);
 });
 
 it('lets only a sale undone leave out the refund, and refuses both wrong combinations in the database', function (): void {

@@ -298,26 +298,6 @@ function giftCardAndMethodOrderWhoseCommitWillFail(string $paymentMethod): Order
 }
 
 /**
- * An amount shared across weights by largest remainder, worked out here on its own, to check the code's against.
- *
- * @param  list<int>  $weights
- * @return list<int>
- */
-function expectedShares(int $amount, array $weights): array
-{
-    $sum = array_sum($weights);
-    $shares = array_map(static fn (int $weight): int => intdiv($amount * $weight, $sum), $weights);
-    $remainders = array_map(static fn (int $weight): int => ($amount * $weight) % $sum, $weights);
-    arsort($remainders);
-
-    foreach (array_slice(array_keys($remainders), 0, $amount - array_sum($shares)) as $key) {
-        $shares[$key]++;
-    }
-
-    return $shares;
-}
-
-/**
  * The public ID of an order's hold for a payment method.
  */
 function holdReference(Order $order, string $method): string

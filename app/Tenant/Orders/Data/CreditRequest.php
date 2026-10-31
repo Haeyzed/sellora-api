@@ -26,7 +26,6 @@ final readonly class CreditRequest
         public Money $amount,
         public array $lines,
         public Money $shipping,
-        public Money $shippingTax,
         public Money $adjustment,
     ) {}
 }

@@ -109,7 +109,7 @@ it('keeps the details until the latest document\'s retention ends, a later credi
     [$order] = invoicedOrder($this->customer);
     // Another refund, two years later, credits the 2026 invoice in 2028.
     $this->travelTo(CarbonImmutable::parse('2028-05-01 10:00', 'UTC'));
-    $this->store->run(static fn () => app(IssueCreditNote::class)->handle(new CreditRequest($order->id, 'rfd_later', 'rf_later', Money::ofMinor(500, 'NGN'), [], Money::zero('NGN'), Money::zero('NGN'), Money::ofMinor(500, 'NGN'))));
+    $this->store->run(static fn () => app(IssueCreditNote::class)->handle(new CreditRequest($order->id, 'rfd_later', 'rf_later', Money::ofMinor(500, 'NGN'), [], Money::zero('NGN'), Money::ofMinor(500, 'NGN'))));
 
     $outcome = $this->store->run(fn () => app(EraseCustomer::class)->erase($this->customer));
 

@@ -151,7 +151,7 @@ it('reports by public ID any invoice that, less its credit notes, doesn\'t equal
     // Planted directly: a credit note with no money given back behind it.
     $invoiceId = $this->store->run(static function () use ($order): string {
         $zero = Money::zero($order->currency);
-        app(IssueCreditNote::class)->handle(new CreditRequest($order->id, 'planted', 'planted-refund', Money::ofMinor(1000, $order->currency), [], $zero, $zero, Money::ofMinor(1000, $order->currency)));
+        app(IssueCreditNote::class)->handle(new CreditRequest($order->id, 'planted', 'planted-refund', Money::ofMinor(1000, $order->currency), [], $zero, Money::ofMinor(1000, $order->currency)));
 
         return Invoice::query()->sole()->public_id;
     });
