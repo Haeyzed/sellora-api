@@ -10,6 +10,7 @@ use App\Shared\Money\DecimalCast;
 use App\Shared\Money\Money;
 use App\Shared\Money\MoneyCast;
 use App\Shared\Money\TaxMode;
+use App\Tenant\Orders\Enums\CreditNoteKind;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -17,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * A credit note (Step 15b): reduces an invoice by what one part of a refund gave back, when that refund reduced the sale; or credits all of it when the sale is undone without a refund (what paid for it was only held, and was released).
+ * A credit note (Step 15b): reduces an invoice by what one part of a refund gave back, when that refund reduced the sale; or by a held amount that stopped counting toward the sale, with no refund behind it (a method released it, or gave back what it took).
  *
  * Copies its invoice's seller and buyer, and its own lines (returned items,
  * shipping, or a price reduction) with their taxes. Like the invoice, the
@@ -28,8 +29,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $public_id
  * @property int $invoice_id
  * @property int $order_id
- * @property string $reference The public ID of the refund part it credits, or of the order for a sale undone without a refund.
- * @property string|null $refund_reference The public ID of the refund; null for a sale undone without a refund.
+ * @property string $reference The public ID of the refund part or the payment hold it credits.
+ * @property string|null $refund_reference The public ID of the refund; null only for a sale undone without one.
+ * @property CreditNoteKind $kind
  * @property string $number As printed, such as "CN-2026-000007"; "TEST-CN-1042-1" for a test order.
  * @property string|null $series
  * @property int|null $sequence_number
@@ -120,6 +122,7 @@ final class CreditNote extends Model
             'invoice_id' => 'integer',
             'order_id' => 'integer',
             'sequence_number' => 'integer',
+            'kind' => CreditNoteKind::class,
             'is_test' => 'boolean',
             'issued_at' => 'immutable_datetime',
             'issued_on' => 'immutable_date',

@@ -249,6 +249,7 @@ it('credits a refunded gateway part and a released gift card so that together th
         ->and(array_column($creditNotes, 'sequence_number'))->toBe([1, 2])
         ->and(array_column($creditNotes, 'total'))->toBe([$gatewayPart, 5000])
         ->and($released)->toMatchArray(['reference' => holdReference($order, FakeGiftCardPaymentMethod::KEY), 'refund' => null])
+        ->and($this->store->run(static fn (): array => CreditNote::query()->orderBy('id')->pluck('kind')->map->value->all()))->toBe(['refund', 'sale_undone'])
         // Shared by largest remainder across the item and the shipping, by what is left of each.
         ->and(array_column($released['lines'], 0))->toBe(['item', 'shipping'])
         ->and(array_column($released['lines'], 1))->toBe([0, 0])

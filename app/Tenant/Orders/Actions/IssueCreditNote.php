@@ -7,6 +7,7 @@ namespace App\Tenant\Orders\Actions;
 use App\Shared\Money\Money;
 use App\Tenant\Orders\Data\CreditedLine;
 use App\Tenant\Orders\Data\CreditRequest;
+use App\Tenant\Orders\Enums\CreditNoteKind;
 use App\Tenant\Orders\Enums\CreditNoteLineKind;
 use App\Tenant\Orders\Enums\InvoiceLineKind;
 use App\Tenant\Orders\Enums\OrderEventType;
@@ -298,6 +299,7 @@ final readonly class IssueCreditNote
             'order_id' => $order->id,
             'reference' => $request->reference,
             'refund_reference' => $request->refundReference,
+            'kind' => $request->refundReference === null ? CreditNoteKind::SaleUndone : CreditNoteKind::Refund,
             'number' => $number === null ? $testNumber : $number->number,
             'series' => $number?->series,
             'sequence_number' => $number?->sequenceNumber,

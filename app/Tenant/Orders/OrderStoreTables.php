@@ -60,7 +60,7 @@ final class OrderStoreTables implements ClassifiesStoreTables
         ]);
         $registry->table('invoice_taxes', include: ['id', 'invoice_id', 'invoice_line_id', 'name', 'country_code', 'state_code', 'rate_percent', 'currency', 'tax_amount', 'created_at']);
         $registry->table('credit_notes', include: [
-            'id', 'public_id', 'invoice_id', 'order_id', 'reference', 'refund_reference', 'number', 'series', 'sequence_number', 'is_test', 'issued_at', 'issued_on', 'locale', 'currency',
+            'id', 'public_id', 'invoice_id', 'order_id', 'reference', 'refund_reference', 'kind', 'number', 'series', 'sequence_number', 'is_test', 'issued_at', 'issued_on', 'locale', 'currency',
             'base_currency', 'exchange_rate', 'tax_mode', 'seller_name', 'seller_trading_name', 'seller_tax_registration_label', 'seller_tax_registration_number',
             'seller_address', 'seller_email', 'seller_phone', 'buyer_name', 'buyer_email', 'buyer_phone', 'buyer_tax_id', 'buyer_tax_id_country', 'billing_address', 'shipping_address', 'buyer_erased_at', 'footer',
             'net_amount', 'tax_amount', 'total_amount', 'pdf_path', 'pdf_rendered_at', 'created_at',

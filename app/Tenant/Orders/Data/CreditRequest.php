@@ -15,8 +15,8 @@ use App\Shared\Money\Money;
 final readonly class CreditRequest
 {
     /**
-     * @param  string  $reference  The refund part's public ID: one credit note per part.
-     * @param  string|null  $refundReference  The refund's public ID; null only for a sale undone without a refund.
+     * @param  string  $reference  The public ID of the refund part or the payment hold it credits: one credit note each.
+     * @param  string|null  $refundReference  The refund's public ID; null only for a sale undone without one, which is what sets its kind.
      * @param  list<CreditedLine>  $lines
      */
     public function __construct(

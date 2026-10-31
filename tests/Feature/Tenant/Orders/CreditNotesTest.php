@@ -8,6 +8,7 @@ use App\Tenant\Catalog\Models\ProductVariant;
 use App\Tenant\Orders\Actions\CancelOrder;
 use App\Tenant\Orders\Actions\IssueCreditNote;
 use App\Tenant\Orders\Data\CreditRequest;
+use App\Tenant\Orders\Enums\CreditNoteKind;
 use App\Tenant\Orders\Exceptions\CreditNoteExceedsInvoiceException;
 use App\Tenant\Orders\Models\CreditNote;
 use App\Tenant\Orders\Models\CreditNoteLine;
@@ -266,6 +267,27 @@ it('credits a test order\'s invoice with credit notes marked TEST that take no n
     });
 
     expect($numbers)->toBe([$numbers[0], "TEST-CN-{$numbers[0]}-1", "TEST-CN-{$numbers[0]}-2", "TEST-CN-{$numbers[0]}-1", 0]);
+});
+
+it('lets only a sale undone leave out the refund, and refuses both wrong combinations in the database', function (): void {
+    [$order] = gatewayPaidOrder();
+    refundOrder($order, 1000);
+
+    $this->store->run(static function (): void {
+        $note = CreditNote::query()->sole();
+        expect($note->kind)->toBe(CreditNoteKind::Refund);
+
+        $row = collect((array) DB::table('credit_notes')->where('id', $note->id)->first())->except(['id'])->all();
+        $insert = static fn (array $changes, string $reference, int $sequence): bool => DB::transaction(static fn (): bool => DB::table('credit_notes')->insert([
+            ...$row, ...$changes, 'public_id' => strtolower((string) Str::ulid()), 'reference' => $reference, 'number' => "CN-2026-00000{$sequence}", 'sequence_number' => $sequence,
+        ]));
+
+        expect(static fn () => $insert(['kind' => 'refund', 'refund_reference' => null], 'rfd_no_refund', 7))->toThrow(QueryException::class, 'credit_notes_refund_reference_matches_kind')
+            ->and(static fn () => $insert(['kind' => 'sale_undone', 'refund_reference' => 'rf_x'], 'rfd_with_refund', 8))->toThrow(QueryException::class, 'credit_notes_refund_reference_matches_kind')
+            // The right combinations go in, and the kind can't change afterwards.
+            ->and($insert(['kind' => 'sale_undone', 'refund_reference' => null], 'chd_released', 9))->toBeTrue()
+            ->and(static fn () => DB::transaction(static fn () => DB::table('credit_notes')->where('id', $note->id)->update(['kind' => 'sale_undone', 'refund_reference' => null])))->toThrow(QueryException::class, 'never changes once issued');
+    });
 });
 
 it('keeps credit notes as issued: the database refuses changing or deleting them, and lets erasure only clear the buyer, once', function (): void {
