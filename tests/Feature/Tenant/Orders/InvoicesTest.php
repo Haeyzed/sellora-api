@@ -20,6 +20,7 @@ use App\Tenant\Orders\Models\Shipment;
 use App\Tenant\Payments\Enums\PaymentMethod;
 use App\Tenant\Payments\Jobs\CheckPaymentWithGateway;
 use App\Tenant\Payments\Jobs\CheckRefundWithGateway;
+use App\Tenant\Payments\Jobs\IssueRefundCreditNote;
 use App\Tenant\Payments\Models\Payment;
 use App\Tenant\Settings\Models\StoreSettings;
 use Carbon\CarbonImmutable;
@@ -145,7 +146,7 @@ it('issues no invoice for an order never sold, and only one for an order paid in
 it('reports by public ID any invoice that, less its credit notes, doesn\'t equal the sale money kept', function (): void {
     [$order] = gatewayPaidOrder();
 
-    expect(Artisan::call('orders:reconcile-invoices'))->toBe(0)
+    expect(reconcileInvoicesPastGrace())->toBe(0)
         ->and(Artisan::output())->toContain('invoices match the sale money kept');
 
     // Planted directly: a credit note with no money given back behind it.
@@ -157,8 +158,39 @@ it('reports by public ID any invoice that, less its credit notes, doesn\'t equal
     });
     $total = $order->total->minorAmount();
 
-    expect(Artisan::call('orders:reconcile-invoices'))->toBe(1)
+    expect(reconcileInvoicesPastGrace())->toBe(1)
         ->and(Artisan::output())->toContain($order->public_id)->toContain($invoiceId)->toContain(($total - 1000).' left on the invoice, '.$total.' kept')->not->toContain('ada@example.com');
+});
+
+it('leaves an order changed within the grace period for the next check, and reports it from the minute that period ends', function (): void {
+    [$order] = gatewayPaidOrder();
+    $changedAt = now()->startOfMinute();
+
+    // Planted directly: a credit note with no money given back behind it, on an order changed at a known minute.
+    $this->store->run(static function () use ($order, $changedAt): void {
+        $zero = Money::zero($order->currency);
+        app(IssueCreditNote::class)->handle(new CreditRequest($order->id, 'planted', 'planted-refund', Money::ofMinor(1000, $order->currency), [], $zero, Money::ofMinor(1000, $order->currency)));
+        DB::table('orders')->where('id', $order->id)->update(['updated_at' => $changedAt]);
+    });
+
+    $this->travelTo($changedAt->copy()->addMinutes(59)->addSeconds(59));
+    expect(Artisan::call('orders:reconcile-invoices'))->toBe(0);
+
+    $this->travelTo($changedAt->copy()->addMinutes(60));
+    expect(Artisan::call('orders:reconcile-invoices'))->toBe(1)
+        ->and(Artisan::output())->toContain($order->public_id);
+});
+
+it('counts another partial refund as a change, though the payment status stays the same', function (): void {
+    Queue::fake([IssueRefundCreditNote::class]);
+    [$order] = gatewayPaidOrder();
+    refundOrder($order, 1000);
+    reconcileInvoicesPastGrace();
+
+    // Its credit note is still on its way, and the order reads partially refunded both before and after.
+    refundOrder($order, 1000);
+
+    expect(Artisan::call('orders:reconcile-invoices'))->toBe(0);
 });
 
 it('doesn\'t count an overpayment as sale money kept', function (): void {
@@ -166,7 +198,7 @@ it('doesn\'t count an overpayment as sale money kept', function (): void {
     recordReceived($payment, $order->total->minorAmount() + 2000);
 
     expect($this->store->run(static fn (): int => Invoice::query()->count()))->toBe(1)
-        ->and(Artisan::call('orders:reconcile-invoices'))->toBe(0);
+        ->and(reconcileInvoicesPastGrace())->toBe(0);
 });
 
 it('reconciles every store\'s invoices on a schedule', function (): void {

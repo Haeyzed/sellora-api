@@ -17,6 +17,7 @@ use App\Tenant\Orders\Models\Invoice;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Orders\Services\TaxDocumentNumbers;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Symfony\Component\Process\Process;
@@ -141,6 +142,16 @@ function splitOrderTaxesIntoTwoRates(Order $order): void
     }
 
     DB::statement('alter table order_taxes enable trigger user');
+}
+
+/**
+ * Runs the invoice check once every order is past its grace period, as the daily run finds them, and returns its exit code.
+ */
+function reconcileInvoicesPastGrace(): int
+{
+    test()->travel(config()->integer('orders.reconcile_grace_minutes') + 1)->minutes();
+
+    return Artisan::call('orders:reconcile-invoices');
 }
 
 /**

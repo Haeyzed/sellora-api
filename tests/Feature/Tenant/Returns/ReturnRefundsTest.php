@@ -30,7 +30,6 @@ use App\Tenant\Returns\Events\ReturnRefundStarted;
 use App\Tenant\Returns\Models\OrderReturn;
 use App\Tenant\Returns\Models\ReturnRefund;
 use App\Tenant\Returns\Services\ReturnRefundAttempts;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
@@ -209,7 +208,7 @@ it('tries again under a new key only once every part of the last refund failed',
     $response = refundReturnAs($return, $this->owner)->assertOk()->assertJsonPath('data.status', 'completed');
 
     expect(array_column($response->json('data.refunds'), 'status', 'attempt'))->toBe([1 => 'failed', 2 => 'succeeded'])
-        ->and(Artisan::call('orders:reconcile-invoices'))->toBe(0);
+        ->and(reconcileInvoicesPastGrace())->toBe(0);
     $this->store->run(static function () use ($return): void {
         expect(Refund::query()->orderBy('id')->pluck('idempotency_key')->all())->toBe(["return:{$return->public_id}:1", "return:{$return->public_id}:2"]);
         Event::assertDispatchedTimes(ReturnRefundStarted::class, 2);

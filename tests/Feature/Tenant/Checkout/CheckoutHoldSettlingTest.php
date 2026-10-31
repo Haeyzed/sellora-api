@@ -29,7 +29,6 @@ use App\Tenant\Payments\Jobs\CheckRefundWithGateway;
 use App\Tenant\Payments\Jobs\IssueRefundCreditNote;
 use App\Tenant\Payments\Models\Payment;
 use Illuminate\Log\Events\MessageLogged;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Exceptions;
@@ -270,7 +269,7 @@ it('credits a refunded gateway part and a released gift card so that together th
 
     expect($again)->toBe($released['number'])
         ->and(orderTaxDocuments($order)['credit_notes'])->toHaveCount(2)
-        ->and(Artisan::call('orders:reconcile-invoices'))->toBe(0);
+        ->and(reconcileInvoicesPastGrace())->toBe(0);
 });
 
 it('issues no invoice when a hold is released between the job being dispatched and running, and logs why', function (): void {
@@ -297,7 +296,7 @@ it('issues no invoice when a hold is released between the job being dispatched a
 
     expect(orderTaxDocuments($order)['invoice'])->toBeNull()
         ->and($logged)->toBe([['warning', ['order' => $order->public_id, 'payment_status' => 'refunded']]])
-        ->and(Artisan::call('orders:reconcile-invoices'))->toBe(0);
+        ->and(reconcileInvoicesPastGrace())->toBe(0);
 });
 
 it('still issues the invoice when the money kept covers the order without the released hold', function (): void {
@@ -353,7 +352,7 @@ it('credits a released hold only as far as it was part of the sale when the buye
 
     // The store keeps ₦20 toward the sale that the gift card no longer covers, so only ₦30 of its ₦50 is credited.
     expect(array_column(orderTaxDocuments($order)['credit_notes'], 'total'))->toBe([3000])
-        ->and(Artisan::call('orders:reconcile-invoices'))->toBe(0);
+        ->and(reconcileInvoicesPastGrace())->toBe(0);
 });
 
 it('credits what a module gave back only as far as it was part of the sale when the buyer overpaid', function (): void {
@@ -367,7 +366,7 @@ it('credits what a module gave back only as far as it was part of the sale when 
     // The gift card's ₦50 went back, which had put the order ₦20 over its total, so the sale lost only ₦30.
     expect(paymentHolds()[FakeGiftCardPaymentMethod::KEY])->toBe(['refunded', 5000])
         ->and(array_column(orderTaxDocuments($order)['credit_notes'], 'total'))->toBe([3000])
-        ->and(Artisan::call('orders:reconcile-invoices'))->toBe(0);
+        ->and(reconcileInvoicesPastGrace())->toBe(0);
 });
 
 it('waits to anonymise an order with a release pending, and anonymises it once the release succeeds', function (): void {

@@ -70,6 +70,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Invoice Reconciliation
+    |--------------------------------------------------------------------------
+    |
+    | The daily check of invoices against the sale money kept leaves out orders
+    | changed within this many minutes: a credit note still on its way would
+    | read as a mismatch. It has to outlast the missing documents' grace, or
+    | the sweep wouldn't have had its chance.
+    |
+    */
+
+    'reconcile_grace_minutes' => (int) env('ORDERS_RECONCILE_GRACE_MINUTES', 60),
+
+    /*
+    |--------------------------------------------------------------------------
     | Tax Document PDFs
     |--------------------------------------------------------------------------
     |
