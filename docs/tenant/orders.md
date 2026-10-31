@@ -89,7 +89,9 @@ Order amounts and copies are financial records and are never overwritten.
    due (`refund_due`) counts only money really taken: payments received, and
    what a method made final. Release pending (`release_pending`) is what a
    method still holds without having taken it. It can't be refunded, because
-   nothing was taken; the hourly sweep releases it.
+   nothing was taken; the hourly sweep releases it. Staff can list these with
+   `release_pending=1`. An order isn't anonymised while it owes a refund or
+   while any payment hold is still held; it waits until that clears.
 7. After delivery, the buyer can send units back through
    [Returns](returns.md), which refunds them through Payments and puts them
    back on the shelf through Inventory; the order itself stays as it was.

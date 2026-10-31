@@ -6,6 +6,7 @@ namespace App\Tenant\Orders\Http\Requests;
 
 use App\Shared\Http\CursorListRequest;
 use App\Tenant\Identity\Concerns\ActsAsStaffMember;
+use App\Tenant\Orders\Contracts\OrderAmountHolds;
 use App\Tenant\Orders\Enums\FulfilmentStatus;
 use App\Tenant\Orders\Enums\OrderPaymentStatus;
 use App\Tenant\Orders\Enums\OrderStatus;
@@ -40,6 +41,8 @@ final class ListOrdersRequest extends CursorListRequest
             'fulfilment_status' => ['sometimes', 'string', Rule::enum(FulfilmentStatus::class)],
             /** True for cancelled orders whose payment is owed back. */
             'refund_due' => ['sometimes', 'boolean'],
+            /** True for cancelled orders with money a payment method still holds, waiting to be released; it can't be refunded. */
+            'release_pending' => ['sometimes', 'boolean'],
             /** True for orders refunded beyond what was paid, for staff to look at. */
             'refunded_beyond_paid' => ['sometimes', 'boolean'],
             /** Placed at or after this moment (ISO 8601). */
@@ -82,6 +85,10 @@ final class ListOrdersRequest extends CursorListRequest
             if ($this->has($flag)) {
                 $query->where($flag, $this->boolean($flag));
             }
+        }
+
+        if ($this->has('release_pending')) {
+            app(OrderAmountHolds::class)->whereReleasePending($query, $this->boolean('release_pending'));
         }
 
         if ($this->filled('placed_from')) {

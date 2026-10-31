@@ -6,6 +6,7 @@ namespace App\Tenant\Orders\Contracts;
 
 use App\Shared\Money\Money;
 use App\Tenant\Orders\Models\Order;
+use Illuminate\Database\Eloquent\Builder;
 
 /**
  * What payment methods outside Payments hold or took for an order, such as a module's gift card applied at checkout: it counts as paid, and isn't asked for again; what they gave back since counts as refunded. Implemented by Tenant\Checkout.
@@ -26,6 +27,18 @@ interface OrderAmountHolds
      * What they still hold without having taken it: nothing can be refunded from it, and on a cancelled order it waits to be released.
      */
     public function pendingFor(Order $order): Money;
+
+    /**
+     * Whether any hold is still neither made final nor released, whatever its amount: the order isn't settled.
+     */
+    public function hasUnsettledHolds(Order $order): bool;
+
+    /**
+     * Narrows a query of orders to cancelled ones with something waiting to be released, or to all others.
+     *
+     * @param  Builder<Order>  $orders
+     */
+    public function whereReleasePending(Builder $orders, bool $pending): void;
 
     /**
      * What of that they gave back once the order was cancelled; in the order's currency.

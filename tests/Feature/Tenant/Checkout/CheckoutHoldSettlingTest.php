@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Shared\Money\Money;
+use App\Shared\Privacy\PersonalDataErasure;
+use App\Shared\Retention\PurgeExpiredRecords;
 use App\Tenant\Checkout\CheckoutExtensions;
 use App\Tenant\Checkout\Events\OrderPaymentsKeepFailing;
 use App\Tenant\Checkout\Events\PaymentHoldKeepsFailing;
@@ -18,6 +20,7 @@ use App\Tenant\Orders\Actions\IssueCreditNote;
 use App\Tenant\Orders\Events\OrderPaid;
 use App\Tenant\Orders\Models\CreditNote;
 use App\Tenant\Orders\Models\Order;
+use App\Tenant\Orders\Privacy\OrderPrivacy;
 use App\Tenant\Payments\Enums\PaymentMethod;
 use App\Tenant\Payments\Exceptions\RefundExceedsRefundableException;
 use App\Tenant\Payments\Jobs\CheckPaymentWithGateway;
@@ -319,6 +322,42 @@ it('credits what a module gave back only as far as it was part of the sale when 
     expect(paymentHolds()[FakeGiftCardPaymentMethod::KEY])->toBe(['refunded', 5000])
         ->and(array_column(orderTaxDocuments($order)['credit_notes'], 'total'))->toBe([3000])
         ->and(Artisan::call('orders:reconcile-invoices'))->toBe(0);
+});
+
+it('waits to anonymise an order with a release pending, and anonymises it once the release succeeds', function (): void {
+    $order = modulesOnlyOrderWhoseCommitFailed();
+    cancelAsStaff($order);
+    $anonymised = fn (): bool => $this->store->run(static fn (): bool => $order->refresh()->anonymised_at !== null);
+
+    // Refused for now: it owes nothing, but the gift card still holds the money.
+    $this->store->run(static fn () => app(PersonalDataErasure::class)->run(static fn () => app(OrderPrivacy::class)->erase(Order::query()->whereKey($order->id), null)));
+    $this->store->run(static fn () => PurgeExpiredRecords::dispatchSync());
+
+    expect($anonymised())->toBeFalse()
+        ->and($this->store->run(static fn (): bool => $order->refresh()->anonymise_when_settled))->toBeTrue()
+        ->and($this->store->run(static fn (): ?string => $order->refresh()->contact_email))->toBe('ada@example.com');
+
+    FakeGiftCardPaymentMethod::$settleFailure = null;
+    $this->artisan('payments:check-pending')->assertSuccessful();
+    $this->store->run(static fn () => PurgeExpiredRecords::dispatchSync());
+
+    expect($anonymised())->toBeTrue()
+        ->and($this->store->run(static fn (): ?string => $order->refresh()->contact_email))->toBeNull();
+});
+
+it('lets staff list the orders with a release pending, and the rest', function (): void {
+    $pending = modulesOnlyOrderWhoseCommitFailed();
+    cancelAsStaff($pending);
+    $paid = modulesOnlyOrderWhoseCommitFailed();
+    $released = modulesOnlyOrderWhoseCommitFailed();
+    // Reachable again just as this one is cancelled, so its hold is released at once.
+    FakeGiftCardPaymentMethod::$settleFailure = null;
+    cancelAsStaff($released);
+    $ids = static fn (string $filter): array => staffOrderRequest('GET', "/orders?{$filter}", subdomain: 'cart-store')->assertOk()->json('data.*.id');
+
+    // Open with a hold still held, cancelled with it released: neither is waiting for a release.
+    expect($ids('release_pending=1'))->toBe([$pending->public_id])
+        ->and($ids('release_pending=0'))->toEqualCanonicalizing([$paid->public_id, $released->public_id]);
 });
 
 it('shows a hold that was never taken on a cancelled order as release pending, not refund due, and refuses to refund it', function (): void {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tenant\Orders\Services;
 
+use App\Tenant\Orders\Contracts\OrderAmountHolds;
 use App\Tenant\Orders\Enums\OrderEventType;
 use App\Tenant\Orders\Enums\OrderStatus;
 use App\Tenant\Orders\Enums\ShipmentStatus;
@@ -22,15 +23,19 @@ use Illuminate\Support\Facades\DB;
  */
 final readonly class OrderAnonymisation
 {
-    public function __construct(private OrderEventLog $orderEventLog) {}
+    public function __construct(
+        private OrderEventLog $orderEventLog,
+        private OrderAmountHolds $orderAmountHolds,
+    ) {}
 
     /**
-     * Whether an order is settled, so it can be anonymised: completed or cancelled, owing no refund, with no shipment still on its way.
+     * Whether an order is settled, so it can be anonymised: completed or cancelled, owing no refund, with no payment hold still to commit or release, and no shipment still on its way.
      */
     public function isSettled(Order $order): bool
     {
         return in_array($order->status, [OrderStatus::Completed, OrderStatus::Cancelled], true)
             && ! $order->refund_due
+            && ! $this->orderAmountHolds->hasUnsettledHolds($order)
             && ! $order->shipments()->whereIn('status', [ShipmentStatus::Pending->value, ShipmentStatus::ReadyForPickup->value, ShipmentStatus::Shipped->value])->exists();
     }
 
