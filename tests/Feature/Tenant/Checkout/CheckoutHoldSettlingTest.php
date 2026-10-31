@@ -15,6 +15,7 @@ use App\Tenant\Orders\Actions\CancelExpiredOrders;
 use App\Tenant\Orders\Events\OrderPaid;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Payments\Enums\PaymentMethod;
+use App\Tenant\Payments\Exceptions\RefundExceedsRefundableException;
 use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -184,7 +185,7 @@ it('makes a cancelled order unpaid again once the sweep releases the module hold
 
     // Paid in full while open, so it was a sale, and invoiced.
     $invoiced = orderTaxDocuments($order);
-    expect(orderAfterHolds($order))->toBe(['status' => 'cancelled', 'payment_status' => 'paid', 'paid' => true, 'refund_due' => true, 'holds' => [FakeGiftCardPaymentMethod::KEY => 'held']])
+    expect(orderAfterHolds($order))->toBe(['status' => 'cancelled', 'payment_status' => 'paid', 'paid' => true, 'refund_due' => false, 'holds' => [FakeGiftCardPaymentMethod::KEY => 'held']])
         ->and($invoiced['invoice'])->toMatchArray(['total' => $order->total->minorAmount()])
         ->and($invoiced['credit_notes'])->toBe([]);
 
@@ -209,6 +210,29 @@ it('makes a cancelled order unpaid again once the sweep releases the module hold
     // Swept again: nothing more to do, and still one credit note.
     $this->artisan('payments:check-pending')->assertSuccessful();
     expect(orderTaxDocuments($order)['credit_notes'])->toHaveCount(1);
+});
+
+it('shows a hold that was never taken on a cancelled order as release pending, not refund due, and refuses to refund it', function (): void {
+    $order = modulesOnlyOrderWhoseCommitFailed();
+
+    staffOrderRequest('GET', "/orders/{$order->public_id}", subdomain: 'cart-store')->assertOk()->assertJsonPath('data.release_pending', null);
+
+    cancelAsStaff($order);
+
+    staffOrderRequest('GET', "/orders/{$order->public_id}", subdomain: 'cart-store')->assertOk()
+        ->assertJsonPath('data.refund_due', false)
+        ->assertJsonPath('data.release_pending.amount', $order->total->minorAmount());
+
+    expect(orderAfterHolds($order)['refund_due'])->toBeFalse()
+        ->and(fn () => refundOrder($order, 1))->toThrow(RefundExceedsRefundableException::class)
+        ->and(fn () => refundOrder($order, shipping: true))->toThrow(RefundExceedsRefundableException::class);
+
+    // Released at last: nothing is waiting any more, and the gift card was never asked to refund.
+    FakeGiftCardPaymentMethod::$settleFailure = null;
+    $this->artisan('payments:check-pending')->assertSuccessful();
+
+    staffOrderRequest('GET', "/orders/{$order->public_id}", subdomain: 'cart-store')->assertOk()->assertJsonPath('data.refund_due', false)->assertJsonPath('data.release_pending', null);
+    expect(FakeGiftCardPaymentMethod::$steps)->toBe(['hold:'.$order->total->minorAmount(), "release:gc_{$order->public_id}"]);
 });
 
 it('keeps sweeping when recording one order\'s payments fails after its hold is released, records it on that hold, and records them the next hour', function (): void {
@@ -240,7 +264,7 @@ it('keeps sweeping when recording one order\'s payments fails after its hold is 
         ->and(orderAfterHolds($order))->toBe(['status' => 'cancelled', 'payment_status' => 'unpaid', 'paid' => false, 'refund_due' => false, 'holds' => [FakeGiftCardPaymentMethod::KEY => 'released']])
         ->and(orderTaxDocuments($order)['credit_notes'])->toHaveCount(1)
         // The other's hold is released for good (the gift card isn't asked twice), and why its order couldn't be recorded is on it.
-        ->and(orderAfterHolds($other))->toBe(['status' => 'cancelled', 'payment_status' => 'paid', 'paid' => true, 'refund_due' => true, 'holds' => [FakeGiftCardPaymentMethod::KEY => 'released']])
+        ->and(orderAfterHolds($other))->toBe(['status' => 'cancelled', 'payment_status' => 'paid', 'paid' => true, 'refund_due' => false, 'holds' => [FakeGiftCardPaymentMethod::KEY => 'released']])
         ->and(orderUpdateAfterHolds($other))->toBe([FakeGiftCardPaymentMethod::KEY => ['failure' => 'order_payments_not_recorded', 'failures' => 1]])
         ->and(orderTaxDocuments($other)['credit_notes'])->toBe([])
         // Logged with public IDs only.

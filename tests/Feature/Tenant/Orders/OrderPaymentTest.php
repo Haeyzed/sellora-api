@@ -123,7 +123,7 @@ it('never revives a cancelled order a payment arrives for: it stays cancelled, o
     Log::shouldHaveReceived('warning')->withArgs(static fn (string $message, array $context): bool => str_contains($message, 'cancelled order') && $context === ['order' => $order->public_id])->once();
 });
 
-it('lets staff cancel an open order before it ships, giving back its stock and promotion uses; a paid one then owes a refund', function (): void {
+it('lets staff cancel an open order before it ships, paid or not, giving back its stock and promotion uses', function (): void {
     Event::fake([OrderCancelled::class]);
 
     [$unpaid, $paid, $stock, $uses] = $this->store->run(function (): array {
@@ -140,7 +140,7 @@ it('lets staff cancel an open order before it ships, giving back its stock and p
 
     expect([$unpaid->status->value, $unpaid->refund_due, $unpaid->cancellation_reason?->value, $unpaid->cancelled_by_type, $unpaid->cancelled_by_id])->toBe(['cancelled', false, 'staff', 'staff_member', 'staff-1'])
         ->and($unpaid->events->last()?->only(['actor_type', 'actor_id', 'data']))->toEqual(['actor_type' => 'staff_member', 'actor_id' => 'staff-1', 'data' => ['from' => 'open', 'to' => 'cancelled', 'reason' => 'staff', 'refund_due' => false]])
-        ->and([$paid->status->value, $paid->payment_status->value, $paid->refund_due])->toBe(['cancelled', 'paid', true])
+        ->and([$paid->status->value, $paid->payment_status->value])->toBe(['cancelled', 'paid'])
         ->and([$stock->on_hand, $stock->reserved])->toBe([5, 0])
         ->and($uses)->toBe(['released', 'released']);
 

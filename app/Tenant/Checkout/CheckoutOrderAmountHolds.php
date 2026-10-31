@@ -25,6 +25,11 @@ final readonly class CheckoutOrderAmountHolds implements OrderAmountHolds
         return $this->sum($order, [PaymentHoldStatus::Committed, PaymentHoldStatus::Refunded]);
     }
 
+    public function pendingFor(Order $order): Money
+    {
+        return $this->sum($order, [PaymentHoldStatus::Held]);
+    }
+
     public function refundedFor(Order $order): Money
     {
         return $this->sum($order, [PaymentHoldStatus::Refunded]);

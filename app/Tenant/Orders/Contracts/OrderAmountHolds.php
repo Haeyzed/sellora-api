@@ -23,6 +23,11 @@ interface OrderAmountHolds
     public function takenFor(Order $order): Money;
 
     /**
+     * What they still hold without having taken it: nothing can be refunded from it, and on a cancelled order it waits to be released.
+     */
+    public function pendingFor(Order $order): Money;
+
+    /**
      * What of that they gave back once the order was cancelled; in the order's currency.
      */
     public function refundedFor(Order $order): Money;

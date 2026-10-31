@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Tenant\Orders\Http\Resources;
 
 use App\Shared\Money\MoneyResource;
+use App\Tenant\Orders\Contracts\OrderAmountHolds;
 use App\Tenant\Orders\Enums\OrderAddressKind;
+use App\Tenant\Orders\Enums\OrderStatus;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Orders\Models\OrderAddress;
 use App\Tenant\Orders\Models\OrderDiscount;
@@ -49,8 +51,10 @@ final class OrderResource extends JsonResource
             'pay_on_delivery' => $order->pay_on_delivery,
             /** "unfulfilled", "partially_fulfilled", "fulfilled", or "not_required" when nothing ships. */
             'fulfilment_status' => $order->fulfilment_status->value,
-            /** True for a cancelled order whose payment is owed back. */
+            /** True for a cancelled order holding money really taken, which is owed back. */
             'refund_due' => $order->refund_due,
+            /** What a payment method chosen at checkout still holds for a cancelled order without having taken it, such as a gift card that couldn't be reached. It is released by itself and can't be refunded. Null when nothing is waiting. */
+            'release_pending' => self::releasePending($order),
             /** True when more was refunded than was paid, such as a refund that went through after the gateway said it failed. */
             'refunded_beyond_paid' => $order->refunded_beyond_paid,
             /** The account it belongs to; null for a guest order. */
@@ -142,6 +146,17 @@ final class OrderResource extends JsonResource
             /** "staff", "customer" or "payment_expired"; null unless cancelled. */
             'cancellation_reason' => $order->cancellation_reason?->value,
         ];
+    }
+
+    private static function releasePending(Order $order): ?MoneyResource
+    {
+        if ($order->status !== OrderStatus::Cancelled) {
+            return null;
+        }
+
+        $pending = app(OrderAmountHolds::class)->pendingFor($order);
+
+        return $pending->isZero() ? null : new MoneyResource($pending);
     }
 
     /**

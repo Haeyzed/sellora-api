@@ -75,6 +75,12 @@ Order amounts and copies are financial records and are never overwritten.
    payment method held (a gift card whose commit failed) and then cancelled
    drops back to unpaid once that hold is released. It loses its paid date,
    owes nothing, and its invoice is credited in full.
+
+   Staff see the two kinds of money on a cancelled order separately. Refund
+   due (`refund_due`) counts only money really taken: payments received, and
+   what a method made final. Release pending (`release_pending`) is what a
+   method still holds without having taken it. It can't be refunded, because
+   nothing was taken; the hourly sweep releases it.
 7. After delivery, the buyer can send units back through
    [Returns](returns.md), which refunds them through Payments and puts them
    back on the shelf through Inventory; the order itself stays as it was.

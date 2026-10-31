@@ -14,6 +14,7 @@ use App\Tenant\Orders\Events\OrderRefundedBeyondPaid;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Orders\Services\OrderEventLog;
 use App\Tenant\Orders\Services\OrderProgress;
+use App\Tenant\Orders\Services\OrderRefundOwed;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -39,6 +40,7 @@ final readonly class RecordOrderPayments
         private OrderEventLog $orderEventLog,
         private MarkOrderAsPaid $markOrderAsPaid,
         private OrderAmountHolds $orderAmountHolds,
+        private OrderRefundOwed $orderRefundOwed,
         private IssueCreditNote $issueCreditNote,
     ) {}
 
@@ -50,9 +52,7 @@ final readonly class RecordOrderPayments
             $refundedInAll = $refunded->add($this->orderAmountHolds->refundedFor($locked));
             // What methods chosen at checkout hold for it (such as a gift card) counts as paid, and what they gave back as refunded.
             $status = OrderPaymentStatus::forAmounts($locked->total, $paid->add($this->orderAmountHolds->heldFor($locked)), $refundedInAll);
-            // A cancelled order owes back only money really taken (payments, and what methods made final), not what a method merely holds.
-            $owes = $locked->status === OrderStatus::Cancelled
-                && OrderPaymentStatus::forAmounts($locked->total, $paid->add($this->orderAmountHolds->takenFor($locked)), $refundedInAll)->holdsMoney();
+            $owes = $locked->status === OrderStatus::Cancelled && $this->orderRefundOwed->given($locked, $paid, $refunded);
 
             if ($status === $locked->payment_status && ($locked->status !== OrderStatus::Cancelled || $owes === $locked->refund_due)) {
                 return $locked;

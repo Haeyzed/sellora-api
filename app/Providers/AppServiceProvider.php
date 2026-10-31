@@ -159,6 +159,7 @@ use App\Tenant\Inventory\Models\StockReservation;
 use App\Tenant\Inventory\SettledReservationRetention;
 use App\Tenant\Inventory\StockLedgerReconciliation;
 use App\Tenant\Orders\Contracts\OrderAmountHolds;
+use App\Tenant\Orders\Contracts\OrderPaymentAmounts;
 use App\Tenant\Orders\Contracts\PaymentCheckBeforeExpiry;
 use App\Tenant\Orders\Contracts\RefundsAwaitingCreditNotes;
 use App\Tenant\Orders\Contracts\ShipmentDrivers;
@@ -206,6 +207,7 @@ use App\Tenant\Payments\Models\PaymentMethodSetting;
 use App\Tenant\Payments\Models\PaymentRefund;
 use App\Tenant\Payments\Models\Refund;
 use App\Tenant\Payments\PaymentGatewayRegistry;
+use App\Tenant\Payments\PaymentsOrderAmounts;
 use App\Tenant\Payments\PaymentStoreTables;
 use App\Tenant\Payments\PaymentWebhookEventRetention;
 use App\Tenant\Payments\PaymentWebhookPayloadRetention;
@@ -317,6 +319,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(StoreSocialSignInRoutes::class, SocialSignInRoutes::class);
         $this->app->bind(RefundsAwaitingCreditNotes::class, RefundCredits::class);
         $this->app->bind(OrderAmountHolds::class, CheckoutOrderAmountHolds::class);
+        $this->app->bind(OrderPaymentAmounts::class, PaymentsOrderAmounts::class);
         $this->app->bind(StockLocationSelector::class, DefaultStockLocationSelector::class);
         // One list of country tax plug-ins, filled in by modules' and integrations' service providers.
         $this->app->singleton(TaxCalculatorRegistry::class);

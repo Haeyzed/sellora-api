@@ -23,6 +23,7 @@ use App\Tenant\Orders\Models\Order;
 use App\Tenant\Orders\Services\OrderActivity;
 use App\Tenant\Orders\Services\OrderEventLog;
 use App\Tenant\Orders\Services\OrderProgress;
+use App\Tenant\Orders\Services\OrderRefundOwed;
 use App\Tenant\Promotions\Actions\SettlePromotionUses;
 use App\Tenant\Promotions\Data\RedemptionHolder;
 use Carbon\CarbonImmutable;
@@ -31,8 +32,9 @@ use Illuminate\Support\Facades\DB;
 /**
  * Cancels an open order before anything has shipped, giving back the stock it holds and its promotion uses, and cancelling its shipments that haven't left (section 13).
  *
- * Staff may cancel a paid order too: it is then marked as owing a refund,
- * which Payments makes (Step 15). Its customer may cancel only before paying.
+ * Staff may cancel a paid order too: it is then marked as owing a refund of
+ * the money really taken, which Payments makes (Step 15). Its customer may
+ * cancel only before paying.
  * Unpaid orders are also cancelled when their payment deadline passes
  * (expire()). Once anything has shipped, returns (Step 18) take over.
  */
@@ -44,6 +46,7 @@ final readonly class CancelOrder
         private ReleaseReservation $releaseReservation,
         private SettlePromotionUses $settlePromotionUses,
         private OrderActivity $orderActivity,
+        private OrderRefundOwed $orderRefundOwed,
     ) {}
 
     /**
@@ -188,7 +191,8 @@ final readonly class CancelOrder
             'cancellation_reason' => $reason,
             'cancelled_by_type' => $actor?->type,
             'cancelled_by_id' => $actor?->publicId,
-            'refund_due' => $locked->payment_status->holdsMoney(),
+            // Only money really taken: what a method merely holds is released, not refunded.
+            'refund_due' => $this->orderRefundOwed->now($locked),
         ])->save();
 
         $this->orderEventLog->record($locked, OrderEventType::Cancelled, ['from' => OrderStatus::Open->value, 'to' => OrderStatus::Cancelled->value, 'reason' => $reason->value, 'refund_due' => $locked->refund_due], $actor);
