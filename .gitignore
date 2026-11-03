@@ -27,4 +27,5 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 /api-docs
+/scripts/output
 /lang/*.zip
