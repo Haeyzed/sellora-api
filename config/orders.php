@@ -74,9 +74,9 @@ return [
     |--------------------------------------------------------------------------
     |
     | The daily check of invoices against the sale money kept leaves out orders
-    | changed within this many minutes: a credit note still on its way would
-    | read as a mismatch. It has to outlast the missing documents' grace, or
-    | the sweep wouldn't have had its chance.
+    | whose money changed within this many minutes: a credit note still on its
+    | way would read as a mismatch. It has to outlast the missing documents'
+    | grace, or the sweep wouldn't have had its chance.
     |
     */
 

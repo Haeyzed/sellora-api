@@ -22,6 +22,7 @@ use App\Tenant\Orders\Jobs\IssueOrderInvoice;
 use App\Tenant\Orders\Models\CreditNote;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Orders\Privacy\OrderPrivacy;
+use App\Tenant\Payments\Actions\RecalculateOrderPayments;
 use App\Tenant\Payments\Enums\PaymentMethod;
 use App\Tenant\Payments\Exceptions\RefundExceedsRefundableException;
 use App\Tenant\Payments\Jobs\CheckPaymentWithGateway;
@@ -29,6 +30,7 @@ use App\Tenant\Payments\Jobs\CheckRefundWithGateway;
 use App\Tenant\Payments\Jobs\IssueRefundCreditNote;
 use App\Tenant\Payments\Models\Payment;
 use Illuminate\Log\Events\MessageLogged;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Exceptions;
@@ -479,6 +481,90 @@ it('keeps sweeping when recording one order\'s payments fails after its hold is 
         ->and(orderUpdateAfterHolds($other))->toBe([FakeGiftCardPaymentMethod::KEY => ['failure' => null, 'failures' => 1]])
         ->and(orderTaxDocuments($other)['credit_notes'])->toHaveCount(1)
         ->and(FakeGiftCardPaymentMethod::$steps)->toHaveCount(4);
+});
+
+it('still reports an order whose payments fail to record every hour once the grace period ends, though other changes keep touching it', function (): void {
+    Exceptions::fake();
+    $order = modulesOnlyOrderWhoseCommitFailed();
+    cancelAsStaff($order);
+    Order::updating(static function (Order $saving) use ($order): void {
+        if ($saving->id === $order->id) {
+            DB::table('orders')->where('id', $order->id)->update(['payment_status' => 'no_such_status']);
+        }
+    });
+    FakeGiftCardPaymentMethod::$settleFailure = null;
+    $releasedAt = now()->addMinute()->startOfMinute();
+    $this->travelTo($releasedAt);
+    $this->artisan('payments:check-pending')->assertSuccessful();
+    $changed = orderMoneyChangedAt($order);
+    $hourlyRun = function (int $minutes) use ($order, $releasedAt): void {
+        $this->travelTo($releasedAt->copy()->addMinutes($minutes));
+        $this->artisan('payments:check-pending')->assertSuccessful();
+        // Something that isn't money, such as a shipment moving.
+        $this->store->run(static fn () => DB::table('orders')->where('id', $order->id)->update(['updated_at' => now()]));
+    };
+
+    $hourlyRun(59);
+    expect(Artisan::call('orders:reconcile-invoices'))->toBe(0);
+
+    $hourlyRun(60);
+
+    expect(Artisan::call('orders:reconcile-invoices'))->toBe(1)
+        ->and(Artisan::output())->toContain($order->public_id)
+        ->and(orderMoneyChangedAt($order))->toBe($changed)
+        ->and($changed)->toBe($releasedAt->toIso8601String())
+        ->and(orderUpdateAfterHolds($order)[FakeGiftCardPaymentMethod::KEY]['failures'])->toBe(3);
+});
+
+it('counts a hold made final or given back as its order\'s money changing, even when the order can\'t be recorded', function (): void {
+    $committed = modulesOnlyOrderWhoseCommitFailed();
+    expect(orderMoneyChangedAt($committed))->not->toBeNull();
+    $this->travelTo(now()->addHour()->startOfSecond());
+    FakeGiftCardPaymentMethod::$settleFailure = null;
+    $this->artisan('payments:check-pending')->assertSuccessful();
+    expect(orderMoneyChangedAt($committed))->toBe(now()->toIso8601String());
+
+    Exceptions::fake();
+    $givenBack = modulesOnlyOrderWhoseCommitFailed(withWallet: true);
+    Order::updating(static function (Order $saving) use ($givenBack): void {
+        if ($saving->id === $givenBack->id && $saving->getOriginal('status')?->value === 'cancelled') {
+            DB::table('orders')->where('id', $givenBack->id)->update(['payment_status' => 'no_such_status']);
+        }
+    });
+    $this->travelTo(now()->addHour()->startOfSecond());
+    cancelAsStaff($givenBack);
+
+    expect(orderUpdateAfterHolds($givenBack)[FakeWalletPaymentMethod::KEY]['failure'])->toBe('order_payments_not_recorded')
+        ->and(orderMoneyChangedAt($givenBack))->toBe(now()->toIso8601String());
+});
+
+it('leaves when money last changed alone when recording again moves nothing, and counts it once recording finally moves the status', function (): void {
+    Exceptions::fake();
+    $order = modulesOnlyOrderWhoseCommitFailed();
+    cancelAsStaff($order);
+    $breaks = true;
+    Order::updating(static function (Order $saving) use (&$breaks, $order): void {
+        if ($breaks && $saving->id === $order->id) {
+            DB::table('orders')->where('id', $order->id)->update(['payment_status' => 'no_such_status']);
+        }
+    });
+    FakeGiftCardPaymentMethod::$settleFailure = null;
+    $this->artisan('payments:check-pending')->assertSuccessful();
+    $changed = orderMoneyChangedAt($order);
+
+    // The recording finally works, an hour on: the status moves, so that is a change.
+    $breaks = false;
+    $this->travelTo(now()->addHour()->startOfSecond());
+    $this->artisan('payments:check-pending')->assertSuccessful();
+    $recorded = orderMoneyChangedAt($order);
+    expect(orderAfterHolds($order))->toMatchArray(['payment_status' => 'unpaid'])
+        ->and($recorded)->not->toBe($changed)->toBe(now()->toIso8601String());
+
+    // Recorded again, an hour on, with nothing different: no change.
+    $this->travelTo(now()->addHour()->startOfSecond());
+    $this->store->run(static fn () => app(RecalculateOrderPayments::class)->handle($order->refresh()));
+
+    expect(orderMoneyChangedAt($order))->toBe($recorded);
 });
 
 it('alerts staff exactly once when recording an order\'s payments keeps failing, and keeps trying every hour after', function (): void {

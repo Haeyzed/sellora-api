@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
- * Recalculates, for every invoiced order in the store, that its invoice less its credit notes equals the sale money kept, and reports each that doesn't. Orders changed within the grace period are left for the next run: a credit note still on its way (a refund that went back moments ago) would read as a mismatch.
+ * Recalculates, for every invoiced order in the store, that its invoice less its credit notes equals the sale money kept, and reports each that doesn't. Orders whose money changed within the grace period are left for the next run: a credit note still on its way (a refund that went back moments ago) would read as a mismatch. Any other change to an order, or a retry that moved nothing, never holds it back.
  */
 final readonly class InvoiceBalanceReconciliation implements StoreInvoiceBalances
 {
@@ -25,7 +25,7 @@ final readonly class InvoiceBalanceReconciliation implements StoreInvoiceBalance
         $mismatches = [];
         $settledBy = CarbonImmutable::now()->subMinutes(config()->integer('orders.reconcile_grace_minutes'));
 
-        Invoice::query()->whereHas('order', static fn (Builder $order): Builder => $order->where('updated_at', '<=', $settledBy))->with('order')->chunkById(200, function (Collection $invoices) use (&$mismatches): void {
+        Invoice::query()->whereHas('order', static fn (Builder $order): Builder => $order->where(static fn (Builder $settled): Builder => $settled->whereNull('money_changed_at')->orWhere('money_changed_at', '<=', $settledBy)))->with('order')->chunkById(200, function (Collection $invoices) use (&$mismatches): void {
             $credited = CreditNote::query()->whereIn('invoice_id', $invoices->modelKeys())->groupBy('invoice_id')->selectRaw('invoice_id, sum(total_amount) as credited')->pluck('credited', 'invoice_id');
 
             foreach ($invoices as $invoice) {

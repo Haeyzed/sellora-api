@@ -50,7 +50,7 @@ final readonly class MarkOrderAsPaid
             }
 
             $from = $locked->payment_status;
-            $locked->forceFill(['payment_status' => OrderPaymentStatus::Paid, 'paid_at' => $paidAt ?? CarbonImmutable::now()]);
+            $locked->forceFill(['payment_status' => OrderPaymentStatus::Paid, 'paid_at' => $paidAt ?? CarbonImmutable::now(), 'money_changed_at' => CarbonImmutable::now()]);
 
             if ($locked->status === OrderStatus::Cancelled) {
                 return $this->owedBack($locked);

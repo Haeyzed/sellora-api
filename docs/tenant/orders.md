@@ -83,8 +83,11 @@ Order amounts and copies are financial records and are never overwritten.
    were never part of the sale, so they don't count. A daily check
    (`orders:reconcile-invoices`) recalculates this for every invoiced order in
    every store and reports each mismatch by public ID. It only reports. Orders
-   changed within `orders.reconcile_grace_minutes` (60 by default) wait for the
-   next run, so a refund whose credit note is still on its way isn't reported.
+   whose money changed within `orders.reconcile_grace_minutes` (60 by default)
+   wait for the next run, so a refund whose credit note is still on its way
+   isn't reported. The grace counts from when money last moved: a payment, a
+   refund, a hold settled or given back, or a new payment status. A retry that
+   moves nothing, or any other change to the order, doesn't restart it.
 
    Staff see the two kinds of money on a cancelled order separately. Refund
    due (`refund_due`) counts only money really taken: payments received, and

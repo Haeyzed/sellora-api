@@ -40,6 +40,7 @@ final readonly class RecordOrderPayments
         private MarkOrderAsPaid $markOrderAsPaid,
         private OrderAmountHolds $orderAmountHolds,
         private OrderRefundOwed $orderRefundOwed,
+        private RecordOrderMoneyChange $recordOrderMoneyChange,
     ) {}
 
     public function handle(Order $order, Money $paid, Money $refunded): Order
@@ -53,9 +54,6 @@ final readonly class RecordOrderPayments
             $owes = $locked->status === OrderStatus::Cancelled && $this->orderRefundOwed->given($locked, $paid, $refunded);
 
             if ($status === $locked->payment_status && ($locked->status !== OrderStatus::Cancelled || $owes === $locked->refund_due)) {
-                // Nothing to show for it, but its money moved: another partial refund is a change the invoice check must wait out.
-                $locked->touch();
-
                 return $locked;
             }
 
@@ -78,6 +76,7 @@ final readonly class RecordOrderPayments
             $locked->save();
 
             if ($status !== $from) {
+                $this->recordOrderMoneyChange->handle($locked->id);
                 $this->orderEventLog->record($locked, OrderEventType::PaymentStatusChanged, ['from' => $from->value, 'to' => $status->value]);
             }
 

@@ -145,6 +145,14 @@ function splitOrderTaxesIntoTwoRates(Order $order): void
 }
 
 /**
+ * When an order's money last changed, in ISO 8601; null when it never has.
+ */
+function orderMoneyChangedAt(Order $order): ?string
+{
+    return test()->store->run(static fn (): ?string => Order::query()->whereKey($order->id)->sole()->money_changed_at?->toIso8601String());
+}
+
+/**
  * Runs the invoice check once every order is past its grace period, as the daily run finds them, and returns its exit code.
  */
 function reconcileInvoicesPastGrace(): int

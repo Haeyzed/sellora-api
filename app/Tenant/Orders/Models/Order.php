@@ -48,6 +48,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property FulfilmentStatus $fulfilment_status
  * @property bool $refund_due Cancelled, holding money really taken: it is owed back. What a method only holds doesn't count.
  * @property bool $refunded_beyond_paid More was refunded than was paid, such as a refund that went through after the gateway said it failed: staff should look at it.
+ * @property CarbonImmutable|null $money_changed_at When its money last changed; a retry that moved nothing leaves it. Null until money first moves.
  * @property int|null $customer_id Null for a guest order not linked to an account.
  * @property string|null $contact_email In lower case, as given at checkout; null once anonymised.
  * @property string|null $contact_name
@@ -297,6 +298,7 @@ final class Order extends Model implements AuditableContract
             'placed_at' => 'immutable_datetime',
             'payment_due_at' => 'immutable_datetime',
             'paid_at' => 'immutable_datetime',
+            'money_changed_at' => 'immutable_datetime',
             'fulfilled_at' => 'immutable_datetime',
             'completed_at' => 'immutable_datetime',
             'cancelled_at' => 'immutable_datetime',

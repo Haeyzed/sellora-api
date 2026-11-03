@@ -18,6 +18,8 @@ use App\Tenant\Orders\Models\Order;
 use App\Tenant\Orders\Models\OrderLine;
 use App\Tenant\Orders\Models\Shipment;
 use App\Tenant\Payments\Enums\PaymentMethod;
+use App\Tenant\Payments\Events\PaymentFailed;
+use App\Tenant\Payments\Events\PaymentNeedsReview;
 use App\Tenant\Payments\Jobs\CheckPaymentWithGateway;
 use App\Tenant\Payments\Jobs\CheckRefundWithGateway;
 use App\Tenant\Payments\Jobs\IssueRefundCreditNote;
@@ -162,15 +164,15 @@ it('reports by public ID any invoice that, less its credit notes, doesn\'t equal
         ->and(Artisan::output())->toContain($order->public_id)->toContain($invoiceId)->toContain(($total - 1000).' left on the invoice, '.$total.' kept')->not->toContain('ada@example.com');
 });
 
-it('leaves an order changed within the grace period for the next check, and reports it from the minute that period ends', function (): void {
+it('leaves an order whose money changed within the grace period for the next check, and reports it from the minute that period ends', function (): void {
     [$order] = gatewayPaidOrder();
     $changedAt = now()->startOfMinute();
 
-    // Planted directly: a credit note with no money given back behind it, on an order changed at a known minute.
+    // Planted directly: a credit note with no money given back behind it, on an order whose money changed at a known minute.
     $this->store->run(static function () use ($order, $changedAt): void {
         $zero = Money::zero($order->currency);
         app(IssueCreditNote::class)->handle(new CreditRequest($order->id, 'planted', 'planted-refund', Money::ofMinor(1000, $order->currency), [], $zero, Money::ofMinor(1000, $order->currency)));
-        DB::table('orders')->where('id', $order->id)->update(['updated_at' => $changedAt]);
+        DB::table('orders')->where('id', $order->id)->update(['money_changed_at' => $changedAt]);
     });
 
     $this->travelTo($changedAt->copy()->addMinutes(59)->addSeconds(59));
@@ -179,6 +181,69 @@ it('leaves an order changed within the grace period for the next check, and repo
     $this->travelTo($changedAt->copy()->addMinutes(60));
     expect(Artisan::call('orders:reconcile-invoices'))->toBe(1)
         ->and(Artisan::output())->toContain($order->public_id);
+});
+
+it('checks an invoice at once when its order shows no money ever moving', function (): void {
+    [$order] = gatewayPaidOrder();
+    $this->store->run(static function () use ($order): void {
+        $zero = Money::zero($order->currency);
+        app(IssueCreditNote::class)->handle(new CreditRequest($order->id, 'planted', 'planted-refund', Money::ofMinor(1000, $order->currency), [], $zero, Money::ofMinor(1000, $order->currency)));
+        DB::table('orders')->where('id', $order->id)->update(['money_changed_at' => null]);
+    });
+
+    expect(Artisan::call('orders:reconcile-invoices'))->toBe(1);
+});
+
+it('restarts the grace period when money really changes on an order already reported', function (): void {
+    Queue::fake([IssueRefundCreditNote::class]);
+    [$order] = gatewayPaidOrder();
+    $this->store->run(static function () use ($order): void {
+        $zero = Money::zero($order->currency);
+        app(IssueCreditNote::class)->handle(new CreditRequest($order->id, 'planted', 'planted-refund', Money::ofMinor(1000, $order->currency), [], $zero, Money::ofMinor(1000, $order->currency)));
+    });
+    expect(reconcileInvoicesPastGrace())->toBe(1);
+
+    refundOrder($order, 500);
+    $this->travel(59)->minutes();
+    expect(Artisan::call('orders:reconcile-invoices'))->toBe(0);
+
+    $this->travel(1)->minutes();
+    expect(Artisan::call('orders:reconcile-invoices'))->toBe(1);
+});
+
+it('counts a payment that failed or went to review as its order\'s money changing', function (string $event): void {
+    [$order, $payment] = manuallyPaidOrder(PaymentMethod::BankTransfer);
+    $this->travelTo(now()->addHour()->startOfSecond());
+
+    $this->store->run(static fn () => $event::dispatch($payment));
+
+    expect(orderMoneyChangedAt($order))->toBe(now()->toIso8601String());
+})->with([PaymentFailed::class, PaymentNeedsReview::class]);
+
+it('fills in when money last changed on orders from before it was kept, from their own records, and leaves it empty where none moved', function (): void {
+    [$refunded] = gatewayPaidOrder();
+    refundOrder($refunded, 1000);
+    $unpaid = $this->store->run(static fn (): Order => unpaidOrder(5000));
+
+    [$kept, $changes] = $this->store->run(static function () use ($refunded, $unpaid): array {
+        $migration = require database_path('migrations/tenant/2026_11_01_100000_add_money_changed_at_to_orders.php');
+        $refundedAt = CarbonImmutable::now()->addDay()->startOfSecond();
+        DB::statement('alter table payment_refunds disable trigger user');
+        DB::table('payment_refunds')->update(['succeeded_at' => $refundedAt]);
+        DB::statement('alter table payment_refunds enable trigger user');
+        $migration->down();
+        // A change that isn't money: it must not stand in for when money moved.
+        DB::table('orders')->update(['updated_at' => $refundedAt->addDay()]);
+
+        $migration->up();
+
+        return [
+            $refundedAt->toIso8601String(),
+            [Order::query()->whereKey($refunded->id)->sole()->money_changed_at?->toIso8601String(), Order::query()->whereKey($unpaid->id)->sole()->money_changed_at],
+        ];
+    });
+
+    expect($changes)->toBe([$kept, null]);
 });
 
 it('counts another partial refund as a change, though the payment status stays the same', function (): void {

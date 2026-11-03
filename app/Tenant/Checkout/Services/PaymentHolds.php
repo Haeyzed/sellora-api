@@ -14,6 +14,7 @@ use App\Tenant\Checkout\Events\PaymentHoldKeepsFailing;
 use App\Tenant\Checkout\Exceptions\OrderPaymentsNotRecordedException;
 use App\Tenant\Checkout\Models\CheckoutPaymentHold;
 use App\Tenant\Orders\Actions\IssueCreditNote;
+use App\Tenant\Orders\Actions\RecordOrderMoneyChange;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Payments\Actions\RecalculateOrderPayments;
 use Carbon\CarbonImmutable;
@@ -37,6 +38,7 @@ final readonly class PaymentHolds
         private CheckoutExtensions $checkoutExtensions,
         private RecalculateOrderPayments $recalculateOrderPayments,
         private IssueCreditNote $issueCreditNote,
+        private RecordOrderMoneyChange $recordOrderMoneyChange,
     ) {}
 
     /**
@@ -219,7 +221,7 @@ final readonly class PaymentHolds
             return false;
         }
 
-        return DB::transaction(static function () use ($hold): bool {
+        return DB::transaction(function () use ($hold): bool {
             $locked = CheckoutPaymentHold::query()->whereKey($hold->id)->lockForUpdate()->firstOrFail();
 
             if ($locked->status !== PaymentHoldStatus::Committed) {
@@ -227,6 +229,7 @@ final readonly class PaymentHolds
             }
 
             $locked->forceFill(['status' => PaymentHoldStatus::Refunded, 'refunded_at' => CarbonImmutable::now(), 'refund_failed_at' => null, 'refund_failure' => null])->save();
+            $this->recordOrderMoneyChange->handle($locked->order_id);
 
             return true;
         });
@@ -318,6 +321,7 @@ final readonly class PaymentHolds
             'settle_failure' => null,
             ...($recovered ? ['settle_recovered_at' => CarbonImmutable::now()] : []),
         ])->save();
+        $this->recordOrderMoneyChange->handle($hold->order_id);
 
         if ($recovered) {
             Log::info('A payment hold that had failed to settle is now settled.', ['order' => $hold->order->public_id, 'method' => $hold->method, 'status' => $to->value, 'tries_failed' => $hold->settle_failures]);
