@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tenant\Checkout\Exceptions;
 
-use App\Shared\Exceptions\DomainException;
-use Illuminate\Database\QueryException;
+use App\Shared\Exceptions\ErrorScrubber;
 use RuntimeException;
 use Throwable;
 
@@ -33,22 +32,6 @@ final class OrderPaymentsNotRecordedException extends RuntimeException
      */
     public static function after(Throwable $exception, string $order, array $holds): self
     {
-        return new self($order, $holds, self::describe($exception));
-    }
-
-    /**
-     * What went wrong, without personal data.
-     */
-    public static function describe(Throwable $exception): string
-    {
-        if ($exception instanceof QueryException) {
-            $sqlState = (string) ($exception->errorInfo[0] ?? $exception->getCode());
-            // Only the constraint's name: the rest of the message can quote values.
-            $constraint = preg_match('/constraint "([A-Za-z0-9_]+)"/', (string) ($exception->errorInfo[2] ?? ''), $matches) === 1 ? " on constraint {$matches[1]}" : '';
-
-            return "database error SQLSTATE[{$sqlState}]{$constraint}";
-        }
-
-        return $exception instanceof DomainException ? $exception->errorCode() : $exception::class;
+        return new self($order, $holds, ErrorScrubber::describe($exception));
     }
 }

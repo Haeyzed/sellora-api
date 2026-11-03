@@ -15,6 +15,7 @@ use App\Landlord\Tenancy\Console\SendPurgeRemindersCommand;
 use App\Landlord\Tenancy\Console\SyncPermissionsCommand;
 use App\Shared\Database\SchemaReferenceCommand;
 use App\Shared\Exceptions\ApiErrorRenderer;
+use App\Shared\Exceptions\ErrorScrubber;
 use App\Shared\Features\Http\Middleware\EnsureIntegrationIsEnabled;
 use App\Shared\Features\Http\Middleware\EnsureModuleIsEnabled;
 use App\Shared\Geography\ListSubdivisionChangesCommand;
@@ -33,6 +34,10 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Support\Facades\Route;
 use Symfony\Component\HttpFoundation\Response;
+
+// Errors record no function arguments in their stack traces, which logs and error tracking print and
+// which can hold a buyer's details. Set here so every entry point has it, whatever php.ini says.
+ini_set('zend.exception_ignore_args', '1');
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -103,6 +108,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo(null);
     })
     ->withExceptions(static function (Exceptions $exceptions): void {
+        // Every error reported or shown, whether through report() or uncaught, loses a database error's details first.
+        $exceptions->map(static fn (Throwable $exception): Throwable => ErrorScrubber::scrub($exception));
         $exceptions->render(static fn (Throwable $exception): Response => app(ApiErrorRenderer::class)->render($exception));
     })->create()
     // Every config file in config/ is complete. Merging Laravel's defaults would

@@ -19,8 +19,9 @@ use Throwable;
  *
  * The shape is {"message": "...", "code": "...", "errors": {...}}: a translated
  * message for people, a stable code for programs, and field errors for
- * validation. Internal details (stack traces, SQL, file paths) are only
- * included when debugging is switched on, which is never the case in production.
+ * validation. Internal details (the error's class, message and file) are only
+ * included when debugging is switched on, which is never the case in
+ * production, and even then a database error's SQL and values are not.
  */
 final class ApiErrorRenderer
 {
@@ -70,7 +71,8 @@ final class ApiErrorRenderer
             ...(array) $response->getData(true),
             'debug' => [
                 'exception' => $exception::class,
-                'message' => $exception->getMessage(),
+                // Errors arrive scrubbed already; scrubbed again so this never depends on that.
+                'message' => ErrorScrubber::scrub($exception)->getMessage(),
                 'file' => $exception->getFile().':'.$exception->getLine(),
             ],
         ]);
