@@ -30,6 +30,7 @@ use App\Shared\Auth\ExpiredPasswordResetTokenRetention;
 use App\Shared\Auth\Models\Role;
 use App\Shared\Auth\TwoFactor\TwoFactorChallenges;
 use App\Shared\Exceptions\ApiErrorResponseDocumentation;
+use App\Shared\Exceptions\ScrubbedFailedJobProvider;
 use App\Shared\Features\Contracts\FeatureSource;
 use App\Shared\Features\FeatureRegistry;
 use App\Shared\Geography\AddressFormats;
@@ -49,6 +50,7 @@ use App\Shared\Privacy\StoreExportRegistry;
 use App\Shared\Retention\Policies\ActivityLogRetention;
 use App\Shared\Retention\Policies\AuditRetention;
 use App\Shared\Retention\Policies\ExpiredAccessTokenRetention;
+use App\Shared\Retention\Policies\FailedJobRetention;
 use App\Shared\Retention\RetentionRegistry;
 use App\Shared\Tenancy\Contracts\StoreAccountNotifications;
 use App\Shared\Tenancy\Contracts\StoreClosure;
@@ -277,6 +279,8 @@ use Illuminate\Contracts\Validation\UncompromisedVerifier;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Client\Factory as HttpFactory;
+use Illuminate\Queue\Failed\DatabaseUuidFailedJobProvider;
+use Illuminate\Queue\Failed\FailedJobProviderInterface;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
@@ -339,6 +343,17 @@ final class AppServiceProvider extends ServiceProvider
         // Per request or job: it remembers the formats it has read.
         $this->app->scoped(AddressFormats::class);
         $this->registerDiscountSources();
+        $this->scrubFailedJobErrors();
+    }
+
+    /**
+     * Failed queued jobs are saved with their error scrubbed, as reported errors are: the queue worker saves the error as it was thrown.
+     */
+    private function scrubFailedJobErrors(): void
+    {
+        $this->app->extend('queue.failer', static fn (FailedJobProviderInterface $failedJobs, Application $app): FailedJobProviderInterface => $failedJobs instanceof DatabaseUuidFailedJobProvider
+            ? new ScrubbedFailedJobProvider($app->make('db'), config()->string('queue.failed.database'), config()->string('queue.failed.table'))
+            : $failedJobs);
     }
 
     /**
@@ -579,6 +594,7 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(TaxDocumentRetention::class);
             $registry->register(PaymentWebhookPayloadRetention::class);
             $registry->register(PaymentWebhookEventRetention::class);
+            $registry->register(FailedJobRetention::class);
 
             return $registry;
         });

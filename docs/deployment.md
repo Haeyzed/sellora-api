@@ -34,6 +34,11 @@ so money never waits behind bulk work:
 php artisan queue:work --queue=payments,default,bulk
 ```
 
+A job that fails every try is kept in the central `failed_jobs` table, from
+every store, with its error scrubbed of a database error's SQL and values.
+The daily retention purge deletes it after 30 days
+(`RETENTION_FAILED_JOBS_DAYS`), because the job's own data can name a buyer.
+
 ## Scheduler
 
 Run `php artisan schedule:run` every minute (retention purges, purge

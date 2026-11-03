@@ -66,6 +66,8 @@ return [
         'payment_webhook_payloads' => (int) env('RETENTION_PAYMENT_WEBHOOK_PAYLOADS_DAYS', 30),
         // Gateways stop resending an event long before this.
         'payment_webhook_events' => (int) env('RETENTION_PAYMENT_WEBHOOK_EVENTS_DAYS', 180),
+        // Queued jobs that failed every try, from every store; each keeps the job's data, which can name a buyer.
+        'failed_jobs' => (int) env('RETENTION_FAILED_JOBS_DAYS', 30),
     ],
 
     /*
