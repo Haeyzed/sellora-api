@@ -36,7 +36,7 @@ merged into `main` by fast-forward:
 | `handover-scripts` | **Not merged, waiting for the owner's review.** Three commits on `main`: `c3ad6db` caps how many refund parts one sweep run checks (`orders.credit_note_checks_per_run`); `fffe4e7` adds [scripts/](../scripts); the third adds this file and the setup steps in the [documentation home](README.md) |
 | `step-10-customers` to `step-18-returns`, `step-10b-social-sign-in`, `step-15b-invoices`, `step-16b-paystack` | Merged; kept on GitHub |
 | `docs-schema-comments`, `fix-token-links`, `fix-payment-holds` | Merged; kept on GitHub |
-| `ci-proof-docs`, `ci-proof-pint`, `ci-proof-stan` | Local only, on the old laptop, and deleted from GitHub. Each breaks one CI check on purpose, to prove CI catches it. Throwaway: never merge them, nothing is lost without them |
+| `ci-proof-docs`, `ci-proof-pint`, `ci-proof-stan` | Gone, as intended. They existed only on the old laptop (each broke one CI check on purpose, to prove CI catches it) and were never meant to be kept |
 | Dependabot: `laravel/telescope` 5.26.0, `spatie/laravel-activitylog` 5.1.3, `spatie/laravel-medialibrary` 11.23.10, `spatie/laravel-permission` 8.3.2, `spatie/laravel-translatable` 6.15.0 | Open, not merged. Each needs its CI run checked and the owner's approval |
 | Dependabot: `shivammathur/setup-php` 2.40.0 | Merged |
 
@@ -110,7 +110,7 @@ then Data tools, as CLAUDE.md section 17 lists them.
 ### d. The frontend, after core
 
 The frontends come after the core API is done. The frontend repository is
-`Haeyzed/sellora-frontend`; see section 5 for its uncommitted files.
+`Haeyzed/sellora-frontend`.
 
 ## 3. Open follow-ups
 
@@ -127,9 +127,8 @@ The frontends come after the core API is done. The frontend repository is
 | **Reverb broadcasting** is not installed: it needs a stable release that allows `guzzlehttp/psr7` 3 | CLAUDE.md section 17, Phase C |
 | **Open decisions** (themes, Horizon, search engine, platform domain, billing for merchants outside Africa) | CLAUDE.md section 16 |
 | **Invoice check false alarms:** it can flag a refund whose credit note is still on its way; the grace period narrows this but doesn't remove it | Only here and in earlier review reports |
-| **Release pending is shown only on the order:** the `refund_due` list filter doesn't include those orders, and customer anonymisation doesn't treat them as blocked | Only here and in earlier review reports |
 | **A credit note edited outside the app** can leave tax behind that the final credit can't take back; the daily invoice check reports it | Only here and in earlier review reports |
-| **The pre-commit hook was tried only on Windows** (PowerShell and Git Bash), never on real Linux | Only here |
+| **The pre-commit hook** was tried by hand only on Windows (PowerShell and Git Bash); CI now runs the hook check (`composer ci:hook`) on Linux on every push | [CI workflow](../.github/workflows/ci.yml) |
 
 ## 4. New PC setup (Windows PowerShell)
 
@@ -169,7 +168,6 @@ Names only. Values are never written in the repository or in a chat.
 | The SSH key for GitHub | Make a new one on the new PC and add it to GitHub, rather than copying the old one |
 | Local databases (`sellora_central` and any `sellora_tenant_` store databases) | Only if the local test data matters. Otherwise start empty: migrate and seed, then register stores again |
 | `.vscode/` settings | Git-ignored; set them again (section 4) |
-| **The frontend's uncommitted files:** 65 untracked files in `sellora-frontend` (under `apps/dashboard/hooks`, `apps/dashboard/lib` and `packages/ui/src`) are on the old laptop only | Commit and push them, or copy the folder, before the laptop goes |
 | Claude Code's own notes about this machine | Moved into the documentation home's setup steps; nothing else is needed |
 
 ## 6. How to resume
@@ -186,21 +184,7 @@ This is the sellora-api repository, continued on a new PC. You have no memory of
 Work exactly to CLAUDE.md. Use scripts/probe.ps1 for probes, scripts/run-suite.ps1 for the Landlord suite before a push, and scripts/wait-for-ci.ps1 after a push.
 ```
 
-Working agreements from the owner that CLAUDE.md doesn't state yet:
-
-- Every rule a change adds gets a probe (a deliberate break of that rule)
-  that its tests catch; the report lists each probe and whether it was
-  caught.
-- A commit is never chained onto a test or probe command in the same shell
-  line.
-- Probes and tests never run against the database at the same time, and no
-  file is edited while a suite runs.
-- No new packages without asking.
-- Larastan errors are fixed, never silenced: no ignore comments, no inline
-  `@var`, no casts only to quiet it.
-- A suite that passed is not run again unless something it covers changed.
-- Reports are short: commits with CI, probes, and anything new or open,
-  always including the audit ignore while it is open.
+The owner's working agreements are in [CLAUDE.md](../CLAUDE.md) section 15.
 
 ## 7. How to check nothing was lost
 
