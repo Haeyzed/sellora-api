@@ -60,6 +60,7 @@ final readonly class RefundCredits implements RefundsAwaitingCreditNotes
         return array_values(array_filter(PaymentRefund::query()
             ->where('status', RefundStatus::Succeeded->value)
             ->where('succeeded_at', '<=', $time)
+            ->whereNull('no_credit_note_at')
             // Only orders that were sold have an invoice to credit; any other would come back every run.
             ->whereHas('refund', static fn (Builder $refunds): Builder => $refunds->where('purpose', RefundPurpose::ReducesSale->value)
                 ->whereExists(static fn (QueryBuilder $paid): QueryBuilder => $paid->select(DB::raw(1))->from('order_events')->whereColumn('order_events.order_id', 'refunds.order_id')->where('order_events.type', OrderEventType::Paid->value)))
@@ -69,6 +70,11 @@ final readonly class RefundCredits implements RefundsAwaitingCreditNotes
             ->get()
             ->map(fn (PaymentRefund $paymentRefund): ?CreditRequest => $this->requestFor($paymentRefund))
             ->all()));
+    }
+
+    public function needsNoCreditNote(string $reference): bool
+    {
+        return PaymentRefund::query()->where('public_id', $reference)->whereNull('no_credit_note_at')->update(['no_credit_note_at' => CarbonImmutable::now()]) > 0;
     }
 
     /**

@@ -8,6 +8,7 @@ use App\Shared\Tenancy\Contracts\StoreTaxDocuments;
 use App\Tenant\Orders\Actions\IssueCreditNote;
 use App\Tenant\Orders\Actions\IssueInvoice;
 use App\Tenant\Orders\Contracts\RefundsAwaitingCreditNotes;
+use App\Tenant\Orders\Data\CreditRequest;
 use App\Tenant\Orders\Enums\OrderEventType;
 use App\Tenant\Orders\Enums\OrderPaymentStatus;
 use App\Tenant\Orders\Enums\TaxDocumentKind;
@@ -18,6 +19,7 @@ use App\Tenant\Orders\Models\Invoice;
 use App\Tenant\Orders\Models\Order;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Log;
 
 /**
  * The current store's part of the hourly sweep: invoices for sales paid in full, and credit notes for refund parts that reduced a sale, that the queue didn't issue; and PDFs it didn't render, queued again.
@@ -57,26 +59,67 @@ final readonly class MissingTaxDocumentSweep implements StoreTaxDocuments
         return $invoices->count() + $creditNotes->count();
     }
 
+    /**
+     * A refund on an order with no invoice to credit is set aside once (it needs no credit note), and the sweep carries on in the same run, so no number of them ever holds back a credit note that is due.
+     */
     private function issueMissingCreditNotes(CarbonImmutable $dueBefore): int
     {
+        $limit = config()->integer('orders.missing_documents_per_run');
         $issued = 0;
+        $tried = [];
 
-        foreach ($this->refundsAwaitingCreditNotes->wentBackBefore($dueBefore, config()->integer('orders.missing_documents_per_run')) as $request) {
-            try {
-                $creditNote = $this->issueCreditNote->handle($request);
-            } catch (CreditNoteExceedsInvoiceException $exception) {
-                // Staff must look at it; the others still go out.
-                report($exception);
+        do {
+            $setAside = 0;
 
-                continue;
+            foreach ($this->refundsAwaitingCreditNotes->wentBackBefore($dueBefore, $limit - $issued + count($tried)) as $request) {
+                if (isset($tried[$request->reference])) {
+                    continue;
+                }
+
+                $tried[$request->reference] = true;
+                $outcome = $this->issueCreditNoteFor($request);
+
+                if ($outcome === true) {
+                    $issued++;
+                } elseif ($outcome === false) {
+                    $setAside++;
+                }
+
+                if ($issued >= $limit) {
+                    break;
+                }
             }
-
-            if ($creditNote !== null) {
-                $issued++;
-            }
-        }
+        } while ($setAside > 0 && $issued < $limit);
 
         return $issued;
+    }
+
+    /**
+     * @return bool|null True when its credit note was issued, false when it was set aside as needing none, null when it is left for staff or the next run.
+     */
+    private function issueCreditNoteFor(CreditRequest $request): ?bool
+    {
+        try {
+            $creditNote = $this->issueCreditNote->handle($request);
+        } catch (CreditNoteExceedsInvoiceException $exception) {
+            // Staff must look at it; the others still go out.
+            report($exception);
+
+            return null;
+        }
+
+        if ($creditNote !== null) {
+            return true;
+        }
+
+        if (! $this->refundsAwaitingCreditNotes->needsNoCreditNote($request->reference)) {
+            return null;
+        }
+
+        // Only the refund part's public ID: staff find the rest from there.
+        Log::info('A refund went back on an order with no invoice to credit, so it gets no credit note.', ['refund_part' => $request->reference]);
+
+        return false;
     }
 
     private function issueMissingInvoices(CarbonImmutable $dueBefore): int

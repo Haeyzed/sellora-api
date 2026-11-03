@@ -31,6 +31,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property string|null $recorded_by_type Who recorded paying it back by hand, by morph name.
  * @property string|null $recorded_by_id
  * @property CarbonImmutable|null $succeeded_at
+ * @property CarbonImmutable|null $no_credit_note_at When the hourly sweep found its order had no invoice to credit: it needs no credit note.
  * @property CarbonImmutable|null $failed_at
  * @property CarbonImmutable|null $last_checked_at When the gateway was last asked about it.
  * @property int $checks How often the gateway was asked about it.
@@ -84,6 +85,7 @@ final class PaymentRefund extends Model implements AuditableContract
             'status' => RefundStatus::class,
             'amount' => MoneyCast::class.':currency',
             'succeeded_at' => 'immutable_datetime',
+            'no_credit_note_at' => 'immutable_datetime',
             'failed_at' => 'immutable_datetime',
             'last_checked_at' => 'immutable_datetime',
             'checks' => 'integer',

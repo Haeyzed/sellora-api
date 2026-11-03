@@ -77,6 +77,10 @@ Order amounts and copies are financial records and are never overwritten.
    gives back what it took. Each such amount gets a credit note of its own in
    the same transaction, spread across the invoice's lines and shipping. An
    order left with nothing also loses its paid date and owes nothing.
+   A refund on an order that never got an invoice (a released hold left it
+   short of its total) gets no credit note. The hourly sweep records that
+   once, logs it by public ID, and never picks that refund up again, so such
+   refunds never hold back a credit note that is due.
 
    The rule for every invoiced order: its invoice less its credit notes
    equals the sale money the store has kept. Overpayments and refunds of them

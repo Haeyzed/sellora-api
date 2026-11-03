@@ -29,6 +29,9 @@ use App\Tenant\Payments\Jobs\CheckPaymentWithGateway;
 use App\Tenant\Payments\Jobs\CheckRefundWithGateway;
 use App\Tenant\Payments\Jobs\IssueRefundCreditNote;
 use App\Tenant\Payments\Models\Payment;
+use App\Tenant\Payments\Models\PaymentRefund;
+use App\Tenant\Payments\Services\RefundCredits;
+use Carbon\CarbonImmutable;
 use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -299,6 +302,59 @@ it('issues no invoice when a hold is released between the job being dispatched a
     expect(orderTaxDocuments($order)['invoice'])->toBeNull()
         ->and($logged)->toBe([['warning', ['order' => $order->public_id, 'payment_status' => 'refunded']]])
         ->and(reconcileInvoicesPastGrace())->toBe(0);
+});
+
+it('sets aside a refund on an order with no invoice once, and never lets a backlog of them hold back a credit note that is due', function (): void {
+    config(['orders.missing_documents_per_run' => 1]);
+    Queue::fake([CheckPaymentWithGateway::class, CheckRefundWithGateway::class, IssueOrderInvoice::class, IssueRefundCreditNote::class]);
+    useFakeGateway();
+    connectFakeGateway('live');
+    $short = giftCardAndMethodOrderWhoseCommitWillFail('gateway:'.FakePaymentGateway::KEY);
+    payAtFakeGateway();
+    cancelAsStaff($short);
+    // Two refunds of the gateway's part, then the gift card is let go: the order is short of its total and never invoiced.
+    $gatewayPart = $short->total->minorAmount() - 5000;
+    refundOrder($this->store->run(static fn (): Order => $short->refresh()), 1000);
+    refundOrder($this->store->run(static fn (): Order => $short->refresh()), $gatewayPart - 1000);
+    FakeGiftCardPaymentMethod::$settleFailure = null;
+    $this->artisan('payments:check-pending')->assertSuccessful();
+    // A sale refunded after them, whose credit note is due.
+    [$sold] = $this->store->run(static fn (): array => gatewayPaidOrder());
+    refundOrder($sold, 1000);
+
+    $logged = [];
+    Event::listen(MessageLogged::class, static function (MessageLogged $message) use (&$logged): void {
+        $logged[] = $message->level.' '.$message->message;
+    });
+    $this->travel(config()->integer('orders.missing_documents_grace_minutes') + 1)->minutes();
+    $this->artisan('orders:issue-missing-tax-documents')->assertSuccessful();
+
+    $setAside = array_values(array_filter($logged, static fn (string $line): bool => str_contains($line, 'no invoice to credit')));
+    expect(orderTaxDocuments($sold)['credit_notes'])->toHaveCount(1)
+        ->and(orderTaxDocuments($short))->toBe(['invoice' => null, 'credit_notes' => []])
+        ->and($setAside)->toHaveCount(2)
+        ->and($setAside[0])->toStartWith('info ');
+
+    // The next two runs pick none of them up again: nothing issued, nothing logged.
+    $logged = [];
+    $this->artisan('orders:issue-missing-tax-documents')->assertSuccessful();
+    $this->travel(1)->hours();
+    $this->artisan('orders:issue-missing-tax-documents')->assertSuccessful();
+
+    expect($this->store->run(static fn (): array => app(RefundCredits::class)->wentBackBefore(CarbonImmutable::now(), 200)))->toBe([])
+        ->and(array_filter($logged, static fn (string $line): bool => str_contains($line, 'no invoice to credit') || str_starts_with($line, 'warning') || str_starts_with($line, 'error')))->toBe([])
+        ->and(orderTaxDocuments($short)['credit_notes'])->toBe([])
+        ->and(orderTaxDocuments($sold)['credit_notes'])->toHaveCount(1);
+
+    // Set aside once: asked again, as a second sweep running at the same moment would, it records nothing new, so nothing is logged twice.
+    [$again, $before, $after] = $this->store->run(static function (): array {
+        $part = PaymentRefund::query()->whereNotNull('no_credit_note_at')->orderBy('id')->firstOrFail();
+        $again = app(RefundCredits::class)->needsNoCreditNote($part->public_id);
+
+        return [$again, $part->no_credit_note_at?->toIso8601String(), $part->refresh()->no_credit_note_at?->toIso8601String()];
+    });
+    expect($again)->toBeFalse()
+        ->and($after)->toBe($before);
 });
 
 it('still issues the invoice when the money kept covers the order without the released hold', function (): void {
