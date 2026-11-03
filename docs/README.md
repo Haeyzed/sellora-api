@@ -129,9 +129,8 @@ and what comes next are in the [handover](HANDOFF.md).
    redis. Node.js and npm are needed only for building assets.
 3. **PostgreSQL 18**, installed on its own (Herd's free version runs no
    database). It must include the `pg_trgm` extension, which the standard
-   Windows installer does. Note the port it listens on: the old laptop used
-   5434, because other PostgreSQL versions held 5432 and 5433. That port
-   goes in `DB_PORT`.
+   Windows installer does. Use the port your PostgreSQL runs on (the
+   default is 5432); that port goes in `DB_PORT`.
 4. **Redis** on port 6379, for the cache, queues and sessions.
 5. **Clone and install:**
 

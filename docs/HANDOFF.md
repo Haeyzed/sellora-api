@@ -141,7 +141,7 @@ and in this order:
    `git@github.com:Haeyzed/sellora-api.git`).
 2. Laravel Herd with PHP 8.4, which brings Composer. Check the PHP
    extensions.
-3. PostgreSQL 18, and its port.
+3. PostgreSQL 18, on the port it runs on (default 5432) in `DB_PORT`.
 4. Redis.
 5. Clone, copy in the old `.env` (section 5), `composer install`.
 6. Create `sellora_central` and `sellora_central_testing`, run the central
