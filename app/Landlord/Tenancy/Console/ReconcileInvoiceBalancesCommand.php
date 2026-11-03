@@ -7,13 +7,15 @@ namespace App\Landlord\Tenancy\Console;
 use App\Landlord\Tenancy\Enums\TenantStatus;
 use App\Landlord\Tenancy\Models\Tenant;
 use App\Shared\Tenancy\Contracts\StoreInvoiceBalances;
+use App\Shared\Tenancy\Enums\InvoiceTaxProblem;
 use App\Shared\Tenancy\InvoiceBalanceMismatch;
+use App\Shared\Tenancy\InvoiceTaxMismatch;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
- * Recalculates, for every store, that each invoice less its credit notes equals the sale money kept, and reports each that doesn't.
+ * Recalculates, for every store, that each invoice less its credit notes equals the sale money kept, and that no line or rate has more tax credited than invoiced, nor tax left once the invoice is credited in full, and reports each that doesn't.
  *
  * Runs on a schedule. It only reports, never corrects: a mismatch is a bug or
  * a hand-edited database to investigate. Each mismatch is logged as a warning
@@ -46,7 +48,12 @@ final class ReconcileInvoiceBalancesCommand extends Command
             }
 
             foreach ($mismatches as $mismatch) {
-                $this->reportMismatch($tenant->id, $mismatch);
+                if ($mismatch instanceof InvoiceTaxMismatch) {
+                    $this->reportTaxMismatch($tenant->id, $mismatch);
+                } else {
+                    $this->reportMismatch($tenant->id, $mismatch);
+                }
+
                 $problems++;
             }
 
@@ -72,6 +79,29 @@ final class ReconcileInvoiceBalancesCommand extends Command
         $this->components->error(sprintf(
             'Store %s, order %s, invoice %s: %d left on the invoice, %d kept (%s, minor units).',
             $storeId, $mismatch->orderId, $mismatch->invoiceId, $mismatch->invoiceLeft, $mismatch->saleKept, $mismatch->currency,
+        ));
+    }
+
+    private function reportTaxMismatch(string $storeId, InvoiceTaxMismatch $mismatch): void
+    {
+        $where = $mismatch->linePosition === null ? 'at rate '.$mismatch->rate : 'on line '.$mismatch->linePosition.' at rate '.$mismatch->rate;
+        $what = $mismatch->problem === InvoiceTaxProblem::CreditedAboveInvoiced ? 'more tax credited than invoiced' : 'credited in full with tax left';
+
+        // Only public IDs, the rate and amounts: staff find the rest from there.
+        Log::warning('An invoice\'s credit notes carry tax that does not fit the invoice.', [
+            'store' => $storeId,
+            'order' => $mismatch->orderId,
+            'invoice' => $mismatch->invoiceId,
+            'problem' => $mismatch->problem->value,
+            'line_position' => $mismatch->linePosition,
+            'rate' => $mismatch->rate,
+            'currency' => $mismatch->currency,
+            'tax_credited' => $mismatch->credited,
+            'tax_invoiced' => $mismatch->invoiced,
+        ]);
+        $this->components->error(sprintf(
+            'Store %s, order %s, invoice %s: %s %s, %d credited of %d invoiced (%s, minor units).',
+            $storeId, $mismatch->orderId, $mismatch->invoiceId, $what, $where, $mismatch->credited, $mismatch->invoiced, $mismatch->currency,
         ));
     }
 }

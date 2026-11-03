@@ -10,6 +10,8 @@ use App\Tenant\Orders\Actions\IssueCreditNote;
 use App\Tenant\Orders\Actions\IssueInvoice;
 use App\Tenant\Orders\Data\CreditRequest;
 use App\Tenant\Orders\Jobs\IssueOrderInvoice;
+use App\Tenant\Orders\Models\CreditNoteLine;
+use App\Tenant\Orders\Models\CreditNoteTax;
 use App\Tenant\Orders\Models\DocumentSequence;
 use App\Tenant\Orders\Models\Invoice;
 use App\Tenant\Orders\Models\InvoiceLine;
@@ -181,6 +183,54 @@ it('leaves an order whose money changed within the grace period for the next che
     $this->travelTo($changedAt->copy()->addMinutes(60));
     expect(Artisan::call('orders:reconcile-invoices'))->toBe(1)
         ->and(Artisan::output())->toContain($order->public_id);
+});
+
+it('reports tax credited above what was invoiced, on a line and at its rate, or at a rate alone for a price reduction', function (string $planted, array $expected, array $notExpected): void {
+    $this->store->run(static fn () => addTaxRate('Standard', 'NG', null, '7.5'));
+    [$order] = gatewayPaidOrder();
+    $line = $this->store->run(static fn (): OrderLine => $order->lines()->sole());
+    $planted === 'line' ? refundOrder($order, lines: [$line->public_id => 1]) : refundOrder($order, 1000);
+    expect(reconcileInvoicesPastGrace())->toBe(0);
+
+    // Planted directly: one more tax row on the credit note's line, far above what the invoice charged.
+    $this->store->run(static function (): void {
+        $creditLine = CreditNoteLine::query()->sole();
+        $tax = CreditNoteTax::query()->where('credit_note_line_id', $creditLine->id)->firstOrFail();
+        DB::table('credit_note_taxes')->insert([...collect($tax->getAttributes())->except('id')->all(), 'tax_amount' => 100_000]);
+    });
+
+    expect(Artisan::call('orders:reconcile-invoices'))->toBe(1);
+    $output = Artisan::output();
+
+    foreach ($expected as $text) {
+        expect($output)->toContain($text);
+    }
+
+    foreach ($notExpected as $text) {
+        expect($output)->not->toContain($text);
+    }
+
+    expect($output)->toContain($order->public_id)->not->toContain('ada@example.com');
+})->with([
+    'a returned unit' => ['line', ['more tax credited than invoiced on line 0 at rate VAT 7.5% NG', 'more tax credited than invoiced at rate VAT 7.5% NG'], []],
+    'a price reduction' => ['reduction', ['more tax credited than invoiced at rate VAT 7.5% NG'], ['on line']],
+]);
+
+it('reports an invoice credited in full that still has tax left at a rate', function (): void {
+    $this->store->run(static fn () => addTaxRate('Standard', 'NG', null, '7.5'));
+    [$order] = gatewayPaidOrder();
+    refundOrder($order, $order->total->minorAmount());
+    expect(reconcileInvoicesPastGrace())->toBe(0);
+
+    // Planted directly: the tax of one credited line removed, as a note issued another way could stand.
+    $this->store->run(static function (): void {
+        DB::statement('alter table credit_note_taxes disable trigger user');
+        DB::table('credit_note_taxes')->where('id', CreditNoteTax::query()->orderBy('id')->firstOrFail()->id)->delete();
+        DB::statement('alter table credit_note_taxes enable trigger user');
+    });
+
+    expect(Artisan::call('orders:reconcile-invoices'))->toBe(1)
+        ->and(Artisan::output())->toContain('credited in full with tax left at rate VAT 7.5% NG');
 });
 
 it('checks an invoice at once when its order shows no money ever moving', function (): void {

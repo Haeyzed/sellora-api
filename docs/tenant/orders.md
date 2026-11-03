@@ -82,7 +82,10 @@ Order amounts and copies are financial records and are never overwritten.
    equals the sale money the store has kept. Overpayments and refunds of them
    were never part of the sale, so they don't count. A daily check
    (`orders:reconcile-invoices`) recalculates this for every invoiced order in
-   every store and reports each mismatch by public ID. It only reports. Orders
+   every store and reports each mismatch by public ID. It also checks the tax
+   on the credit notes: no invoice line and no rate may have more tax credited
+   than was invoiced, and an invoice credited in full has no tax left at any
+   rate. It only reports. Orders
    whose money changed within `orders.reconcile_grace_minutes` (60 by default)
    wait for the next run, so a refund whose credit note is still on its way
    isn't reported. The grace counts from when money last moved: a payment, a
