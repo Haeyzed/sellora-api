@@ -1,5 +1,8 @@
 {
     "preset": "laravel",
+    "exclude": [
+        "scripts/output"
+    ],
     "rules": {
         "declare_strict_types": true,
         "final_class": true,
