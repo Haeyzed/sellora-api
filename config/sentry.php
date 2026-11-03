@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Shared\Exceptions\SentryEventScrubber;
+
 /**
  * Sentry Laravel SDK configuration file.
  *
@@ -58,6 +60,11 @@ return [
     // Request bodies can hold passwords, tokens and personal data, so they are never sent.
     // @see: https://docs.sentry.io/platforms/php/configuration/options/#max_request_body_size
     'max_request_body_size' => 'never',
+
+    // The last check on every error report: no database error's SQL or values, no call's arguments.
+    // A class and method name rather than a closure, so config:cache still works.
+    // @see: https://docs.sentry.io/platforms/php/configuration/options/#before_send
+    'before_send' => [SentryEventScrubber::class, 'scrub'],
 
     // @see: https://docs.sentry.io/platforms/php/guides/laravel/configuration/options/#ignore_exceptions
     // 'ignore_exceptions' => [],

@@ -35,6 +35,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Support\Facades\Route;
+use Sentry\Laravel\Integration;
 use Symfony\Component\HttpFoundation\Response;
 
 // Errors record no function arguments in their stack traces, which logs and error tracking print and
@@ -112,6 +113,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(static function (Exceptions $exceptions): void {
         // Every error reported or shown, whether through report() or uncaught, loses a database error's details first.
         $exceptions->map(static fn (Throwable $exception): Throwable => ErrorScrubber::scrub($exception));
+        // Reported errors go to Sentry too, scrubbed as above; it sends only when a DSN is configured.
+        Integration::handles($exceptions);
         $exceptions->render(static fn (Throwable $exception): Response => app(ApiErrorRenderer::class)->render($exception));
     })
     // Laravel's handler, scrubbing an error a console command didn't catch before printing it too.
