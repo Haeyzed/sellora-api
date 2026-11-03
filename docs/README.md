@@ -188,6 +188,22 @@ Windows quirks worth knowing:
 - A test run that fails on database timeouts after the PC slept proves
   nothing; run it again on its own.
 
+### Errors and personal data in production
+
+An error's message or stack trace can quote a buyer's details, so errors are
+cleaned before they reach logs, Sentry, console output or failed jobs: a
+database error keeps only its SQLSTATE and the constraint it broke.
+
+- **`zend.exception_ignore_args = On`** in production's `php.ini` (PHP's
+  production default). The application also sets it at startup, so stack
+  traces never record the arguments each call was given; `php.ini` covers
+  the moment before it starts. A test checks the setting.
+- **Sentry** sends only when `SENTRY_LARAVEL_DSN` is set, and never in tests.
+  Keep `SENTRY_SEND_DEFAULT_PII` and the two `*_SQL_BINDINGS_ENABLED`
+  settings off.
+- **Failed queued jobs** are kept 30 days (`RETENTION_FAILED_JOBS_DAYS`); see
+  [deployment](deployment.md).
+
 ### Helper scripts
 
 `scripts/` holds PowerShell helpers for local work. Each one explains itself
