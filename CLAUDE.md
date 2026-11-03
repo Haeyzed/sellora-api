@@ -1139,7 +1139,7 @@ Names must say exactly what a thing is or does, so the code reads without explan
 - Events that trigger side effects (emails, WhatsApp messages, webhooks) dispatch after the transaction commits.
 - Never swallow exceptions silently. Throw a named domain exception extending `App\Shared\Exceptions\DomainException`, and map it to an API response in `bootstrap/app.php`.
 - Avoid N+1 queries: eager-load relationships that Resources use.
-- Format with Laravel Pint (`vendor/bin/pint --dirty --format agent` after changing PHP files) and analyse with Larastan at a high level. Fix warnings rather than suppressing them.
+- Format with Laravel Pint (`vendor/bin/pint --dirty --format agent` after changing PHP files) and analyse with Larastan at a high level. Fix warnings rather than suppressing them: no ignore comments or baseline entries, no inline `@var` and no casts added only to quiet Larastan; fix the real type instead.
 
 ### Data integrity
 
