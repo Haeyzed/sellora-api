@@ -401,7 +401,8 @@ sellora-api/
 │   ├── Unit/
 │   ├── Pest.php
 │   └── TestCase.php
-├── docs/                             # hand-written guides only: README.md (product guide), roadmap.md (decided module rules), landlord/ and tenant/ API guides; never generated files
+├── docs/                             # hand-written guides only: README.md (product guide and local setup), HANDOFF.md (dated handover: where work stands, what comes next, new-PC setup), roadmap.md (decided module rules), landlord/ and tenant/ API guides; never generated files
+├── scripts/                          # PowerShell helpers for local work (probe.ps1, run-suite.ps1, wait-for-ci.ps1, db-status.ps1); no secrets or machine-specific paths; their output goes to git-ignored scripts/output/
 ├── api-docs/                         # git-ignored output of `composer docs:export` (OpenAPI JSON for Postman)
 ├── composer.json
 ├── phpunit.xml                       # includes module and integration test folders
@@ -1313,6 +1314,12 @@ If you notice a security problem anywhere, in the legacy project, in this reposi
 - **An approved plan is the step's definition of done.** Every item in it (events, endpoints, limits, tests, docs) is built, or listed in the report as dropped or changed with the reason. The report lists each planned event with its test.
 - **A local run that fails on database connection timeouts** (for example after the machine slept) proves nothing. It is re-run on its own before any conclusion is drawn, and is never the run a commit relies on.
 - Claude Code never edits this `CLAUDE.md` itself; proposed changes go in the report (section 2.3).
+- **Every rule a change adds gets a probe:** a deliberate break of that rule, run against the tests, which must catch it. The report lists each probe and whether it was caught. A probe that isn't caught means the tests are too weak; strengthen them, never drop the probe. Probes are run with `scripts/probe.ps1`, which restores the file byte for byte and rejects a run if the file changed during it.
+- **A commit is never chained onto a test or probe command** in the same shell line, so a commit can never go in on a run that didn't prove what it should.
+- **One thing at a time against the database and the files:** probes and test runs never run against the database at the same time, and no file is edited while a suite is running. Editor auto-save and format-on-save stay off for this folder, so the editor never changes a file under a running probe.
+- **A suite that passed is not run again** unless something it covers changed since; CI remains the official full run.
+- **Reports are short:** commits with their CI result, probes and whether each was caught, and anything new or open, always including any audit ignore still in place.
+- **Helper scripts live in `scripts/`, never only in a session's scratchpad**, so they survive a move to another machine. `docs/HANDOFF.md` is a dated snapshot for continuing on a new machine; when it disagrees with `git log`, GitHub or this guide, they win, and it is updated whenever work moves to another machine.
 - **Before every push:** run Pint over the whole repository (not only changed files, and including `lang/`), run Larastan, run the contention tests in parallel, and run every suite a change can affect. A new column on a store table must be classified for the store export, which the Landlord suite checks, so run it. Pushed commits are never rewritten, so a commit that fails on its own is reported, not hidden.
 - **Keep the full test suite fast** enough to run before every push (aim for under 10 minutes): test stores get a copy of a prepared template database, or a used copy that has been reset and verified identical to the template (schema, rows, ID counters and extensions); tests run in parallel. The template is built once before the parallel workers start, never inside a test. A slow suite stops being run, and an unrun suite protects nothing.
 - **CI is the official full-suite run.** A green CI run on a branch's last commit is the full-suite result for that step, and CI's time is the one compared against the 10-minute target. Local full runs are optional and may run on battery; they're for catching problems early, not for approval or timing.
