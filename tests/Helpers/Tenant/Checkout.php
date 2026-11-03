@@ -25,6 +25,7 @@ use Illuminate\Testing\TestResponse;
 use Tests\Fixtures\Checkout\FakeClashingPaymentMethod;
 use Tests\Fixtures\Checkout\FakeGiftCardPaymentMethod;
 use Tests\Fixtures\Checkout\FakeWalletPaymentMethod;
+use Tests\Fixtures\Payments\FakePaymentGateway;
 
 /*
 |--------------------------------------------------------------------------
@@ -428,4 +429,27 @@ function placeAtOnce(array $placements, string $subdomain = 'cart-store'): array
         'headers' => [CartToken::HEADER => $placement['token'], 'Idempotency-Key' => $placement['key']],
         'body' => ['checkout' => $placement['checkout'], 'version' => $placement['version']],
     ], $placements));
+}
+
+/**
+ * In the cart store: an order paid by the fake gift card and the fake gateway, cancelled, two of the gateway's part refunded, then the gift card released, so it is short of its total and never invoiced (its refunds need no credit note); then a sale refunded after them, whose credit note is due. The queue must be faked for the invoice and refund credit note jobs. Returns both orders.
+ *
+ * @return array{Order, Order}
+ */
+function twoRefundsNeverInvoicedThenOneDue(): array
+{
+    useFakeGateway();
+    connectFakeGateway('live');
+    $short = giftCardAndMethodOrderWhoseCommitWillFail('gateway:'.FakePaymentGateway::KEY);
+    payAtFakeGateway();
+    cancelAsStaff($short);
+    $gatewayPart = $short->total->minorAmount() - 5000;
+    refundOrder(test()->store->run(static fn (): Order => $short->refresh()), 1000);
+    refundOrder(test()->store->run(static fn (): Order => $short->refresh()), $gatewayPart - 1000);
+    FakeGiftCardPaymentMethod::$settleFailure = null;
+    test()->artisan('payments:check-pending')->assertSuccessful();
+    [$sold] = test()->store->run(static fn (): array => gatewayPaidOrder());
+    refundOrder($sold, 1000);
+
+    return [$short, $sold];
 }

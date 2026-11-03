@@ -68,6 +68,9 @@ return [
 
     'missing_documents_per_run' => (int) env('ORDERS_MISSING_DOCUMENTS_PER_RUN', 200),
 
+    // How many refund parts one run may check for a missing credit note, those it sets aside as needing none (their order has no invoice) included. The sweep carries on past those so they never hold back a credit note that is due; this keeps one run from going on for as long as the backlog does.
+    'credit_note_checks_per_run' => (int) env('ORDERS_CREDIT_NOTE_CHECKS_PER_RUN', 1000),
+
     /*
     |--------------------------------------------------------------------------
     | Invoice Reconciliation

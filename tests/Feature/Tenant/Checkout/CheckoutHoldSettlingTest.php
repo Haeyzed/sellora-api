@@ -307,20 +307,7 @@ it('issues no invoice when a hold is released between the job being dispatched a
 it('sets aside a refund on an order with no invoice once, and never lets a backlog of them hold back a credit note that is due', function (): void {
     config(['orders.missing_documents_per_run' => 1]);
     Queue::fake([CheckPaymentWithGateway::class, CheckRefundWithGateway::class, IssueOrderInvoice::class, IssueRefundCreditNote::class]);
-    useFakeGateway();
-    connectFakeGateway('live');
-    $short = giftCardAndMethodOrderWhoseCommitWillFail('gateway:'.FakePaymentGateway::KEY);
-    payAtFakeGateway();
-    cancelAsStaff($short);
-    // Two refunds of the gateway's part, then the gift card is let go: the order is short of its total and never invoiced.
-    $gatewayPart = $short->total->minorAmount() - 5000;
-    refundOrder($this->store->run(static fn (): Order => $short->refresh()), 1000);
-    refundOrder($this->store->run(static fn (): Order => $short->refresh()), $gatewayPart - 1000);
-    FakeGiftCardPaymentMethod::$settleFailure = null;
-    $this->artisan('payments:check-pending')->assertSuccessful();
-    // A sale refunded after them, whose credit note is due.
-    [$sold] = $this->store->run(static fn (): array => gatewayPaidOrder());
-    refundOrder($sold, 1000);
+    [$short, $sold] = twoRefundsNeverInvoicedThenOneDue();
 
     $logged = [];
     Event::listen(MessageLogged::class, static function (MessageLogged $message) use (&$logged): void {
@@ -357,6 +344,26 @@ it('sets aside a refund on an order with no invoice once, and never lets a backl
         ->and($after)->toBe($before);
 });
 
+it('checks no more refund parts in one run than the cap, however long the backlog, and gets to the one due on a later run', function (): void {
+    config(['orders.missing_documents_per_run' => 1, 'orders.credit_note_checks_per_run' => 2]);
+    Queue::fake([CheckPaymentWithGateway::class, CheckRefundWithGateway::class, IssueOrderInvoice::class, IssueRefundCreditNote::class]);
+    [$short, $sold] = twoRefundsNeverInvoicedThenOneDue();
+    $this->travel(config()->integer('orders.missing_documents_grace_minutes') + 1)->minutes();
+
+    // The two set aside use up this run's checks; the one due waits.
+    $this->artisan('orders:issue-missing-tax-documents')->assertSuccessful();
+    $afterFirst = $this->store->run(static fn (): array => [PaymentRefund::query()->whereNotNull('no_credit_note_at')->count(), app(RefundCredits::class)->wentBackBefore(CarbonImmutable::now(), 200)]);
+    expect(orderTaxDocuments($sold)['credit_notes'])->toBe([])
+        ->and($afterFirst[0])->toBe(2)
+        ->and($afterFirst[1])->toHaveCount(1);
+
+    // The next run gets to it.
+    $this->travel(1)->hours();
+    $this->artisan('orders:issue-missing-tax-documents')->assertSuccessful();
+
+    expect(orderTaxDocuments($sold)['credit_notes'])->toHaveCount(1)
+        ->and(orderTaxDocuments($short)['credit_notes'])->toBe([]);
+});
 it('still issues the invoice when the money kept covers the order without the released hold', function (): void {
     Queue::fake([CheckPaymentWithGateway::class, CheckRefundWithGateway::class, IssueOrderInvoice::class]);
     $order = giftCardAndMethodOrderWhoseCommitWillFail(PaymentMethod::BankTransfer->value);

@@ -60,29 +60,37 @@ final readonly class MissingTaxDocumentSweep implements StoreTaxDocuments
     }
 
     /**
-     * A refund on an order with no invoice to credit is set aside once (it needs no credit note), and the sweep carries on in the same run, so no number of them ever holds back a credit note that is due.
+     * A refund on an order with no invoice to credit is set aside once (it needs no credit note), and the sweep carries on in the same run, so a backlog of them never holds back a credit note that is due. One run checks at most orders.credit_note_checks_per_run refund parts, however long the backlog: the rest wait for the next run, and as each set-aside part is never checked again, the backlog shrinks every run.
      */
     private function issueMissingCreditNotes(CarbonImmutable $dueBefore): int
     {
         $limit = config()->integer('orders.missing_documents_per_run');
+        $checksLeft = config()->integer('orders.credit_note_checks_per_run');
         $issued = 0;
         $tried = [];
+        // Parts tried and left as they were come back in every list, so each list asks for that many more.
+        $stillListed = 0;
 
         do {
             $setAside = 0;
+            // Every list asks for no more new parts than the run may still check, so the cap holds however the loop goes.
+            $wanted = min($limit - $issued, $checksLeft);
 
-            foreach ($this->refundsAwaitingCreditNotes->wentBackBefore($dueBefore, $limit - $issued + count($tried)) as $request) {
+            foreach ($this->refundsAwaitingCreditNotes->wentBackBefore($dueBefore, $wanted + $stillListed) as $request) {
                 if (isset($tried[$request->reference])) {
                     continue;
                 }
 
                 $tried[$request->reference] = true;
+                $checksLeft--;
                 $outcome = $this->issueCreditNoteFor($request);
 
                 if ($outcome === true) {
                     $issued++;
                 } elseif ($outcome === false) {
                     $setAside++;
+                } else {
+                    $stillListed++;
                 }
 
                 if ($issued >= $limit) {
