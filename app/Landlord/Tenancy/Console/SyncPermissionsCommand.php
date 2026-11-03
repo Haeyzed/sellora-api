@@ -8,6 +8,7 @@ use App\Landlord\Identity\Actions\SyncPlatformPermissions;
 use App\Landlord\Tenancy\Enums\TenantStatus;
 use App\Landlord\Tenancy\Models\Tenant;
 use App\Shared\Auth\PermissionSyncResult;
+use App\Shared\Exceptions\ErrorScrubber;
 use App\Shared\Tenancy\Contracts\StorePermissions;
 use Illuminate\Console\Command;
 use Throwable;
@@ -37,7 +38,7 @@ final class SyncPermissionsCommand extends Command
                 $this->report("Store {$store->id}", $store->run(static fn (): PermissionSyncResult => $storePermissions->sync()));
             } catch (Throwable $exception) {
                 report($exception);
-                $this->components->error("Store {$store->id}: {$exception->getMessage()}");
+                $this->components->error("Store {$store->id}: ".ErrorScrubber::describe($exception));
                 $failures++;
             }
         }

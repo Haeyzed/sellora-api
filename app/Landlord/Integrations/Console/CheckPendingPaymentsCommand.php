@@ -7,6 +7,7 @@ namespace App\Landlord\Integrations\Console;
 use App\Landlord\Integrations\CentralWebhookEndpoints;
 use App\Landlord\Tenancy\Enums\TenantStatus;
 use App\Landlord\Tenancy\Models\Tenant;
+use App\Shared\Exceptions\ErrorScrubber;
 use App\Shared\Tenancy\Contracts\StoreCommittedPaymentRefunds;
 use App\Shared\Tenancy\Contracts\StorePaymentChecks;
 use App\Shared\Tenancy\Contracts\StoreUnsettledPaymentHolds;
@@ -38,7 +39,7 @@ final class CheckPendingPaymentsCommand extends Command
                 $pruned = $webhookEndpoints->pruneUnused((string) $tenant->getTenantKey(), $inUse, $orphanCutoff);
             } catch (Throwable $exception) {
                 report($exception);
-                $this->components->error("Store {$tenant->id}: {$exception->getMessage()}");
+                $this->components->error("Store {$tenant->id}: ".ErrorScrubber::describe($exception));
                 $failures++;
 
                 continue;

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Landlord\Tenancy;
 
 use App\Landlord\Tenancy\Models\DatabaseServer;
+use App\Shared\Exceptions\ErrorScrubber;
 use Illuminate\Console\Command;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Support\Facades\Validator;
@@ -107,7 +108,8 @@ final class AddDatabaseServerCommand extends Command
 
             return true;
         } catch (Throwable $exception) {
-            $this->components->error('Could not connect to the server: '.$exception->getMessage());
+            // Only the SQLSTATE: the driver's message names the host and user typed, and would be logged with the console output.
+            $this->components->error('Could not connect to the server: '.ErrorScrubber::describe($exception));
 
             return false;
         } finally {

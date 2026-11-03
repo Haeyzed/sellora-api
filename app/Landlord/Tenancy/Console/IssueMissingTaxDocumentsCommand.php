@@ -6,6 +6,7 @@ namespace App\Landlord\Tenancy\Console;
 
 use App\Landlord\Tenancy\Enums\TenantStatus;
 use App\Landlord\Tenancy\Models\Tenant;
+use App\Shared\Exceptions\ErrorScrubber;
 use App\Shared\Tenancy\Contracts\StoreTaxDocuments;
 use Illuminate\Console\Command;
 use Throwable;
@@ -32,7 +33,7 @@ final class IssueMissingTaxDocumentsCommand extends Command
                 $issued = $tenant->run(static fn (): int => $storeTaxDocuments->issueMissing());
             } catch (Throwable $exception) {
                 report($exception);
-                $this->components->error("Store {$tenant->id}: {$exception->getMessage()}");
+                $this->components->error("Store {$tenant->id}: ".ErrorScrubber::describe($exception));
                 $failures++;
 
                 continue;

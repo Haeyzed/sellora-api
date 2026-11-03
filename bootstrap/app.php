@@ -16,6 +16,7 @@ use App\Landlord\Tenancy\Console\SyncPermissionsCommand;
 use App\Shared\Database\SchemaReferenceCommand;
 use App\Shared\Exceptions\ApiErrorRenderer;
 use App\Shared\Exceptions\ErrorScrubber;
+use App\Shared\Exceptions\ScrubbedConsoleErrors;
 use App\Shared\Features\Http\Middleware\EnsureIntegrationIsEnabled;
 use App\Shared\Features\Http\Middleware\EnsureModuleIsEnabled;
 use App\Shared\Geography\ListSubdivisionChangesCommand;
@@ -29,6 +30,7 @@ use App\Shared\Tenancy\Http\Middleware\EnsureCentralDomain;
 use App\Shared\Tenancy\Http\Middleware\IdentifyStoreUnlessCentral;
 use App\Shared\Tenancy\TenantRoutes;
 use Illuminate\Auth\Middleware\Authenticate;
+use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -111,7 +113,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // Every error reported or shown, whether through report() or uncaught, loses a database error's details first.
         $exceptions->map(static fn (Throwable $exception): Throwable => ErrorScrubber::scrub($exception));
         $exceptions->render(static fn (Throwable $exception): Response => app(ApiErrorRenderer::class)->render($exception));
-    })->create()
+    })
+    // Laravel's handler, scrubbing an error a console command didn't catch before printing it too.
+    ->withSingletons([ExceptionHandler::class => ScrubbedConsoleErrors::class])
+    ->create()
     // Every config file in config/ is complete. Merging Laravel's defaults would
     // silently add a "web" guard, a "users" provider pointing to a User model
     // that doesn't exist, and database connections this app never uses.

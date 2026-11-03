@@ -6,6 +6,7 @@ namespace App\Landlord\Tenancy\Console;
 
 use App\Landlord\Tenancy\Enums\TenantStatus;
 use App\Landlord\Tenancy\Models\Tenant;
+use App\Shared\Exceptions\ErrorScrubber;
 use App\Shared\Tenancy\Contracts\StoreStockLedger;
 use App\Shared\Tenancy\StockLevelMismatch;
 use Illuminate\Console\Command;
@@ -39,7 +40,7 @@ final class ReconcileStockLevelsCommand extends Command
                 $mismatches = $tenant->run(static fn (): array => $storeStockLedger->mismatches());
             } catch (Throwable $exception) {
                 report($exception);
-                $this->components->error("Store {$tenant->id}: {$exception->getMessage()}");
+                $this->components->error("Store {$tenant->id}: ".ErrorScrubber::describe($exception));
                 $problems++;
 
                 continue;

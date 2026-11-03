@@ -6,6 +6,7 @@ namespace App\Landlord\Tenancy\Console;
 
 use App\Landlord\Tenancy\Enums\TenantStatus;
 use App\Landlord\Tenancy\Models\Tenant;
+use App\Shared\Exceptions\ErrorScrubber;
 use App\Shared\Tenancy\Contracts\StorePromotionHolds;
 use App\Shared\Tenancy\Contracts\StoreStockReservations;
 use App\Shared\Tenancy\Contracts\StoreUnpaidOrders;
@@ -35,7 +36,7 @@ final class ReleaseExpiredReservationsCommand extends Command
                 $released = $tenant->run(static fn (): int => $storeStockReservations->releaseExpired() + $storePromotionHolds->releaseExpired() + $storeUnpaidOrders->cancelExpired());
             } catch (Throwable $exception) {
                 report($exception);
-                $this->components->error("Store {$tenant->id}: {$exception->getMessage()}");
+                $this->components->error("Store {$tenant->id}: ".ErrorScrubber::describe($exception));
                 $failures++;
 
                 continue;
