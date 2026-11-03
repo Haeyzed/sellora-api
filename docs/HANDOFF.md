@@ -1,8 +1,8 @@
 # Handover
 
 **Date:** 3 November 2026.
-**Describes:** `main` at `f0432da`, and the branch `handover-scripts` at
-`c3ad6db` and `fffe4e7` plus the commit that adds this file.
+**Describes:** `main` at `cb3e372`, and the branch `scrub-error-reports`
+started from it.
 
 This is for continuing the work on a new PC: for the project owner, and for
 a fresh Claude Code session that remembers nothing of the sessions before
@@ -15,25 +15,30 @@ disagrees with `git log`, GitHub or CLAUDE.md, they win.
 
 ## 1. Where things stand
 
-**`main`** is at `f0432da` ("Set aside, once, a refund on an order with no
-invoice to credit"). CI passed on it: run 41645166398, all three jobs (Pest
-on PostgreSQL 18 and Redis; Pint, Larastan and composer audit; Scramble).
+**`main`** is at `cb3e372` ("Leave the helper scripts' output folder out of
+Pint"). CI passed on it: run 41676650226, all three jobs (Pest on
+PostgreSQL 18 and Redis; Pint, Larastan and composer audit; Scramble).
 
-**What was finished last:** the third round of fixes on `fix-payment-holds`,
-merged into `main` by fast-forward:
+**What was finished last:** `handover-scripts`, merged into `main` by
+fast-forward:
 
 | Commit | What |
 |---|---|
-| `8e80259` | The invoice check counts its grace period from `orders.money_changed_at`, set only when money moves; existing orders backfilled |
-| `cefceb2` | A fully credited invoice has no tax left on any line or rate |
-| `5af260d` | The daily invoice check also reports credit note tax that doesn't fit its invoice |
-| `f0432da` | A refund on an order with no invoice is set aside once (`payment_refunds.no_credit_note_at`) and never picked up again |
+| `c3ad6db` | Caps how many refund parts one sweep run checks for credit notes (`orders.credit_note_checks_per_run`) |
+| `fffe4e7` | Adds the helper scripts in [scripts/](../scripts) |
+| `0a07e9d` | Adds this handover and the Windows setup steps in the [documentation home](README.md) |
+| `7b706d2` | The setup steps say to use the port PostgreSQL runs on (default 5432) |
+| `cb3e372` | Pint leaves the helper scripts' output folder (`scripts/output`) alone |
+
+Before that: the third round of fixes on `fix-payment-holds` (`8e80259` to
+`f0432da`).
 
 **Branches:**
 
 | Branch | State |
 |---|---|
-| `handover-scripts` | **Not merged, waiting for the owner's review.** Three commits on `main`: `c3ad6db` caps how many refund parts one sweep run checks (`orders.credit_note_checks_per_run`); `fffe4e7` adds [scripts/](../scripts); the third adds this file and the setup steps in the [documentation home](README.md) |
+| `scrub-error-reports` | **In progress:** item 2a below. Not merged |
+| `handover-scripts` | Merged; kept on GitHub |
 | `step-10-customers` to `step-18-returns`, `step-10b-social-sign-in`, `step-15b-invoices`, `step-16b-paystack` | Merged; kept on GitHub |
 | `docs-schema-comments`, `fix-token-links`, `fix-payment-holds` | Merged; kept on GitHub |
 | `ci-proof-docs`, `ci-proof-pint`, `ci-proof-stan` | Gone, as intended. They existed only on the old laptop (each broke one CI check on purpose, to prove CI catches it) and were never meant to be kept |
@@ -195,16 +200,8 @@ git fetch --all --prune
 git status                      # "nothing to commit, working tree clean"
 git rev-parse main origin/main  # the same hash twice
 git log --oneline -1 origin/main
-git branch -r                   # every branch in section 1, except the ci-proof ones
-git log --oneline main..origin/handover-scripts
-```
-
-On the old laptop, before it goes, look for anything not on GitHub:
-
-```powershell
-git status --short                            # nothing
-git log --branches --not --remotes --oneline  # only the three ci-proof commits
-git stash list                                # nothing
+git branch -r                   # every branch in section 1 that is kept on GitHub
+git log --branches --not --remotes --oneline  # nothing: every local commit is on GitHub
 ```
 
 **The PC matches CI:**
