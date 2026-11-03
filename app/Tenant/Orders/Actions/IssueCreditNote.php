@@ -146,7 +146,16 @@ final readonly class IssueCreditNote
      */
     private function shareOfInvoice(Invoice $invoice, Money $amount): array
     {
-        $left = InvoiceCreditsLeft::of($invoice);
+        return $this->sharedAcrossLines(InvoiceCreditsLeft::of($invoice), $amount);
+    }
+
+    /**
+     * An amount shared across what is left of the lines, taken off them in turn with each line's own tax.
+     *
+     * @return list<array{kind: CreditNoteLineKind, invoiceLine: InvoiceLine|null, name: string, quantity: int, total: Money, taxes: list<array{InvoiceTax, Money}>}>
+     */
+    private function sharedAcrossLines(InvoiceCreditsLeft $left, Money $amount): array
+    {
         $credits = [];
 
         foreach ($left->shares($amount) as [$line, $share]) {
@@ -164,7 +173,12 @@ final readonly class IssueCreditNote
     }
 
     /**
-     * The credit note's lines, in order: returned units, shipping, then a price reduction. Their tax comes from what is left of the invoice's.
+     * The credit note's lines, in order: returned units, shipping, what of them was more than was left of their lines, then a price reduction. Their tax comes from what is left of the invoice's.
+     *
+     * A line is credited no more than is left of it. An earlier price
+     * reduction took part of every line, so a line refunded whole afterwards
+     * can come to more: the rest is credited against what is left of the other
+     * lines, each with its own tax, so no line's tax is ever left behind.
      *
      * @return list<array{kind: CreditNoteLineKind, invoiceLine: InvoiceLine|null, name: string, quantity: int, total: Money, taxes: list<array{InvoiceTax, Money}>}>
      */
@@ -172,15 +186,24 @@ final readonly class IssueCreditNote
     {
         $left = InvoiceCreditsLeft::of($invoice);
         $lines = [];
+        $beyondLeft = Money::zero($invoice->currency);
 
         foreach ($request->lines as $credited) {
             $invoiceLine = $this->invoiceLineFor($invoice, $credited);
-            $lines[] = ['kind' => CreditNoteLineKind::Item, 'invoiceLine' => $invoiceLine, 'name' => $invoiceLine->name, 'quantity' => $credited->quantity, 'total' => $credited->amount, 'taxes' => $left->credit($invoiceLine, $credited->amount)];
+            $own = $this->noMoreThanLeft($left, $invoiceLine, $credited->amount);
+            $beyondLeft = $beyondLeft->add($credited->amount->subtract($own));
+            $lines[] = ['kind' => CreditNoteLineKind::Item, 'invoiceLine' => $invoiceLine, 'name' => $invoiceLine->name, 'quantity' => $credited->quantity, 'total' => $own, 'taxes' => $left->credit($invoiceLine, $own)];
         }
 
         if ($request->shipping->isPositive()) {
             $shipping = $invoice->lines->firstWhere('kind', InvoiceLineKind::Shipping) ?? throw new LogicException('Shipping was refunded on an order whose invoice has none.');
-            $lines[] = ['kind' => CreditNoteLineKind::Shipping, 'invoiceLine' => $shipping, 'name' => $shipping->name, 'quantity' => 1, 'total' => $request->shipping, 'taxes' => $left->credit($shipping, $request->shipping)];
+            $own = $this->noMoreThanLeft($left, $shipping, $request->shipping);
+            $beyondLeft = $beyondLeft->add($request->shipping->subtract($own));
+            $lines[] = ['kind' => CreditNoteLineKind::Shipping, 'invoiceLine' => $shipping, 'name' => $shipping->name, 'quantity' => 1, 'total' => $own, 'taxes' => $left->credit($shipping, $own)];
+        }
+
+        if ($beyondLeft->isPositive()) {
+            array_push($lines, ...$this->sharedAcrossLines($left, $beyondLeft));
         }
 
         if ($request->adjustment->isPositive()) {
@@ -194,6 +217,13 @@ final readonly class IssueCreditNote
         }
 
         return $lines;
+    }
+
+    private function noMoreThanLeft(InvoiceCreditsLeft $left, InvoiceLine $line, Money $amount): Money
+    {
+        $lineLeft = $left->leftOn($line);
+
+        return $amount->isLessThan($lineLeft) ? $amount : $lineLeft;
     }
 
     private function invoiceLineFor(Invoice $invoice, CreditedLine $credited): InvoiceLine

@@ -19,6 +19,7 @@ use App\Tenant\Orders\Models\CreditNoteTax;
 use App\Tenant\Orders\Models\DocumentSequence;
 use App\Tenant\Orders\Models\Invoice;
 use App\Tenant\Orders\Models\InvoiceTax;
+use App\Tenant\Orders\Services\InvoiceCreditsLeft;
 use App\Tenant\Payments\Enums\GatewayMode;
 use App\Tenant\Payments\Enums\GatewayPaymentState;
 use App\Tenant\Payments\Enums\PaymentMethod;
@@ -332,22 +333,42 @@ it('takes each credit\'s tax from what is left of the line, so partial credits a
     'dinar, three decimals' => ['KWD', 12345],
 ]);
 
-it('never takes more tax than is left when a line is credited whole after a price reduction', function (): void {
-    [$taxes, $invoiceTax, $itemTax] = $this->store->run(static function (): array {
+it('leaves no tax on any line or rate when a line credited whole after a price reduction credits the invoice in full', function (): void {
+    [$left, $byRate, $credited, $lines] = $this->store->run(static function (): array {
         addTaxRate('Standard', 'NG', null, '7.5');
-        $order = markPaid(unpaidOrder(10000));
-        $invoice = app(IssueInvoice::class)->handle($order)?->load('lines');
+        $order = unpaidOrder(10007);
+        splitOrderTaxesIntoTwoRates($order);
+        $order = markPaid($order);
+        $invoice = app(IssueInvoice::class)->handle($order)?->load('lines.taxes');
         $item = $invoice->lines->firstWhere('kind', InvoiceLineKind::Item);
+        $shipping = $invoice->lines->firstWhere('kind', InvoiceLineKind::Shipping);
         $zero = Money::zero('NGN');
-        // The reduction comes off the shipping too, so the whole line is more than the tracked part of it left.
-        app(IssueCreditNote::class)->handle(new CreditRequest($order->id, 'rfd_reduction', 'rf_reduction', Money::ofMinor(1000, 'NGN'), [], $zero, Money::ofMinor(1000, 'NGN')));
+        // A price reduction the size of the shipping comes off the item and the shipping both; the item refunded whole then credits the rest of the invoice.
+        app(IssueCreditNote::class)->handle(new CreditRequest($order->id, 'rfd_reduction', 'rf_reduction', $shipping->total, [], $zero, $shipping->total));
         app(IssueCreditNote::class)->handle(new CreditRequest($order->id, 'rfd_line', 'rf_line', $item->total, [new CreditedLine($order->lines()->sole()->id, 1, $item->total)], $zero, $zero));
 
-        return [CreditNote::query()->orderBy('id')->get()->map(static fn (CreditNote $note): int => $note->tax->minorAmount())->all(), $invoice->tax->minorAmount(), $item->tax->minorAmount()];
+        $notes = CreditNote::query()->with('lines.taxes')->get();
+        $sumByRate = static fn ($taxes): array => $taxes->groupBy('name')->map(static fn ($rows): int => $rows->sum(static fn ($row): int => $row->tax->minorAmount()))->sortKeys()->all();
+        $byLine = static fn (int $lineId): array => [
+            $notes->flatMap->lines->where('invoice_line_id', $lineId)->sum(static fn ($line): int => $line->total->minorAmount()),
+            $notes->flatMap->lines->where('invoice_line_id', $lineId)->sum(static fn ($line): int => $line->tax->minorAmount()),
+        ];
+
+        return [
+            InvoiceCreditsLeft::of($invoice->refresh()->load('lines.taxes'))->taxLeft(),
+            [$sumByRate($notes->flatMap->lines->flatMap->taxes), $sumByRate($invoice->lines->flatMap->taxes)],
+            [$notes->sum(static fn (CreditNote $note): int => $note->total->minorAmount()), $invoice->total->minorAmount(), $notes->sum(static fn (CreditNote $note): int => $note->tax->minorAmount()), $invoice->tax->minorAmount()],
+            // The item line's own credit, then the shipping's: no more than each was invoiced.
+            [$byLine($item->id), [$item->total->minorAmount(), $item->tax->minorAmount()], $byLine($shipping->id), [$shipping->total->minorAmount(), $shipping->tax->minorAmount()]],
+        ];
     });
 
-    expect(array_sum($taxes))->toBeLessThanOrEqual($invoiceTax)
-        ->and($taxes[1])->toBeLessThanOrEqual($itemTax);
+    expect(collect($left)->flatten()->unique()->values()->all())->toBe([0])
+        ->and($byRate[0])->toBe($byRate[1])
+        ->and($credited[0])->toBe($credited[1])
+        ->and($credited[2])->toBe($credited[3])
+        ->and($lines[0][0])->toBeLessThanOrEqual($lines[1][0])->and($lines[0][1])->toBeLessThanOrEqual($lines[1][1])
+        ->and($lines[2][0])->toBeLessThanOrEqual($lines[3][0])->and($lines[2][1])->toBeLessThanOrEqual($lines[3][1]);
 });
 
 it('never carries more tax than a credit comes to, even when an earlier credit left its tax behind', function (): void {

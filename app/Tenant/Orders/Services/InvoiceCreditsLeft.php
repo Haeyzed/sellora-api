@@ -20,9 +20,11 @@ use LogicException;
  * credit that finishes a line takes exactly what is left of it. A price
  * reduction belongs to no line, so it is spread across what is left of all of
  * them by largest remainder; that way the lines always add up to what is left
- * on the invoice. A line can be credited for more than is left of it when a
- * price reduction came first: it then takes all its tax, and the excess comes
- * off what is left of the other lines.
+ * on the invoice. A credit never takes more off a line than is left of it
+ * (IssueCreditNote credits the rest against the other lines, each with its
+ * own tax), so a fully credited invoice has no tax left on any line or rate.
+ * Credit notes issued before that may have credited a line past what was left
+ * of it; replaying one takes the excess off the other lines' money.
  */
 final class InvoiceCreditsLeft
 {
@@ -85,7 +87,25 @@ final class InvoiceCreditsLeft
     }
 
     /**
-     * Takes an amount off a line.
+     * What is still left to credit on a line.
+     */
+    public function leftOn(InvoiceLine $line): Money
+    {
+        return Money::ofMinor($this->amounts[$line->id] ?? 0, $this->currency);
+    }
+
+    /**
+     * The tax still left to credit, by line ID and rate (name, country, state and percent): all zero once the invoice is credited in full.
+     *
+     * @return array<int, array<string, int>>
+     */
+    public function taxLeft(): array
+    {
+        return $this->taxes;
+    }
+
+    /**
+     * Takes an amount off a line, no more than is left of it (leftOn()): the credit that brings the line to nothing takes all its tax still left, at every rate.
      *
      * @return list<array{InvoiceTax, Money}> The tax it carries, by rate.
      */
