@@ -100,8 +100,9 @@ tokens; a token for one never works for another.
 These are in the approved build order (CLAUDE.md section 17) but don't exist
 yet:
 
-- **Step 18, Returns:** returns with a refund or an exchange. Today a refund
-  doesn't put stock back.
+- **Step 18b, Exchanges:** a return settled with a replacement order, and
+  refunds to destinations other than the original payment. Returns with a
+  refund are built ([Returns](tenant/returns.md)).
 - **Step 19, Storefront:** content pages, menus, banners, SEO, wishlists,
   fetching several products for comparison, related and similar products and
   best sellers.
@@ -112,6 +113,95 @@ yet:
 - **Phase C, after the shopping flow works:** custom domains, merchant
   billing ([Billing](landlord/billing.md)), Stripe and other gateways, live
   updates, custom fields, and modules.
+
+## Local setup on Windows
+
+The steps for a new Windows PC, in Windows PowerShell. Where work stands
+and what comes next are in the [handover](HANDOFF.md).
+
+1. **Git**, and an SSH key added to GitHub: the remote is
+   `git@github.com:Haeyzed/sellora-api.git`. Check with `git --version` and
+   `ssh -T git@github.com`.
+2. **PHP 8.4 and Composer** from Laravel Herd (Herd's PHP 8.4, not 8.5).
+   Run PHP, `php artisan` and Composer from PowerShell: Git Bash has no
+   `php` on its path. Check `php -v`, then that `php -m` lists every
+   extension CI uses: bcmath, gmp, intl, pdo_pgsql, pgsql, gd, exif, zip and
+   redis. Node.js and npm are needed only for building assets.
+3. **PostgreSQL 18**, installed on its own (Herd's free version runs no
+   database). It must include the `pg_trgm` extension, which the standard
+   Windows installer does. Note the port it listens on: the old laptop used
+   5434, because other PostgreSQL versions held 5432 and 5433. That port
+   goes in `DB_PORT`.
+4. **Redis** on port 6379, for the cache, queues and sessions.
+5. **Clone and install:**
+
+   ```powershell
+   git clone git@github.com:Haeyzed/sellora-api.git
+   cd sellora-api
+   composer install
+   ```
+
+   Windows file locks (antivirus or the search indexer) can make Composer
+   fail while unpacking; run `composer install` again, up to three times.
+6. **The `.env`:** copy the old machine's `.env` into the clone and keep its
+   `APP_KEY`: encrypted data can be read only with the key that wrote it.
+   Set `DB_PORT` and `DB_PASSWORD` for this PC's PostgreSQL. Only on a
+   brand-new setup with no data to keep, copy `.env.example` and run
+   `php artisan key:generate`. Don't use `composer setup` with a copied
+   `.env`, since it runs `key:generate`.
+7. **Databases:** create `sellora_central` and `sellora_central_testing`
+   (for example in pgAdmin). The tests make everything else themselves:
+   each parallel test process's own central database, and the store
+   template database that test stores are copied from. Store databases are
+   named with `TENANT_DATABASE_PREFIX` (`sellora_tenant_`, and
+   `sellora_testing_tenant_` in tests). The database user must be allowed
+   to create databases.
+8. **Central database:**
+
+   ```powershell
+   php artisan migrate
+   php artisan permissions:sync
+   php artisan db:seed --force
+   ```
+
+9. **The pre-commit hook:** `composer hooks:install` (see below).
+10. **VS Code:** turn off auto-save and format-on-save for this folder, so
+    an editor never rewrites a file while a probe or a test run has it
+    open. In `.vscode/settings.json` (git-ignored):
+
+    ```json
+    {
+        "files.autoSave": "off",
+        "editor.formatOnSave": false
+    }
+    ```
+
+11. **Final check:** `composer ci` runs every check CI runs (Pint, the hook
+    check, Larastan, composer audit, Scramble and the full Pest suite). When
+    it passes, this PC matches CI.
+
+Windows quirks worth knowing:
+
+- PowerShell breaks the quotes in `php artisan tinker --execute`; put the
+  code in a file and pass the file to `tinker` instead.
+- `psql` run from Git Bash can fail to load its DLLs; run it from
+  PowerShell, or use `.\scripts\db-status.ps1`.
+- A test run that fails on database timeouts after the PC slept proves
+  nothing; run it again on its own.
+
+### Helper scripts
+
+`scripts/` holds PowerShell helpers for local work. Each one explains itself
+at the top, works in Windows PowerShell 5.1 and PowerShell 7, and writes its
+output to the git-ignored `scripts/output/`. If Windows blocks them, run one
+as `powershell -ExecutionPolicy Bypass -File .\scripts\probe.ps1 ...`.
+
+| Script | What it does |
+|---|---|
+| `probe.ps1` | Breaks one rule on purpose, runs the tests named and says whether they caught it; the file is always restored byte for byte. Runs only on a clean working tree |
+| `run-suite.ps1` | Runs a suite, the Landlord suite by default, one or more times, and keeps each run's full output |
+| `wait-for-ci.ps1` | Waits for the GitHub Actions run of a commit and prints each job's result |
+| `db-status.ps1` | A read-only look at the database server: leftover test databases and live sessions |
 
 ## Before you commit
 
