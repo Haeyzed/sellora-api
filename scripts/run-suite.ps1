@@ -11,8 +11,14 @@ runs: the tests would read a half-made change.
 A run that fails on database connection timeouts (for example after the
 machine slept) proves nothing: run it again on its own.
 
+Parallel workers: -Processes sets how many. Without it, the number is worked
+out from the memory free when the run starts: one worker per 0.5 GB, at
+least 2 and at most one per CPU. One worker per CPU (Pest's own default) can
+exhaust a machine's memory while other apps are open, and a swapping machine
+makes test queries time out. The number used is printed with each run.
+
 How to run, from any folder (Windows PowerShell 5.1 or pwsh 7):
-  .\scripts\run-suite.ps1 [-Path <test file or folder>] [-Times <runs>] [-Serial]
+  .\scripts\run-suite.ps1 [-Path <test file or folder>] [-Times <runs>] [-Processes <workers>] [-Serial]
 
 Exit code: 0 when every run passed, 1 otherwise.
 
@@ -20,10 +26,12 @@ Examples:
   .\scripts\run-suite.ps1                       # the Landlord suite, once, before a push
   .\scripts\run-suite.ps1 -Times 5              # five Landlord runs, to find a flaky test
   .\scripts\run-suite.ps1 -Path tests/Feature/Tenant/Orders
+  .\scripts\run-suite.ps1 -Path tests/Feature/Tenant -Processes 3
 #>
 param(
     [string] $Path = 'tests/Feature/Landlord',
     [int] $Times = 1,
+    [int] $Processes = 0,
     [switch] $Serial
 )
 
@@ -33,6 +41,18 @@ $root = Get-ProjectRoot
 $out = Get-ScriptOutputDir
 $label = ($Path -replace '[\\/:]', '-').Trim('-')
 $failedRuns = 0
+
+function Get-SafeWorkerCount {
+    $cpus = [Environment]::ProcessorCount
+    $freeGb = (Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory / 1MB
+    $workers = [math]::Floor($freeGb / 0.5)
+
+    return [int] [math]::Max(2, [math]::Min($cpus, $workers))
+}
+
+if ($Processes -lt 0) {
+    throw '-Processes must be 1 or more (or left out for the default).'
+}
 
 Push-Location $root
 
@@ -44,9 +64,12 @@ try {
         $log = Join-Path $out "suite-$label-$stamp-run$run.log"
         $junit = Join-Path $out "suite-$label-$stamp-run$run.xml"
         $arguments = @('vendor/bin/pest', $Path, '--log-junit', $junit)
+        $workers = 'serial'
 
         if (-not $Serial) {
-            $arguments += '--parallel'
+            $count = if ($Processes -gt 0) { $Processes } else { Get-SafeWorkerCount }
+            $arguments += @('--parallel', "--processes=$count")
+            $workers = "$count workers"
         }
 
         $started = Get-Date
@@ -72,7 +95,7 @@ try {
             $failedRuns++
         }
 
-        Write-Output "run $run of $Times ($minutes min): $summary -> $log"
+        Write-Output "run $run of $Times ($minutes min, $workers): $summary -> $log"
     }
 } finally {
     Pop-Location
