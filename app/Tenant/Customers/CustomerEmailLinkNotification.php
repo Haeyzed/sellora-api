@@ -7,6 +7,7 @@ namespace App\Tenant\Customers;
 use App\Shared\Http\EmailedLink;
 use App\Tenant\Customers\Enums\CustomerEmailTokenPurpose;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -14,7 +15,7 @@ use Illuminate\Notifications\Notification;
 /**
  * The email with a one-time link into the storefront, to verify a customer's email or to confirm a new one.
  */
-final class CustomerEmailLinkNotification extends Notification implements ShouldQueue
+final class CustomerEmailLinkNotification extends Notification implements ShouldBeEncrypted, ShouldQueue
 {
     use Queueable;
 

@@ -7,6 +7,7 @@ namespace App\Landlord\Tenancy;
 use App\Landlord\Tenancy\Models\Tenant;
 use Carbon\CarbonImmutable;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -17,7 +18,7 @@ use Illuminate\Notifications\Notification;
  * A closed store can't be signed in to, so the owner can no longer export its
  * data themselves; until the purge date, Sellora support can restore it.
  */
-final class StoreClosedNotification extends Notification implements ShouldQueue
+final class StoreClosedNotification extends Notification implements ShouldBeEncrypted, ShouldQueue
 {
     use Queueable;
 

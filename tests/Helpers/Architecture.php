@@ -2,6 +2,10 @@
 
 declare(strict_types=1);
 
+use Illuminate\Contracts\Queue\ShouldBeEncrypted;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Mail\Mailable;
+use Illuminate\Notifications\Notification;
 use Symfony\Component\Finder\Finder;
 
 /*
@@ -223,4 +227,66 @@ function translationPlaceholderMismatches(string $langPath): array
     }
 
     return $mismatches;
+}
+
+/*
+|--------------------------------------------------------------------------
+| For QueuedMessageEncryptionTest.php
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Every class, interface, trait and enum of the production code (app/, and each module's and integration's src/), by name, sorted.
+ *
+ * @return list<class-string>
+ */
+function productionClasses(): array
+{
+    $root = dirname(__DIR__, 2);
+    $sourceFolders = ['app' => 'App'];
+
+    foreach (['modules' => 'Modules', 'integrations' => 'Integrations'] as $zone => $zoneNamespace) {
+        foreach (glob($root.'/'.$zone.'/*/src', GLOB_ONLYDIR) ?: [] as $sourceFolder) {
+            $sourceFolders[$zone.'/'.basename(dirname($sourceFolder)).'/src'] = $zoneNamespace.'\\'.basename(dirname($sourceFolder));
+        }
+    }
+
+    $classes = [];
+
+    foreach ($sourceFolders as $folder => $namespace) {
+        foreach ((new Finder)->files()->in($root.'/'.$folder)->name('*.php') as $file) {
+            $class = $namespace.'\\'.str_replace('/', '\\', mb_substr(str_replace('\\', '/', $file->getRelativePathname()), 0, -4));
+
+            if (class_exists($class) || interface_exists($class) || trait_exists($class) || enum_exists($class)) {
+                $classes[] = $class;
+            }
+        }
+    }
+
+    sort($classes);
+
+    return $classes;
+}
+
+/**
+ * The queued notifications, mailables and listeners among the classes given that aren't encrypted in the queue. A listener is a class in a Listeners folder (CLAUDE.md section 5.2).
+ *
+ * @param  list<class-string>  $classes
+ * @return list<class-string>
+ */
+function unencryptedQueuedMessages(array $classes): array
+{
+    return array_values(array_filter($classes, static function (string $class): bool {
+        $reflection = new ReflectionClass($class);
+
+        if (! $reflection->isInstantiable() || ! $reflection->implementsInterface(ShouldQueue::class)) {
+            return false;
+        }
+
+        $isMessage = $reflection->isSubclassOf(Notification::class)
+            || $reflection->isSubclassOf(Mailable::class)
+            || str_contains($class, '\\Listeners\\');
+
+        return $isMessage && ! $reflection->implementsInterface(ShouldBeEncrypted::class);
+    }));
 }

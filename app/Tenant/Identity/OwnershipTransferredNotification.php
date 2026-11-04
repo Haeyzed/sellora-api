@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tenant\Identity;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -12,7 +13,7 @@ use Illuminate\Notifications\Notification;
 /**
  * The email both people get once an ownership transfer is accepted: the new owner and the previous one.
  */
-final class OwnershipTransferredNotification extends Notification implements ShouldQueue
+final class OwnershipTransferredNotification extends Notification implements ShouldBeEncrypted, ShouldQueue
 {
     use Queueable;
 

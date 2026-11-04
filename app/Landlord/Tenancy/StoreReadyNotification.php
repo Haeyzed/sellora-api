@@ -6,6 +6,7 @@ namespace App\Landlord\Tenancy;
 
 use App\Landlord\Tenancy\Models\Tenant;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -13,7 +14,7 @@ use Illuminate\Notifications\Notification;
 /**
  * The email telling a new store's owner their store is ready, with a link to sign in to its dashboard.
  */
-final class StoreReadyNotification extends Notification implements ShouldQueue
+final class StoreReadyNotification extends Notification implements ShouldBeEncrypted, ShouldQueue
 {
     use Queueable;
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Landlord\Tenancy;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -13,7 +14,7 @@ use SensitiveParameter;
 /**
  * The email with the 6-digit code that confirms a merchant owns the email they are registering a store with.
  */
-final class StoreRegistrationCodeNotification extends Notification implements ShouldQueue
+final class StoreRegistrationCodeNotification extends Notification implements ShouldBeEncrypted, ShouldQueue
 {
     use Queueable;
 

@@ -6,6 +6,7 @@ namespace App\Shared\Tenancy;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -17,7 +18,7 @@ use Illuminate\Notifications\Notification;
  * dashboard, never the file: the file can only be downloaded by the
  * requester while signed in.
  */
-final class StoreExportReadyNotification extends Notification implements ShouldQueue
+final class StoreExportReadyNotification extends Notification implements ShouldBeEncrypted, ShouldQueue
 {
     use Queueable;
 

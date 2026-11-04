@@ -6,6 +6,7 @@ namespace App\Tenant\Identity;
 
 use App\Shared\Http\EmailedLink;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -13,7 +14,7 @@ use Illuminate\Notifications\Notification;
 /**
  * The email inviting someone to join a store's team, with a one-time link into the store dashboard.
  */
-final class StaffInvitationNotification extends Notification implements ShouldQueue
+final class StaffInvitationNotification extends Notification implements ShouldBeEncrypted, ShouldQueue
 {
     use Queueable;
 

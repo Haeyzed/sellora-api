@@ -6,6 +6,7 @@ namespace App\Landlord\Identity;
 
 use App\Shared\Http\EmailedLink;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -13,7 +14,7 @@ use Illuminate\Notifications\Notification;
 /**
  * The email inviting someone to join Sellora's team, with a one-time link into the platform admin app.
  */
-final class PlatformAdminInvitationNotification extends Notification implements ShouldQueue
+final class PlatformAdminInvitationNotification extends Notification implements ShouldBeEncrypted, ShouldQueue
 {
     use Queueable;
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tenant\Customers;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -15,7 +16,7 @@ use Illuminate\Notifications\Notification;
  * It never says the new address: whoever reads the old mailbox may not be
  * the customer any more.
  */
-final class CustomerEmailChangedNotification extends Notification implements ShouldQueue
+final class CustomerEmailChangedNotification extends Notification implements ShouldBeEncrypted, ShouldQueue
 {
     use Queueable;
 

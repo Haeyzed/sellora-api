@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tenant\Identity;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -12,7 +13,7 @@ use Illuminate\Notifications\Notification;
 /**
  * The email telling a staff member that the owner wants to hand them the store, with a link into the store dashboard to accept it while signed in.
  */
-final class OwnershipTransferOfferNotification extends Notification implements ShouldQueue
+final class OwnershipTransferOfferNotification extends Notification implements ShouldBeEncrypted, ShouldQueue
 {
     use Queueable;
 

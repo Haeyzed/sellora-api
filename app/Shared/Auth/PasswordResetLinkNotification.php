@@ -6,6 +6,7 @@ namespace App\Shared\Auth;
 
 use App\Shared\Http\EmailedLink;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -16,7 +17,7 @@ use Illuminate\Notifications\Notification;
  * The link points into the right frontend app, built from the URL template
  * of the account's password broker in config/auth.php.
  */
-final class PasswordResetLinkNotification extends Notification implements ShouldQueue
+final class PasswordResetLinkNotification extends Notification implements ShouldBeEncrypted, ShouldQueue
 {
     use Queueable;
 

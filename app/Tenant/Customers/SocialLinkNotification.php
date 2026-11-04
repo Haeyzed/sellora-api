@@ -8,6 +8,7 @@ use App\Shared\Http\EmailedLink;
 use App\Tenant\Customers\Enums\CustomerEmailTokenPurpose;
 use App\Tenant\Customers\Enums\SocialProvider;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -15,7 +16,7 @@ use Illuminate\Notifications\Notification;
 /**
  * The email asking an account's owner to confirm connecting a sign-in provider to it (Step 10b). It says plainly that someone is connecting a provider, and to ignore it if that wasn't them.
  */
-final class SocialLinkNotification extends Notification implements ShouldQueue
+final class SocialLinkNotification extends Notification implements ShouldBeEncrypted, ShouldQueue
 {
     use Queueable;
 
