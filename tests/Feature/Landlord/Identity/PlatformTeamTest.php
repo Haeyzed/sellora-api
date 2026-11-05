@@ -146,6 +146,26 @@ it('resets another admin\'s two-factor authentication after the super admin conf
         ->assertConflict()->assertJsonPath('code', 'two_factor_not_enabled');
 });
 
+it('lists the platform\'s permissions with their labels, groups and sensitive flags, in the dashboard\'s language and searchable', function (): void {
+    platformTeam('GET', 'team/permissions', as: $this->superAdmin)
+        ->assertOk()
+        ->assertJsonPath('data.0', [
+            'name' => 'legal_documents.manage', 'label' => 'Manage legal documents', 'description' => __('permissions.legal_documents.manage.description'),
+            'group' => ['key' => 'legal', 'label' => 'Legal documents'], 'is_sensitive' => false,
+        ])
+        ->assertJsonPath('data.*.name', ['legal_documents.manage', 'stores.export', 'stores.grant', 'stores.manage', 'stores.view'])
+        ->assertJsonPath('data.*.is_sensitive', [false, true, true, true, false]);
+
+    $this->withHeader('Accept-Language', 'fr');
+
+    platformTeam('GET', 'team/permissions?search=exporter', as: $this->superAdmin)
+        ->assertOk()
+        ->assertHeader('Content-Language', 'fr')
+        ->assertJsonPath('data.*.name', ['stores.export'])
+        ->assertJsonPath('data.0.label', 'Exporter les données des boutiques')
+        ->assertJsonPath('data.0.group.label', 'Boutiques');
+});
+
 it('manages platform roles from the permission list, audited in the central database', function (): void {
     platformTeam('GET', 'team/permissions', as: $this->superAdmin)->assertOk()->assertJsonCount(count(PlatformPermission::cases()), 'data');
 

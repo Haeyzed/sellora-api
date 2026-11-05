@@ -280,6 +280,52 @@ it('lists the permissions roles can grant, with descriptions', function (): void
         ->assertJsonFragment(['name' => 'staff.invite', 'description' => __('permissions.staff.invite.description')]);
 });
 
+it('lists every permission with its label, description, group and whether it is sensitive, sorted by group and then label', function (): void {
+    $permissions = teamRequest('GET', 'team/permissions', as: $this->owner)->assertOk()->json('data');
+    $refund = collect($permissions)->firstWhere('name', 'payments.refund');
+    $collator = new Collator('en');
+    $sortKeys = array_map(static fn (array $permission): string => $permission['group']['label']."\u{0}".$permission['label'], $permissions);
+    $sorted = $sortKeys;
+    usort($sorted, static fn (string $first, string $second): int => (int) $collator->compare($first, $second));
+
+    expect($permissions)->toHaveCount(count(app(StaffPermissionCatalogue::class)->all()))
+        ->and($refund)->toBe([
+            'name' => 'payments.refund', 'label' => 'Refund payments', 'description' => __('permissions.payments.refund.description'),
+            'group' => ['key' => 'payments', 'label' => 'Payments'], 'is_sensitive' => true,
+        ])
+        ->and(collect($permissions)->firstWhere('name', 'catalog.view')['is_sensitive'])->toBeFalse()
+        ->and($sortKeys)->toBe($sorted);
+});
+
+it('lists the permissions in the dashboard\'s language', function (): void {
+    $this->withHeader('Accept-Language', 'fr-CA');
+
+    $response = teamRequest('GET', 'team/permissions', as: $this->owner)->assertOk()->assertHeader('Content-Language', 'fr');
+
+    expect(collect($response->json('data'))->firstWhere('name', 'payments.refund'))->toMatchArray([
+        'label' => 'Rembourser les paiements', 'group' => ['key' => 'payments', 'label' => 'Paiements'],
+    ]);
+});
+
+it('searches the permissions by label or description in the dashboard\'s language, or by key', function (?string $language, string $search, array $expected): void {
+    if ($language !== null) {
+        $this->withHeader('Accept-Language', $language);
+    }
+
+    $names = teamRequest('GET', 'team/permissions?search='.rawurlencode($search), as: $this->owner)->assertOk()->json('data.*.name');
+
+    expect($names)->toBe($expected);
+})->with([
+    'a label, in French' => ['fr', 'REMBOURSER', ['payments.refund']],
+    'a description' => [null, 'tracking', ['orders.fulfil']],
+    'a key' => [null, 'manage_gateways', ['payments.manage_gateways']],
+    'nothing' => [null, 'no permission says this', []],
+]);
+
+it('refuses a search longer than 100 characters', function (): void {
+    teamRequest('GET', 'team/permissions?search='.str_repeat('a', 101), as: $this->owner)->assertUnprocessable()->assertJsonValidationErrors('search');
+});
+
 it('describes every permission a store\'s or the platform\'s roles can grant', function (): void {
     $permissionNames = [...app(StaffPermissionCatalogue::class)->all(), ...array_column(PlatformPermission::cases(), 'value')];
 
@@ -327,8 +373,14 @@ it('gives a team member permissions directly, on top of their roles, audited and
         ->assertOk()
         ->assertJsonPath('data.holds_every_permission', false)
         ->assertJsonPath('data.permissions', [
-            ['name' => 'catalog.view', 'description' => __('permissions.catalog.view.description'), 'sources' => [['type' => 'direct', 'role' => null]]],
-            ['name' => 'settings.view', 'description' => __('permissions.settings.view.description'), 'sources' => [['type' => 'role', 'role' => 'Cashier']]],
+            [
+                'name' => 'catalog.view', 'label' => __('permissions.catalog.view.label'), 'description' => __('permissions.catalog.view.description'),
+                'group' => ['key' => 'catalog', 'label' => __('permission_groups.catalog')], 'is_sensitive' => false, 'sources' => [['type' => 'direct', 'role' => null]],
+            ],
+            [
+                'name' => 'settings.view', 'label' => __('permissions.settings.view.label'), 'description' => __('permissions.settings.view.description'),
+                'group' => ['key' => 'settings', 'label' => __('permission_groups.settings')], 'is_sensitive' => false, 'sources' => [['type' => 'role', 'role' => 'Cashier']],
+            ],
         ]);
 
     teamRequest('GET', 'catalog/brands', as: $cashier)->assertOk();

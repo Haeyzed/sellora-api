@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
+use App\Shared\Http\Middleware\UseDashboardLanguage;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Pricing\Http\Controllers\QuoteController;
 use App\Tenant\Pricing\Http\Controllers\StoreCurrencyController;
@@ -28,7 +29,7 @@ Route::prefix('catalog')
 
 Route::prefix('staff/pricing')
     ->name('staff.pricing.')
-    ->middleware(['auth:'.StaffMember::GUARD, EnsureTwoFactorWhenRequired::class, 'throttle:api'])
+    ->middleware([UseDashboardLanguage::class, 'auth:'.StaffMember::GUARD, EnsureTwoFactorWhenRequired::class, 'throttle:api'])
     ->group(static function (): void {
         Route::apiResource('tax-classes', TaxClassController::class)->parameters(['tax-classes' => 'taxClass']);
         Route::apiResource('tax-rates', TaxRateController::class)->parameters(['tax-rates' => 'taxRate']);

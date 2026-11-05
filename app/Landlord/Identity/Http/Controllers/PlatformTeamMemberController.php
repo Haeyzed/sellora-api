@@ -20,11 +20,13 @@ use App\Landlord\Identity\Http\Requests\ManagePlatformTeamRequest;
 use App\Landlord\Identity\Http\Requests\ResetPlatformAdminTwoFactorRequest;
 use App\Landlord\Identity\Http\Resources\PlatformTeamMemberResource;
 use App\Landlord\Identity\Models\PlatformAdmin;
+use App\Landlord\Identity\PlatformPermissionCatalogue;
 use App\Landlord\Identity\Services\PlatformAdminPermissions;
 use App\Shared\Auth\EffectivePermissions;
 use App\Shared\Auth\Exceptions\IncorrectCurrentPasswordException;
 use App\Shared\Auth\Exceptions\TooManyIncorrectAttemptsException;
 use App\Shared\Auth\Http\Resources\EffectivePermissionsResource;
+use App\Shared\Auth\PermissionTexts;
 use App\Shared\Http\Controller;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
@@ -33,7 +35,11 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  */
 final class PlatformTeamMemberController extends Controller
 {
-    public function __construct(private readonly PlatformAdminPermissions $platformAdminPermissions) {}
+    public function __construct(
+        private readonly PlatformAdminPermissions $platformAdminPermissions,
+        private readonly PlatformPermissionCatalogue $platformPermissionCatalogue,
+        private readonly PermissionTexts $permissionTexts,
+    ) {}
 
     /**
      * List platform admins.
@@ -81,7 +87,7 @@ final class PlatformTeamMemberController extends Controller
      */
     public function permissions(ManagePlatformTeamRequest $request, PlatformAdmin $platformAdmin): EffectivePermissionsResource
     {
-        return new EffectivePermissionsResource($this->effectivePermissionsOf($platformAdmin));
+        return new EffectivePermissionsResource($this->effectivePermissionsOf($platformAdmin), $this->platformPermissionCatalogue, $this->permissionTexts);
     }
 
     /**
@@ -99,7 +105,7 @@ final class PlatformTeamMemberController extends Controller
     {
         $changePlatformAdminPermissions->handle($request->actor(), $platformAdmin, $request->platformPermissions());
 
-        return new EffectivePermissionsResource($this->effectivePermissionsOf($platformAdmin));
+        return new EffectivePermissionsResource($this->effectivePermissionsOf($platformAdmin), $this->platformPermissionCatalogue, $this->permissionTexts);
     }
 
     /**

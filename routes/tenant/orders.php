@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
+use App\Shared\Http\Middleware\UseDashboardLanguage;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Orders\Http\Controllers\CustomerOrderController;
@@ -27,7 +28,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('staff')
     ->name('staff.')
-    ->middleware(['auth:'.StaffMember::GUARD, EnsureTwoFactorWhenRequired::class, 'throttle:api'])
+    ->middleware([UseDashboardLanguage::class, 'auth:'.StaffMember::GUARD, EnsureTwoFactorWhenRequired::class, 'throttle:api'])
     ->group(static function (): void {
         Route::prefix('orders')->name('orders.')->group(static function (): void {
             Route::get('/', [StaffOrderController::class, 'index'])->name('index');

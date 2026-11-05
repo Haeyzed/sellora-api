@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
+use App\Shared\Http\Middleware\UseDashboardLanguage;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Inventory\Http\Controllers\StockLevelController;
 use App\Tenant\Inventory\Http\Controllers\StockLocationController;
@@ -17,7 +18,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('staff/inventory')
     ->name('staff.inventory.')
-    ->middleware(['auth:'.StaffMember::GUARD, EnsureTwoFactorWhenRequired::class, 'throttle:api'])
+    ->middleware([UseDashboardLanguage::class, 'auth:'.StaffMember::GUARD, EnsureTwoFactorWhenRequired::class, 'throttle:api'])
     ->group(static function (): void {
         Route::get('locations', [StockLocationController::class, 'index'])->name('locations.index');
         Route::get('levels', [StockLevelController::class, 'index'])->name('levels.index');

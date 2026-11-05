@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
+use App\Shared\Http\Middleware\UseDashboardLanguage;
 use App\Tenant\Catalog\Http\Controllers\ArchiveProductController;
 use App\Tenant\Catalog\Http\Controllers\AttributeController;
 use App\Tenant\Catalog\Http\Controllers\AttributeValueController;
@@ -48,7 +49,7 @@ Route::prefix('catalog')
 
 Route::prefix('staff/catalog')
     ->name('staff.catalog.')
-    ->middleware(['auth:'.StaffMember::GUARD, EnsureTwoFactorWhenRequired::class, 'throttle:api', UseStoreLanguage::class])
+    ->middleware([UseDashboardLanguage::class, 'auth:'.StaffMember::GUARD, EnsureTwoFactorWhenRequired::class, 'throttle:api', UseStoreLanguage::class])
     ->group(static function (): void {
         Route::get('brands', [BrandController::class, 'index'])->name('brands.index');
         Route::post('brands', [BrandController::class, 'store'])->name('brands.store');

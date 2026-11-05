@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
+use App\Shared\Http\Middleware\UseDashboardLanguage;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Shipping\Http\Controllers\ShippingMethodController;
 use App\Tenant\Shipping\Http\Controllers\ShippingQuoteController;
@@ -17,7 +18,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('staff/shipping')
     ->name('staff.shipping.')
-    ->middleware(['auth:'.StaffMember::GUARD, EnsureTwoFactorWhenRequired::class, 'throttle:api'])
+    ->middleware([UseDashboardLanguage::class, 'auth:'.StaffMember::GUARD, EnsureTwoFactorWhenRequired::class, 'throttle:api'])
     ->group(static function (): void {
         Route::apiResource('zones', ShippingZoneController::class);
         Route::put('zones/{zone}/regions', [ShippingZoneController::class, 'replaceRegions'])->name('zones.regions.update');

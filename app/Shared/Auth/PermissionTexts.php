@@ -19,6 +19,21 @@ final readonly class PermissionTexts
 {
     public function __construct(private Translator $translator) {}
 
+    /**
+     * The permission with all its texts, in the current language.
+     */
+    public function describe(GrantablePermission $permission): DescribedPermission
+    {
+        return new DescribedPermission(
+            name: (string) $permission->value,
+            label: $this->label($permission),
+            description: $this->description($permission),
+            groupKey: $permission->group(),
+            groupLabel: $this->groupLabel($permission),
+            isSensitive: $permission->isSensitive(),
+        );
+    }
+
     public function label(GrantablePermission $permission): string
     {
         return $this->text('permissions.'.$permission->value.'.label');

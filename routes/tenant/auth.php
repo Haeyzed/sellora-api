@@ -10,6 +10,7 @@ use App\Shared\Auth\Http\Controllers\RecoveryCodeController;
 use App\Shared\Auth\Http\Controllers\TwoFactorConfirmationController;
 use App\Shared\Auth\Http\Controllers\TwoFactorController;
 use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
+use App\Shared\Http\Middleware\UseDashboardLanguage;
 use App\Tenant\Customers\Http\Controllers\CurrentCustomerController;
 use App\Tenant\Customers\Http\Controllers\RegistrationController;
 use App\Tenant\Customers\Http\Controllers\SignInController as CustomerSignInController;
@@ -27,7 +28,7 @@ use Illuminate\Support\Facades\Route;
 | Staff sign-in (Tenant\Identity), under /api/v1/staff/auth.
 */
 
-Route::prefix('staff/auth')->name('staff.auth.')->group(static function (): void {
+Route::prefix('staff/auth')->name('staff.auth.')->middleware(UseDashboardLanguage::class)->group(static function (): void {
     Route::middleware('throttle:login')->group(static function (): void {
         Route::post('tokens', StaffSignInController::class)->name('tokens.store');
         Route::post('two-factor-challenges', StaffTwoFactorChallengeController::class)->name('two-factor-challenges.store');

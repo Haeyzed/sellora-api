@@ -6,6 +6,7 @@ namespace App\Tenant\Identity\Http\Controllers;
 
 use App\Shared\Auth\EffectivePermissions;
 use App\Shared\Auth\Http\Resources\EffectivePermissionsResource;
+use App\Shared\Auth\PermissionTexts;
 use App\Shared\Features\Exceptions\UsageLimitReachedException;
 use App\Shared\Http\Controller;
 use App\Tenant\Identity\Actions\ChangeStaffMemberPermissions;
@@ -24,6 +25,7 @@ use App\Tenant\Identity\Http\Requests\ViewTeamMemberRequest;
 use App\Tenant\Identity\Http\Resources\TeamMemberResource;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Identity\Services\StaffAuthority;
+use App\Tenant\Identity\StaffPermissionCatalogue;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 /**
@@ -31,7 +33,11 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  */
 final class TeamMemberController extends Controller
 {
-    public function __construct(private readonly StaffAuthority $staffAuthority) {}
+    public function __construct(
+        private readonly StaffAuthority $staffAuthority,
+        private readonly StaffPermissionCatalogue $staffPermissionCatalogue,
+        private readonly PermissionTexts $permissionTexts,
+    ) {}
 
     /**
      * List team members.
@@ -86,7 +92,7 @@ final class TeamMemberController extends Controller
      */
     public function permissions(ViewTeamMemberRequest $request, StaffMember $staffMember): EffectivePermissionsResource
     {
-        return new EffectivePermissionsResource($this->effectivePermissionsOf($staffMember));
+        return new EffectivePermissionsResource($this->effectivePermissionsOf($staffMember), $this->staffPermissionCatalogue, $this->permissionTexts);
     }
 
     /**
@@ -106,7 +112,7 @@ final class TeamMemberController extends Controller
     {
         $changeStaffMemberPermissions->handle($request->actor(), $staffMember, $request->permissionNames());
 
-        return new EffectivePermissionsResource($this->effectivePermissionsOf($staffMember));
+        return new EffectivePermissionsResource($this->effectivePermissionsOf($staffMember), $this->staffPermissionCatalogue, $this->permissionTexts);
     }
 
     /**

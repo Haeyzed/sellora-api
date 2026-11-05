@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
+use App\Shared\Http\Middleware\UseDashboardLanguage;
 use App\Tenant\Cart\Http\Controllers\CartCodeController;
 use App\Tenant\Cart\Http\Controllers\CartController;
 use App\Tenant\Cart\Http\Controllers\CartLineController;
@@ -48,6 +49,6 @@ Route::prefix('cart')
 */
 
 Route::get('staff/customers/{customer}/cart', [StaffCustomerCartController::class, 'show'])
-    ->middleware(['auth:'.StaffMember::GUARD, EnsureTwoFactorWhenRequired::class, 'throttle:api', UseStoreLanguage::class])
+    ->middleware([UseDashboardLanguage::class, 'auth:'.StaffMember::GUARD, EnsureTwoFactorWhenRequired::class, 'throttle:api', UseStoreLanguage::class])
     ->withTrashed()
     ->name('staff.customers.cart.show');

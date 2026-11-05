@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
+use App\Shared\Http\Middleware\UseDashboardLanguage;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Returns\Http\Controllers\CustomerReturnController;
@@ -45,7 +46,7 @@ Route::prefix('guest/orders/{order}/returns')->middleware(UseStoreLanguage::clas
     });
 });
 
-Route::middleware(['auth:'.StaffMember::GUARD, EnsureTwoFactorWhenRequired::class, 'throttle:api'])->group(static function (): void {
+Route::middleware([UseDashboardLanguage::class, 'auth:'.StaffMember::GUARD, EnsureTwoFactorWhenRequired::class, 'throttle:api'])->group(static function (): void {
     Route::post('staff/orders/{order}/returns', [ReturnController::class, 'store'])->name('staff.orders.returns.store');
 
     Route::prefix('staff/returns')->name('staff.returns.')->group(static function (): void {

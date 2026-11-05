@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
+use App\Shared\Http\Middleware\UseDashboardLanguage;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Payments\Http\Controllers\ManualPaymentMethodController;
 use App\Tenant\Payments\Http\Controllers\PaymentController;
@@ -20,7 +21,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('staff')
     ->name('staff.')
-    ->middleware(['auth:'.StaffMember::GUARD, EnsureTwoFactorWhenRequired::class, 'throttle:api'])
+    ->middleware([UseDashboardLanguage::class, 'auth:'.StaffMember::GUARD, EnsureTwoFactorWhenRequired::class, 'throttle:api'])
     ->group(static function (): void {
         Route::prefix('payment-gateways')->name('payment-gateways.')->where(['gateway' => '[a-z0-9_]{1,64}'])->group(static function (): void {
             Route::get('/', [PaymentGatewayController::class, 'index'])->name('index');

@@ -7,17 +7,19 @@ namespace App\Landlord\Identity\Http\Controllers;
 use App\Landlord\Identity\Actions\CreatePlatformRole;
 use App\Landlord\Identity\Actions\DeletePlatformRole;
 use App\Landlord\Identity\Actions\UpdatePlatformRole;
-use App\Landlord\Identity\Enums\PlatformPermission;
 use App\Landlord\Identity\Exceptions\PlatformRoleInUseException;
 use App\Landlord\Identity\Exceptions\PlatformRoleNameTakenException;
 use App\Landlord\Identity\Exceptions\PlatformRoleProtectedException;
+use App\Landlord\Identity\Http\Requests\ListPlatformPermissionsRequest;
 use App\Landlord\Identity\Http\Requests\ListPlatformTeamRequest;
 use App\Landlord\Identity\Http\Requests\ManagePlatformTeamRequest;
 use App\Landlord\Identity\Http\Requests\SavePlatformRoleRequest;
-use App\Landlord\Identity\Http\Resources\PlatformPermissionResource;
 use App\Landlord\Identity\Http\Resources\PlatformRoleResource;
+use App\Landlord\Identity\PlatformPermissionCatalogue;
 use App\Landlord\Identity\PlatformRoleQueries;
+use App\Shared\Auth\Http\Resources\GrantablePermissionResource;
 use App\Shared\Auth\Models\Role;
+use App\Shared\Auth\PermissionList;
 use App\Shared\Http\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -99,8 +101,8 @@ final class PlatformRoleController extends Controller
      * Super admins only. Each permission has a description in the request's
      * language.
      */
-    public function permissions(ManagePlatformTeamRequest $request): AnonymousResourceCollection
+    public function permissions(ListPlatformPermissionsRequest $request, PlatformPermissionCatalogue $platformPermissionCatalogue, PermissionList $permissionList): AnonymousResourceCollection
     {
-        return PlatformPermissionResource::collection(PlatformPermission::cases());
+        return GrantablePermissionResource::collection($permissionList->of($platformPermissionCatalogue, $request->search()));
     }
 }

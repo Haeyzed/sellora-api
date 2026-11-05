@@ -23,6 +23,7 @@ use App\Shared\Geography\ListSubdivisionChangesCommand;
 use App\Shared\Http\Middleware\AddSecurityHeaders;
 use App\Shared\Http\Middleware\ForceJsonResponse;
 use App\Shared\Http\Middleware\RejectSecretsInUrl;
+use App\Shared\Http\Middleware\UseDashboardLanguage;
 use App\Shared\Idempotency\EnsureRequestIsIdempotent;
 use App\Shared\Money\ExchangeRates\RefreshExchangeRatesCommand;
 use App\Shared\Retention\PurgeExpiredRecordsCommand;
@@ -47,7 +48,7 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
         then: static function (): void {
-            Route::middleware(['api', EnsureCentralDomain::class])
+            Route::middleware(['api', EnsureCentralDomain::class, UseDashboardLanguage::class])
                 ->prefix('api/v1/platform')
                 ->name('platform.')
                 ->group(base_path('routes/landlord.php'));

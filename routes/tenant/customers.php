@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
+use App\Shared\Http\Middleware\UseDashboardLanguage;
 use App\Tenant\Customers\Http\Controllers\CustomerAccountController;
 use App\Tenant\Customers\Http\Controllers\CustomerAddressController;
 use App\Tenant\Customers\Http\Controllers\CustomerErasureConfirmationController;
@@ -71,7 +72,7 @@ Route::prefix('customer/account')->name('customer.account.')->middleware(['auth:
 
 Route::prefix('staff/customers')
     ->name('staff.customers.')
-    ->middleware(['auth:'.StaffMember::GUARD, EnsureTwoFactorWhenRequired::class, 'throttle:api'])
+    ->middleware([UseDashboardLanguage::class, 'auth:'.StaffMember::GUARD, EnsureTwoFactorWhenRequired::class, 'throttle:api'])
     ->group(static function (): void {
         Route::get('/', [StaffCustomerController::class, 'index'])->name('index');
         Route::get('{customer}', [StaffCustomerController::class, 'show'])->name('show')->withTrashed();
@@ -98,7 +99,7 @@ Route::prefix('staff/customers')
 
 Route::prefix('staff/customer-groups')
     ->name('staff.customer-groups.')
-    ->middleware(['auth:'.StaffMember::GUARD, EnsureTwoFactorWhenRequired::class, 'throttle:api'])
+    ->middleware([UseDashboardLanguage::class, 'auth:'.StaffMember::GUARD, EnsureTwoFactorWhenRequired::class, 'throttle:api'])
     ->group(static function (): void {
         Route::get('/', [CustomerGroupController::class, 'index'])->name('index');
         Route::post('/', [CustomerGroupController::class, 'store'])->name('store');

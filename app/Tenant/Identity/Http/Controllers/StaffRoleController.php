@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tenant\Identity\Http\Controllers;
 
+use App\Shared\Auth\Http\Resources\GrantablePermissionResource;
 use App\Shared\Auth\Models\Role;
+use App\Shared\Auth\PermissionList;
 use App\Shared\Http\Controller;
 use App\Tenant\Identity\Actions\CreateStaffRole;
 use App\Tenant\Identity\Actions\DeleteStaffRole;
@@ -14,10 +16,10 @@ use App\Tenant\Identity\Exceptions\RoleInUseException;
 use App\Tenant\Identity\Exceptions\RoleNameTakenException;
 use App\Tenant\Identity\Exceptions\RoleProtectedException;
 use App\Tenant\Identity\Http\Requests\DeleteStaffRoleRequest;
+use App\Tenant\Identity\Http\Requests\ListStaffPermissionsRequest;
 use App\Tenant\Identity\Http\Requests\ListStaffRolesRequest;
 use App\Tenant\Identity\Http\Requests\SaveStaffRoleRequest;
 use App\Tenant\Identity\Http\Requests\ViewStaffRolesRequest;
-use App\Tenant\Identity\Http\Resources\StaffPermissionResource;
 use App\Tenant\Identity\Http\Resources\StaffRoleResource;
 use App\Tenant\Identity\StaffPermissionCatalogue;
 use App\Tenant\Identity\StaffRoleQueries;
@@ -110,8 +112,8 @@ final class StaffRoleController extends Controller
      * Needs the roles.view permission. Each permission has a description in
      * the request's language.
      */
-    public function permissions(ViewStaffRolesRequest $request, StaffPermissionCatalogue $staffPermissionCatalogue): AnonymousResourceCollection
+    public function permissions(ListStaffPermissionsRequest $request, StaffPermissionCatalogue $staffPermissionCatalogue, PermissionList $permissionList): AnonymousResourceCollection
     {
-        return StaffPermissionResource::collection($staffPermissionCatalogue->all());
+        return GrantablePermissionResource::collection($permissionList->of($staffPermissionCatalogue, $request->search()));
     }
 }

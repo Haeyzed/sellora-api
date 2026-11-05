@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
+use App\Shared\Http\Middleware\UseDashboardLanguage;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Promotions\Http\Controllers\DiscountPreviewController;
 use App\Tenant\Promotions\Http\Controllers\PromotionCodeController;
@@ -17,7 +18,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('staff/promotions')
     ->name('staff.promotions.')
-    ->middleware(['auth:'.StaffMember::GUARD, EnsureTwoFactorWhenRequired::class, 'throttle:api'])
+    ->middleware([UseDashboardLanguage::class, 'auth:'.StaffMember::GUARD, EnsureTwoFactorWhenRequired::class, 'throttle:api'])
     ->group(static function (): void {
         Route::get('/', [PromotionController::class, 'index'])->name('index');
         Route::post('/', [PromotionController::class, 'store'])->name('store');

@@ -121,6 +121,18 @@ it('lets staff record a withdrawal the customer asked for, but never a grant', f
         ->toThrow(InvalidArgumentException::class);
 });
 
+it('records a staff withdrawal without a language, whatever the staff member\'s dashboard is in', function (): void {
+    customerRequest('PUT', 'account/marketing-consents/email', ['granted' => true], $this->customer)->assertOk();
+    $this->withHeader('Accept-Language', 'fr');
+
+    staffCustomerRequest('POST', "/{$this->customer->public_id}/marketing-consents/withdrawals", ['channel' => 'email'], $this->owner)
+        ->assertCreated()
+        ->assertHeader('Content-Language', 'fr');
+
+    // Staff show the customer no wording, so their withdrawal records none, and no language: never the dashboard's.
+    expect($this->store->run(static fn (): array => MarketingConsent::query()->orderBy('id')->pluck('locale')->all()))->toBe(['en', null]);
+});
+
 it('never lets an event be changed or deleted outside erasure', function (Closure $tamper, string $message): void {
     customerRequest('PUT', 'account/marketing-consents/email', ['granted' => true], $this->customer)->assertOk();
 

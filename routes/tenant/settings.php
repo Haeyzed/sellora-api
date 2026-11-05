@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
+use App\Shared\Http\Middleware\UseDashboardLanguage;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Settings\Http\Controllers\StaffTwoFactorRequirementController;
 use App\Tenant\Settings\Http\Controllers\StoreClosureController;
@@ -19,7 +20,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('staff/store')
     ->name('staff.store.')
-    ->middleware(['auth:'.StaffMember::GUARD, EnsureTwoFactorWhenRequired::class, 'throttle:api'])
+    ->middleware([UseDashboardLanguage::class, 'auth:'.StaffMember::GUARD, EnsureTwoFactorWhenRequired::class, 'throttle:api'])
     ->group(static function (): void {
         Route::get('settings', [StoreSettingsController::class, 'show'])->name('settings.show');
         Route::patch('settings', [StoreSettingsController::class, 'update'])->name('settings.update');

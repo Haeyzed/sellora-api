@@ -454,3 +454,20 @@ it('lets staff preview what a basket gets, with the code they try, with promotio
 
     promotionRequest('POST', '/preview', ['lines' => [['variant' => $variant, 'quantity' => 1]]], $outsider)->assertForbidden();
 });
+
+it('shows staff the store\'s own text in the store\'s language, while the dashboard is in another', function (): void {
+    // The store publishes in English only; the French title is there but never offered.
+    [$variant, $viewer] = $this->store->run(static function (): array {
+        runningPromotion(['title' => ['en' => 'Ten off', 'fr' => 'Dix de moins']]);
+        $viewer = StaffMember::factory()->create();
+        $viewer->givePermissionTo(Permission::findByName('promotions.view', StaffMember::GUARD));
+
+        return [promotedVariant(5000)->public_id, $viewer];
+    });
+    $this->withHeader('Accept-Language', 'fr');
+
+    promotionRequest('POST', '/preview', ['lines' => [['variant' => $variant, 'quantity' => 2]]], $viewer)
+        ->assertOk()
+        ->assertHeader('Content-Language', 'fr')
+        ->assertJsonPath('data.discounts.0.label', 'Ten off');
+});

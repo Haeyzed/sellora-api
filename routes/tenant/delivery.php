@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Shared\Auth\Http\Controllers\AccessTokenController;
 use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
+use App\Shared\Http\Middleware\UseDashboardLanguage;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Delivery\Http\Controllers\CurrentDriverCashController;
 use App\Tenant\Delivery\Http\Controllers\CurrentDriverController;
@@ -75,7 +76,7 @@ Route::get('guest/orders/{order}/delivery-tracking', [DeliveryTrackingController
 
 Route::prefix('staff/delivery')
     ->name('staff.delivery.')
-    ->middleware(['auth:'.StaffMember::GUARD, EnsureTwoFactorWhenRequired::class, 'throttle:api'])
+    ->middleware([UseDashboardLanguage::class, 'auth:'.StaffMember::GUARD, EnsureTwoFactorWhenRequired::class, 'throttle:api'])
     ->group(static function (): void {
         Route::apiResource('drivers', DriverController::class)->except('destroy');
         Route::post('drivers/{driver}/deactivate', [DriverController::class, 'deactivate'])->name('drivers.deactivate');
