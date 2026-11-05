@@ -7,9 +7,11 @@ the buyer. Field-level detail is in the database's own column comments.
 
 Returns never moves money or stock itself: refunds go through
 [Payments](payments.md) and stock through [Inventory](inventory.md), each
-through their own actions. Exchanges come in Step 18c; until then every
-return is settled by a refund, back to how the buyer paid unless they chose
-another [destination](#where-a-refund-goes) a module offers.
+through their own actions. Exchanges are being built: the replacement
+order is ready ([replacement orders](checkout.md#replacement-orders-exchanges),
+Step 18c), and asking for an exchange from a return comes in Step 18d.
+Until then every return is settled by a refund, back to how the buyer paid
+unless they chose another [destination](#where-a-refund-goes) a module offers.
 
 ## A return from start to finish
 

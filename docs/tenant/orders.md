@@ -16,6 +16,11 @@ order.
 An order has a public ID and a sequential number for people to read (for
 example `#1042`); the number is not a secret and doesn't unlock anything.
 
+An order comes from exactly one place: a checkout, or a return it replaces
+in an exchange ([replacement orders](checkout.md#replacement-orders-exchanges)).
+Neither ever changes, and a return has at most one replacement that isn't
+cancelled.
+
 It moves along three separate tracks:
 
 - **Order:** open, completed or cancelled.

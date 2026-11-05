@@ -50,6 +50,13 @@ example, a valid code can remain on a cart while the minimum spend is not
 met; adding another item may make it apply. The cart shows the reason when a
 code is currently not applicable.
 
+A replacement order in an exchange gets today's automatic promotions, never
+a code, and then its allowances: fixed reductions the exchange agreed,
+taken off what each line or the delivery still costs after the promotions,
+never more, and before tax. They are recorded as discounts from the source
+"exchange". Only replacement orders give them
+([replacement orders](checkout.md#replacement-orders-exchanges)).
+
 ## Usage holds and redemption scenario
 
 1. A shopper enters a code or qualifies for an automatic offer.

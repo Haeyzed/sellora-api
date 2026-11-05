@@ -101,5 +101,39 @@ method would share a key with one already registered stops the app at boot
 with an error naming both, so a hold is never settled by the wrong method.
 
 Thus, saving checkout details does not reserve stock; pressing confirm and
-passing the quote checks does. See [Sellora business flows](business-flows.md)
+passing the quote checks does.
+
+## Replacement orders (exchanges)
+
+An exchange settles a return by sending other items in their place (Step
+18c; staff ask for one from Returns in Step 18d). The replacement is a real
+order, placed without a cart or checkout through the same public steps:
+whether each item is for sale and in stock, today's prices with today's
+automatic promotions (never a code), tax, and shipping. It is priced in the
+original order's currency at today's rate, for the original buyer and sent
+to the original order's current address, and keeps the original's test
+flag.
+
+- `QuoteReplacementOrder` says what it comes to now: its total, what the
+  returned items credit (the smaller of what they are worth and what the
+  replacement costs), what is still due and what goes back to the buyer.
+  It can't be placed when an item is no longer for sale or out of stock,
+  the currency is no longer offered, or the delivery can't be priced.
+- When the store was at fault, a like-for-like item costs no more than
+  what the buyer paid for the one they sent back, and a delivery the buyer
+  doesn't pay for costs nothing. Both come off as **allowances**: fixed
+  reductions after the promotions, before tax, shown on the order as
+  discounts from "exchange". Only replacement orders give allowances; no
+  cart, checkout or shopper's request can.
+- `PlaceReplacementOrder` places it as staff confirmed the quote, all or
+  nothing and in checkout's own order. It refuses with a 409 when the
+  quote changed or can't be placed now. Confirming again returns the same
+  order, and a return has at most one replacement that isn't cancelled.
+- The credit is held on the order as the payment method `exchange_credit`,
+  which checkout never offers. It follows every hold's lifecycle: when the
+  credit covers it all, the order is paid at once; otherwise the buyer pays
+  the rest the usual way. It is committed when the order is paid and
+  released if it expires or is cancelled unpaid. It can't be given back
+  once committed: a paid replacement that is cancelled is left owing the
+  refund for staff. See [Sellora business flows](business-flows.md)
 for what happens after the order exists.

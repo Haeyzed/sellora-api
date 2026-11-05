@@ -62,6 +62,12 @@ several, such as a gift-card portion followed by a gateway payment.
   customer, never for one named payment or for money that was never part
   of the sale.
 
+- Core's own destination `exchange` takes the part of a return that pays
+  for its exchange's [replacement order](checkout.md#replacement-orders-exchanges):
+  the money stays in the store. Nobody can choose it, so it is never
+  offered, and a guest's order may use it. It is paid out at once and still
+  reduces the sale, so it gets a credit note.
+
 Refund requests and their amounts never change. Gateway outcomes are
 checked, and unclear cases go to staff review rather than being declared
 successful.
