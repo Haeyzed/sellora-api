@@ -40,6 +40,7 @@ use App\Tenant\Orders\Actions\PlaceOrder;
 use App\Tenant\Orders\Data\BuyerTaxId;
 use App\Tenant\Orders\Data\OrderBuyer;
 use App\Tenant\Orders\Data\OrderDraft;
+use App\Tenant\Orders\Data\OrderSource;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Payments\Actions\RecalculateOrderPayments;
 use App\Tenant\Payments\Actions\StartManualPayment;
@@ -223,7 +224,7 @@ final readonly class PlaceCheckoutOrder
         $option = $quote->priced->shipping->quote->required ? $quote->priced->shipping->option : null;
 
         return new OrderDraft(
-            $checkout->public_id,
+            OrderSource::checkout($checkout->public_id),
             $basket,
             $checkout->customer === null
                 ? OrderBuyer::guest($email, $checkout->contact_name, $checkout->contact_phone, $taxId)

@@ -40,7 +40,8 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property int $id
  * @property string $public_id
  * @property int $number Shown as "#1042"; per store, never used to look an order up.
- * @property string $checkout_id The checkout it was placed from.
+ * @property string|null $checkout_id The checkout it was placed from; null for a replacement order.
+ * @property int|null $replaces_return_id The return it replaces in an exchange (Step 18c); null for an order placed at checkout. Exactly one of the two is set.
  * @property OrderStatus $status
  * @property OrderPaymentStatus $payment_status Moved only by Payments.
  * @property bool $is_test Placed with a test-mode payment method; never changes. Only test payments pay it, and it never counts as a sale.

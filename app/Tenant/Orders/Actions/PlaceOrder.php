@@ -14,6 +14,7 @@ use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Inventory\Actions\TransferReservation;
 use App\Tenant\Inventory\Data\StockHolder;
 use App\Tenant\Orders\Data\OrderDraft;
+use App\Tenant\Orders\Data\OrderSource;
 use App\Tenant\Orders\Data\PlacedOrder;
 use App\Tenant\Orders\Enums\FulfilmentStatus;
 use App\Tenant\Orders\Enums\OrderAddressKind;
@@ -41,7 +42,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Turns a checkout into an order (section 13), for Checkout to call (Step 16): everything is copied as it was charged, so nothing that changes later (products, promotions, tax rates, exchange rates, saved addresses) changes the order.
+ * Turns a checkout, or a replacement for a return (Step 18c), into an order (section 13): everything is copied as it was charged, so nothing that changes later (products, promotions, tax rates, exchange rates, saved addresses) changes the order.
  *
  * In one transaction: the order gets the store's next number and copies of
  * its lines (names in the buyer's language, SKU, price, discount, tax), each
@@ -49,7 +50,7 @@ use Illuminate\Support\Facades\DB;
  * the checkout's stock hold and promotion uses become the order's; and the
  * order gets a payment deadline, always: the usual one, or a later one the
  * draft gives, never beyond the maximum. A guest order whose email belongs to
- * a verified account joins that account. Placing the same checkout again
+ * a verified account joins that account. Placing from the same source again
  * returns the same order. OrderPlaced is announced once it is saved.
  */
 final readonly class PlaceOrder
@@ -69,10 +70,10 @@ final readonly class PlaceOrder
         $paymentDueAt = $this->paymentDeadline($draft);
 
         return DB::transaction(function () use ($draft, $paymentDueAt): PlacedOrder {
-            // Two requests placing the same checkout at once: the second waits, then finds the first's order.
-            DB::select('select pg_advisory_xact_lock(hashtext(?))', ['order-checkout:'.$draft->checkoutId]);
+            // Two requests placing from the same source at once: the second waits, then finds the first's order.
+            DB::select('select pg_advisory_xact_lock(hashtext(?))', [$draft->source->lockKey()]);
 
-            $existing = Order::query()->where('checkout_id', $draft->checkoutId)->first();
+            $existing = $this->alreadyPlaced($draft->source);
 
             if ($existing !== null) {
                 return new PlacedOrder($existing, false);
@@ -99,7 +100,17 @@ final readonly class PlaceOrder
     }
 
     /**
-     * Refuses a draft whose parts don't fit together: Checkout must hand over exactly what it charged.
+     * The order already placed from the source: the checkout's, or the return's replacement that isn't cancelled.
+     */
+    private function alreadyPlaced(OrderSource $source): ?Order
+    {
+        return $source->checkoutId !== null
+            ? Order::query()->where('checkout_id', $source->checkoutId)->first()
+            : Order::query()->where('replaces_return_id', $source->replacesReturnId)->where('status', '<>', OrderStatus::Cancelled)->first();
+    }
+
+    /**
+     * Refuses a draft whose parts don't fit together: the caller must hand over exactly what it charged.
      *
      * @throws InvalidOrderDraftException
      */
@@ -203,7 +214,8 @@ final readonly class PlaceOrder
 
         $order = new Order;
         $order->forceFill([
-            'checkout_id' => $draft->checkoutId,
+            'checkout_id' => $draft->source->checkoutId,
+            'replaces_return_id' => $draft->source->replacesReturnId,
             'status' => OrderStatus::Open,
             'payment_status' => OrderPaymentStatus::Unpaid,
             'is_test' => $draft->isTest,

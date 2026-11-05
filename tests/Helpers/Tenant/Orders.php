@@ -23,6 +23,7 @@ use App\Tenant\Orders\Actions\MoveShipment;
 use App\Tenant\Orders\Actions\PlaceOrder;
 use App\Tenant\Orders\Data\OrderBuyer;
 use App\Tenant\Orders\Data\OrderDraft;
+use App\Tenant\Orders\Data\OrderSource;
 use App\Tenant\Orders\Enums\OrderPermission;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Orders\Models\OrderAccessToken;
@@ -137,6 +138,7 @@ function orderDraft(
     ?AddressSnapshot $billingAddress = null,
     bool $isTest = false,
     bool $payOnDelivery = false,
+    ?OrderSource $source = null,
 ): OrderDraft {
     $checkout ??= strtolower((string) Str::ulid());
     $buyer ??= OrderBuyer::guest('ada@example.com', 'Ada Obi', '+2348012345678');
@@ -151,7 +153,7 @@ function orderDraft(
     $option = $method === null ? null : new ShippingOption($method, Money::ofMinor($shippingAmount, $basket->priced->currency), true);
 
     return new OrderDraft(
-        $checkout, $basket, $buyer, $billingAddress, $method !== null && $method->fulfilment->needsAddress() ? orderAddress() : null,
+        $source ?? OrderSource::checkout($checkout), $basket, $buyer, $billingAddress, $method !== null && $method->fulfilment->needsAddress() ? orderAddress() : null,
         $option, $stockHolder, $promotionHolder, $locale, 'Leave it at the gate.', $paymentDueAt, $isTest, $payOnDelivery,
     );
 }

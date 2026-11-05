@@ -59,6 +59,7 @@ it('refuses any change to what was sold, and any delete', function (Closure $tam
     'when it was placed' => [fn (int $id) => DB::table('orders')->where('id', $id)->update(['placed_at' => now()->subDay()]), 'never change'],
     'the payment deadline' => [fn (int $id) => DB::table('orders')->where('id', $id)->update(['payment_due_at' => now()->addYear()]), 'never change'],
     'the checkout' => [fn (int $id) => DB::table('orders')->where('id', $id)->update(['checkout_id' => 'another']), 'never change'],
+    'the source, to a replaced return' => [fn (int $id) => DB::table('orders')->where('id', $id)->update(['checkout_id' => null, 'replaces_return_id' => 999999]), 'never change'],
     'the locale' => [fn (int $id) => DB::table('orders')->where('id', $id)->update(['locale' => 'fr']), 'never change'],
     'the contact email' => [fn (int $id) => DB::table('orders')->where('id', $id)->update(['contact_email' => 'eve@example.com']), 'only through erasure'],
     'the contact name' => [fn (int $id) => DB::table('orders')->where('id', $id)->update(['contact_name' => 'Eve']), 'only through erasure'],

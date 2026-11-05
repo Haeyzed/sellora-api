@@ -166,7 +166,7 @@ it('places a checkout once: placing it again, or at the same moment, returns the
     // A second request placing the same checkout waits for the first, then finds its order.
     $this->store->run(static function (): void {
         $draft = orderDraft([[cartVariant(10000), 1]], orderShippingMethod(name: 'Second'));
-        $otherRequest = SecondConnection::open()->holdAdvisoryLock('order-checkout:'.$draft->checkoutId);
+        $otherRequest = SecondConnection::open()->holdAdvisoryLock($draft->source->lockKey());
 
         expect($otherRequest->blocks(static fn () => app(PlaceOrder::class)->handle($draft)))->toBeTrue();
 
@@ -175,7 +175,7 @@ it('places a checkout once: placing it again, or at the same moment, returns the
         expect(app(PlaceOrder::class)->handle($draft)->isNew)->toBeTrue()
             ->and(app(PlaceOrder::class)->handle($draft)->isNew)->toBeFalse()
             // And the database keeps one order per checkout, whatever the code does.
-            ->and(fn () => rawOrder(['checkout_id' => $draft->checkoutId]))->toThrow(QueryException::class, 'orders_checkout_id_unique');
+            ->and(fn () => rawOrder(['checkout_id' => $draft->source->checkoutId]))->toThrow(QueryException::class, 'orders_checkout_id_unique');
     });
 });
 
@@ -208,24 +208,24 @@ it('refuses a draft whose parts don\'t fit together', function (Closure $draftOf
     'no address to ship to' => [function () {
         $draft = orderDraft([[cartVariant(10000), 1]], orderShippingMethod());
 
-        return new App\Tenant\Orders\Data\OrderDraft($draft->checkoutId, $draft->basket, $draft->buyer, null, null, $draft->shipping, $draft->stockHolder, $draft->promotionHolder, 'en');
+        return new App\Tenant\Orders\Data\OrderDraft($draft->source, $draft->basket, $draft->buyer, null, null, $draft->shipping, $draft->stockHolder, $draft->promotionHolder, 'en');
     }, 'needs their address'],
     'a carrier rate not yet quoted' => [function () {
         $draft = orderDraft([[cartVariant(10000), 1]], orderShippingMethod());
 
-        return new App\Tenant\Orders\Data\OrderDraft($draft->checkoutId, $draft->basket, $draft->buyer, null, $draft->shippingAddress, new ShippingOption($draft->shipping?->method ?? throw new LogicException, null, false), $draft->stockHolder, $draft->promotionHolder, 'en');
+        return new App\Tenant\Orders\Data\OrderDraft($draft->source, $draft->basket, $draft->buyer, null, $draft->shippingAddress, new ShippingOption($draft->shipping?->method ?? throw new LogicException, null, false), $draft->stockHolder, $draft->promotionHolder, 'en');
     }, 'must be quoted'],
     'shipping charged at another price' => [function () {
         $draft = orderDraft([[cartVariant(10000), 1]], orderShippingMethod());
 
-        return new App\Tenant\Orders\Data\OrderDraft($draft->checkoutId, $draft->basket, $draft->buyer, null, $draft->shippingAddress, new ShippingOption($draft->shipping?->method ?? throw new LogicException, App\Shared\Money\Money::ofMinor(9999, 'NGN'), true), $draft->stockHolder, $draft->promotionHolder, 'en');
+        return new App\Tenant\Orders\Data\OrderDraft($draft->source, $draft->basket, $draft->buyer, null, $draft->shippingAddress, new ShippingOption($draft->shipping?->method ?? throw new LogicException, App\Shared\Money\Money::ofMinor(9999, 'NGN'), true), $draft->stockHolder, $draft->promotionHolder, 'en');
     }, 'chosen method\'s price'],
     'line discounts their promotions don\'t account for' => [function () {
         runningPromotion(['percent' => Decimal::of(10)]);
         $draft = orderDraft([[cartVariant(10000), 1]], orderShippingMethod());
         $withoutPromotions = new App\Tenant\Promotions\Data\DiscountedBasket($draft->basket->priced, new App\Tenant\Promotions\Data\DiscountOutcome('NGN', [], [], App\Shared\Money\Money::zero('NGN')));
 
-        return new App\Tenant\Orders\Data\OrderDraft($draft->checkoutId, $withoutPromotions, $draft->buyer, null, $draft->shippingAddress, $draft->shipping, $draft->stockHolder, $draft->promotionHolder, 'en');
+        return new App\Tenant\Orders\Data\OrderDraft($draft->source, $withoutPromotions, $draft->buyer, null, $draft->shippingAddress, $draft->shipping, $draft->stockHolder, $draft->promotionHolder, 'en');
     }, 'what its promotions took off'],
 ]);
 
