@@ -29,7 +29,10 @@ use App\Tenant\Returns\Actions\ReceiveReturn;
 use App\Tenant\Returns\Actions\RefundReturn;
 use App\Tenant\Returns\Actions\RejectReturn;
 use App\Tenant\Returns\Actions\RequestReturn;
+use App\Tenant\Returns\Actions\SettleExchange;
 use App\Tenant\Returns\Data\ReturnRequester;
+use App\Tenant\Returns\Enums\ReturnExchangeStatus;
+use App\Tenant\Returns\Enums\ReturnStatus;
 use App\Tenant\Returns\Exceptions\OrderNotReturnableException;
 use App\Tenant\Returns\Exceptions\RefundDestinationChoiceClosedException;
 use App\Tenant\Returns\Exceptions\RefundDestinationNotOfferedException;
@@ -196,7 +199,10 @@ final class ReturnController extends Controller
      * every unit that came back at what the buyer paid for it, with shipping
      * when `shipping` is true (by default when the reason is damaged or the
      * wrong item), less `withheld` (minor units) with a `withheld_reason`.
-     * The return completes when the refund has gone back in full.
+     * The return completes when the refund has gone back in full. For an
+     * exchange awaiting its replacement, once that was paid, it settles the
+     * exchange again if that failed: the refund to the exchange and any
+     * difference to the buyer, each made once.
      *
      * Asking again never refunds twice: while the last attempt is pending,
      * in staff review, or partly refunded, it is shown as it stands; a new
@@ -213,9 +219,16 @@ final class ReturnController extends Controller
      * @throws PaymentGatewayNotConnectedException
      */
     #[HeaderParameter('Idempotency-Key', 'A new key for each request to refund, 8 to 128 letters, digits, - or _. Sending the same request again with it returns the first answer.', required: true, type: 'string', example: 'return-refund-2f9c1a7e')]
-    public function refund(RefundReturnRequest $request, OrderReturn $return, RefundReturn $refundReturn): ReturnResource
+    public function refund(RefundReturnRequest $request, OrderReturn $return, RefundReturn $refundReturn, SettleExchange $settleExchange): ReturnResource
     {
-        $refundReturn->handle($return, $request->actor(), $request->shipping(), $request->withheld($return), $request->withheldReason());
+        $exchange = $return->status === ReturnStatus::AwaitingExchange ? $return->liveExchange() : null;
+
+        match (true) {
+            // An exchange whose replacement was paid, settled again: its refund to the exchange and any difference, each made once.
+            $exchange?->status === ReturnExchangeStatus::Pending => $settleExchange->committed($exchange),
+            $exchange?->status === ReturnExchangeStatus::Committed => $refundReturn->giveExchangeDifference($return, $request->actor()),
+            default => $refundReturn->handle($return, $request->actor(), $request->shipping(), $request->withheld($return), $request->withheldReason()),
+        };
 
         return new ReturnResource($return->refresh()->load([...self::WITH, 'refunds.refund']));
     }
@@ -311,6 +324,7 @@ final class ReturnController extends Controller
      *
      * @throws ReturnExchangeNotReadyException
      */
+    #[HeaderParameter('Idempotency-Key', 'A new key for each confirmation, 8 to 128 letters, digits, - or _. Sending the same request again with it returns the first answer.', required: true, type: 'string', example: 'return-exchange-2f9c1a7e')]
     public function confirmExchange(ConfirmExchangeRequest $request, OrderReturn $return, ConfirmExchange $confirmExchange, PreviewExchange $previewExchange): ReturnResource|JsonResponse
     {
         try {

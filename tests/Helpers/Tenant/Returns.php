@@ -552,3 +552,24 @@ function inspectedExchange(object $test, App\Tenant\Catalog\Models\ProductVarian
         return app(InspectReturn::class)->handle($received, StockLocation::query()->where('is_default', true)->sole(), $outcomes, $staff, $fault);
     });
 }
+
+/**
+ * Where a return's exchange settled: the return's status, its latest exchange, the original order's refund to the exchange, the difference's refund attempt (or null), and what the original order's credit notes credited in all, in minor units.
+ *
+ * @return array{0: string, 1: App\Tenant\Returns\Models\ReturnExchange, 2: App\Tenant\Payments\Models\Refund|null, 3: App\Tenant\Returns\Models\ReturnRefund|null, 4: int}
+ */
+function settledExchange(OrderReturn $return): array
+{
+    return test()->store->run(static function () use ($return): array {
+        $fresh = OrderReturn::query()->findOrFail($return->id);
+        $exchange = App\Tenant\Returns\Models\ReturnExchange::query()->where('return_id', $return->id)->orderByDesc('id')->firstOrFail();
+
+        return [
+            $fresh->status->value,
+            $exchange,
+            $exchange->refund_id === null ? null : App\Tenant\Payments\Models\Refund::query()->findOrFail($exchange->refund_id),
+            App\Tenant\Returns\Models\ReturnRefund::query()->where('return_id', $return->id)->whereNotNull('refund_amount')->orderByDesc('attempt')->first(),
+            (int) App\Tenant\Orders\Models\CreditNote::query()->where('order_id', $fresh->order_id)->sum('total_amount'),
+        ];
+    });
+}

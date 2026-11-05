@@ -14,7 +14,9 @@ use App\Tenant\Orders\Models\Order;
 use App\Tenant\Payments\Actions\FindRefundDestinations;
 use App\Tenant\Payments\Actions\RefundOrder;
 use App\Tenant\Payments\Data\RefundRequest;
+use App\Tenant\Payments\Enums\RefundPurpose;
 use App\Tenant\Payments\Exceptions\RefundExceedsRefundableException;
+use App\Tenant\Returns\Enums\ReturnExchangeStatus;
 use App\Tenant\Returns\Enums\ReturnRefundStatus;
 use App\Tenant\Returns\Enums\ReturnResolution;
 use App\Tenant\Returns\Enums\ReturnStatus;
@@ -26,6 +28,7 @@ use App\Tenant\Returns\Models\ReturnLine;
 use App\Tenant\Returns\Models\ReturnRefund;
 use App\Tenant\Returns\Services\ReturnProgress;
 use App\Tenant\Returns\Services\ReturnRefundAttempts;
+use Closure;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -66,8 +69,54 @@ final readonly class RefundReturn
      */
     public function handle(OrderReturn $return, StaffMember $actor, ?bool $shipping = null, ?Money $withheld = null, ?string $withheldReason = null): ReturnRefund
     {
+        return $this->ask($return, $actor, function (OrderReturn $locked) use ($shipping, $withheld, $withheldReason): array {
+            if ($locked->status !== ReturnStatus::Inspected && ! ($locked->status === ReturnStatus::Approved && $locked->keep_items)) {
+                throw new ReturnTransitionNotAllowedException;
+            }
+
+            // An exchange is settled by its replacement: confirm it, or make the return a refund first.
+            if ($locked->resolution === ReturnResolution::Exchange) {
+                throw new ReturnIsExchangeException;
+            }
+
+            return [
+                'shipping' => $shipping ?? $locked->isStoresFault(),
+                'withheld_amount' => $withheld?->minorAmount() ?? 0,
+                'withheld_reason' => $withheld === null ? null : $withheldReason,
+            ];
+        });
+    }
+
+    /**
+     * Gives back what goes to the buyer of an exchange whose replacement was paid (Step 18d): a cheaper replacement's difference, by amount, to the destination the customer chose, through the same attempts as a refund, so it is never refunded twice and a new attempt follows a definite failure.
+     *
+     * @throws ReturnTransitionNotAllowedException When the return isn't an exchange whose replacement was paid with a difference to give back.
+     * @throws DomainException What Payments refused it with; the refusal is saved on the attempt.
+     */
+    public function giveExchangeDifference(OrderReturn $return, StaffMember $actor): ReturnRefund
+    {
+        return $this->ask($return, $actor, static function (OrderReturn $locked): array {
+            $exchange = $locked->liveExchange();
+
+            if ($locked->status !== ReturnStatus::AwaitingExchange || $exchange?->status !== ReturnExchangeStatus::Committed || ! $exchange->difference->isPositive()) {
+                throw new ReturnTransitionNotAllowedException;
+            }
+
+            return ['shipping' => false, 'refund_amount' => $exchange->difference->minorAmount(), 'withheld_amount' => 0, 'withheld_reason' => null];
+        });
+    }
+
+    /**
+     * Asks Payments for the return's last attempt, or a new one made from the fields given, and brings the return up to date with what Payments answered.
+     *
+     * @param  Closure(OrderReturn): array<string, mixed>  $newAttempt  What a new attempt gives back, checked on the locked return.
+     *
+     * @throws DomainException
+     */
+    private function ask(OrderReturn $return, StaffMember $actor, Closure $newAttempt): ReturnRefund
+    {
         $by = AccountReference::to($actor);
-        $attempt = DB::transaction(fn (): ReturnRefund => $this->attemptFor($return, $by, $shipping, $withheld, $withheldReason));
+        $attempt = DB::transaction(fn (): ReturnRefund => $this->attemptFor($return, $by, $newAttempt));
 
         if ($attempt->status !== ReturnRefundStatus::Started) {
             return $attempt;
@@ -93,10 +142,9 @@ final readonly class RefundReturn
     /**
      * The attempt to ask Payments about: the last one, unless it definitely got nothing back, else a new one saved now.
      *
-     * @throws ReturnTransitionNotAllowedException
-     * @throws ReturnIsExchangeException
+     * @param  Closure(OrderReturn): array<string, mixed>  $newAttempt
      */
-    private function attemptFor(OrderReturn $return, AccountReference $by, ?bool $shipping, ?Money $withheld, ?string $withheldReason): ReturnRefund
+    private function attemptFor(OrderReturn $return, AccountReference $by, Closure $newAttempt): ReturnRefund
     {
         $locked = $this->returnProgress->lock($return);
         $this->attempts->settle($locked, $by);
@@ -106,25 +154,15 @@ final readonly class RefundReturn
             return $last;
         }
 
-        if ($locked->status !== ReturnStatus::Inspected && ! ($locked->status === ReturnStatus::Approved && $locked->keep_items)) {
-            throw new ReturnTransitionNotAllowedException;
-        }
-
-        // An exchange is settled by its replacement: confirm it, or make the return a refund first.
-        if ($locked->resolution === ReturnResolution::Exchange) {
-            throw new ReturnIsExchangeException;
-        }
-
+        $fields = $newAttempt($locked);
         $number = ($last->attempt ?? 0) + 1;
 
         return tap((new ReturnRefund)->forceFill([
+            ...$fields,
             'return_id' => $locked->id,
             'attempt' => $number,
             'idempotency_key' => ReturnRefund::keyFor($locked, $number),
             'status' => ReturnRefundStatus::Started,
-            'shipping' => $shipping ?? $locked->isStoresFault(),
-            'withheld_amount' => $withheld?->minorAmount() ?? 0,
-            'withheld_reason' => $withheld === null ? null : $withheldReason,
             // The customer's latest choice; asking again under this attempt's key sends the same.
             'destination' => $locked->latestRefundChoice()->destination ?? FindRefundDestinations::ORIGINAL_PAYMENT,
             'requested_by_type' => $by->type,
@@ -134,6 +172,17 @@ final readonly class RefundReturn
 
     private function requestFor(OrderReturn $return, Order $order, ReturnRefund $attempt): RefundRequest
     {
+        // An exchange's difference: an amount that reduces the sale, to where the customer chose.
+        if ($attempt->refund_amount !== null) {
+            return new RefundRequest(
+                amount: Money::ofMinor($attempt->refund_amount, $order->currency),
+                reason: 'Exchange difference, return '.$return->displayNumber(),
+                idempotencyKey: $attempt->idempotency_key,
+                purpose: RefundPurpose::ReducesSale,
+                destination: $attempt->destination,
+            );
+        }
+
         $lines = $return->lines()->with('orderLine')->get()->mapWithKeys(static fn (ReturnLine $line): array => [$line->orderLine->public_id => $line->quantity])->all();
 
         return new RefundRequest(

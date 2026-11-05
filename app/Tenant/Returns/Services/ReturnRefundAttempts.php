@@ -36,7 +36,8 @@ final readonly class ReturnRefundAttempts
             $this->follow($locked, $attempt);
         }
 
-        $refundable = $locked->status === ReturnStatus::Inspected || ($locked->status === ReturnStatus::Approved && $locked->keep_items);
+        // An exchange's only attempt gives back its difference, once its replacement was paid.
+        $refundable = $locked->status === ReturnStatus::Inspected || $locked->status === ReturnStatus::AwaitingExchange || ($locked->status === ReturnStatus::Approved && $locked->keep_items);
 
         if ($refundable && $locked->refunds()->where('status', ReturnRefundStatus::Succeeded->value)->exists()) {
             $this->returnProgress->move($locked, ReturnStatus::Completed, $by);
