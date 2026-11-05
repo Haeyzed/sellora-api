@@ -4,14 +4,26 @@ declare(strict_types=1);
 
 namespace App\Tenant\Settings\Enums;
 
+use App\Shared\Auth\Contracts\GrantablePermission;
+
 /**
  * What staff can be allowed to do with the store's settings. Requiring two-factor authentication for staff is the owner's alone.
  */
-enum SettingsPermission: string
+enum SettingsPermission: string implements GrantablePermission
 {
     /** See the store's settings: name, country, currency, languages, tax mode, units and contact details. */
     case SettingsView = 'settings.view';
 
     /** Change the store's settings. */
     case SettingsManage = 'settings.manage';
+
+    public function group(): string
+    {
+        return 'settings';
+    }
+
+    public function isSensitive(): bool
+    {
+        return in_array($this, [self::SettingsManage], true);
+    }
 }

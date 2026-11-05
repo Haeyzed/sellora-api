@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Tenant\Orders\Enums;
 
+use App\Shared\Auth\Contracts\GrantablePermission;
+
 /**
  * What staff can be allowed to do with the store's orders.
  */
-enum OrderPermission: string
+enum OrderPermission: string implements GrantablePermission
 {
     /** See orders, their history and shipments. */
     case OrdersView = 'orders.view';
@@ -20,4 +22,14 @@ enum OrderPermission: string
 
     /** See invoices and credit notes, with the buyer's details on them, and download their PDFs. */
     case InvoicesView = 'invoices.view';
+
+    public function group(): string
+    {
+        return 'orders';
+    }
+
+    public function isSensitive(): bool
+    {
+        return in_array($this, [self::InvoicesView], true);
+    }
 }

@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Tenant\Delivery\Enums;
 
+use App\Shared\Auth\Contracts\GrantablePermission;
+
 /**
  * What staff can be allowed to do with the store's own drivers and deliveries.
  */
-enum DeliveryPermission: string
+enum DeliveryPermission: string implements GrantablePermission
 {
     /** See drivers and deliveries. */
     case DeliveryView = 'delivery.view';
@@ -20,4 +22,14 @@ enum DeliveryPermission: string
 
     /** Add, change, deactivate and erase drivers, and issue them PIN setup codes. */
     case DriversManage = 'drivers.manage';
+
+    public function group(): string
+    {
+        return 'delivery';
+    }
+
+    public function isSensitive(): bool
+    {
+        return in_array($this, [self::DeliveryCashManage, self::DriversManage], true);
+    }
 }

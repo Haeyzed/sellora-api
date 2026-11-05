@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Landlord\Identity\Enums;
 
+use App\Shared\Auth\Contracts\GrantablePermission;
+
 /**
  * What members of Sellora's team can be allowed to do through platform roles.
  *
@@ -11,7 +13,7 @@ namespace App\Landlord\Identity\Enums;
  * itself (inviting admins, roles, two-factor resets) is for super admins only,
  * so it has no permission here.
  */
-enum PlatformPermission: string
+enum PlatformPermission: string implements GrantablePermission
 {
     /** Draft, edit and publish the terms of service, privacy policy and other legal documents merchants accept. */
     case LegalDocumentsManage = 'legal_documents.manage';
@@ -27,4 +29,14 @@ enum PlatformPermission: string
 
     /** Export all of a store's data. Separate from viewing stores, because an export holds every customer's personal data. */
     case StoresExport = 'stores.export';
+
+    public function group(): string
+    {
+        return $this === self::LegalDocumentsManage ? 'legal' : 'stores';
+    }
+
+    public function isSensitive(): bool
+    {
+        return in_array($this, [self::StoresManage, self::StoresGrant, self::StoresExport], true);
+    }
 }
