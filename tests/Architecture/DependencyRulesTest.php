@@ -156,6 +156,13 @@ arch('only the exchange rates reader touches the central market rates, which sto
     ->expect('App\Shared\Money\ExchangeRates\Models\ExchangeRate')
     ->toOnlyBeUsedIn('App\Shared\Money\ExchangeRates');
 
+arch('only replacement orders give price allowances: never a cart, a checkout or anything a shopper sends')
+    ->expect('App\Tenant\Promotions\Data\PriceAllowances')
+    ->toOnlyBeUsedIn([
+        'App\Tenant\Promotions\Actions\PriceWithDiscounts',
+        'App\Tenant\Checkout\Actions\QuoteReplacementOrder',
+    ]);
+
 arch('landlord domains are final')
     ->expect('App\Landlord')
     ->classes()

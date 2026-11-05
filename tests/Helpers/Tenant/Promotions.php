@@ -162,3 +162,35 @@ function otherCheckoutUse(Promotion $promotion): array
         'status' => 'reserved', 'currency' => 'NGN', 'discount_amount' => 100, 'expires_at' => now()->addMinutes(15), 'created_at' => now(), 'updated_at' => now(),
     ];
 }
+
+/*
+|--------------------------------------------------------------------------
+| For PriceAllowancesTest.php
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * The lines priced as a replacement order would be, with the allowances given (in minor units of the store's currency, or Money).
+ *
+ * @param  list<array{0: ProductVariant, 1: int}>  $lines
+ * @param  array<string, int|Money>  $allowances  By line key, "line-1" and so on.
+ */
+function pricedWithAllowances(array $lines, array $allowances, ?int $shipping = null, ?int $shippingAllowance = null): DiscountedBasket
+{
+    $pricingLines = [];
+
+    foreach (array_values($lines) as $position => [$variant, $quantity]) {
+        $pricingLines[] = ['key' => 'line-'.($position + 1), 'variant' => $variant, 'quantity' => $quantity];
+    }
+
+    $money = static fn (int|Money $amount): Money => $amount instanceof Money ? $amount : Money::ofMinor($amount, 'NGN');
+
+    return app(PriceWithDiscounts::class)->handle(
+        'NGN',
+        $pricingLines,
+        null,
+        $shipping === null ? null : Money::ofMinor($shipping, 'NGN'),
+        DiscountBuyer::guest(null),
+        allowances: new App\Tenant\Promotions\Data\PriceAllowances('the-return', 'Exchange allowance', array_map($money, $allowances), $shippingAllowance === null ? null : $money($shippingAllowance)),
+    );
+}
