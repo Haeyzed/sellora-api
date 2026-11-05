@@ -12,6 +12,7 @@ return [
 
     'destinations' => [
         'original_payment' => 'Kwa njia uliyolipia',
+        'exchange' => 'Kwa agizo lako la kubadilisha',
     ],
 
 ];

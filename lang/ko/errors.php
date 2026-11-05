@@ -227,4 +227,9 @@ return [
     'refund_destination_refused' => '선택한 환불 대상이 이 환불을 거절하여 아무것도 지급되지 않았습니다. 환불받을 곳을 다시 선택하세요.',
     'refund_destination_not_offered' => '이 반품에는 해당 환불 대상을 사용할 수 없습니다. 이 반품에 표시된 대상 중에서 선택하세요.',
     'refund_destination_choice_closed' => '지금은 이 환불을 받을 곳을 바꿀 수 없습니다. 환불이 이미 진행 중이거나 반품이 끝났습니다. 그 환불이 확실히 실패한 경우에만 다시 선택할 수 있습니다.',
+    'replacement_quote_changed' => '교환 주문 금액이 표시된 금액과 달라졌습니다. 가격, 프로모션, 배송비, 세금 또는 환율이 바뀌었습니다. 새 금액을 확인하고 다시 확정하세요.',
+    'replacement_not_available' => '교환 상품 중 하나가 더 이상 판매되지 않습니다. 다른 상품을 선택하거나 대신 반품을 환불하세요.',
+    'replacement_out_of_stock' => '교환 상품 중 하나의 재고가 없습니다. 다른 상품을 선택하거나 대신 반품을 환불하세요.',
+    'replacement_currency_not_offered' => '주문 통화가 더 이상 제공되지 않아 그 통화로 교환 상품의 가격을 매길 수 없습니다. 대신 반품을 환불하세요.',
+    'replacement_shipping_unavailable' => '선택한 배송 방법으로는 교환 상품을 주문 주소로 보낼 수 없습니다. 다른 배송 방법을 선택하세요.',
 ];

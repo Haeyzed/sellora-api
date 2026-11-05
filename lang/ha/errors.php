@@ -227,4 +227,9 @@ return [
     'refund_destination_refused' => 'Wurin mayar da kuɗin da aka zaɓa ya ƙi wannan mayarwa, don haka ba a biya komai ba. Sake zaɓar inda mayar da kuɗin zai tafi.',
     'refund_destination_not_offered' => 'Ba a bayar da wannan wurin mayar da kuɗi don wannan mayarwar ba. Zaɓi ɗaya daga cikin wuraren da aka lissafa mata.',
     'refund_destination_choice_closed' => 'Ba za a iya canza inda wannan mayar da kuɗin zai tafi yanzu ba: an riga an fara mayarwa, ko kuma mayarwar ta ƙare. Sai idan wannan mayarwar ta gaza tabbas ne za a iya sake zaɓa.',
+    'replacement_quote_changed' => 'Odar musanya ba ta kai abin da aka nuna ba yanzu: farashi, tallan rangwame, jigila, haraji ko farashin musayar kuɗi ya canza. Duba sababbin adadin kuma ka sake tabbatarwa.',
+    'replacement_not_available' => 'Ba a sayar da ɗaya daga cikin kayan musanya kuma. Zaɓi wani kaya, ko ka mayar da kuɗin abin da aka dawo da shi maimakon haka.',
+    'replacement_out_of_stock' => 'Ɗaya daga cikin kayan musanya ya ƙare a ajiya. Zaɓi wani kaya, ko ka mayar da kuɗin abin da aka dawo da shi maimakon haka.',
+    'replacement_currency_not_offered' => 'Ba a bayar da kuɗin odar kuma, don haka ba za a iya sa farashin musanya da shi ba. Mayar da kuɗin abin da aka dawo da shi maimakon haka.',
+    'replacement_shipping_unavailable' => 'Ba za a iya aika musanyar zuwa adireshin odar da hanyar jigilar da aka zaɓa ba. Zaɓi wata hanyar jigila.',
 ];

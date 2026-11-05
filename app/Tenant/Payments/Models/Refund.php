@@ -36,7 +36,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property Money $withheld What staff kept back from the lines given back (Returns, Step 18); their amounts are already less this. Zero when nothing was.
  * @property string|null $withheld_reason Why it was kept back; set exactly when something was.
  * @property string|null $idempotency_key The client's.
- * @property string $destination Where it goes: "original_payment" (back the way each payment came), or a module's destination key the customer chose, such as "store_credit", which pays it out itself.
+ * @property string $destination Where it goes: "original_payment" (back the way each payment came), a module's destination key the customer chose, such as "store_credit", which pays it out itself, or "exchange", the part of a return that pays for its replacement order (Step 18c).
  * @property string $requested_by_type By morph name.
  * @property string $requested_by_id
  * @property CarbonImmutable $created_at

@@ -227,4 +227,9 @@ return [
     'refund_destination_refused' => 'Ibi tí a yàn fún ìdápadà owó kọ ìdápadà yìí, nítorí náà a kò san nǹkan kan. Tún yan ibi tí ìdápadà owó náà yóò lọ.',
     'refund_destination_not_offered' => 'A kò fún ni ní ibi ìdápadà owó yẹn fún ìdápadà ẹrù yìí. Yan ọ̀kan nínú àwọn ibi tí a kọ sílẹ̀ fún un.',
     'refund_destination_choice_closed' => 'A kò lè yí ibi tí ìdápadà owó yìí yóò lọ padà báyìí: ìdápadà kan ti wà lójú ọ̀nà, tàbí ìdápadà ẹrù náà ti parí. A lè tún un yàn kìkì bí ìdápadà owó náà bá kùnà dájúdájú.',
+    'replacement_quote_changed' => 'Ọjà ìrọ́pò kò tó iye tí a fi hàn mọ́: iye owó kan, ẹ̀dínwó, ìfiránṣẹ́, owó-orí tàbí iye pàṣípààrọ̀ owó ti yípadà. Ṣàyẹ̀wò iye tuntun náà kí o sì tún jẹ́rìí sí i.',
+    'replacement_not_available' => 'Ọ̀kan nínú àwọn ọjà ìrọ́pò kò sí fún títà mọ́. Yan ọjà mìíràn, tàbí dá owó ọjà tí a dá padà dípò bẹ́ẹ̀.',
+    'replacement_out_of_stock' => 'Ọ̀kan nínú àwọn ọjà ìrọ́pò ti tán ní ìpamọ́. Yan ọjà mìíràn, tàbí dá owó ọjà tí a dá padà dípò bẹ́ẹ̀.',
+    'replacement_currency_not_offered' => 'A kò fúnni ní owó tí a fi san ọjà náà mọ́, nítorí náà a kò lè fi iye owó ìrọ́pò sí i. Dá owó ọjà tí a dá padà dípò bẹ́ẹ̀.',
+    'replacement_shipping_unavailable' => 'A kò lè fi ọ̀nà ìfiránṣẹ́ tí a yàn fi ọjà ìrọ́pò ránṣẹ́ sí àdírẹ́sì ọjà náà. Yan ọ̀nà ìfiránṣẹ́ mìíràn.',
 ];

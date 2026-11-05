@@ -97,6 +97,7 @@ use App\Tenant\Checkout\Listeners\CommitPaymentHoldsWhenOrderPaid;
 use App\Tenant\Checkout\Listeners\RefundCommittedPaymentHoldsWhenOrderCancelled;
 use App\Tenant\Checkout\Listeners\ReleasePaymentHoldsWhenOrderCancelled;
 use App\Tenant\Checkout\Models\Checkout;
+use App\Tenant\Checkout\PaymentMethods\ExchangeCreditPaymentMethod;
 use App\Tenant\Checkout\PaymentMethods\GatewayPaymentMethods;
 use App\Tenant\Checkout\PaymentMethods\ManualPaymentMethods;
 use App\Tenant\Checkout\Privacy\CheckoutData;
@@ -400,6 +401,8 @@ final class AppServiceProvider extends ServiceProvider
             $extensions = new CheckoutExtensions($app);
             $extensions->addPaymentMethod(GatewayPaymentMethods::class);
             $extensions->addPaymentMethod(ManualPaymentMethods::class);
+            // What an exchange's returned items pay toward its replacement order: never offered at checkout.
+            $extensions->addPaymentMethod(ExchangeCreditPaymentMethod::class);
 
             return $extensions;
         });

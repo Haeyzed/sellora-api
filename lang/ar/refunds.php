@@ -12,6 +12,7 @@ return [
 
     'destinations' => [
         'original_payment' => 'إلى طريقة الدفع التي استخدمتها',
+        'exchange' => 'لصالح طلب الاستبدال',
     ],
 
 ];

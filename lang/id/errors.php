@@ -227,4 +227,9 @@ return [
     'refund_destination_refused' => 'Tujuan pengembalian dana yang dipilih menolak pengembalian ini, jadi tidak ada yang dibayarkan. Pilih lagi ke mana pengembalian dana dikirim.',
     'refund_destination_not_offered' => 'Tujuan pengembalian dana itu tidak ditawarkan untuk pengembalian ini. Pilih salah satu tujuan yang tercantum untuknya.',
     'refund_destination_choice_closed' => 'Tujuan pengembalian dana ini tidak dapat diubah sekarang: pengembalian dana sudah dalam proses, atau pengembaliannya sudah selesai. Tujuan hanya dapat dipilih lagi jika pengembalian dana itu pasti gagal.',
+    'replacement_quote_changed' => 'Pesanan pengganti tidak lagi sebesar yang ditampilkan: harga, promosi, pengiriman, pajak, atau kurs berubah. Periksa jumlah yang baru dan konfirmasi lagi.',
+    'replacement_not_available' => 'Salah satu barang pengganti tidak dijual lagi. Pilih barang lain, atau kembalikan dana retur ini saja.',
+    'replacement_out_of_stock' => 'Salah satu barang pengganti stoknya habis. Pilih barang lain, atau kembalikan dana retur ini saja.',
+    'replacement_currency_not_offered' => 'Mata uang pesanan tidak ditawarkan lagi, jadi pengganti tidak bisa diberi harga dalam mata uang itu. Kembalikan dana retur ini saja.',
+    'replacement_shipping_unavailable' => 'Pengganti tidak bisa dikirim ke alamat pesanan dengan metode pengiriman yang dipilih. Pilih metode pengiriman lain.',
 ];

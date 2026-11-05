@@ -12,6 +12,7 @@ return [
 
     'destinations' => [
         'original_payment' => 'Sul metodo con cui hai pagato',
+        'exchange' => 'Per il tuo ordine sostitutivo',
     ],
 
 ];

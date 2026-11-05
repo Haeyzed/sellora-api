@@ -227,4 +227,9 @@ return [
     'refund_destination_refused' => 'De gekozen terugbetalingsbestemming heeft deze terugbetaling geweigerd, dus er is niets uitbetaald. Kies opnieuw waar de terugbetaling naartoe gaat.',
     'refund_destination_not_offered' => 'Die terugbetalingsbestemming wordt voor deze retour niet aangeboden. Kies een van de bestemmingen die ervoor worden vermeld.',
     'refund_destination_choice_closed' => 'Waar deze terugbetaling naartoe gaat, kan nu niet worden gewijzigd: er is al een terugbetaling onderweg, of de retour is afgerond. Opnieuw kiezen kan alleen als die terugbetaling zeker is mislukt.',
+    'replacement_quote_changed' => 'De vervangende bestelling komt niet meer uit op wat werd getoond: een prijs, actie, verzending, belasting of wisselkoers is veranderd. Controleer de nieuwe bedragen en bevestig opnieuw.',
+    'replacement_not_available' => 'Een vervangend artikel wordt niet meer verkocht. Kies een ander artikel, of betaal de retour in plaats daarvan terug.',
+    'replacement_out_of_stock' => 'Een vervangend artikel is niet op voorraad. Kies een ander artikel, of betaal de retour in plaats daarvan terug.',
+    'replacement_currency_not_offered' => 'De valuta van de bestelling wordt niet meer aangeboden, dus er kan geen vervanging in worden geprijsd. Betaal de retour in plaats daarvan terug.',
+    'replacement_shipping_unavailable' => 'De vervanging kan met de gekozen verzendmethode niet naar het adres van de bestelling worden gestuurd. Kies een andere verzendmethode.',
 ];

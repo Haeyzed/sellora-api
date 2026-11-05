@@ -26,6 +26,9 @@ final class RefundDestinations
     /** Core's own destination: back the way each payment came. */
     public const string ORIGINAL_PAYMENT = 'original_payment';
 
+    /** Core's own destination for what a return credits toward its exchange's replacement order (Step 18c). Never offered: only an exchange refunds to it. */
+    public const string EXCHANGE = 'exchange';
+
     /** What a destination's key looks like. */
     public const string KEY_PATTERN = '/^[a-z][a-z0-9_]{0,63}$/';
 
@@ -46,8 +49,8 @@ final class RefundDestinations
     {
         $key = $this->make($destination)->key();
 
-        if (preg_match(self::KEY_PATTERN, $key) !== 1 || $key === self::ORIGINAL_PAYMENT) {
-            throw new LogicException("The refund destination {$destination} has the key \"{$key}\": keys are lowercase letters, digits and underscores, and \"".self::ORIGINAL_PAYMENT.'" is core\'s.');
+        if (preg_match(self::KEY_PATTERN, $key) !== 1 || in_array($key, [self::ORIGINAL_PAYMENT, self::EXCHANGE], true)) {
+            throw new LogicException("The refund destination {$destination} has the key \"{$key}\": keys are lowercase letters, digits and underscores, and \"".self::ORIGINAL_PAYMENT.'" and "'.self::EXCHANGE.'" are core\'s.');
         }
 
         if (isset($this->destinations[$key])) {
@@ -96,18 +99,22 @@ final class RefundDestinations
     }
 
     /**
-     * Whether a key belongs to a destination a module registered, whatever its state.
+     * Whether a key belongs to a destination that can be paid out to, whatever its module's state: core's exchange destination, or one a module registered.
      */
     public function isRegistered(string $key): bool
     {
-        return isset($this->destinations[$key]);
+        return $key === self::EXCHANGE || isset($this->destinations[$key]);
     }
 
     /**
-     * The registered destination to pay a refund out to, when its module isn't Unavailable to the store: Locked, Disabled and Suspended modules still pay out (section 3.3). Null otherwise, or for a key no module registered.
+     * The destination to pay a refund out to: core's exchange destination, or a registered one whose module isn't Unavailable to the store (Locked, Disabled and Suspended modules still pay out, section 3.3). Null otherwise, or for a key no module registered.
      */
     public function forPayout(string $key): ?RefundDestination
     {
+        if ($key === self::EXCHANGE) {
+            return $this->make(ExchangeRefundDestination::class);
+        }
+
         [$class, $featureKey] = $this->destinations[$key] ?? [null, null];
 
         if ($class === null || $featureKey === null || $this->features()->state($featureKey) === FeatureState::Unavailable) {
@@ -124,6 +131,10 @@ final class RefundDestinations
     {
         if ($key === self::ORIGINAL_PAYMENT) {
             return $this->originalPaymentLabel();
+        }
+
+        if ($key === self::EXCHANGE) {
+            return $this->make(ExchangeRefundDestination::class)->label();
         }
 
         $class = $this->destinations[$key][0] ?? null;

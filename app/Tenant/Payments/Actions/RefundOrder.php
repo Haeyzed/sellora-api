@@ -227,13 +227,19 @@ final readonly class RefundOrder
     }
 
     /**
-     * A refund to a module's destination reduces the sale (it still gets a credit note) and goes to the order's own customer: a guest's order only ever gets money back the way it was paid.
+     * A refund to a destination reduces the sale (it still gets a credit note). A module's destination goes to the order's own customer: a guest's order only ever gets money back the way it was paid. Core's exchange destination keeps the money in the store for the replacement order, so a guest's exchange may use it.
      *
      * @throws RefundInvalidException
      */
     private function ensureDestinationFits(Order $order, RefundRequest $request, RefundPurpose $purpose): void
     {
-        if ($request->goesToDestination() && ($purpose !== RefundPurpose::ReducesSale || $order->customer_id === null)) {
+        if (! $request->goesToDestination()) {
+            return;
+        }
+
+        $needsCustomer = $request->destination !== RefundDestinations::EXCHANGE;
+
+        if ($purpose !== RefundPurpose::ReducesSale || ($needsCustomer && $order->customer_id === null)) {
             throw new RefundInvalidException;
         }
     }

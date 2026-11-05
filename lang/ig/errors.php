@@ -227,4 +227,9 @@ return [
     'refund_destination_refused' => 'Ebe a họọrọ ka ego ahụ laghachi jụrụ nkwụghachi a, ya mere ọ dịghị ihe a kwụrụ. Họrọ ọzọ ebe nkwụghachi ahụ ga-aga.',
     'refund_destination_not_offered' => 'A naghị enye ebe nkwụghachi ego ahụ maka nlọghachi a. Họrọ otu n\'ime ebe ndị e depụtara maka ya.',
     'refund_destination_choice_closed' => 'Agaghị agbanwe ugbu a ebe nkwụghachi a ga-aga: nkwụghachi anọlarị n\'ụzọ, ma ọ bụ nlọghachi ahụ agwụla. A ga-ahọrọ ya ọzọ naanị ma ọ bụrụ na nkwụghachi ahụ dara n\'ezie.',
+    'replacement_quote_changed' => 'Ọda nnọchi anaghị abịa n\'ego e gosiri ọzọ: ọnụahịa, mbelata ọnụahịa, mbupu, ụtụ isi ma ọ bụ ọnụego mgbanwe agbanweela. Lelee ego ọhụrụ ahụ ma kwado ọzọ.',
+    'replacement_not_available' => 'A naghị ere otu ihe nnọchi ọzọ. Họrọ ihe ọzọ, ma ọ bụ weghachite ego maka ihe ahụ e weghachiri kama.',
+    'replacement_out_of_stock' => 'Otu ihe nnọchi agwụla n\'ụlọ ahịa. Họrọ ihe ọzọ, ma ọ bụ weghachite ego maka ihe ahụ e weghachiri kama.',
+    'replacement_currency_not_offered' => 'A naghị enye ego ọda ahụ ọzọ, ya mere a pụghị itinye ọnụahịa nnọchi na ya. Weghachite ego maka ihe ahụ e weghachiri kama.',
+    'replacement_shipping_unavailable' => 'A pụghị iziga nnọchi ahụ n\'adreesị ọda ahụ site n\'ụzọ mbupu a họrọ. Họrọ ụzọ mbupu ọzọ.',
 ];

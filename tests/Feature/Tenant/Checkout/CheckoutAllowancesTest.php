@@ -35,6 +35,16 @@ afterEach(function (): void {
     deleteAllStores();
 });
 
+it('never offers the exchange credit at checkout, so a shopper can\'t choose it', function (): void {
+    $token = checkoutCart([[10000, 1]]);
+    readyCheckout($token);
+
+    $quote = checkoutRequest('PATCH', '', ['payment_method' => 'exchange_credit'], token: $token)->assertOk();
+
+    expect(array_column($quote->json('data.payment_methods'), 'key'))->not->toContain('exchange_credit')
+        ->and(checkoutIssues($quote))->toContain('payment_method_not_offered');
+});
+
 it('ignores allowances a shopper sends to the cart, the checkout or the order', function (): void {
     $token = checkoutCart([[10000, 1]]);
     $sent = ['allowances' => ['lines' => ['line-1' => 10000], 'shipping' => 150000], 'allowance' => 10000];

@@ -227,4 +227,9 @@ return [
     'refund_destination_refused' => 'La destination de remboursement choisie a refusé ce remboursement : rien n\'a été versé. Choisissez à nouveau où va le remboursement.',
     'refund_destination_not_offered' => 'Cette destination de remboursement n\'est pas proposée pour ce retour. Choisissez l\'une des destinations indiquées pour lui.',
     'refund_destination_choice_closed' => 'La destination de ce remboursement ne peut pas être modifiée maintenant : un remboursement est déjà en cours, ou le retour est terminé. Elle ne peut être choisie à nouveau que si ce remboursement échoue de façon certaine.',
+    'replacement_quote_changed' => 'La commande de remplacement ne correspond plus au montant affiché : un prix, une promotion, la livraison, la taxe ou le taux de change a changé. Vérifiez les nouveaux montants et confirmez à nouveau.',
+    'replacement_not_available' => 'Un article de remplacement n\'est plus en vente. Choisissez un autre article, ou remboursez plutôt le retour.',
+    'replacement_out_of_stock' => 'Un article de remplacement est en rupture de stock. Choisissez un autre article, ou remboursez plutôt le retour.',
+    'replacement_currency_not_offered' => 'La devise de la commande n\'est plus proposée : aucun remplacement ne peut y être tarifé. Remboursez plutôt le retour.',
+    'replacement_shipping_unavailable' => 'Le remplacement ne peut pas être envoyé à l\'adresse de la commande avec le mode de livraison choisi. Choisissez un autre mode de livraison.',
 ];

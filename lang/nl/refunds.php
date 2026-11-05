@@ -12,6 +12,7 @@ return [
 
     'destinations' => [
         'original_payment' => 'Terug naar hoe je hebt betaald',
+        'exchange' => 'Voor je vervangende bestelling',
     ],
 
 ];

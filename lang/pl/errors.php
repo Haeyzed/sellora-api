@@ -227,4 +227,9 @@ return [
     'refund_destination_refused' => 'Wybrane miejsce zwrotu odrzuciło ten zwrot, więc nic nie wypłacono. Wybierz ponownie, dokąd ma trafić zwrot.',
     'refund_destination_not_offered' => 'To miejsce zwrotu nie jest dostępne dla tego zwrotu. Wybierz jedno z miejsc podanych dla niego.',
     'refund_destination_choice_closed' => 'Nie można teraz zmienić, dokąd trafi ten zwrot pieniędzy: zwrot jest już w drodze albo zwrot towaru został zakończony. Można wybrać ponownie tylko wtedy, gdy ten zwrot na pewno się nie powiedzie.',
+    'replacement_quote_changed' => 'Zamówienie zastępcze nie wynosi już tyle, ile pokazano: zmieniła się cena, promocja, wysyłka, podatek lub kurs wymiany. Sprawdź nowe kwoty i potwierdź ponownie.',
+    'replacement_not_available' => 'Jeden z produktów zastępczych nie jest już w sprzedaży. Wybierz inny produkt albo zamiast tego zwróć pieniądze za zwrot.',
+    'replacement_out_of_stock' => 'Jednego z produktów zastępczych nie ma w magazynie. Wybierz inny produkt albo zamiast tego zwróć pieniądze za zwrot.',
+    'replacement_currency_not_offered' => 'Waluta zamówienia nie jest już oferowana, więc nie można w niej wycenić zamiennika. Zamiast tego zwróć pieniądze za zwrot.',
+    'replacement_shipping_unavailable' => 'Zamiennika nie można wysłać wybraną metodą wysyłki na adres zamówienia. Wybierz inną metodę wysyłki.',
 ];

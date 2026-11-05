@@ -250,5 +250,10 @@ return [
     'refund_destination_refused' => 'The chosen refund destination refused this refund, so nothing was paid out. Choose again where the refund goes.',
     'refund_destination_not_offered' => 'That refund destination isn\'t offered for this return. Choose one of the destinations listed for it.',
     'refund_destination_choice_closed' => 'Where this refund goes can\'t be changed now: a refund is already on its way, or the return is finished. It can be chosen again only if that refund definitely fails.',
+    'replacement_quote_changed' => 'The replacement order no longer comes to what was shown: a price, promotion, shipping, tax or exchange rate changed. Check the new amounts and confirm again.',
+    'replacement_not_available' => 'A replacement item is no longer for sale. Choose another item, or refund the return instead.',
+    'replacement_out_of_stock' => 'A replacement item is out of stock. Choose another item, or refund the return instead.',
+    'replacement_currency_not_offered' => 'The order\'s currency isn\'t offered any more, so no replacement can be priced in it. Refund the return instead.',
+    'replacement_shipping_unavailable' => 'The replacement can\'t be sent with the chosen shipping method to the order\'s address. Choose another shipping method.',
 
 ];

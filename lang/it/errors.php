@@ -227,4 +227,9 @@ return [
     'refund_destination_refused' => 'La destinazione di rimborso scelta ha rifiutato questo rimborso, quindi non è stato pagato nulla. Scegli di nuovo dove va il rimborso.',
     'refund_destination_not_offered' => 'Questa destinazione di rimborso non è offerta per questo reso. Scegli una delle destinazioni elencate per esso.',
     'refund_destination_choice_closed' => 'La destinazione di questo rimborso non può essere cambiata ora: un rimborso è già in corso, oppure il reso è concluso. Si può scegliere di nuovo solo se quel rimborso non va a buon fine con certezza.',
+    'replacement_quote_changed' => 'L\'ordine sostitutivo non corrisponde più a quanto mostrato: è cambiato un prezzo, una promozione, la spedizione, l\'imposta o il tasso di cambio. Controlla i nuovi importi e conferma di nuovo.',
+    'replacement_not_available' => 'Un articolo sostitutivo non è più in vendita. Scegli un altro articolo, oppure rimborsa il reso.',
+    'replacement_out_of_stock' => 'Un articolo sostitutivo è esaurito. Scegli un altro articolo, oppure rimborsa il reso.',
+    'replacement_currency_not_offered' => 'La valuta dell\'ordine non è più offerta, quindi non si può prezzare un sostituto in essa. Rimborsa invece il reso.',
+    'replacement_shipping_unavailable' => 'Il sostituto non può essere spedito all\'indirizzo dell\'ordine con il metodo di spedizione scelto. Scegli un altro metodo di spedizione.',
 ];

@@ -12,6 +12,7 @@ return [
 
     'destinations' => [
         'original_payment' => '退回您的原付款方式',
+        'exchange' => '用于你的换货订单',
     ],
 
 ];

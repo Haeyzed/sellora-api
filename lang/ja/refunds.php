@@ -12,6 +12,7 @@ return [
 
     'destinations' => [
         'original_payment' => 'お支払いに使った方法へ',
+        'exchange' => '交換用の注文に充当',
     ],
 
 ];

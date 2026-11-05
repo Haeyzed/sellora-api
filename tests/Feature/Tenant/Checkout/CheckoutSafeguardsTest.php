@@ -43,11 +43,12 @@ afterEach(function (): void {
     deleteAllStores();
 });
 
-it('wires in core\'s own payment methods first, gateways then those paid by hand, once for the whole app', function (): void {
+it('wires in core\'s own payment methods first, gateways then those paid by hand, then the exchange credit, once for the whole app', function (): void {
     $extensions = app(CheckoutExtensions::class);
 
     expect($extensions)->toBe(app(CheckoutExtensions::class))
-        ->and(array_map(get_class(...), $this->store->run(static fn (): array => $extensions->paymentMethods())))->toBe([GatewayPaymentMethods::class, ManualPaymentMethods::class])
+        ->and(array_map(get_class(...), $this->store->run(static fn (): array => $extensions->paymentMethods())))->toBe([GatewayPaymentMethods::class, ManualPaymentMethods::class, App\Tenant\Checkout\PaymentMethods\ExchangeCreditPaymentMethod::class])
+        ->and($extensions->paymentMethodFor('exchange_credit'))->toBeInstanceOf(App\Tenant\Checkout\PaymentMethods\ExchangeCreditPaymentMethod::class)
         ->and($extensions->paymentMethodFor('gateway:'.FakePaymentGateway::KEY))->toBeInstanceOf(GatewayPaymentMethods::class)
         ->and($extensions->paymentMethodFor('bank_transfer'))->toBeInstanceOf(ManualPaymentMethods::class)
         ->and($extensions->paymentMethodFor('gift_card'))->toBeNull();

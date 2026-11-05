@@ -12,6 +12,7 @@ return [
 
     'destinations' => [
         'original_payment' => 'Zurück auf die Zahlungsart, mit der du bezahlt hast',
+        'exchange' => 'Für deine Ersatzbestellung',
     ],
 
 ];

@@ -399,3 +399,63 @@ function returnsRequest(string $method, string $path, array $data = [], ?StaffMe
 
     return $response;
 }
+
+/*
+|--------------------------------------------------------------------------
+| For ReplacementOrdersTest.php
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * A shipping method of the test store that sends anywhere in Nigeria for the flat price given, in minor units, made through the staff API. Make one per test: each makes its own zone.
+ */
+function replacementShippingMethod(int $amount = 1500): App\Tenant\Shipping\Models\ShippingMethod
+{
+    $zone = shippingZone('Nigeria', ['NG'], subdomain: 'first-store');
+    $id = shippingRequest('POST', '/methods', ['fulfilment' => 'ship', 'pricing' => 'flat', 'zone' => $zone, 'name' => ['en' => 'Replacement post'], 'rates' => [['from' => 0, 'to' => null, 'amount' => $amount]]], subdomain: 'first-store')->assertCreated()->json('data.id');
+
+    return test()->store->run(static fn (): App\Tenant\Shipping\Models\ShippingMethod => App\Tenant\Shipping\Models\ShippingMethod::query()->where('public_id', $id)->sole());
+}
+
+/**
+ * What a replacement order for the return is made from, as an exchange would ask: the variants given as [variant, quantity, at most (minor units) or null], with the returned items worth the amount given.
+ *
+ * @param  list<array{0: App\Tenant\Catalog\Models\ProductVariant, 1: int, 2?: int|null}>  $lines
+ */
+function replacementRequest(OrderReturn $return, array $lines, int $returnedValue, ?App\Tenant\Shipping\Models\ShippingMethod $method, bool $chargesShipping = true, ?Order $original = null): App\Tenant\Checkout\Data\ReplacementRequest
+{
+    $original ??= Order::query()->findOrFail($return->order_id);
+    $currency = $original->currency;
+
+    return new App\Tenant\Checkout\Data\ReplacementRequest(
+        $original,
+        $return->id,
+        $return->public_id,
+        $return->getMorphClass(),
+        array_map(static fn (array $line): App\Tenant\Checkout\Data\ReplacementLine => new App\Tenant\Checkout\Data\ReplacementLine($line[0], $line[1], isset($line[2]) ? App\Shared\Money\Money::ofMinor($line[2], $currency) : null), $lines),
+        App\Shared\Money\Money::ofMinor($returnedValue, $currency),
+        $method,
+        $chargesShipping,
+        'Exchange allowance',
+    );
+}
+
+/**
+ * Quotes the replacement, then places it as staff confirmed that quote.
+ */
+function placeReplacement(App\Tenant\Checkout\Data\ReplacementRequest $request): App\Tenant\Checkout\Data\PlacedReplacement
+{
+    $quote = app(App\Tenant\Checkout\Actions\QuoteReplacementOrder::class)->handle($request);
+
+    return app(App\Tenant\Checkout\Actions\PlaceReplacementOrder::class)->handle($request, $quote->hash);
+}
+
+/**
+ * The quote's money, in minor units: what the returned items are worth, the replacement's total, the credit, what is still due, and what goes back.
+ *
+ * @return list<int>
+ */
+function replacementSettlement(App\Tenant\Checkout\Data\ReplacementQuote $quote): array
+{
+    return [$quote->returnedValue->minorAmount(), $quote->total->minorAmount(), $quote->credit->minorAmount(), $quote->amountDue->minorAmount(), $quote->difference->minorAmount()];
+}

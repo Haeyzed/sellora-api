@@ -12,6 +12,7 @@ return [
 
     'destinations' => [
         'original_payment' => 'Тем же способом, которым вы платили',
+        'exchange' => 'В счёт заказа на замену',
     ],
 
 ];

@@ -116,14 +116,17 @@ final readonly class GiveRefundToDestination
     }
 
     /**
-     * @throws LogicException When the refund's order has no customer: a refund only goes to a destination for the order's own customer.
+     * @throws LogicException When the refund goes to a module's destination but its order has no customer: a module's destination is only ever for the order's own customer. Core's exchange destination keeps the money in the store, so a guest's order may use it.
      */
     private function payout(Refund $refund): DestinationRefund
     {
         $order = $refund->order()->with('customer')->firstOrFail();
-        $customer = $order->customer ?? throw new LogicException("Refund {$refund->public_id} goes to a destination, but its order has no customer.");
 
-        return new DestinationRefund($refund->public_id, $order->public_id, $customer->public_id, $refund->amount, $order->is_test);
+        if ($order->customer === null && $refund->destination !== RefundDestinations::EXCHANGE) {
+            throw new LogicException("Refund {$refund->public_id} goes to a destination, but its order has no customer.");
+        }
+
+        return new DestinationRefund($refund->public_id, $order->public_id, $order->customer?->public_id, $refund->amount, $order->is_test);
     }
 
     /**

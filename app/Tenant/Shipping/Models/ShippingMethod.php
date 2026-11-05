@@ -8,6 +8,7 @@ use App\Shared\Concerns\HasPublicId;
 use App\Shared\Money\Money;
 use App\Shared\Money\MoneyCast;
 use App\Tenant\Inventory\Models\StockLocation;
+use App\Tenant\Pricing\Data\TaxAddress;
 use App\Tenant\Settings\Concerns\HasStoreTranslations;
 use App\Tenant\Shipping\Enums\ShippingFulfilment;
 use App\Tenant\Shipping\Enums\ShippingPricing;
@@ -143,6 +144,18 @@ final class ShippingMethod extends Model implements AuditableContract
     public function isArchived(): bool
     {
         return $this->archived_at !== null;
+    }
+
+    /**
+     * Where tax is worked out to when the buyer collects with it: the pickup's own address. Null when it isn't a pickup, or the pickup has no address yet.
+     *
+     * The one copy of this rule: carts, checkouts and replacement orders all ask here.
+     */
+    public function pickupTaxAddress(): ?TaxAddress
+    {
+        return $this->fulfilment === ShippingFulfilment::Pickup && $this->pickup_country_code !== null
+            ? new TaxAddress($this->pickup_country_code, $this->pickup_state_code, $this->pickup_postal_code)
+            : null;
     }
 
     /**

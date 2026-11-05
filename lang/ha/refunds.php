@@ -12,6 +12,7 @@ return [
 
     'destinations' => [
         'original_payment' => 'Zuwa hanyar da ka biya da ita',
+        'exchange' => 'Don odar musanyar ka',
     ],
 
 ];

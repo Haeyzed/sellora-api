@@ -227,4 +227,9 @@ return [
     'refund_destination_refused' => 'Seçilen iade yeri bu iadeyi reddetti, bu yüzden hiçbir şey ödenmedi. İadenin nereye gideceğini yeniden seçin.',
     'refund_destination_not_offered' => 'Bu iade yeri bu iade için sunulmuyor. Onun için listelenen yerlerden birini seçin.',
     'refund_destination_choice_closed' => 'Bu iadenin nereye gideceği şimdi değiştirilemez: bir iade zaten yolda ya da iade işlemi tamamlandı. Ancak o iade kesin olarak başarısız olursa yeniden seçilebilir.',
+    'replacement_quote_changed' => 'Değişim siparişi artık gösterilen tutarda değil: bir fiyat, promosyon, kargo, vergi veya döviz kuru değişti. Yeni tutarları kontrol edip yeniden onaylayın.',
+    'replacement_not_available' => 'Değişim ürünlerinden biri artık satışta değil. Başka bir ürün seçin ya da bunun yerine iadeyi geri ödeyin.',
+    'replacement_out_of_stock' => 'Değişim ürünlerinden biri stokta yok. Başka bir ürün seçin ya da bunun yerine iadeyi geri ödeyin.',
+    'replacement_currency_not_offered' => 'Siparişin para birimi artık sunulmuyor, bu yüzden değişim ürünü bu para biriminde fiyatlandırılamaz. Bunun yerine iadeyi geri ödeyin.',
+    'replacement_shipping_unavailable' => 'Değişim ürünü seçilen kargo yöntemiyle siparişin adresine gönderilemez. Başka bir kargo yöntemi seçin.',
 ];

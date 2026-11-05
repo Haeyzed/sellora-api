@@ -227,4 +227,9 @@ return [
     'refund_destination_refused' => '所选的退款去向拒绝了这笔退款，因此没有支付任何款项。请重新选择退款去向。',
     'refund_destination_not_offered' => '此退货不提供该退款去向。请从为其列出的去向中选择一个。',
     'refund_destination_choice_closed' => '现在无法更改这笔退款的去向：退款已在处理中，或退货已完成。只有在该退款确定失败后才能重新选择。',
+    'replacement_quote_changed' => '换货订单的金额已与显示的不同：价格、促销、运费、税费或汇率发生了变化。请查看新的金额并再次确认。',
+    'replacement_not_available' => '有一件换货商品已不再销售。请选择其他商品，或改为退款。',
+    'replacement_out_of_stock' => '有一件换货商品缺货。请选择其他商品，或改为退款。',
+    'replacement_currency_not_offered' => '该订单的币种已不再提供，因此无法以该币种为换货定价。请改为退款。',
+    'replacement_shipping_unavailable' => '无法使用所选的配送方式将换货寄到订单地址。请选择其他配送方式。',
 ];

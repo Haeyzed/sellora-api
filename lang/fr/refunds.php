@@ -12,6 +12,7 @@ return [
 
     'destinations' => [
         'original_payment' => 'Sur le moyen de paiement utilisé',
+        'exchange' => 'Pour votre commande de remplacement',
     ],
 
 ];

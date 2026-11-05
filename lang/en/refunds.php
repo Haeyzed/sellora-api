@@ -12,6 +12,7 @@ return [
 
     'destinations' => [
         'original_payment' => 'Back to how you paid',
+        'exchange' => 'Toward your replacement order',
     ],
 
 ];

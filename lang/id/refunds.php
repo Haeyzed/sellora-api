@@ -12,6 +12,7 @@ return [
 
     'destinations' => [
         'original_payment' => 'Kembali ke cara Anda membayar',
+        'exchange' => 'Untuk pesanan pengganti Anda',
     ],
 
 ];

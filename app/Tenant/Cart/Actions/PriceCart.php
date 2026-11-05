@@ -26,7 +26,6 @@ use App\Tenant\Shipping\Data\CarrierAddress;
 use App\Tenant\Shipping\Data\ShippableLine;
 use App\Tenant\Shipping\Data\ShippingQuoteRequest;
 use App\Tenant\Shipping\Data\ShippingRegion;
-use App\Tenant\Shipping\Enums\ShippingFulfilment;
 use Illuminate\Database\Eloquent\Collection;
 use LogicException;
 
@@ -78,7 +77,7 @@ final readonly class PriceCart
         $storeCountry = $this->findStoreSettings->handle()->country_code;
         $address = $checkout?->shippingAddress;
         $taxDestination = match (true) {
-            $chosen?->fulfilment === ShippingFulfilment::Pickup && $chosen->pickup_country_code !== null => new TaxAddress($chosen->pickup_country_code, $chosen->pickup_state_code, $chosen->pickup_postal_code),
+            $chosen?->pickupTaxAddress() !== null => $chosen->pickupTaxAddress(),
             $address !== null => $address->toTaxAddress(),
             $checkout?->billingDestination !== null => $checkout->billingDestination,
             default => self::destinationOf($cart, $storeCountry),

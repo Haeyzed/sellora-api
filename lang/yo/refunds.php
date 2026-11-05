@@ -12,6 +12,7 @@ return [
 
     'destinations' => [
         'original_payment' => 'Padà sí ọ̀nà tí o fi sanwó',
+        'exchange' => 'Fún ọjà ìrọ́pò rẹ',
     ],
 
 ];

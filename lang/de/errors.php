@@ -227,4 +227,9 @@ return [
     'refund_destination_refused' => 'Das gewählte Erstattungsziel hat diese Erstattung abgelehnt, es wurde also nichts ausgezahlt. Wähle erneut, wohin die Erstattung geht.',
     'refund_destination_not_offered' => 'Dieses Erstattungsziel wird für diese Rücksendung nicht angeboten. Wähle eines der dafür aufgeführten Ziele.',
     'refund_destination_choice_closed' => 'Wohin diese Erstattung geht, lässt sich jetzt nicht ändern: Eine Erstattung ist schon unterwegs oder die Rücksendung ist abgeschlossen. Erneut wählen kannst du erst, wenn diese Erstattung sicher fehlgeschlagen ist.',
+    'replacement_quote_changed' => 'Die Ersatzbestellung kostet nicht mehr das, was angezeigt wurde: Ein Preis, eine Aktion, der Versand, die Steuer oder der Wechselkurs hat sich geändert. Prüfe die neuen Beträge und bestätige erneut.',
+    'replacement_not_available' => 'Ein Ersatzartikel wird nicht mehr verkauft. Wähle einen anderen Artikel oder erstatte die Rücksendung stattdessen.',
+    'replacement_out_of_stock' => 'Ein Ersatzartikel ist nicht vorrätig. Wähle einen anderen Artikel oder erstatte die Rücksendung stattdessen.',
+    'replacement_currency_not_offered' => 'Die Währung der Bestellung wird nicht mehr angeboten, daher kann kein Ersatz in ihr berechnet werden. Erstatte die Rücksendung stattdessen.',
+    'replacement_shipping_unavailable' => 'Der Ersatz kann mit der gewählten Versandart nicht an die Adresse der Bestellung geschickt werden. Wähle eine andere Versandart.',
 ];

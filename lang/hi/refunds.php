@@ -12,6 +12,7 @@ return [
 
     'destinations' => [
         'original_payment' => 'उसी तरीके से जिससे आपने भुगतान किया',
+        'exchange' => 'आपके बदले वाले ऑर्डर के लिए',
     ],
 
 ];

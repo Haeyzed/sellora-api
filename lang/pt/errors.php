@@ -227,4 +227,9 @@ return [
     'refund_destination_refused' => 'O destino de reembolso escolhido recusou este reembolso, por isso nada foi pago. Escolha novamente para onde vai o reembolso.',
     'refund_destination_not_offered' => 'Esse destino de reembolso não é oferecido para esta devolução. Escolha um dos destinos indicados para ela.',
     'refund_destination_choice_closed' => 'Agora não é possível mudar para onde vai este reembolso: um reembolso já está a caminho, ou a devolução terminou. Só pode ser escolhido de novo se esse reembolso falhar com certeza.',
+    'replacement_quote_changed' => 'O pedido de substituição já não corresponde ao valor mostrado: mudou um preço, uma promoção, o envio, o imposto ou a taxa de câmbio. Verifique os novos valores e confirme novamente.',
+    'replacement_not_available' => 'Um artigo de substituição já não está à venda. Escolha outro artigo ou reembolse a devolução.',
+    'replacement_out_of_stock' => 'Um artigo de substituição está esgotado. Escolha outro artigo ou reembolse a devolução.',
+    'replacement_currency_not_offered' => 'A moeda do pedido já não é oferecida, por isso não é possível definir o preço de uma substituição nela. Reembolse a devolução.',
+    'replacement_shipping_unavailable' => 'A substituição não pode ser enviada para a morada do pedido com o método de envio escolhido. Escolha outro método de envio.',
 ];

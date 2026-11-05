@@ -227,4 +227,9 @@ return [
     'refund_destination_refused' => 'Mahali palipochaguliwa pa kurudishiwa pesa pamekataa marejesho haya, kwa hiyo hakuna kilicholipwa. Chagua tena marejesho yaende wapi.',
     'refund_destination_not_offered' => 'Mahali hapo pa kurudishiwa pesa hapatolewi kwa marejesho haya. Chagua mojawapo ya maeneo yaliyoorodheshwa kwake.',
     'refund_destination_choice_closed' => 'Hapawezi kubadilishwa sasa marejesho haya yataenda wapi: marejesho tayari yako njiani, au urejeshaji umekamilika. Yanaweza kuchaguliwa tena tu ikiwa marejesho hayo yatashindwa kwa hakika.',
+    'replacement_quote_changed' => 'Agizo la kubadilisha halifikii tena kiasi kilichoonyeshwa: bei, ofa, usafirishaji, kodi au kiwango cha ubadilishaji kimebadilika. Kagua kiasi kipya kisha uthibitishe tena.',
+    'replacement_not_available' => 'Bidhaa moja ya kubadilisha haiuzwi tena. Chagua bidhaa nyingine, au rudisha pesa ya bidhaa iliyorudishwa badala yake.',
+    'replacement_out_of_stock' => 'Bidhaa moja ya kubadilisha imeisha. Chagua bidhaa nyingine, au rudisha pesa ya bidhaa iliyorudishwa badala yake.',
+    'replacement_currency_not_offered' => 'Sarafu ya agizo haitolewi tena, kwa hivyo hakuna bidhaa ya kubadilisha inayoweza kupangiwa bei kwa sarafu hiyo. Rudisha pesa ya bidhaa iliyorudishwa badala yake.',
+    'replacement_shipping_unavailable' => 'Bidhaa ya kubadilisha haiwezi kutumwa kwa anwani ya agizo kwa njia ya usafirishaji iliyochaguliwa. Chagua njia nyingine ya usafirishaji.',
 ];

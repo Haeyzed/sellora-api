@@ -12,6 +12,7 @@ return [
 
     'destinations' => [
         'original_payment' => 'Ödeme yaptığınız yönteme',
+        'exchange' => 'Değişim siparişiniz için',
     ],
 
 ];

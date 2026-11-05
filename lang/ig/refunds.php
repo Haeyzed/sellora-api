@@ -12,6 +12,7 @@ return [
 
     'destinations' => [
         'original_payment' => 'Laghachi n\'ụzọ i siri kwụọ ụgwọ',
+        'exchange' => 'Maka ọda nnọchi gị',
     ],
 
 ];

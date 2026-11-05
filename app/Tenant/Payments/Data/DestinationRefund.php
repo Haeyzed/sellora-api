@@ -14,13 +14,13 @@ final readonly class DestinationRefund
     /**
      * @param  string  $refundId  The refund's public ID: the same refund always has the same one, so a module can tell it already paid it out.
      * @param  string  $orderId  The order's public ID.
-     * @param  string  $customerId  The public ID of the customer it goes to.
+     * @param  string|null  $customerId  The public ID of the customer it goes to: always set for a module's destination; null only for core's exchange destination on a guest's order (Step 18c).
      * @param  bool  $isTest  Whether the order is a test order: a module must never pay a test refund out as real value.
      */
     public function __construct(
         public string $refundId,
         public string $orderId,
-        public string $customerId,
+        public ?string $customerId,
         public Money $amount,
         public bool $isTest,
     ) {}

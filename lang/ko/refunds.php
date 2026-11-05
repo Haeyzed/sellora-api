@@ -12,6 +12,7 @@ return [
 
     'destinations' => [
         'original_payment' => '결제한 수단으로',
+        'exchange' => '교환 주문에 사용',
     ],
 
 ];
