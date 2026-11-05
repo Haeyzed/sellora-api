@@ -1,7 +1,7 @@
 # Handover
 
 **Date:** 5 November 2026.
-**Describes:** `main` at `53515da`, and the branch `encrypt-queued-messages`
+**Describes:** `main` at `a796b80`, and the branch `permission-labels`
 started from it.
 
 This is for continuing the work on a new PC: for the project owner, and for
@@ -15,30 +15,32 @@ disagrees with `git log`, GitHub or CLAUDE.md, they win.
 
 ## 1. Where things stand
 
-**`main`** is at `53515da` ("Document how errors are kept free of personal
-data in production"). CI passed on it: run 41862033454, all three jobs (Pest
-on PostgreSQL 18 and Redis; Pint, Larastan and composer audit; Scramble).
+**`main`** is at `a796b80` ("Update Symfony to 8.1.11 for eight security
+advisories"). CI passed on it: run 41949795261, all three jobs (Pest on
+PostgreSQL 18 and Redis; Pint, Larastan and composer audit; Scramble).
 
-**What was finished last:** `scrub-error-reports` (the error scrubbing that
-was item 2a), merged into `main` by fast-forward:
+**What was finished last:** `encrypt-queued-messages`, merged into `main` by
+fast-forward:
 
 | Commit | What |
 |---|---|
-| `b7172ee` | Database errors are scrubbed before they are reported or shown |
-| `9b8b8c7` | ...and in what the console prints |
-| `3b0b080` | Reported errors go to Sentry, scrubbed, and only with a DSN |
-| `f7fd529` | Failed jobs' errors are scrubbed; failed jobs are purged after 30 days |
-| `53515da` | [Documentation home](README.md): errors and personal data in production |
+| `842adec` | `scripts/run-suite.ps1` picks a safe number of parallel workers (`-Processes`) |
+| `0394a84` | Every queued notification is encrypted in the queue and in `failed_jobs`; an architecture test requires it |
+| `8a6b235` | CLAUDE.md: gateways on demand, billing gateway per merchant, permission labels |
+| `8f99aa9` | A test proves the exchange-rate app ID never leaks from a failed refresh |
+| `0aab2cc` | [Deployment](deployment.md): encrypted jobs and changing `APP_KEY` |
+| `a796b80` | Symfony 8.1.11, for eight security advisories |
 
-Before that: `handover-scripts` (`c3ad6db` to `cb3e372`), which added the
-helper scripts and this handover.
+Before that: `scrub-error-reports` (`b7172ee` to `53515da`), which keeps
+database errors' personal data out of reports, logs, the console, Sentry and
+failed jobs.
 
 **Branches:**
 
 | Branch | State |
 |---|---|
-| `encrypt-queued-messages` | **In progress:** item 2a below. Not merged |
-| `scrub-error-reports`, `handover-scripts` | Merged; kept on GitHub |
+| `permission-labels` | **In progress:** item 2a below. Not merged |
+| `encrypt-queued-messages`, `scrub-error-reports`, `handover-scripts` | Merged; kept on GitHub |
 | `step-10-customers` to `step-18-returns`, `step-10b-social-sign-in`, `step-15b-invoices`, `step-16b-paystack` | Merged; kept on GitHub |
 | `docs-schema-comments`, `fix-token-links`, `fix-payment-holds` | Merged; kept on GitHub |
 | `ci-proof-docs`, `ci-proof-pint`, `ci-proof-stan` | Gone, as intended. They existed only on the old laptop (each broke one CI check on purpose, to prove CI catches it) and were never meant to be kept |
@@ -50,22 +52,17 @@ helper scripts and this handover.
 Each item is its own branch, starts only when the owner says so, and ends
 with a stop for review (CLAUDE.md section 17).
 
-### a. Queued emails encrypted (`encrypt-queued-messages`)
+### a. Permission labels (`permission-labels`)
 
-Every queued notification implements Laravel's ShouldBeEncrypted, so the links with
-tokens, codes, emails and names they carry are unreadable in the queue and
-in `failed_jobs`; an architecture test requires it of every queued
-notification, mailable and listener. The branch also proves the Open
-Exchange Rates app ID never leaks from a failed refresh, and lets
-`scripts/run-suite.ps1` pick a safe number of workers. What deploying it
-means for jobs already stored is in [deployment](deployment.md).
+From the CLAUDE.md section 10 rule. Every permission has a translated label
+and description and a group, in all 20 languages, and says whether it is
+sensitive. Both permission lists return them, sorted by group and label and
+searchable. Every staff and platform route answers in the dashboard's
+language (`Accept-Language`), while store content stays in the store's
+language. The branch also makes `scripts/wait-for-ci.ps1` survive a sleep
+and wait for the CI workflow only.
 
-### b. Permission labels
-
-The next small branch, from the section 10 rule that every permission gets
-a translated label, description and group. Not started.
-
-### c. Step 18b: exchanges and the refund-destination extension point
+### b. Step 18b: exchanges and the refund-destination extension point
 
 From CLAUDE.md sections 17 and 18. An exchange is the return plus a linked
 replacement order made by a staff action that reuses checkout's pricing,
@@ -75,12 +72,12 @@ payment is core's default and only destination, and modules add others
 through a core contract. Returns today is described in
 [Returns](tenant/returns.md).
 
-### d. Steps 19, 20 and 21
+### c. Steps 19, 20 and 21
 
 Storefront, then Messaging (email first, see [Messaging](tenant/messaging.md)),
 then Data tools, as CLAUDE.md section 17 lists them.
 
-### e. The frontend, after core
+### d. The frontend, after core
 
 The frontends come after the core API is done. The frontend repository is
 `Haeyzed/sellora-frontend`.
@@ -104,6 +101,8 @@ The frontends come after the core API is done. The frontend repository is
 | **Other errors that can quote personal data:** errors are scrubbed only when they are, or were caused by, a database error. Others pass with their message, for example a mail error quoting the recipient's address, which also lands in `failed_jobs.exception` (encryption covers the job's data, not its error). Each needs its own handling in `ErrorScrubber`, one kind of error at a time | Only here (found in `scrub-error-reports`) |
 | **Telescope stores exception messages** in full, including a database error's SQL and values. It runs only locally (never in production or staging with real data), so it was left out of `scrub-error-reports` | Only here |
 | **Plain-text queued emails** written before `encrypt-queued-messages` is deployed stay readable in `failed_jobs` until the 30-day purge; they are not re-encrypted | [Deployment](deployment.md) |
+| **A saved preferred language for staff and platform admins** (a column on each), for Step 20: today a dashboard's language comes only from `Accept-Language`, so emails and alerts sent outside a request (by a job or the scheduler) have no language to use | Only here (decided in `permission-labels`) |
+| **Native review of the permission labels and group names** before real merchants use them: Yoruba, Hausa, Igbo and Swahili above all, and ideally every non-English language. They were written without a native speaker; the descriptions were too | `lang/*/permissions.php` and `lang/*/permission_groups.php` |
 | **The pre-commit hook** was tried by hand only on Windows (PowerShell and Git Bash); CI now runs the hook check (`composer ci:hook`) on Linux on every push | [CI workflow](../.github/workflows/ci.yml) |
 
 ## 4. New PC setup (Windows PowerShell)

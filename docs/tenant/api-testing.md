@@ -58,6 +58,15 @@ also require role permissions and two-factor authentication. Use the
 appropriate token variable in the examples below; do not send a platform
 admin token to a store endpoint.
 
+**Languages.** Staff endpoints (`/staff/...`) answer in the dashboard's
+language: send `Accept-Language` with any of the application's 20 languages
+(a regional one such as `fr-CA` falls back to `fr`; anything else gets
+English). Errors, validation messages and permission labels follow it. The
+store's own content, such as product names, stays in the store's language.
+Customer and storefront endpoints answer in the store language the client
+asks for, among the languages the store publishes in. `Content-Language` on
+the response says which language was used.
+
 ## Endpoint cURL reference
 
 The following commands cover all 329 operations in the current tenant
@@ -2857,9 +2866,15 @@ curl.exe --request PUT "${StoreBase}/staff/orders/${Order}/tags" `
 
 **GET** `/staff/team/permissions` — staff bearer token. List permissions roles can grant
 
+Each permission has its key (`name`), a short `label`, a `description`, its
+`group` (`key` and `label`) and `is_sensitive`, sorted by group and label.
+`search` matches the label or description in the dashboard's language, or the
+key.
+
 ```powershell
-curl.exe --request GET "${StoreBase}/staff/team/permissions" `
+curl.exe --request GET "${StoreBase}/staff/team/permissions?search=refund" `
   --header 'Accept: application/json' `
+  --header 'Accept-Language: fr' `
   --header "Authorization: Bearer $StaffToken"
 ```
 

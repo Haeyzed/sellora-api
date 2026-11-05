@@ -215,7 +215,7 @@ as `powershell -ExecutionPolicy Bypass -File .\scripts\probe.ps1 ...`.
 |---|---|
 | `probe.ps1` | Breaks one rule on purpose, runs the tests named and says whether they caught it; the file is always restored byte for byte. Runs only on a clean working tree |
 | `run-suite.ps1` | Runs a suite, the Landlord suite by default, one or more times, and keeps each run's full output. Uses as many parallel workers as free memory allows unless `-Processes` says how many |
-| `wait-for-ci.ps1` | Waits for the GitHub Actions run of a commit and prints each job's result |
+| `wait-for-ci.ps1` | Waits for the CI workflow's run of a commit and prints each job's result; a sleep during the wait extends it, and it says when it couldn't check |
 | `db-status.ps1` | A read-only look at the database server: leftover test databases and live sessions |
 
 ## Before you commit

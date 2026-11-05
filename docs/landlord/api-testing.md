@@ -68,6 +68,12 @@ curl.exe --request GET "$PlatformBase/auth/me" `
   --header "Authorization: Bearer $PlatformToken"
 ```
 
+Platform endpoints answer in the dashboard's language: send
+`Accept-Language` with any of the application's 20 languages (a regional one
+such as `fr-CA` falls back to `fr`; anything else gets English). Errors,
+validation messages and permission labels follow it, and `Content-Language`
+on the response says which language was used.
+
 ## Register a store
 
 Registration starts on the central domain and does not require an existing
@@ -380,9 +386,15 @@ curl.exe --request POST "${PlatformBase}/auth/invitation-previews" `
 
 **GET** `/team/permissions` — platform bearer token. List permissions platform roles can grant
 
+Each permission has its key (`name`), a short `label`, a `description`, its
+`group` (`key` and `label`) and `is_sensitive`, sorted by group and label.
+`search` matches the label or description in the dashboard's language, or the
+key.
+
 ```powershell
-curl.exe --request GET "${PlatformBase}/team/permissions" `
+curl.exe --request GET "${PlatformBase}/team/permissions?search=export" `
   --header 'Accept: application/json' `
+  --header 'Accept-Language: fr' `
   --header "Authorization: Bearer $PlatformToken"
 ```
 
