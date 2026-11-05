@@ -225,4 +225,6 @@ return [
     'returned_units_no_longer_on_hand' => 'Einige aus dieser Retoure wieder eingelagerte Einheiten wurden inzwischen verkauft oder reserviert und können nicht an den Käufer zurückgehen.',
     'return_refund_module_held' => 'Ein Teil dieser Bestellung wurde mit einer Methode bezahlt, die Geld nur bei Stornierung der ganzen Bestellung zurückgibt. Erstatte das anders Bezahlte als Betrag über die Zahlungen der Bestellung.',
     'refund_destination_refused' => 'Das gewählte Erstattungsziel hat diese Erstattung abgelehnt, es wurde also nichts ausgezahlt. Wähle erneut, wohin die Erstattung geht.',
+    'refund_destination_not_offered' => 'Dieses Erstattungsziel wird für diese Rücksendung nicht angeboten. Wähle eines der dafür aufgeführten Ziele.',
+    'refund_destination_choice_closed' => 'Wohin diese Erstattung geht, lässt sich jetzt nicht ändern: Eine Erstattung ist schon unterwegs oder die Rücksendung ist abgeschlossen. Erneut wählen kannst du erst, wenn diese Erstattung sicher fehlgeschlagen ist.',
 ];

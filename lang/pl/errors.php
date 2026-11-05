@@ -225,4 +225,6 @@ return [
     'returned_units_no_longer_on_hand' => 'Część sztuk z tego zwrotu przywróconych na półkę została od tego czasu sprzedana lub zarezerwowana, więc nie mogą wrócić do kupującego.',
     'return_refund_module_held' => 'Część tego zamówienia opłacono metodą, która zwraca pieniądze tylko po anulowaniu całego zamówienia. Zwróć resztę jako kwotę z płatności zamówienia.',
     'refund_destination_refused' => 'Wybrane miejsce zwrotu odrzuciło ten zwrot, więc nic nie wypłacono. Wybierz ponownie, dokąd ma trafić zwrot.',
+    'refund_destination_not_offered' => 'To miejsce zwrotu nie jest dostępne dla tego zwrotu. Wybierz jedno z miejsc podanych dla niego.',
+    'refund_destination_choice_closed' => 'Nie można teraz zmienić, dokąd trafi ten zwrot pieniędzy: zwrot jest już w drodze albo zwrot towaru został zakończony. Można wybrać ponownie tylko wtedy, gdy ten zwrot na pewno się nie powiedzie.',
 ];

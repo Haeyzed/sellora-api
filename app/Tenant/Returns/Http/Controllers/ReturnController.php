@@ -17,6 +17,7 @@ use App\Tenant\Payments\Exceptions\RefundExceedsSaleException;
 use App\Tenant\Payments\Exceptions\RefundInvalidException;
 use App\Tenant\Returns\Actions\ApproveReturn;
 use App\Tenant\Returns\Actions\CancelReturn;
+use App\Tenant\Returns\Actions\ChooseRefundDestination;
 use App\Tenant\Returns\Actions\InspectReturn;
 use App\Tenant\Returns\Actions\ReceiveReturn;
 use App\Tenant\Returns\Actions\RefundReturn;
@@ -24,6 +25,8 @@ use App\Tenant\Returns\Actions\RejectReturn;
 use App\Tenant\Returns\Actions\RequestReturn;
 use App\Tenant\Returns\Data\ReturnRequester;
 use App\Tenant\Returns\Exceptions\OrderNotReturnableException;
+use App\Tenant\Returns\Exceptions\RefundDestinationChoiceClosedException;
+use App\Tenant\Returns\Exceptions\RefundDestinationNotOfferedException;
 use App\Tenant\Returns\Exceptions\ReturnInspectionMismatchException;
 use App\Tenant\Returns\Exceptions\ReturnQuantityTooHighException;
 use App\Tenant\Returns\Exceptions\ReturnRefundModuleHeldException;
@@ -33,6 +36,7 @@ use App\Tenant\Returns\Http\Requests\ApproveReturnRequest;
 use App\Tenant\Returns\Http\Requests\InspectReturnRequest;
 use App\Tenant\Returns\Http\Requests\ListReturnsRequest;
 use App\Tenant\Returns\Http\Requests\ManageReturnRequest;
+use App\Tenant\Returns\Http\Requests\RecordRefundDestinationRequest;
 use App\Tenant\Returns\Http\Requests\RefundReturnRequest;
 use App\Tenant\Returns\Http\Requests\RejectReturnRequest;
 use App\Tenant\Returns\Http\Requests\StaffReturnRequest;
@@ -53,7 +57,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
  */
 final class ReturnController extends Controller
 {
-    private const array WITH = ['order', 'lines.orderLine', 'stockLocation', 'media'];
+    private const array WITH = ['order', 'lines.orderLine', 'stockLocation', 'media', 'refundChoices'];
 
     /**
      * List returns.
@@ -198,6 +202,27 @@ final class ReturnController extends Controller
         $refundReturn->handle($return, $request->actor(), $request->shipping(), $request->withheld($return), $request->withheldReason());
 
         return new ReturnResource($return->refresh()->load([...self::WITH, 'refunds.refund']));
+    }
+
+    /**
+     * Record where the customer asked a return's refund to go.
+     *
+     * Needs the returns.manage permission. Staff never choose for the
+     * customer: this records what the customer asked for, with a `note`
+     * saying how they asked (it goes in the store's activity log). A module's
+     * destination (such as store credit) only for an order with a customer
+     * account, while the store uses that module; back to how they paid
+     * (`original_payment`) always. Only before the refund starts, and again
+     * only once the last refund definitely failed (409 otherwise).
+     *
+     * @throws RefundDestinationChoiceClosedException
+     * @throws RefundDestinationNotOfferedException
+     */
+    public function recordRefundDestination(RecordRefundDestinationRequest $request, OrderReturn $return, ChooseRefundDestination $chooseRefundDestination): ReturnResource
+    {
+        $chooseRefundDestination->handle($return, $request->destination(), $request->actor(), $request->note());
+
+        return new ReturnResource($return->refresh()->load(self::WITH));
     }
 
     /**

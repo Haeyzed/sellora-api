@@ -249,6 +249,7 @@ use App\Tenant\Returns\Enums\ReturnPermission;
 use App\Tenant\Returns\Listeners\ForgetReturnsWhenOrderAnonymised;
 use App\Tenant\Returns\Listeners\SettleReturnRefundWhenRefundChanges;
 use App\Tenant\Returns\Models\OrderReturn;
+use App\Tenant\Returns\Models\ReturnRefundChoice;
 use App\Tenant\Returns\Models\ReturnSettings;
 use App\Tenant\Returns\Privacy\CustomerReturnData;
 use App\Tenant\Returns\Privacy\GuestReturnData;
@@ -634,6 +635,7 @@ final class AppServiceProvider extends ServiceProvider
             'driver' => Driver::class,
             'delivery' => Delivery::class,
             'return' => OrderReturn::class,
+            'return_refund_choice' => ReturnRefundChoice::class,
             'return_settings' => ReturnSettings::class,
             'staff_invitation' => StaffInvitation::class,
             'role' => Role::class,

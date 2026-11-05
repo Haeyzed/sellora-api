@@ -225,4 +225,6 @@ return [
     'returned_units_no_longer_on_hand' => 'Algunas unidades de esta devolución que se repusieron se han vendido o reservado desde entonces, así que no pueden volver al comprador.',
     'return_refund_module_held' => 'Parte de este pedido se pagó con un método que solo devuelve dinero si se cancela el pedido entero. Reembolsa lo pagado de otro modo como importe desde los pagos del pedido.',
     'refund_destination_refused' => 'El destino de reembolso elegido rechazó este reembolso, así que no se pagó nada. Elige de nuevo adónde va el reembolso.',
+    'refund_destination_not_offered' => 'Ese destino de reembolso no se ofrece para esta devolución. Elige uno de los destinos indicados para ella.',
+    'refund_destination_choice_closed' => 'Ahora no se puede cambiar adónde va este reembolso: ya hay un reembolso en curso o la devolución ha terminado. Solo se puede elegir de nuevo si ese reembolso falla con seguridad.',
 ];

@@ -22,7 +22,18 @@ final class CustomerReturnRequest extends FormRequest
      */
     public function rules(): array
     {
-        return $this->returnRules();
+        return [
+            ...$this->returnRules(),
+            /** Where the refund goes: "original_payment" (the default when left out), or a key from GET /customer/orders/{order}/refund-destinations. */
+            'refund_destination' => ['sometimes', 'nullable', 'string', 'max:64'],
+        ];
+    }
+
+    public function refundDestination(): ?string
+    {
+        $destination = $this->string('refund_destination')->value();
+
+        return $destination === '' ? null : $destination;
     }
 
     /**

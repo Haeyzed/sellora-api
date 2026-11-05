@@ -225,4 +225,6 @@ return [
     'returned_units_no_longer_on_hand' => 'Baadhi ya vipande vya marejesho haya vilivyorudishwa rafuni vimeuzwa au kuhifadhiwa tangu hapo, kwa hivyo haviwezi kurudi kwa mnunuzi.',
     'return_refund_module_held' => 'Sehemu ya oda hii ililipwa kwa njia inayorudisha pesa tu oda nzima ikighairiwa. Rudisha kilicholipwa kwa njia nyingine kama kiasi kutoka kwa malipo ya oda.',
     'refund_destination_refused' => 'Mahali palipochaguliwa pa kurudishiwa pesa pamekataa marejesho haya, kwa hiyo hakuna kilicholipwa. Chagua tena marejesho yaende wapi.',
+    'refund_destination_not_offered' => 'Mahali hapo pa kurudishiwa pesa hapatolewi kwa marejesho haya. Chagua mojawapo ya maeneo yaliyoorodheshwa kwake.',
+    'refund_destination_choice_closed' => 'Hapawezi kubadilishwa sasa marejesho haya yataenda wapi: marejesho tayari yako njiani, au urejeshaji umekamilika. Yanaweza kuchaguliwa tena tu ikiwa marejesho hayo yatashindwa kwa hakika.',
 ];

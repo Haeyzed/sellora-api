@@ -13,6 +13,7 @@ use App\Tenant\Returns\Data\ReturnRequester;
 use App\Tenant\Returns\Enums\ReturnReason;
 use App\Tenant\Returns\Enums\ReturnStatus;
 use App\Tenant\Returns\Exceptions\OrderNotReturnableException;
+use App\Tenant\Returns\Exceptions\RefundDestinationNotOfferedException;
 use App\Tenant\Returns\Exceptions\ReturnPhotoRequiredException;
 use App\Tenant\Returns\Exceptions\ReturnQuantityTooHighException;
 use App\Tenant\Returns\Exceptions\ReturnsNotOfferedException;
@@ -47,12 +48,15 @@ final readonly class RequestReturn
         private ReturnableUnits $returnableUnits,
         private ReturnProgress $returnProgress,
         private ReturnPhotos $returnPhotos,
+        private ChooseRefundDestination $chooseRefundDestination,
     ) {}
 
     /**
      * @param  array<string, int>  $lines  Units to return, by order line public ID.
      * @param  list<EncodedImage>  $photos  Already re-encoded; their temporary files are deleted either way.
+     * @param  string|null  $refundDestination  Where the signed-in customer asking wants the refund to go; null leaves it going back to the original payment.
      *
+     * @throws RefundDestinationNotOfferedException When anyone but the order's signed-in customer chooses, or the destination isn't on offer.
      * @throws ReturnsNotOfferedException
      * @throws ReturnPhotoRequiredException
      * @throws OrderNotReturnableException
@@ -70,9 +74,10 @@ final readonly class RequestReturn
         array $photos = [],
         ?string $outsideWindowReason = null,
         ?string $undeliveredReason = null,
+        ?string $refundDestination = null,
     ): OrderReturn {
         try {
-            return DB::transaction(function () use ($requester, $order, $lines, $reason, $note, $photos, $outsideWindowReason, $undeliveredReason): OrderReturn {
+            return DB::transaction(function () use ($requester, $order, $lines, $reason, $note, $photos, $outsideWindowReason, $undeliveredReason, $refundDestination): OrderReturn {
                 $settings = ReturnSettings::current();
                 $this->ensureBuyerMayAsk($requester, $settings, $reason, $photos);
 
@@ -89,6 +94,10 @@ final readonly class RequestReturn
                 $this->createLines($return, $returnable, $lines);
                 $this->returnProgress->record($return, null, ReturnStatus::Requested, $requester->account);
                 $this->returnPhotos->keep($return, $photos);
+
+                if ($refundDestination !== null) {
+                    $this->chooseRefundDestination->handle($return, $refundDestination, $requester->customer ?? throw new RefundDestinationNotOfferedException);
+                }
 
                 return $return->load('lines');
             });

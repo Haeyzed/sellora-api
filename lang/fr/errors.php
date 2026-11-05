@@ -225,4 +225,6 @@ return [
     'returned_units_no_longer_on_hand' => 'Certaines unités de ce retour remises en rayon ont été vendues ou réservées depuis : elles ne peuvent pas retourner à l\'acheteur.',
     'return_refund_module_held' => 'Une partie de cette commande a été payée avec un moyen qui ne rembourse qu\'à l\'annulation de toute la commande. Remboursez le reste par montant depuis les paiements de la commande.',
     'refund_destination_refused' => 'La destination de remboursement choisie a refusé ce remboursement : rien n\'a été versé. Choisissez à nouveau où va le remboursement.',
+    'refund_destination_not_offered' => 'Cette destination de remboursement n\'est pas proposée pour ce retour. Choisissez l\'une des destinations indiquées pour lui.',
+    'refund_destination_choice_closed' => 'La destination de ce remboursement ne peut pas être modifiée maintenant : un remboursement est déjà en cours, ou le retour est terminé. Elle ne peut être choisie à nouveau que si ce remboursement échoue de façon certaine.',
 ];

@@ -30,7 +30,7 @@ use Illuminate\Http\Response;
  */
 final class GuestReturnController extends Controller
 {
-    private const array WITH = ['order', 'lines.orderLine', 'media'];
+    private const array WITH = ['order', 'lines.orderLine', 'media', 'refundChoices'];
 
     /**
      * Ask to return units of my order.

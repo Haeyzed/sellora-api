@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tenant\Returns\Http\Resources;
 
+use App\Tenant\Payments\Actions\FindRefundDestinations;
 use App\Tenant\Returns\Models\OrderReturn;
 use App\Tenant\Returns\Models\ReturnLine;
 use App\Tenant\Returns\Services\ReturnPhotos;
@@ -41,6 +42,8 @@ final class BuyerReturnResource extends JsonResource
             'keep_items' => $this->keep_items,
             /** Why the store rejected it. */
             'rejection_reason' => $this->rejection_reason,
+            /** Where its refund goes: "original_payment" (back to how the buyer paid) unless they chose otherwise; `chosen_at` is null when no choice was made. Covers only what was paid with real money. */
+            'refund_destination' => $this->refundDestination(),
             /**
              * The units coming back.
              *
@@ -61,5 +64,24 @@ final class BuyerReturnResource extends JsonResource
             'rejected_at' => $this->rejected_at?->toIso8601String(),
             'cancelled_at' => $this->cancelled_at?->toIso8601String(),
         ];
+    }
+
+    /**
+     * @return array{key: string, label: string, chosen_at: string|null}
+     */
+    private function refundDestination(): array
+    {
+        $choice = $this->latestRefundChoice();
+        $key = $choice->destination ?? FindRefundDestinations::ORIGINAL_PAYMENT;
+
+        return ['key' => $key, 'label' => $this->destinationLabel($key), 'chosen_at' => $choice?->created_at->toIso8601String()];
+    }
+
+    /**
+     * Its name in the buyer's language, or its key for a destination no module registers any more.
+     */
+    private function destinationLabel(string $key): string
+    {
+        return resolve(FindRefundDestinations::class)->labelOf($key);
     }
 }

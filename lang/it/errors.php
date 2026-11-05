@@ -225,4 +225,6 @@ return [
     'returned_units_no_longer_on_hand' => 'Alcune unità di questo reso rimesse a scaffale sono state vendute o riservate nel frattempo, quindi non possono tornare all\'acquirente.',
     'return_refund_module_held' => 'Parte di questo ordine è stata pagata con un metodo che restituisce denaro solo se l\'intero ordine viene annullato. Rimborsa il resto come importo dai pagamenti dell\'ordine.',
     'refund_destination_refused' => 'La destinazione di rimborso scelta ha rifiutato questo rimborso, quindi non è stato pagato nulla. Scegli di nuovo dove va il rimborso.',
+    'refund_destination_not_offered' => 'Questa destinazione di rimborso non è offerta per questo reso. Scegli una delle destinazioni elencate per esso.',
+    'refund_destination_choice_closed' => 'La destinazione di questo rimborso non può essere cambiata ora: un rimborso è già in corso, oppure il reso è concluso. Si può scegliere di nuovo solo se quel rimborso non va a buon fine con certezza.',
 ];

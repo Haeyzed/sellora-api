@@ -248,5 +248,7 @@ return [
     'returned_units_no_longer_on_hand' => 'Some units put back on the shelf from this return were sold or held since, so they can\'t go back to the buyer.',
     'return_refund_module_held' => 'Part of this order was paid with a method that can only give money back when the whole order is cancelled. Refund what was paid otherwise by amount from the order\'s payments.',
     'refund_destination_refused' => 'The chosen refund destination refused this refund, so nothing was paid out. Choose again where the refund goes.',
+    'refund_destination_not_offered' => 'That refund destination isn\'t offered for this return. Choose one of the destinations listed for it.',
+    'refund_destination_choice_closed' => 'Where this refund goes can\'t be changed now: a refund is already on its way, or the return is finished. It can be chosen again only if that refund definitely fails.',
 
 ];

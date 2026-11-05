@@ -36,6 +36,7 @@ Route::middleware(['auth:'.Customer::GUARD, UseStoreLanguage::class])->name('cus
         Route::get('customer/returns', [CustomerReturnController::class, 'index'])->name('returns.index');
         Route::get('customer/returns/{return}', [CustomerReturnController::class, 'show'])->name('returns.show');
         Route::post('customer/returns/{return}/cancel', [CustomerReturnController::class, 'cancel'])->name('returns.cancel');
+        Route::put('customer/returns/{return}/refund-destination', [CustomerReturnController::class, 'chooseRefundDestination'])->name('returns.refund-destination.update');
     });
 });
 
@@ -64,5 +65,6 @@ Route::middleware([UseDashboardLanguage::class, 'auth:'.StaffMember::GUARD, Ensu
         Route::post('{return}/inspect', [ReturnController::class, 'inspect'])->name('inspect');
         Route::post('{return}/refund', [ReturnController::class, 'refund'])->middleware('idempotent')->name('refund');
         Route::post('{return}/cancel', [ReturnController::class, 'cancel'])->name('cancel');
+        Route::put('{return}/refund-destination', [ReturnController::class, 'recordRefundDestination'])->name('refund-destination.update');
     });
 });

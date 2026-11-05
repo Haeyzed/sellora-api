@@ -225,4 +225,6 @@ return [
     'returned_units_no_longer_on_hand' => 'Ụfọdụ otu sitere na nlọghachi a eweghachiri n\'shelf erela ma ọ bụ ejidere kemgbe, ya mere ha enweghị ike ịlaghachi n\'aka onye zụrụ.',
     'return_refund_module_held' => 'Akwụrụ ụfọdụ n\'ime ịtụnye a site n\'ụzọ na-eweghachi ego naanị mgbe a kagburu ịtụnye ahụ niile. Weghachite ihe akwụrụ n\'ụzọ ndị ọzọ dị ka ego site na ịkwụ ụgwọ nke ịtụnye ahụ.',
     'refund_destination_refused' => 'Ebe a họọrọ ka ego ahụ laghachi jụrụ nkwụghachi a, ya mere ọ dịghị ihe a kwụrụ. Họrọ ọzọ ebe nkwụghachi ahụ ga-aga.',
+    'refund_destination_not_offered' => 'A naghị enye ebe nkwụghachi ego ahụ maka nlọghachi a. Họrọ otu n\'ime ebe ndị e depụtara maka ya.',
+    'refund_destination_choice_closed' => 'Agaghị agbanwe ugbu a ebe nkwụghachi a ga-aga: nkwụghachi anọlarị n\'ụzọ, ma ọ bụ nlọghachi ahụ agwụla. A ga-ahọrọ ya ọzọ naanị ma ọ bụrụ na nkwụghachi ahụ dara n\'ezie.',
 ];

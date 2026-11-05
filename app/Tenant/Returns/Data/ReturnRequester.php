@@ -16,14 +16,18 @@ use App\Tenant\Identity\Models\StaffMember;
  */
 final readonly class ReturnRequester
 {
+    /**
+     * @param  Customer|null  $customer  The signed-in customer asking; null for a guest or staff.
+     */
     private function __construct(
         public ?AccountReference $account,
         public bool $isStaff,
+        public ?Customer $customer = null,
     ) {}
 
     public static function customer(Customer $customer): self
     {
-        return new self(AccountReference::to($customer), false);
+        return new self(AccountReference::to($customer), false, $customer);
     }
 
     public static function guest(): self

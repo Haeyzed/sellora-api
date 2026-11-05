@@ -225,4 +225,6 @@ return [
     'returned_units_no_longer_on_hand' => 'Bu iadeden rafa geri konan bazı birimler o zamandan beri satıldı veya ayrıldı, bu yüzden alıcıya geri gönderilemez.',
     'return_refund_module_held' => 'Bu siparişin bir kısmı, yalnızca siparişin tamamı iptal edildiğinde para iade eden bir yöntemle ödendi. Geri kalanını siparişin ödemelerinden tutar olarak iade edin.',
     'refund_destination_refused' => 'Seçilen iade yeri bu iadeyi reddetti, bu yüzden hiçbir şey ödenmedi. İadenin nereye gideceğini yeniden seçin.',
+    'refund_destination_not_offered' => 'Bu iade yeri bu iade için sunulmuyor. Onun için listelenen yerlerden birini seçin.',
+    'refund_destination_choice_closed' => 'Bu iadenin nereye gideceği şimdi değiştirilemez: bir iade zaten yolda ya da iade işlemi tamamlandı. Ancak o iade kesin olarak başarısız olursa yeniden seçilebilir.',
 ];

@@ -225,4 +225,6 @@ return [
     'returned_units_no_longer_on_hand' => 'Sommige eenheden uit deze retour die terug op voorraad zijn gezet, zijn sindsdien verkocht of gereserveerd en kunnen niet terug naar de koper.',
     'return_refund_module_held' => 'Een deel van deze bestelling is betaald met een methode die alleen geld teruggeeft als de hele bestelling wordt geannuleerd. Betaal de rest terug als bedrag via de betalingen van de bestelling.',
     'refund_destination_refused' => 'De gekozen terugbetalingsbestemming heeft deze terugbetaling geweigerd, dus er is niets uitbetaald. Kies opnieuw waar de terugbetaling naartoe gaat.',
+    'refund_destination_not_offered' => 'Die terugbetalingsbestemming wordt voor deze retour niet aangeboden. Kies een van de bestemmingen die ervoor worden vermeld.',
+    'refund_destination_choice_closed' => 'Waar deze terugbetaling naartoe gaat, kan nu niet worden gewijzigd: er is al een terugbetaling onderweg, of de retour is afgerond. Opnieuw kiezen kan alleen als die terugbetaling zeker is mislukt.',
 ];

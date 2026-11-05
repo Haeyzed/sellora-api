@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tenant\Returns\Http\Resources;
 
+use App\Tenant\Payments\Actions\FindRefundDestinations;
 use App\Tenant\Returns\Models\OrderReturn;
 use App\Tenant\Returns\Models\ReturnLine;
 use App\Tenant\Returns\Models\ReturnRefund;
@@ -55,6 +56,8 @@ final class ReturnResource extends JsonResource
             'stock_location' => $this->stockLocation?->public_id,
             /** Who asked, by account type and ID; null for a guest with the order's access token. */
             'requested_by' => $this->requested_by_type === null || $this->requested_by_id === null ? null : ['type' => $this->requested_by_type, 'id' => $this->requested_by_id],
+            /** Where its refund goes, as the customer chose (or staff recorded at their request, with how they asked in `note`): "original_payment" unless a choice was made. `chosen_by` and `chosen_at` are null when none was. Covers only what was paid with real money. */
+            'refund_destination' => $this->refundDestination(),
             /**
              * The units coming back, and once inspected how many went back on the shelf and how many were written off.
              *
@@ -105,5 +108,30 @@ final class ReturnResource extends JsonResource
                 'at' => $change->created_at->toIso8601String(),
             ])->all())),
         ];
+    }
+
+    /**
+     * @return array{key: string, label: string, chosen_by: array{type: string, id: string}|null, note: string|null, chosen_at: string|null}
+     */
+    private function refundDestination(): array
+    {
+        $choice = $this->latestRefundChoice();
+        $key = $choice->destination ?? FindRefundDestinations::ORIGINAL_PAYMENT;
+
+        return [
+            'key' => $key,
+            'label' => $this->destinationLabel($key),
+            'chosen_by' => $choice === null ? null : ['type' => $choice->chosen_by_type, 'id' => $choice->chosen_by_id],
+            'note' => $choice?->note,
+            'chosen_at' => $choice?->created_at->toIso8601String(),
+        ];
+    }
+
+    /**
+     * Its name in the current language, or its key for a destination no module registers any more.
+     */
+    private function destinationLabel(string $key): string
+    {
+        return resolve(FindRefundDestinations::class)->labelOf($key);
     }
 }

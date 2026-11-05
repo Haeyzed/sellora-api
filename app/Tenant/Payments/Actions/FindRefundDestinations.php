@@ -14,6 +14,9 @@ use App\Tenant\Payments\RefundDestinations;
  */
 final readonly class FindRefundDestinations
 {
+    /** Core's own destination, back the way each payment came: where a refund goes when nobody chose. */
+    public const string ORIGINAL_PAYMENT = RefundDestinations::ORIGINAL_PAYMENT;
+
     public function __construct(private RefundDestinations $refundDestinations) {}
 
     /**

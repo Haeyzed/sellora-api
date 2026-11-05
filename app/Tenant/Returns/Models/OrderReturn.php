@@ -54,6 +54,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
  * @property-read Collection<int, ReturnLine> $lines
  * @property-read Collection<int, ReturnStatusChange> $statusChanges
  * @property-read Collection<int, ReturnRefund> $refunds Its refund attempts, oldest first.
+ * @property-read Collection<int, ReturnRefundChoice> $refundChoices Each choice of where its refund goes, oldest first.
  */
 final class OrderReturn extends Model implements HasMedia
 {
@@ -115,6 +116,22 @@ final class OrderReturn extends Model implements HasMedia
     public function refunds(): HasMany
     {
         return $this->hasMany(ReturnRefund::class, 'return_id')->orderBy('attempt');
+    }
+
+    /**
+     * @return HasMany<ReturnRefundChoice, $this>
+     */
+    public function refundChoices(): HasMany
+    {
+        return $this->hasMany(ReturnRefundChoice::class, 'return_id')->orderBy('id');
+    }
+
+    /**
+     * The latest choice of where its refund goes, or null when none was made (it goes back to the original payment). Uses the loaded choices when they are.
+     */
+    public function latestRefundChoice(): ?ReturnRefundChoice
+    {
+        return $this->relationLoaded('refundChoices') ? $this->refundChoices->last() : $this->refundChoices()->reorder('id', 'desc')->first();
     }
 
     /**

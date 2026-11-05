@@ -225,4 +225,6 @@ return [
     'returned_units_no_longer_on_hand' => 'An sayar ko an riƙe wasu naúrori daga wannan dawowar da aka mayar kan shiryayye tun daga lokacin, don haka ba za su iya komawa ga mai saye ba.',
     'return_refund_module_held' => 'An biya wani ɓangare na wannan oda da hanyar da ke mayar da kuɗi ne kawai idan an soke odar gaba ɗaya. Mayar da abin da aka biya ta wasu hanyoyi a matsayin adadi daga biyan kuɗin odar.',
     'refund_destination_refused' => 'Wurin mayar da kuɗin da aka zaɓa ya ƙi wannan mayarwa, don haka ba a biya komai ba. Sake zaɓar inda mayar da kuɗin zai tafi.',
+    'refund_destination_not_offered' => 'Ba a bayar da wannan wurin mayar da kuɗi don wannan mayarwar ba. Zaɓi ɗaya daga cikin wuraren da aka lissafa mata.',
+    'refund_destination_choice_closed' => 'Ba za a iya canza inda wannan mayar da kuɗin zai tafi yanzu ba: an riga an fara mayarwa, ko kuma mayarwar ta ƙare. Sai idan wannan mayarwar ta gaza tabbas ne za a iya sake zaɓa.',
 ];

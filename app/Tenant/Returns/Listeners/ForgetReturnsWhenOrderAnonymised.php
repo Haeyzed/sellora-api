@@ -6,13 +6,14 @@ namespace App\Tenant\Returns\Listeners;
 
 use App\Tenant\Orders\Events\OrderAnonymised;
 use App\Tenant\Returns\Models\OrderReturn;
+use App\Tenant\Returns\Models\ReturnRefundChoice;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Filesystem\Factory as FilesystemFactory;
 use Illuminate\Support\Facades\DB;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
- * Removes what an anonymised order's returns hold about its buyer, inside the same PersonalDataErasure run: the note added about the reason, and the photos.
+ * Removes what an anonymised order's returns hold about its buyer, inside the same PersonalDataErasure run: the note added about the reason, the photos, and staff's notes on how the buyer asked for their refund to go somewhere.
  *
  * The returns themselves stay, with their lines, statuses, times and
  * refunds. Photo rows are deleted in the transaction and their files once it
@@ -36,6 +37,8 @@ final readonly class ForgetReturnsWhenOrderAnonymised
             'anonymised_at' => CarbonImmutable::now(),
             'updated_at' => CarbonImmutable::now(),
         ]);
+        // A mass update, so the cleared note never goes into an audit record.
+        ReturnRefundChoice::query()->whereIn('return_id', $ids)->whereNotNull('note')->toBase()->update(['note' => null, 'anonymised_at' => CarbonImmutable::now()]);
 
         $photos = Media::query()->where('model_type', (new OrderReturn)->getMorphClass())->whereIn('model_id', $ids)->get();
 

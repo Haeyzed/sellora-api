@@ -225,4 +225,6 @@ return [
     'returned_units_no_longer_on_hand' => '此退货中重新上架的部分商品此后已售出或被预留，因此无法退回给买家。',
     'return_refund_module_held' => '此订单的一部分使用了只有在整单取消时才能退款的方式支付。其余部分请从订单的付款中按金额退款。',
     'refund_destination_refused' => '所选的退款去向拒绝了这笔退款，因此没有支付任何款项。请重新选择退款去向。',
+    'refund_destination_not_offered' => '此退货不提供该退款去向。请从为其列出的去向中选择一个。',
+    'refund_destination_choice_closed' => '现在无法更改这笔退款的去向：退款已在处理中，或退货已完成。只有在该退款确定失败后才能重新选择。',
 ];

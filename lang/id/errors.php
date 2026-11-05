@@ -225,4 +225,6 @@ return [
     'returned_units_no_longer_on_hand' => 'Beberapa unit dari retur ini yang dikembalikan ke rak sudah terjual atau ditahan sejak itu, jadi tidak bisa dikembalikan ke pembeli.',
     'return_refund_module_held' => 'Sebagian pesanan ini dibayar dengan metode yang hanya mengembalikan uang jika seluruh pesanan dibatalkan. Kembalikan yang dibayar dengan cara lain sebagai jumlah dari pembayaran pesanan.',
     'refund_destination_refused' => 'Tujuan pengembalian dana yang dipilih menolak pengembalian ini, jadi tidak ada yang dibayarkan. Pilih lagi ke mana pengembalian dana dikirim.',
+    'refund_destination_not_offered' => 'Tujuan pengembalian dana itu tidak ditawarkan untuk pengembalian ini. Pilih salah satu tujuan yang tercantum untuknya.',
+    'refund_destination_choice_closed' => 'Tujuan pengembalian dana ini tidak dapat diubah sekarang: pengembalian dana sudah dalam proses, atau pengembaliannya sudah selesai. Tujuan hanya dapat dipilih lagi jika pengembalian dana itu pasti gagal.',
 ];
