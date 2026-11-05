@@ -19,4 +19,6 @@ return [
         'other' => 'その他',
     ],
 
+    'exchange_allowance' => '交換割引',
+
 ];

@@ -236,4 +236,5 @@ return [
     'return_replacement_invalid' => 'Een ruil noemt voor elke geretourneerde regel een artikel van de winkel om in plaats daarvan te sturen; een terugbetaling noemt er geen.',
     'return_replacement_not_available' => 'Een artikel voor deze ruil kan nu niet worden verstuurd: het wordt niet meer verkocht of is niet op voorraad. Kies een ander, of betaal de retour in plaats daarvan terug.',
     'return_is_an_exchange' => 'Deze retour wordt afgehandeld met een ruil. Bevestig de ruil, of wijzig de afhandeling eerst in een terugbetaling.',
+    'exchange_not_ready' => 'De ruil van deze retour kan nog niet worden bekeken of bevestigd: het moet een ruil zijn, en gecontroleerd of goedgekeurd terwijl de koper de artikelen houdt.',
 ];

@@ -236,4 +236,5 @@ return [
     'return_replacement_invalid' => 'Un cambio indica un articolo del negozio da inviare al posto di ogni riga resa; un rimborso non ne indica nessuno.',
     'return_replacement_not_available' => 'Un articolo di questo cambio non può essere inviato ora: non è più in vendita o è esaurito. Scegline un altro, oppure rimborsa il reso.',
     'return_is_an_exchange' => 'Questo reso si chiude con un cambio. Conferma il cambio, oppure cambia prima la chiusura in un rimborso.',
+    'exchange_not_ready' => 'Il cambio di questo reso non può ancora essere visto né confermato: deve essere un cambio, ispezionato o approvato lasciando gli articoli all\'acquirente.',
 ];

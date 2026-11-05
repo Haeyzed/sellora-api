@@ -236,4 +236,5 @@ return [
     'return_replacement_invalid' => 'Uma troca indica um artigo da loja a enviar em vez de cada linha devolvida, e um reembolso não indica nenhum.',
     'return_replacement_not_available' => 'Um artigo desta troca não pode ser enviado agora: já não está à venda ou está esgotado. Escolha outro ou reembolse a devolução.',
     'return_is_an_exchange' => 'Esta devolução é resolvida com uma troca. Confirme a troca ou altere primeiro a forma de a resolver para um reembolso.',
+    'exchange_not_ready' => 'A troca desta devolução ainda não pode ser vista nem confirmada: tem de ser uma troca, e estar inspecionada ou aprovada com o comprador a ficar com os artigos.',
 ];

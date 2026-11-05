@@ -19,4 +19,6 @@ return [
         'other' => 'Diğer',
     ],
 
+    'exchange_allowance' => 'Değişim indirimi',
+
 ];

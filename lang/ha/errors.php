@@ -236,4 +236,5 @@ return [
     'return_replacement_invalid' => 'Musanya na ambaci kayan shago ɗaya da za a aika maimakon kowane layin da aka dawo da shi, kuma mayar da kuɗi bai ambaci ko ɗaya ba.',
     'return_replacement_not_available' => 'Ba za a iya aika wani kaya na wannan musanyar yanzu ba: ba a sayar da shi kuma, ko ya ƙare. Zaɓi wani, ko ka mayar da kuɗin maimakon haka.',
     'return_is_an_exchange' => 'Ana warware wannan dawowar ta hanyar musanya. Tabbatar da musanyar, ko ka canza yadda za a warware ta zuwa mayar da kuɗi tukuna.',
+    'exchange_not_ready' => 'Ba za a iya duba ko tabbatar da musanyar wannan dawowar ba tukuna: dole ta zama musanya, kuma an duba ta ko an amince da ita mai saye na riƙe kayan.',
 ];

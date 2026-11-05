@@ -79,8 +79,10 @@ final readonly class QuoteReplacementOrder
         $holder = $request->redemptionHolder();
 
         $destination = $this->shippingDestination($request, $shippingAddress, $billingAddress);
+        $ships = array_any($request->lines, static fn (ReplacementLine $line): bool => $line->variant->requires_shipping);
 
-        if ($destination === null) {
+        // Lines that ship need a way to ship them, and lines that don't need none.
+        if ($destination === null || $ships !== ($method !== null)) {
             return $this->withIssues($request, [self::SHIPPING_UNAVAILABLE]);
         }
 
@@ -204,7 +206,7 @@ final readonly class QuoteReplacementOrder
         $over = [];
 
         foreach ($request->lines as $position => $line) {
-            $priced = $basket->priced->lines[self::key($position)] ?? throw new LogicException('Every replacement line is priced.');
+            $priced = $basket->priced->lines[self::lineKey($position)] ?? throw new LogicException('Every replacement line is priced.');
 
             if ($line->atMost === null || ! $priced->total()->isGreaterThan($line->atMost)) {
                 continue;
@@ -213,7 +215,7 @@ final readonly class QuoteReplacementOrder
             $excess = $priced->total()->subtract($line->atMost)->minorAmount();
             $taxable = $priced->subtotal->subtract($priced->discount)->minorAmount();
             $gross = $priced->total()->minorAmount();
-            $over[self::key($position)] = Money::ofMinor(max(1, intdiv($excess * $taxable + $gross - 1, $gross)), $line->atMost->currency());
+            $over[self::lineKey($position)] = Money::ofMinor(max(1, intdiv($excess * $taxable + $gross - 1, $gross)), $line->atMost->currency());
         }
 
         return $over;
@@ -239,10 +241,13 @@ final readonly class QuoteReplacementOrder
      */
     private function pricingLines(ReplacementRequest $request): array
     {
-        return array_map(static fn (ReplacementLine $line, int $position): array => ['key' => self::key($position), 'variant' => $line->variant, 'quantity' => $line->quantity], $request->lines, array_keys($request->lines));
+        return array_map(static fn (ReplacementLine $line, int $position): array => ['key' => self::lineKey($position), 'variant' => $line->variant, 'quantity' => $line->quantity], $request->lines, array_keys($request->lines));
     }
 
-    private static function key(int $position): string
+    /**
+     * The key a replacement line is priced under, by its position in the request.
+     */
+    public static function lineKey(int $position): string
     {
         return 'replacement-'.($position + 1);
     }

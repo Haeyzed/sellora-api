@@ -19,4 +19,6 @@ return [
         'other' => 'Outro motivo',
     ],
 
+    'exchange_allowance' => 'Desconto de troca',
+
 ];

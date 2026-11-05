@@ -259,5 +259,6 @@ return [
     'return_replacement_invalid' => 'An exchange names one of the store\'s items to send in place of every returned line, and a refund names none.',
     'return_replacement_not_available' => 'An item to send in this exchange can\'t be sent now: it isn\'t for sale any more, or it is out of stock. Choose another, or refund the return instead.',
     'return_is_an_exchange' => 'This return is settled by an exchange. Confirm its exchange, or change how it is settled to a refund first.',
+    'exchange_not_ready' => 'This return\'s exchange can\'t be previewed or confirmed yet: it must be an exchange, and inspected or approved with the buyer keeping the items.',
 
 ];

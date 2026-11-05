@@ -19,4 +19,6 @@ return [
         'other' => 'Ihe ọzọ',
     ],
 
+    'exchange_allowance' => 'Mbelata mgbanwe',
+
 ];

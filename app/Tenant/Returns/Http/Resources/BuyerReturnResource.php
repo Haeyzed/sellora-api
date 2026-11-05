@@ -47,6 +47,12 @@ final class BuyerReturnResource extends JsonResource
             /** Where its refund goes: "original_payment" (back to how the buyer paid) unless they chose otherwise; `chosen_at` is null when no choice was made. Covers only what was paid with real money. */
             'refund_destination' => $this->refundDestination(),
             /**
+             * Its latest exchange, once confirmed: its replacement order, whether it is waiting to be paid (pending), paid (committed) or gave its credit back (released), and how the returned items settle it. Null when none was confirmed.
+             *
+             * @var array{id: string, status: string, order: array{id: string, number: int}, credit: MoneyResource, difference: MoneyResource, kept: MoneyResource, shipping_charged: bool, confirmed_at: string}|null
+             */
+            'exchange' => $this->whenLoaded('exchanges', fn (): ?array => ReturnResource::exchangeOf($this->resource), null),
+            /**
              * The units coming back, and for an exchange the variant sent in their place (null for a refund).
              *
              * @var list<array{line: string, product_name: string, variant_name: string|null, quantity: int, replacement: array{id: string, sku: string|null, product: string}|null}>

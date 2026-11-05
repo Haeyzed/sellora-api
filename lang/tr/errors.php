@@ -236,4 +236,5 @@ return [
     'return_replacement_invalid' => 'Değişim, iade edilen her satır yerine gönderilecek mağazanın bir ürününü belirtir; para iadesi hiçbirini belirtmez.',
     'return_replacement_not_available' => 'Bu değişimde gönderilecek bir ürün şu anda gönderilemiyor: artık satışta değil veya stokta yok. Başka birini seçin ya da bunun yerine iadeyi geri ödeyin.',
     'return_is_an_exchange' => 'Bu iade bir değişimle sonuçlandırılır. Değişimi onaylayın ya da önce sonuçlandırma şeklini para iadesi olarak değiştirin.',
+    'exchange_not_ready' => 'Bu iadenin değişimi henüz önizlenemez veya onaylanamaz: bir değişim olmalı ve incelenmiş ya da ürünler alıcıda kalarak onaylanmış olmalı.',
 ];

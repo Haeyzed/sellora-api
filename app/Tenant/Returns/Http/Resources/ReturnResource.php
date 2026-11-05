@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tenant\Returns\Http\Resources;
 
+use App\Shared\Money\MoneyResource;
 use App\Tenant\Payments\Actions\FindRefundDestinations;
 use App\Tenant\Returns\Models\OrderReturn;
 use App\Tenant\Returns\Models\ReturnLine;
@@ -12,6 +13,7 @@ use App\Tenant\Returns\Models\ReturnStatusChange;
 use App\Tenant\Returns\Services\ReturnPhotos;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use LogicException;
 
 /**
  * A return as staff see it: its order, why, its lines and what became of them, who asked, and why staff went past what a buyer could ask for.
@@ -62,6 +64,12 @@ final class ReturnResource extends JsonResource
             'requested_by' => $this->requested_by_type === null || $this->requested_by_id === null ? null : ['type' => $this->requested_by_type, 'id' => $this->requested_by_id],
             /** Where its refund goes, as the customer chose (or staff recorded at their request, with how they asked in `note`): "original_payment" unless a choice was made. `chosen_by` and `chosen_at` are null when none was. Covers only what was paid with real money. */
             'refund_destination' => $this->refundDestination(),
+            /**
+             * Its latest exchange, once confirmed: its replacement order, whether it is waiting to be paid (pending), paid (committed) or gave its credit back (released), and how the returned items settle it. Null when none was confirmed.
+             *
+             * @var array{id: string, status: string, order: array{id: string, number: int}, credit: MoneyResource, difference: MoneyResource, kept: MoneyResource, shipping_charged: bool, confirmed_at: string}|null
+             */
+            'exchange' => $this->whenLoaded('exchanges', fn (): ?array => self::exchangeOf($this->resource), null),
             /**
              * The units coming back, and once inspected how many went back on the shelf and how many were written off. For an exchange,
 eplacement is the variant sent in their place, as many of it; null for a refund.
@@ -152,5 +160,26 @@ eplacement is the variant sent in their place, as many of it; null for a refund.
         $variant = $line->replacementVariant;
 
         return $variant === null ? null : ['id' => $variant->public_id, 'sku' => $variant->sku, 'product' => $variant->product->public_id];
+    }
+
+    /**
+     * A return's latest exchange, as the API shows it; null when none was confirmed.
+     *
+     * @return array{id: string, status: string, order: array{id: string, number: int}, credit: MoneyResource, difference: MoneyResource, kept: MoneyResource, shipping_charged: bool, confirmed_at: string}|null
+     */
+    public static function exchangeOf(OrderReturn $return): ?array
+    {
+        $exchange = $return->exchanges->last();
+
+        return $exchange === null ? null : [
+            'id' => $exchange->public_id,
+            'status' => $exchange->status->value,
+            'order' => ['id' => $exchange->order->public_id, 'number' => $exchange->order->number],
+            'credit' => new MoneyResource($exchange->credit),
+            'difference' => new MoneyResource($exchange->difference),
+            'kept' => new MoneyResource($exchange->kept),
+            'shipping_charged' => $exchange->shipping_charged,
+            'confirmed_at' => ($exchange->created_at ?? throw new LogicException('A saved exchange has a creation time.'))->toIso8601String(),
+        ];
     }
 }

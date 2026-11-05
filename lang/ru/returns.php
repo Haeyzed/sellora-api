@@ -19,4 +19,6 @@ return [
         'other' => 'Другая причина',
     ],
 
+    'exchange_allowance' => 'Скидка по обмену',
+
 ];

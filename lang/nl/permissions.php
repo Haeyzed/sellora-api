@@ -202,5 +202,9 @@ return [
             'label' => 'Retouren beheren',
             'description' => 'Retouren starten, goedkeuren, afwijzen, ontvangen, controleren en annuleren, en de retourinstellingen wijzigen.',
         ],
+        'exchange' => [
+            'label' => 'Ruilen bevestigen',
+            'description' => 'De ruil van een retour bevestigen: dit plaatst de vervangende bestelling en verrekent wat de geretourneerde artikelen waard zijn.',
+        ],
     ],
 ];

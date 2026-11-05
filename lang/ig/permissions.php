@@ -202,5 +202,9 @@ return [
             'label' => 'Jikwaa ihe eweghachiri',
             'description' => 'Malite, kwado, jụ, nata, nyochaa ma kagbuo nlọghachi, ma gbanwee ntọala nlọghachi.',
         ],
+        'exchange' => [
+            'label' => 'Kwado mgbanwe',
+            'description' => 'Kwado mgbanwe nke nweghachi: nke a na-eme ọda nnọchi ya ma na-edozi uru ihe e weghachiri.',
+        ],
     ],
 ];

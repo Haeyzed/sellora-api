@@ -19,4 +19,6 @@ return [
         'other' => 'Inny powód',
     ],
 
+    'exchange_allowance' => 'Rabat za wymianę',
+
 ];

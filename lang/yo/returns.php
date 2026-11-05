@@ -19,4 +19,6 @@ return [
         'other' => 'Ìdí mìíràn',
     ],
 
+    'exchange_allowance' => 'Ẹ̀dínwó pàṣípààrọ̀',
+
 ];

@@ -19,4 +19,6 @@ return [
         'other' => 'Other',
     ],
 
+    'exchange_allowance' => 'Exchange allowance',
+
 ];

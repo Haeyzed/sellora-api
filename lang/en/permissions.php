@@ -208,5 +208,9 @@ return [
             'label' => 'Manage returns',
             'description' => 'Start, approve, reject, receive, inspect and cancel returns, and change the return settings.',
         ],
+        'exchange' => [
+            'label' => 'Confirm exchanges',
+            'description' => 'Confirm a return\'s exchange: this places its replacement order and settles what the returned items are worth.',
+        ],
     ],
 ];

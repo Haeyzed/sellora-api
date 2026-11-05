@@ -236,4 +236,5 @@ return [
     'return_replacement_invalid' => 'Un cambio indica un artículo de la tienda para enviar en lugar de cada línea devuelta, y un reembolso no indica ninguno.',
     'return_replacement_not_available' => 'Un artículo de este cambio no se puede enviar ahora: ya no está a la venta o está agotado. Elige otro o reembolsa la devolución.',
     'return_is_an_exchange' => 'Esta devolución se resuelve con un cambio. Confirma el cambio o cambia primero la forma de resolverla a un reembolso.',
+    'exchange_not_ready' => 'El cambio de esta devolución aún no se puede ver ni confirmar: debe ser un cambio e inspeccionarse, o aprobarse quedándose el comprador los artículos.',
 ];

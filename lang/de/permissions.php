@@ -202,5 +202,9 @@ return [
             'label' => 'Retouren verwalten',
             'description' => 'Retouren anlegen, genehmigen, ablehnen, annehmen, prüfen und stornieren und die Retoureneinstellungen ändern.',
         ],
+        'exchange' => [
+            'label' => 'Umtausche bestätigen',
+            'description' => 'Den Umtausch einer Rücksendung bestätigen: Das legt die Ersatzbestellung an und rechnet den Wert der zurückgegebenen Artikel ab.',
+        ],
     ],
 ];

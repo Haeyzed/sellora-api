@@ -19,4 +19,6 @@ return [
         'other' => 'Alasan lain',
     ],
 
+    'exchange_allowance' => 'Potongan penukaran',
+
 ];

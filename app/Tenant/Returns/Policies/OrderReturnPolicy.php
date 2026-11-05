@@ -26,4 +26,12 @@ final class OrderReturnPolicy
     {
         return $actor->can(ReturnPermission::ReturnsManage->value);
     }
+
+    /**
+     * Confirming an exchange: it places the replacement order and settles the returned items' value.
+     */
+    public function exchange(StaffMember $actor): bool
+    {
+        return $actor->can(ReturnPermission::ReturnsExchange->value);
+    }
 }

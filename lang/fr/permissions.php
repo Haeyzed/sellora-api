@@ -202,5 +202,9 @@ return [
             'label' => 'Gérer les retours',
             'description' => 'Créer, approuver, refuser, réceptionner, contrôler et annuler des retours, et modifier les réglages des retours.',
         ],
+        'exchange' => [
+            'label' => 'Confirmer les échanges',
+            'description' => 'Confirmer l\'échange d\'un retour : cela crée sa commande de remplacement et règle la valeur des articles retournés.',
+        ],
     ],
 ];

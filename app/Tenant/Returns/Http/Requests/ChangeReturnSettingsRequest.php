@@ -30,8 +30,10 @@ final class ChangeReturnSettingsRequest extends FormRequest
             'window_days' => ['sometimes', 'integer:strict', 'min:0', 'max:'.config()->integer('returns.max_window_days')],
             /** Whether customers and guests may ask for returns themselves; staff always can. */
             'customer_requests' => ['sometimes', 'boolean:strict'],
-            /** Whether a buyer must add a photo when the reason is damaged or the wrong item. */
+            /** Whether a buyer must add a photo when the reason claims the store was at fault (damaged, the wrong item, faulty or not as described). */
             'photos_required' => ['sometimes', 'boolean:strict'],
+            /** Whether the buyer pays for an exchange's replacement delivery when the store wasn't at fault; it is always free when it was. Off by default. */
+            'charge_shipping_on_exchanges' => ['sometimes', 'boolean:strict'],
         ];
     }
 
@@ -48,5 +50,10 @@ final class ChangeReturnSettingsRequest extends FormRequest
     public function photosRequired(): ?bool
     {
         return $this->has('photos_required') ? $this->boolean('photos_required') : null;
+    }
+
+    public function chargeShippingOnExchanges(): ?bool
+    {
+        return $this->has('charge_shipping_on_exchanges') ? $this->boolean('charge_shipping_on_exchanges') : null;
     }
 }

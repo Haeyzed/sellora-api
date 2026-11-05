@@ -202,5 +202,9 @@ return [
             'label' => 'Ṣakoso awọn ipadabọ',
             'description' => 'Bẹ̀rẹ̀, fọwọ́ sí, kọ̀, gbà, ṣàyẹ̀wò àti fagilé ìdápadà, kí o sì yí ètò ìdápadà padà.',
         ],
+        'exchange' => [
+            'label' => 'Jẹ́rìí sí pàṣípààrọ̀',
+            'description' => 'Jẹ́rìí sí pàṣípààrọ̀ ìdápadà kan: èyí ń ṣe ọjà ìrọ́pò rẹ̀, ó sì ń yanjú iye àwọn ọjà tí a dá padà.',
+        ],
     ],
 ];

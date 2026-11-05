@@ -19,4 +19,6 @@ return [
         'other' => '기타',
     ],
 
+    'exchange_allowance' => '교환 할인',
+
 ];

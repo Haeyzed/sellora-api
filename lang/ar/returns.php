@@ -19,4 +19,6 @@ return [
         'other' => 'سبب آخر',
     ],
 
+    'exchange_allowance' => 'خصم الاستبدال',
+
 ];

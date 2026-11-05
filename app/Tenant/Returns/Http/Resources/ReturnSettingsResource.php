@@ -30,8 +30,10 @@ final class ReturnSettingsResource extends JsonResource
             'window_days' => $this->window_days,
             /** Whether customers and guests may ask for returns themselves; staff always can. */
             'customer_requests' => $this->customer_requests,
-            /** Whether a buyer must add a photo when the reason is damaged or the wrong item. */
+            /** Whether a buyer must add a photo when the reason claims the store was at fault. */
             'photos_required' => $this->photos_required,
+            /** Whether the buyer pays for an exchange's replacement delivery when the store wasn't at fault; always free when it was. */
+            'charge_shipping_on_exchanges' => $this->charge_shipping_on_exchanges,
         ];
     }
 }

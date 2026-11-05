@@ -19,4 +19,6 @@ return [
         'other' => 'Anderer Grund',
     ],
 
+    'exchange_allowance' => 'Umtauschnachlass',
+
 ];

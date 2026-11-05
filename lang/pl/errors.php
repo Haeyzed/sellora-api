@@ -236,4 +236,5 @@ return [
     'return_replacement_invalid' => 'Wymiana wskazuje produkt sklepu do wysłania w miejsce każdej zwracanej pozycji, a zwrot pieniędzy nie wskazuje żadnego.',
     'return_replacement_not_available' => 'Jednego z produktów tej wymiany nie można teraz wysłać: nie jest już w sprzedaży lub go brak. Wybierz inny albo zamiast tego zwróć pieniądze.',
     'return_is_an_exchange' => 'Ten zwrot jest rozliczany wymianą. Potwierdź wymianę albo najpierw zmień sposób rozliczenia na zwrot pieniędzy.',
+    'exchange_not_ready' => 'Wymiany tego zwrotu nie można jeszcze podejrzeć ani potwierdzić: musi to być wymiana, sprawdzona albo zatwierdzona z produktami u kupującego.',
 ];

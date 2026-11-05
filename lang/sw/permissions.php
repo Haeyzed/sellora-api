@@ -202,5 +202,9 @@ return [
             'label' => 'Simamia marejesho',
             'description' => 'Kuanzisha, kuidhinisha, kukataa, kupokea, kukagua na kughairi marejesho, na kubadilisha mipangilio ya marejesho.',
         ],
+        'exchange' => [
+            'label' => 'Kuthibitisha ubadilishaji',
+            'description' => 'Thibitisha ubadilishaji wa urudishaji: hii huunda agizo la kubadilisha na kutatua thamani ya bidhaa zilizorudishwa.',
+        ],
     ],
 ];

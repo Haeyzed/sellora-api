@@ -236,4 +236,5 @@ return [
     'return_replacement_invalid' => 'Ubadilishaji unataja bidhaa moja ya duka itakayotumwa badala ya kila mstari uliorudishwa, na kurudishiwa pesa hakutaji yoyote.',
     'return_replacement_not_available' => 'Bidhaa moja ya ubadilishaji huu haiwezi kutumwa sasa: haiuzwi tena au imeisha. Chagua nyingine, au rudisha pesa badala yake.',
     'return_is_an_exchange' => 'Urudishaji huu unatatuliwa kwa ubadilishaji. Thibitisha ubadilishaji, au badilisha kwanza njia ya kutatua iwe kurudishiwa pesa.',
+    'exchange_not_ready' => 'Ubadilishaji wa urudishaji huu bado hauwezi kuonwa wala kuthibitishwa: lazima uwe ubadilishaji, na uwe umekaguliwa au kuidhinishwa mnunuzi akibaki na bidhaa.',
 ];

@@ -500,3 +500,55 @@ function exchangeLinesPayload(array $units, array $replacements): array
 {
     return array_map(static fn (array $line): array => [...$line, ...(isset($replacements[$line['line']]) ? ['replacement' => $replacements[$line['line']]] : [])], returnLinesPayload($units));
 }
+
+/**
+ * Another variant of the same product as the one given, at the price given (in minor units of the store's currency), with stock: such as another size.
+ */
+function siblingVariant(App\Tenant\Catalog\Models\ProductVariant $of, int $price, int $stock = 5): App\Tenant\Catalog\Models\ProductVariant
+{
+    $currency = $of->currency ?? 'NGN';
+    $variant = App\Tenant\Catalog\Models\ProductVariant::factory()->create([
+        'product_id' => $of->product_id, 'price' => App\Shared\Money\Money::ofMinor($price, $currency), 'currency' => $currency, 'attribute_signature' => 'size:'.Str::lower((string) Str::ulid()),
+    ]);
+    app(App\Tenant\Inventory\Actions\ChangeInventorySettings::class)->handle($variant, new App\Tenant\Inventory\Data\InventorySettingsData(tracksStock: true, allowsBackorder: false));
+    app(App\Tenant\Inventory\Actions\ReceiveStock::class)->handle($variant, StockLocation::query()->sole(), $stock);
+
+    return $variant->load('product');
+}
+
+/**
+ * A staff request for a return's exchange preview, with the shipping method given.
+ */
+function exchangePreviewAs(OrderReturn $return, StaffMember $as, ?App\Tenant\Shipping\Models\ShippingMethod $method = null): TestResponse
+{
+    return returnsRequest('GET', "{$return->public_id}/exchange-preview".($method === null ? '' : '?shipping_method='.$method->public_id), as: $as);
+}
+
+/**
+ * Staff confirming a return's exchange through the API, with the hash given (or the preview's now) and a new Idempotency-Key each time unless one is given.
+ */
+function confirmExchangeAs(OrderReturn $return, StaffMember $as, ?App\Tenant\Shipping\Models\ShippingMethod $method = null, ?string $hash = null, ?string $idempotencyKey = null): TestResponse
+{
+    $hash ??= (string) exchangePreviewAs($return, $as, $method)->json('data.quote_hash');
+
+    return returnsRequest('POST', "{$return->public_id}/exchange", array_filter(['quote_hash' => $hash, 'shipping_method' => $method?->public_id]), as: $as, headers: ['Idempotency-Key' => $idempotencyKey ?? (string) Str::ulid()]);
+}
+
+/**
+ * An exchange of every unit of the test's order, requested by staff, approved, received and inspected with every unit back on the shelf: the fault confirmed as the reason claims, or overruled with the reason given.
+ *
+ * @param  object{order: Order}  $test
+ */
+function inspectedExchange(object $test, App\Tenant\Catalog\Models\ProductVariant $replacement, ReturnReason $reason, ?string $overruled = null): OrderReturn
+{
+    $return = requestedExchange($test->order, $replacement, $reason);
+
+    return test()->store->run(static function () use ($return, $reason, $overruled): OrderReturn {
+        $staff = AccountReference::to(StaffMember::query()->firstOrFail());
+        $received = app(ReceiveReturn::class)->handle(app(ApproveReturn::class)->handle($return, $staff), $staff);
+        $outcomes = $received->lines()->with('orderLine')->get()->mapWithKeys(static fn ($line): array => [$line->orderLine->public_id => ['restocked' => $line->quantity, 'written_off' => 0]])->all();
+        $fault = $overruled === null ? null : new App\Tenant\Returns\Data\FaultConfirmation(! $reason->isStoresFault(), $overruled);
+
+        return app(InspectReturn::class)->handle($received, StockLocation::query()->where('is_default', true)->sole(), $outcomes, $staff, $fault);
+    });
+}

@@ -32,7 +32,7 @@ it('lists every store permission under its domain\'s group', function (): void {
         'payments.confirm' => 'payments', 'payments.manage_gateways' => 'payments', 'payments.refund' => 'payments', 'payments.view' => 'payments',
         'pricing.manage' => 'pricing', 'pricing.view' => 'pricing',
         'promotions.manage' => 'promotions', 'promotions.view' => 'promotions',
-        'returns.manage' => 'returns', 'returns.view' => 'returns',
+        'returns.exchange' => 'returns', 'returns.manage' => 'returns', 'returns.view' => 'returns',
         'roles.manage' => 'team', 'roles.view' => 'team',
         'settings.manage' => 'settings', 'settings.view' => 'settings',
         'shipping.manage' => 'shipping', 'shipping.view' => 'shipping',
@@ -60,7 +60,7 @@ it('marks as sensitive exactly the permissions that move money, show personal da
 
     expect($sensitive(app(StaffPermissionCatalogue::class)->permissions()))->toBe([
         'customers.privacy', 'customers.tax_exemption', 'delivery.cash.manage', 'drivers.manage', 'inventory.costs', 'invoices.view',
-        'payments.manage_gateways', 'payments.refund', 'roles.manage', 'settings.manage', 'staff.invite', 'staff.manage',
+        'payments.manage_gateways', 'payments.refund', 'returns.exchange', 'roles.manage', 'settings.manage', 'staff.invite', 'staff.manage',
     ])
         ->and($sensitive(app(PlatformPermissionCatalogue::class)->permissions()))->toBe(['stores.export', 'stores.grant', 'stores.manage']);
 });

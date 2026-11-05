@@ -19,4 +19,6 @@ return [
         'other' => 'Andere reden',
     ],
 
+    'exchange_allowance' => 'Ruilkorting',
+
 ];

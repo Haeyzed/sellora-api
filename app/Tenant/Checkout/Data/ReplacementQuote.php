@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tenant\Checkout\Data;
 
 use App\Shared\Money\Money;
+use App\Tenant\Checkout\Actions\QuoteReplacementOrder;
 use App\Tenant\Promotions\Data\DiscountedBasket;
 use App\Tenant\Shipping\Data\ShippingOption;
 
@@ -34,6 +35,14 @@ final readonly class ReplacementQuote
         public array $issues,
         public string $hash,
     ) {}
+
+    /**
+     * What a replacement line comes to, tax and allowances included, by its position in the request; null when the quote has issues.
+     */
+    public function lineTotal(int $position): ?Money
+    {
+        return $this->basket?->priced->lines[QuoteReplacementOrder::lineKey($position)]?->total();
+    }
 
     public function canBePlaced(): bool
     {

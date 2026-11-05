@@ -19,4 +19,6 @@ return [
         'other' => '其他原因',
     ],
 
+    'exchange_allowance' => '换货折让',
+
 ];

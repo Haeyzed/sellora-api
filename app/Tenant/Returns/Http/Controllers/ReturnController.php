@@ -7,6 +7,8 @@ namespace App\Tenant\Returns\Http\Controllers;
 use App\Shared\Auth\AccountReference;
 use App\Shared\Features\Exceptions\UsageLimitReachedException;
 use App\Shared\Http\Controller;
+use App\Tenant\Checkout\Exceptions\ReplacementCannotBePlacedException;
+use App\Tenant\Checkout\Exceptions\ReplacementQuoteChangedException;
 use App\Tenant\Inventory\Exceptions\ReturnedUnitsNoLongerOnHandException;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Payments\Exceptions\OrderNotRefundableException;
@@ -20,7 +22,9 @@ use App\Tenant\Returns\Actions\CancelReturn;
 use App\Tenant\Returns\Actions\ChangeReturnReplacements;
 use App\Tenant\Returns\Actions\ChangeReturnResolution;
 use App\Tenant\Returns\Actions\ChooseRefundDestination;
+use App\Tenant\Returns\Actions\ConfirmExchange;
 use App\Tenant\Returns\Actions\InspectReturn;
+use App\Tenant\Returns\Actions\PreviewExchange;
 use App\Tenant\Returns\Actions\ReceiveReturn;
 use App\Tenant\Returns\Actions\RefundReturn;
 use App\Tenant\Returns\Actions\RejectReturn;
@@ -29,6 +33,7 @@ use App\Tenant\Returns\Data\ReturnRequester;
 use App\Tenant\Returns\Exceptions\OrderNotReturnableException;
 use App\Tenant\Returns\Exceptions\RefundDestinationChoiceClosedException;
 use App\Tenant\Returns\Exceptions\RefundDestinationNotOfferedException;
+use App\Tenant\Returns\Exceptions\ReturnExchangeNotReadyException;
 use App\Tenant\Returns\Exceptions\ReturnInspectionMismatchException;
 use App\Tenant\Returns\Exceptions\ReturnQuantityTooHighException;
 use App\Tenant\Returns\Exceptions\ReturnRefundModuleHeldException;
@@ -39,6 +44,8 @@ use App\Tenant\Returns\Exceptions\ReturnTransitionNotAllowedException;
 use App\Tenant\Returns\Http\Requests\ApproveReturnRequest;
 use App\Tenant\Returns\Http\Requests\ChangeReturnReplacementsRequest;
 use App\Tenant\Returns\Http\Requests\ChangeReturnResolutionRequest;
+use App\Tenant\Returns\Http\Requests\ConfirmExchangeRequest;
+use App\Tenant\Returns\Http\Requests\ExchangePreviewRequest;
 use App\Tenant\Returns\Http\Requests\InspectReturnRequest;
 use App\Tenant\Returns\Http\Requests\ListReturnsRequest;
 use App\Tenant\Returns\Http\Requests\ManageReturnRequest;
@@ -47,6 +54,7 @@ use App\Tenant\Returns\Http\Requests\RefundReturnRequest;
 use App\Tenant\Returns\Http\Requests\RejectReturnRequest;
 use App\Tenant\Returns\Http\Requests\StaffReturnRequest;
 use App\Tenant\Returns\Http\Requests\ViewReturnRequest;
+use App\Tenant\Returns\Http\Resources\ExchangePreviewResource;
 use App\Tenant\Returns\Http\Resources\ReturnResource;
 use App\Tenant\Returns\Models\OrderReturn;
 use App\Tenant\Returns\Services\ReturnPhotos;
@@ -63,7 +71,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
  */
 final class ReturnController extends Controller
 {
-    private const array WITH = ['order', 'lines.orderLine', 'lines.replacementVariant.product', 'stockLocation', 'media', 'refundChoices'];
+    private const array WITH = ['order', 'lines.orderLine', 'lines.replacementVariant.product', 'stockLocation', 'media', 'refundChoices', 'exchanges.order'];
 
     /**
      * List returns.
@@ -267,6 +275,54 @@ final class ReturnController extends Controller
     public function resolution(ChangeReturnResolutionRequest $request, OrderReturn $return, ChangeReturnResolution $changeReturnResolution): ReturnResource
     {
         return new ReturnResource($changeReturnResolution->handle($return, $request->resolution(), $request->replacements(), $request->actor())->load(self::WITH));
+    }
+
+    /**
+     * Preview a return's exchange.
+     *
+     * Needs the returns.view permission. What the exchange would come to if
+     * confirmed now: each replacement priced at today's price with today's
+     * automatic promotions (a like-for-like replacement costs no more than
+     * the returned units did when the store's fault is confirmed), the
+     * delivery (free when the store was at fault, else as the return
+     * settings say), what the returned items credit, what the buyer still
+     * owes, what goes back to them and what the store keeps. issues says
+     * why it can't be confirmed now. Holds nothing. Only for an exchange
+     * that is inspected, or approved with the buyer keeping the items.
+     *
+     * @throws ReturnExchangeNotReadyException
+     */
+    public function exchangePreview(ExchangePreviewRequest $request, OrderReturn $return, PreviewExchange $previewExchange): ExchangePreviewResource
+    {
+        return new ExchangePreviewResource($previewExchange->handle($return, $request->shippingMethod()));
+    }
+
+    /**
+     * Confirm a return's exchange.
+     *
+     * Needs the returns.exchange permission (sensitive) and payments.refund.
+     * Places the replacement order as previewed, with the returned items'
+     * credit held on it, and the return waits for it to be paid
+     * (awaiting_exchange): at once when the credit covers it, otherwise the
+     * buyer pays the rest the usual way. If anything charged changed since
+     * the preview, or a replacement can't be sent now, nothing is placed and
+     * the new preview comes back (409). Confirming again returns the same
+     * return. Send an Idempotency-Key.
+     *
+     * @throws ReturnExchangeNotReadyException
+     */
+    public function confirmExchange(ConfirmExchangeRequest $request, OrderReturn $return, ConfirmExchange $confirmExchange, PreviewExchange $previewExchange): ReturnResource|JsonResponse
+    {
+        try {
+            $confirmExchange->handle($return, $request->actor(), $request->quoteHash(), $request->shippingMethod());
+        } catch (ReplacementQuoteChangedException|ReplacementCannotBePlacedException $exception) {
+            return (new ExchangePreviewResource($previewExchange->handle($return->refresh(), $request->shippingMethod())))
+                ->additional(['code' => (string) $exception->errorCode(), 'message' => (string) $exception->translatedMessage()])
+                ->response()
+                ->setStatusCode(Response::HTTP_CONFLICT);
+        }
+
+        return new ReturnResource($return->refresh()->load(self::WITH));
     }
 
     /**

@@ -236,4 +236,5 @@ return [
     'return_replacement_invalid' => 'Penukaran menyebut satu barang toko untuk dikirim sebagai ganti setiap baris yang diretur, dan pengembalian dana tidak menyebut apa pun.',
     'return_replacement_not_available' => 'Salah satu barang untuk penukaran ini tidak bisa dikirim sekarang: sudah tidak dijual atau stoknya habis. Pilih yang lain, atau kembalikan dana retur ini saja.',
     'return_is_an_exchange' => 'Retur ini diselesaikan dengan penukaran. Konfirmasi penukarannya, atau ubah dulu cara penyelesaiannya menjadi pengembalian dana.',
+    'exchange_not_ready' => 'Penukaran retur ini belum bisa dilihat atau dikonfirmasi: harus berupa penukaran, dan sudah diperiksa atau disetujui dengan pembeli menyimpan barangnya.',
 ];

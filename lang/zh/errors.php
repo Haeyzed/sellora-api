@@ -236,4 +236,5 @@ return [
     'return_replacement_invalid' => '换货需为每一行退回的商品指定一件店铺商品寄出替换，退款则不指定任何商品。',
     'return_replacement_not_available' => '此次换货中的一件商品现在无法寄出：已不再销售或缺货。请选择其他商品，或改为退款。',
     'return_is_an_exchange' => '此退货以换货方式处理。请确认换货，或先将处理方式改为退款。',
+    'exchange_not_ready' => '此退货的换货尚不能预览或确认：必须是换货，且已检验，或在买家保留商品的情况下已批准。',
 ];

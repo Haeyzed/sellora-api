@@ -202,5 +202,9 @@ return [
             'label' => 'Zarządzanie zwrotami',
             'description' => 'Tworzenie, zatwierdzanie, odrzucanie, przyjmowanie, sprawdzanie i anulowanie zwrotów oraz zmiana ustawień zwrotów.',
         ],
+        'exchange' => [
+            'label' => 'Potwierdzanie wymian',
+            'description' => 'Potwierdzenie wymiany zwrotu: tworzy zamówienie zastępcze i rozlicza wartość zwróconych produktów.',
+        ],
     ],
 ];

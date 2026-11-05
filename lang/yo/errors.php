@@ -236,4 +236,5 @@ return [
     'return_replacement_invalid' => 'Pàṣípààrọ̀ máa ń dárúkọ ọjà ilé ìtajà kan tí a ó fi ránṣẹ́ dípò ìlà kọ̀ọ̀kan tí a dá padà, ìdápadà owó kò sì dárúkọ ọ̀kankan.',
     'return_replacement_not_available' => 'A kò lè fi ọjà kan nínú pàṣípààrọ̀ yìí ránṣẹ́ báyìí: kò sí fún títà mọ́, tàbí ó ti tán. Yan òmíràn, tàbí dá owó padà dípò bẹ́ẹ̀.',
     'return_is_an_exchange' => 'Pàṣípààrọ̀ ni a fi ń yanjú ìdápadà yìí. Jẹ́rìí sí pàṣípààrọ̀ rẹ̀, tàbí kọ́kọ́ yí ọ̀nà ìyanjú padà sí ìdápadà owó.',
+    'exchange_not_ready' => 'A kò tíì lè wo tàbí jẹ́rìí sí pàṣípààrọ̀ ìdápadà yìí: ó gbọ́dọ̀ jẹ́ pàṣípààrọ̀, kí a sì ti yẹ̀ ẹ́ wò tàbí fọwọ́ sí i pẹ̀lú ẹni tó rà á tó ń pa àwọn ọjà mọ́.',
 ];

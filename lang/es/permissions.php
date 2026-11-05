@@ -202,5 +202,9 @@ return [
             'label' => 'Gestionar devoluciones',
             'description' => 'Iniciar, aprobar, rechazar, recibir, revisar y cancelar devoluciones, y cambiar los ajustes de devoluciones.',
         ],
+        'exchange' => [
+            'label' => 'Confirmar cambios',
+            'description' => 'Confirmar el cambio de una devolución: crea su pedido de reemplazo y liquida lo que valen los artículos devueltos.',
+        ],
     ],
 ];

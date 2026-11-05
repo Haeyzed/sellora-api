@@ -202,5 +202,9 @@ return [
             'label' => 'Sarrafa kayan da aka dawo',
             'description' => 'Fara, amince, ƙi, karɓa, duba da soke dawowar kaya, da canza saitunan dawowa.',
         ],
+        'exchange' => [
+            'label' => 'Tabbatar da musanya',
+            'description' => 'Tabbatar da musanyar dawowa: wannan yana yin odar musanya kuma yana warware darajar kayan da aka dawo da su.',
+        ],
     ],
 ];

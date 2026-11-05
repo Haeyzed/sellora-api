@@ -19,4 +19,6 @@ return [
         'other' => 'Wani dalili',
     ],
 
+    'exchange_allowance' => 'Rangwamen musanya',
+
 ];

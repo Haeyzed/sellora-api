@@ -67,6 +67,8 @@ Route::middleware([UseDashboardLanguage::class, 'auth:'.StaffMember::GUARD, Ensu
         Route::post('{return}/cancel', [ReturnController::class, 'cancel'])->name('cancel');
         Route::put('{return}/replacements', [ReturnController::class, 'replacements'])->name('replacements.update');
         Route::put('{return}/resolution', [ReturnController::class, 'resolution'])->name('resolution.update');
+        Route::get('{return}/exchange-preview', [ReturnController::class, 'exchangePreview'])->name('exchange-preview.show');
+        Route::post('{return}/exchange', [ReturnController::class, 'confirmExchange'])->middleware('idempotent')->name('exchange.store');
         Route::put('{return}/refund-destination', [ReturnController::class, 'recordRefundDestination'])->name('refund-destination.update');
     });
 });

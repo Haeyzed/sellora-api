@@ -202,5 +202,9 @@ return [
             'label' => 'Kelola retur',
             'description' => 'Membuat, menyetujui, menolak, menerima, memeriksa, dan membatalkan retur, serta mengubah pengaturan retur.',
         ],
+        'exchange' => [
+            'label' => 'Konfirmasi penukaran',
+            'description' => 'Konfirmasi penukaran sebuah retur: ini membuat pesanan penggantinya dan menyelesaikan nilai barang yang diretur.',
+        ],
     ],
 ];

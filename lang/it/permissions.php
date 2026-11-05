@@ -202,5 +202,9 @@ return [
             'label' => 'Gestisci resi',
             'description' => 'Avviare, approvare, rifiutare, ricevere, controllare e annullare i resi, e modificare le impostazioni dei resi.',
         ],
+        'exchange' => [
+            'label' => 'Confermare i cambi',
+            'description' => 'Confermare il cambio di un reso: crea il suo ordine sostitutivo e regola il valore degli articoli resi.',
+        ],
     ],
 ];

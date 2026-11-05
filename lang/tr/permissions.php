@@ -202,5 +202,9 @@ return [
             'label' => 'İadeleri yönet',
             'description' => 'İade başlatma, onaylama, reddetme, teslim alma, inceleme ve iptal etme ile iade ayarlarını değiştirme.',
         ],
+        'exchange' => [
+            'label' => 'Değişimleri onaylama',
+            'description' => 'Bir iadenin değişimini onaylama: bu, değişim siparişini oluşturur ve iade edilen ürünlerin değerini hesaplar.',
+        ],
     ],
 ];

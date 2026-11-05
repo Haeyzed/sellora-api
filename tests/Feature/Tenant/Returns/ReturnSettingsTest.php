@@ -35,7 +35,7 @@ afterEach(function (): void {
 it('starts every store with the defaults, saved as its own row', function (): void {
     returnsRequest('GET', 'settings', as: $this->owner)
         ->assertOk()
-        ->assertExactJson(['data' => ['window_days' => 14, 'customer_requests' => true, 'photos_required' => false]]);
+        ->assertExactJson(['data' => ['window_days' => 14, 'customer_requests' => true, 'photos_required' => false, 'charge_shipping_on_exchanges' => false]]);
 
     expect($this->store->run(static fn (): int => ReturnSettings::query()->count()))->toBe(1);
 });
@@ -43,10 +43,10 @@ it('starts every store with the defaults, saved as its own row', function (): vo
 it('changes only what is sent, keeping the rest, and records who changed what', function (): void {
     returnsRequest('PATCH', 'settings', ['window_days' => 30], as: $this->owner)
         ->assertOk()
-        ->assertExactJson(['data' => ['window_days' => 30, 'customer_requests' => true, 'photos_required' => false]]);
+        ->assertExactJson(['data' => ['window_days' => 30, 'customer_requests' => true, 'photos_required' => false, 'charge_shipping_on_exchanges' => false]]);
     returnsRequest('PATCH', 'settings', ['customer_requests' => false, 'photos_required' => true], as: $this->owner)
         ->assertOk()
-        ->assertExactJson(['data' => ['window_days' => 30, 'customer_requests' => false, 'photos_required' => true]]);
+        ->assertExactJson(['data' => ['window_days' => 30, 'customer_requests' => false, 'photos_required' => true, 'charge_shipping_on_exchanges' => false]]);
     returnsRequest('PATCH', 'settings', ['window_days' => 0], as: $this->owner)->assertOk()->assertJsonPath('data.window_days', 0);
 
     $this->store->run(function (): void {

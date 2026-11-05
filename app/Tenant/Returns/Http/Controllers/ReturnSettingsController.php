@@ -35,6 +35,6 @@ final class ReturnSettingsController extends Controller
      */
     public function update(ChangeReturnSettingsRequest $request, ChangeReturnSettings $changeReturnSettings): ReturnSettingsResource
     {
-        return new ReturnSettingsResource($changeReturnSettings->handle($request->windowDays(), $request->customerRequests(), $request->photosRequired()));
+        return new ReturnSettingsResource($changeReturnSettings->handle($request->windowDays(), $request->customerRequests(), $request->photosRequired(), $request->chargeShippingOnExchanges()));
     }
 }

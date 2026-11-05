@@ -236,4 +236,5 @@ return [
     'return_replacement_invalid' => 'Ein Umtausch nennt für jede zurückgegebene Position einen Artikel des Shops, der stattdessen geschickt wird; eine Erstattung nennt keinen.',
     'return_replacement_not_available' => 'Ein Artikel für diesen Umtausch kann gerade nicht geschickt werden: Er wird nicht mehr verkauft oder ist nicht vorrätig. Wähle einen anderen oder erstatte die Rücksendung stattdessen.',
     'return_is_an_exchange' => 'Diese Rücksendung wird durch einen Umtausch abgewickelt. Bestätige den Umtausch oder ändere die Abwicklung zuerst auf eine Erstattung.',
+    'exchange_not_ready' => 'Der Umtausch dieser Rücksendung kann noch nicht angesehen oder bestätigt werden: Sie muss ein Umtausch sein und geprüft oder genehmigt sein, wobei der Käufer die Artikel behält.',
 ];

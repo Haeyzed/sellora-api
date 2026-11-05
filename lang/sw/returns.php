@@ -19,4 +19,6 @@ return [
         'other' => 'Sababu nyingine',
     ],
 
+    'exchange_allowance' => 'Punguzo la ubadilishaji',
+
 ];
