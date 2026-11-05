@@ -7,8 +7,8 @@ declare(strict_types=1);
 | Returns
 |--------------------------------------------------------------------------
 |
-| The defaults a store's return settings start from until staff change them
-| (Tenant\Returns, Step 18): how many days after delivery a buyer may ask to
+| The defaults a store's return settings row is created with, when the store
+| is set up (Tenant\Returns, Step 18); staff change them from there: how many days after delivery a buyer may ask to
 | return a line, whether buyers may ask at all (staff always can), and
 | whether a photo is required when the reason is the store's fault (damaged,
 | or the wrong item). The most a store can set the window to is capped, so

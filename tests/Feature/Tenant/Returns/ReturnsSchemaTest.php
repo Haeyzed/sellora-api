@@ -153,6 +153,8 @@ it('only ever adds to a return\'s history', function (): void {
 
 it('keeps one row of return settings, with a window of up to a year', function (): void {
     $this->store->run(static function (): void {
+        // Every store starts with its row; the checks are tested on an empty table.
+        DB::table('return_settings')->delete();
         $insert = static fn (array $row) => DB::table('return_settings')->insert(['window_days' => 14, 'customer_requests' => true, 'photos_required' => false, ...$row]);
 
         expect(fn () => $insert(['id' => 2]))->toThrow(QueryException::class)

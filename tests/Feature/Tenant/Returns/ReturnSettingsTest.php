@@ -32,12 +32,12 @@ afterEach(function (): void {
     deleteAllStores();
 });
 
-it('shows the defaults until staff first change them', function (): void {
+it('starts every store with the defaults, saved as its own row', function (): void {
     returnsRequest('GET', 'settings', as: $this->owner)
         ->assertOk()
         ->assertExactJson(['data' => ['window_days' => 14, 'customer_requests' => true, 'photos_required' => false]]);
 
-    expect($this->store->run(static fn (): int => ReturnSettings::query()->count()))->toBe(0);
+    expect($this->store->run(static fn (): int => ReturnSettings::query()->count()))->toBe(1);
 });
 
 it('changes only what is sent, keeping the rest, and records who changed what', function (): void {

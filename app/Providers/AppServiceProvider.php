@@ -71,6 +71,7 @@ use App\Shared\Tenancy\Contracts\StoreStockReservations;
 use App\Shared\Tenancy\Contracts\StoreTaxDocuments;
 use App\Shared\Tenancy\Contracts\StoreUnpaidOrders;
 use App\Shared\Tenancy\Contracts\StoreUnsettledPaymentHolds;
+use App\Shared\Tenancy\StoreSettingsSetups;
 use App\Tenant\Cart\CartStoreTables;
 use App\Tenant\Cart\CustomerCartRetention;
 use App\Tenant\Cart\GuestCartRetention;
@@ -255,6 +256,7 @@ use App\Tenant\Returns\Models\ReturnSettings;
 use App\Tenant\Returns\Privacy\CustomerReturnData;
 use App\Tenant\Returns\Privacy\GuestReturnData;
 use App\Tenant\Returns\ReturnPhotoRetention;
+use App\Tenant\Returns\ReturnSettingsDefaults;
 use App\Tenant\Returns\ReturnStoreFiles;
 use App\Tenant\Returns\ReturnStoreTables;
 use App\Tenant\Settings\Enums\SettingsPermission;
@@ -321,7 +323,8 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(StoreExports::class, PlatformStoreExports::class);
         $this->app->bind(StoreAccountNotifications::class, StaffAccountNotifications::class);
         $this->app->bind(StoreProfile::class, PlatformStoreProfile::class);
-        $this->app->bind(StoreSettingsSetup::class, StoreSettingsDefaults::class);
+        // Every settings row a store needs, created with it: the store-wide ones first, then each core domain's own.
+        $this->app->bind(StoreSettingsSetup::class, static fn (Application $app): StoreSettingsSetups => new StoreSettingsSetups([$app->make(StoreSettingsDefaults::class), $app->make(ReturnSettingsDefaults::class)]));
         $this->app->bind(StorePermissions::class, StaffPermissionSync::class);
         $this->app->bind(StoreStockLedger::class, StockLedgerReconciliation::class);
         $this->app->bind(StoreInvoiceBalances::class, InvoiceBalanceReconciliation::class);

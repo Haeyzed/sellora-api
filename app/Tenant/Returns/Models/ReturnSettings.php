@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Tenant\Returns\Models;
 
+use App\Tenant\Returns\Exceptions\MissingReturnSettingsException;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use OwenIt\Auditing\Auditable;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
 /**
- * How the store takes returns. One row, absent until staff first change it: until then the defaults in config/returns.php apply.
+ * How the store takes returns. One row, created with the store from the defaults in config/returns.php (ReturnSettingsDefaults), never on read.
  *
  * @property int $id Always 1.
  * @property int $window_days How many days after a line's delivery a buyer may ask to return it; 0 means only staff can start returns.
@@ -35,16 +36,13 @@ final class ReturnSettings extends Model implements AuditableContract
     protected $auditExclude = ['id', 'updated_at'];
 
     /**
-     * The store's settings as saved, or the defaults when it never changed them (not saved).
+     * The store's return settings.
+     *
+     * @throws MissingReturnSettingsException When the store has none: a bug, never filled in with defaults.
      */
     public static function current(): self
     {
-        return self::query()->find(1) ?? (new self)->forceFill([
-            'id' => 1,
-            'window_days' => config()->integer('returns.window_days'),
-            'customer_requests' => config()->boolean('returns.customer_requests'),
-            'photos_required' => config()->boolean('returns.photos_required'),
-        ]);
+        return self::query()->find(1) ?? throw new MissingReturnSettingsException;
     }
 
     /**
