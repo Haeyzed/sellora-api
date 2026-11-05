@@ -17,6 +17,8 @@ use Illuminate\Validation\Validator;
  */
 trait ValidatesReturnRequest
 {
+    use ReadsReturnLines;
+
     /** @var list<EncodedImage> */
     private array $encodedPhotos = [];
 
@@ -84,11 +86,11 @@ trait ValidatesReturnRequest
      */
     public function returnLines(): array
     {
+        $validated = $this->safe();
         $lines = [];
 
-        foreach ((array) $this->validated('lines') as $line) {
-            /** @var array{line: string, quantity: int|string} $line */
-            $lines[$line['line']] = (int) $line['quantity'];
+        foreach ($this->linePositions($validated) as $position) {
+            $lines[$this->lineOf($validated, $position)] = $validated->integer("lines.{$position}.quantity");
         }
 
         return $lines;
@@ -97,23 +99,6 @@ trait ValidatesReturnRequest
     public function resolution(): ReturnResolution
     {
         return ReturnResolution::tryFrom($this->string('resolution')->value()) ?? ReturnResolution::Refund;
-    }
-
-    /**
-     * @return array<string, string> The variant sent in place of each line, by order line public ID; only lines that name one.
-     */
-    public function replacements(): array
-    {
-        $replacements = [];
-
-        foreach ((array) $this->validated('lines') as $line) {
-            /** @var array{line: string, replacement?: string|null} $line */
-            if (isset($line['replacement']) && $line['replacement'] !== '') {
-                $replacements[$line['line']] = $line['replacement'];
-            }
-        }
-
-        return $replacements;
     }
 
     public function reason(): ReturnReason

@@ -14,6 +14,7 @@ use Illuminate\Foundation\Http\FormRequest;
 final class ChangeReturnReplacementsRequest extends FormRequest
 {
     use ActsAsStaffMember;
+    use ReadsReturnLines;
 
     public function authorize(): bool
     {
@@ -33,20 +34,5 @@ final class ChangeReturnReplacementsRequest extends FormRequest
             /** The ID of the variant to send in place of the line's units, as many of it; it must be for sale and in stock. */
             'lines.*.replacement' => ['required', 'string', 'max:26'],
         ];
-    }
-
-    /**
-     * @return array<string, string> Variant public IDs, by order line public ID.
-     */
-    public function replacements(): array
-    {
-        $replacements = [];
-
-        foreach ((array) $this->validated('lines') as $line) {
-            /** @var array{line: string, replacement: string} $line */
-            $replacements[$line['line']] = $line['replacement'];
-        }
-
-        return $replacements;
     }
 }

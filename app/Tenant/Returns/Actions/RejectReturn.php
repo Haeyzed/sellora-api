@@ -12,7 +12,6 @@ use App\Tenant\Inventory\Models\StockLocation;
 use App\Tenant\Returns\Enums\ReturnStatus;
 use App\Tenant\Returns\Exceptions\ReturnTransitionNotAllowedException;
 use App\Tenant\Returns\Models\OrderReturn;
-use App\Tenant\Returns\Models\ReturnLine;
 use App\Tenant\Returns\Services\ReturnProgress;
 use App\Tenant\Returns\Services\ReturnRefundAttempts;
 use Illuminate\Support\Facades\DB;
@@ -64,7 +63,6 @@ final readonly class RejectReturn
         $writtenOff = [];
 
         foreach ($locked->lines()->with('orderLine')->get() as $line) {
-            /** @var ReturnLine $line */
             $variant = $line->orderLine->product_variant_id;
             $restocked[$variant] = ($restocked[$variant] ?? 0) + (int) $line->restocked_quantity;
             $writtenOff[$variant] = ($writtenOff[$variant] ?? 0) + (int) $line->written_off_quantity;

@@ -17,6 +17,7 @@ use Illuminate\Validation\Rule;
 final class InspectReturnRequest extends FormRequest
 {
     use ActsAsStaffMember;
+    use ReadsReturnLines;
 
     public function authorize(): bool
     {
@@ -60,13 +61,14 @@ final class InspectReturnRequest extends FormRequest
      */
     public function outcomes(): array
     {
+        $validated = $this->safe();
         $outcomes = [];
 
-        /** @var list<array{line: string, restocked: int|string, written_off: int|string}> $lines */
-        $lines = $this->validated('lines');
-
-        foreach ($lines as $line) {
-            $outcomes[$line['line']] = ['restocked' => (int) $line['restocked'], 'written_off' => (int) $line['written_off']];
+        foreach ($this->linePositions($validated) as $position) {
+            $outcomes[$this->lineOf($validated, $position)] = [
+                'restocked' => $validated->integer("lines.{$position}.restocked"),
+                'written_off' => $validated->integer("lines.{$position}.written_off"),
+            ];
         }
 
         return $outcomes;

@@ -16,6 +16,7 @@ use Illuminate\Validation\Rule;
 final class ChangeReturnResolutionRequest extends FormRequest
 {
     use ActsAsStaffMember;
+    use ReadsReturnLines;
 
     public function authorize(): bool
     {
@@ -42,20 +43,5 @@ final class ChangeReturnResolutionRequest extends FormRequest
     public function resolution(): ReturnResolution
     {
         return ReturnResolution::from($this->string('resolution')->value());
-    }
-
-    /**
-     * @return array<string, string> Variant public IDs, by order line public ID.
-     */
-    public function replacements(): array
-    {
-        $replacements = [];
-
-        foreach ((array) $this->validated('lines', []) as $line) {
-            /** @var array{line: string, replacement: string} $line */
-            $replacements[$line['line']] = $line['replacement'];
-        }
-
-        return $replacements;
     }
 }
