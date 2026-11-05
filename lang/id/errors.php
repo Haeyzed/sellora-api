@@ -232,4 +232,5 @@ return [
     'replacement_out_of_stock' => 'Salah satu barang pengganti stoknya habis. Pilih barang lain, atau kembalikan dana retur ini saja.',
     'replacement_currency_not_offered' => 'Mata uang pesanan tidak ditawarkan lagi, jadi pengganti tidak bisa diberi harga dalam mata uang itu. Kembalikan dana retur ini saja.',
     'replacement_shipping_unavailable' => 'Pengganti tidak bisa dikirim ke alamat pesanan dengan metode pengiriman yang dipilih. Pilih metode pengiriman lain.',
+    'return_fault_reason_required' => 'Sebutkan alasannya: apakah toko bersalah berbeda dari yang diklaim alasan retur.',
 ];

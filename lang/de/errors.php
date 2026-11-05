@@ -232,4 +232,5 @@ return [
     'replacement_out_of_stock' => 'Ein Ersatzartikel ist nicht vorrätig. Wähle einen anderen Artikel oder erstatte die Rücksendung stattdessen.',
     'replacement_currency_not_offered' => 'Die Währung der Bestellung wird nicht mehr angeboten, daher kann kein Ersatz in ihr berechnet werden. Erstatte die Rücksendung stattdessen.',
     'replacement_shipping_unavailable' => 'Der Ersatz kann mit der gewählten Versandart nicht an die Adresse der Bestellung geschickt werden. Wähle eine andere Versandart.',
+    'return_fault_reason_required' => 'Gib einen Grund an: Ob der Shop schuld war, weicht von dem ab, was der Rückgabegrund angibt.',
 ];

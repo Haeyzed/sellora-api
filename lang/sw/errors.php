@@ -232,4 +232,5 @@ return [
     'replacement_out_of_stock' => 'Bidhaa moja ya kubadilisha imeisha. Chagua bidhaa nyingine, au rudisha pesa ya bidhaa iliyorudishwa badala yake.',
     'replacement_currency_not_offered' => 'Sarafu ya agizo haitolewi tena, kwa hivyo hakuna bidhaa ya kubadilisha inayoweza kupangiwa bei kwa sarafu hiyo. Rudisha pesa ya bidhaa iliyorudishwa badala yake.',
     'replacement_shipping_unavailable' => 'Bidhaa ya kubadilisha haiwezi kutumwa kwa anwani ya agizo kwa njia ya usafirishaji iliyochaguliwa. Chagua njia nyingine ya usafirishaji.',
+    'return_fault_reason_required' => 'Eleza sababu: kama duka lilikuwa na kosa kunatofautiana na kile sababu ya kurudisha inadai.',
 ];

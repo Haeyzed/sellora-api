@@ -10,6 +10,8 @@ use App\Tenant\Returns\Enums\ReturnStatus;
 use App\Tenant\Returns\Events\ReturnApproved;
 use App\Tenant\Returns\Events\ReturnCancelled;
 use App\Tenant\Returns\Events\ReturnCompleted;
+use App\Tenant\Returns\Events\ReturnExchangeConfirmed;
+use App\Tenant\Returns\Events\ReturnExchangeReleased;
 use App\Tenant\Returns\Events\ReturnInspected;
 use App\Tenant\Returns\Events\ReturnReceived;
 use App\Tenant\Returns\Events\ReturnRejected;
@@ -75,7 +77,8 @@ final readonly class ReturnProgress
         }
 
         $from = $locked->status;
-        $locked->forceFill([...$fields, 'status' => $next, self::stampFor($next) => CarbonImmutable::now()])->save();
+        $stamp = self::stampFor($from, $next);
+        $locked->forceFill([...$fields, 'status' => $next, ...($stamp === null ? [] : [$stamp => CarbonImmutable::now()])])->save();
         $this->record($locked, $from, $next, $by);
 
         return $locked;
@@ -94,20 +97,36 @@ final readonly class ReturnProgress
             'changed_by_id' => $by?->publicId,
         ])->save();
 
+        // An exchange whose replacement expired or was cancelled unpaid goes back to where it was: that is its release, not a second inspection or approval.
+        if ($from === ReturnStatus::AwaitingExchange && $to !== ReturnStatus::Completed) {
+            ReturnExchangeReleased::dispatch($return);
+
+            return;
+        }
+
         match ($to) {
             ReturnStatus::Requested => ReturnRequested::dispatch($return),
             ReturnStatus::Approved => ReturnApproved::dispatch($return),
             ReturnStatus::Rejected => ReturnRejected::dispatch($return),
             ReturnStatus::Received => ReturnReceived::dispatch($return),
             ReturnStatus::Inspected => ReturnInspected::dispatch($return),
+            ReturnStatus::AwaitingExchange => ReturnExchangeConfirmed::dispatch($return),
             ReturnStatus::Completed => ReturnCompleted::dispatch($return),
             ReturnStatus::Cancelled => ReturnCancelled::dispatch($return),
         };
     }
 
-    private static function stampFor(ReturnStatus $status): string
+    /**
+     * The timestamp a move sets: the next status's own. Going back from awaiting an exchange keeps the inspection's or approval's time, and awaiting an exchange has its time on the exchange.
+     */
+    private static function stampFor(ReturnStatus $from, ReturnStatus $status): ?string
     {
+        if ($from === ReturnStatus::AwaitingExchange && $status !== ReturnStatus::Completed) {
+            return null;
+        }
+
         return match ($status) {
+            ReturnStatus::AwaitingExchange => null,
             ReturnStatus::Requested => 'requested_at',
             ReturnStatus::Approved => 'approved_at',
             ReturnStatus::Rejected => 'rejected_at',

@@ -122,7 +122,7 @@ final class ReturnController extends Controller
      */
     public function approve(ApproveReturnRequest $request, OrderReturn $return, ApproveReturn $approveReturn): ReturnResource
     {
-        return new ReturnResource($approveReturn->handle($return, AccountReference::to($request->actor()), $request->keepItems())->load(self::WITH));
+        return new ReturnResource($approveReturn->handle($return, AccountReference::to($request->actor()), $request->keepItems(), $request->faultConfirmation())->load(self::WITH));
     }
 
     /**
@@ -169,7 +169,7 @@ final class ReturnController extends Controller
      */
     public function inspect(InspectReturnRequest $request, OrderReturn $return, InspectReturn $inspectReturn): ReturnResource
     {
-        return new ReturnResource($inspectReturn->handle($return, $request->stockLocation(), $request->outcomes(), AccountReference::to($request->actor()))->load(self::WITH));
+        return new ReturnResource($inspectReturn->handle($return, $request->stockLocation(), $request->outcomes(), AccountReference::to($request->actor()), $request->faultConfirmation())->load(self::WITH));
     }
 
     /**

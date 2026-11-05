@@ -16,7 +16,8 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property int $id Always 1.
  * @property int $window_days How many days after a line's delivery a buyer may ask to return it; 0 means only staff can start returns.
  * @property bool $customer_requests Whether customers and guests may ask for returns themselves; staff always can.
- * @property bool $photos_required Whether a buyer must add a photo when the reason is damaged or the wrong item.
+ * @property bool $photos_required Whether a buyer must add a photo when the reason claims the store was at fault.
+ * @property bool $charge_shipping_on_exchanges Whether the buyer pays for an exchange's replacement delivery when the store wasn't at fault; always free when it was.
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  */
@@ -55,6 +56,7 @@ final class ReturnSettings extends Model implements AuditableContract
             'window_days' => 'integer',
             'customer_requests' => 'boolean',
             'photos_required' => 'boolean',
+            'charge_shipping_on_exchanges' => 'boolean',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];

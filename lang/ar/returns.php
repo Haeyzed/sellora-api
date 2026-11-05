@@ -12,6 +12,7 @@ return [
     'reasons' => [
         'damaged' => 'وصل تالفًا',
         'wrong_item' => 'تم إرسال منتج خاطئ',
+        'faulty' => 'معيب أو لا يعمل',
         'not_as_described' => 'لا يطابق الوصف',
         'does_not_fit' => 'المقاس غير مناسب',
         'changed_mind' => 'غيّرت رأيي',

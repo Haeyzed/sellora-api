@@ -12,6 +12,7 @@ return [
     'reasons' => [
         'damaged' => '파손된 상태로 도착',
         'wrong_item' => '다른 상품이 배송됨',
+        'faulty' => '불량이거나 작동하지 않음',
         'not_as_described' => '설명과 다름',
         'does_not_fit' => '사이즈가 맞지 않음',
         'changed_mind' => '단순 변심',

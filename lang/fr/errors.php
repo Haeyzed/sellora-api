@@ -232,4 +232,5 @@ return [
     'replacement_out_of_stock' => 'Un article de remplacement est en rupture de stock. Choisissez un autre article, ou remboursez plutôt le retour.',
     'replacement_currency_not_offered' => 'La devise de la commande n\'est plus proposée : aucun remplacement ne peut y être tarifé. Remboursez plutôt le retour.',
     'replacement_shipping_unavailable' => 'Le remplacement ne peut pas être envoyé à l\'adresse de la commande avec le mode de livraison choisi. Choisissez un autre mode de livraison.',
+    'return_fault_reason_required' => 'Indiquez pourquoi : la responsabilité de la boutique diffère de ce qu\'affirme le motif du retour.',
 ];

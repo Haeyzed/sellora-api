@@ -12,6 +12,7 @@ return [
     'reasons' => [
         'damaged' => 'Hasarlı geldi',
         'wrong_item' => 'Yanlış ürün gönderildi',
+        'faulty' => 'Kusurlu veya çalışmıyor',
         'not_as_described' => 'Açıklamadaki gibi değil',
         'does_not_fit' => 'Uymadı',
         'changed_mind' => 'Fikrimi değiştirdim',

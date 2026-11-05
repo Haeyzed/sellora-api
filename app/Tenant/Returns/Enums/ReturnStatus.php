@@ -10,7 +10,9 @@ namespace App\Tenant\Returns\Enums;
  *   requested → approved | rejected | cancelled
  *   approved  → received | cancelled | completed (the buyer keeps the items: refunded without coming back)
  *   received  → inspected
- *   inspected → completed (its refund went back) | rejected (nothing to refund, such as damage the buyer caused)
+ *   inspected → completed (its refund went back) | rejected (nothing to refund, such as damage the buyer caused) | awaiting_exchange
+ *   approved  → awaiting_exchange too, when the buyer keeps the items
+ *   awaiting_exchange → completed (its replacement was paid and any difference went back) | inspected or approved (its replacement expired or was cancelled unpaid)
  *
  * Rejected, completed and cancelled are final.
  */
@@ -31,7 +33,10 @@ enum ReturnStatus: string
     /** Staff checked the items: each unit went back on the shelf or was written off as damaged. */
     case Inspected = 'inspected';
 
-    /** Its refund went back to the buyer. */
+    /** An exchange whose replacement order was placed and isn't paid yet (Step 18d). */
+    case AwaitingExchange = 'awaiting_exchange';
+
+    /** Its refund went back to the buyer, or its exchange's replacement was paid. */
     case Completed = 'completed';
 
     /** Called off by the buyer while it was requested, or by staff before the items arrived. */
@@ -41,9 +46,10 @@ enum ReturnStatus: string
     {
         return in_array($next, match ($this) {
             self::Requested => [self::Approved, self::Rejected, self::Cancelled],
-            self::Approved => [self::Received, self::Cancelled, self::Completed],
+            self::Approved => [self::Received, self::Cancelled, self::Completed, self::AwaitingExchange],
             self::Received => [self::Inspected],
-            self::Inspected => [self::Completed, self::Rejected],
+            self::Inspected => [self::Completed, self::Rejected, self::AwaitingExchange],
+            self::AwaitingExchange => [self::Completed, self::Inspected, self::Approved],
             self::Rejected, self::Completed, self::Cancelled => [],
         }, true);
     }

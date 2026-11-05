@@ -232,4 +232,5 @@ return [
     'replacement_out_of_stock' => '有一件换货商品缺货。请选择其他商品，或改为退款。',
     'replacement_currency_not_offered' => '该订单的币种已不再提供，因此无法以该币种为换货定价。请改为退款。',
     'replacement_shipping_unavailable' => '无法使用所选的配送方式将换货寄到订单地址。请选择其他配送方式。',
+    'return_fault_reason_required' => '请说明原因：店铺是否有过错与退货原因所述不同。',
 ];

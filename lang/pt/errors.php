@@ -232,4 +232,5 @@ return [
     'replacement_out_of_stock' => 'Um artigo de substituição está esgotado. Escolha outro artigo ou reembolse a devolução.',
     'replacement_currency_not_offered' => 'A moeda do pedido já não é oferecida, por isso não é possível definir o preço de uma substituição nela. Reembolse a devolução.',
     'replacement_shipping_unavailable' => 'A substituição não pode ser enviada para a morada do pedido com o método de envio escolhido. Escolha outro método de envio.',
+    'return_fault_reason_required' => 'Indique porquê: a culpa da loja difere do que o motivo da devolução afirma.',
 ];

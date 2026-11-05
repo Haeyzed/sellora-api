@@ -35,12 +35,16 @@ final class ReturnResource extends JsonResource
             /** Its order's number and its own, such as "#1042-R1". */
             'number' => $this->displayNumber(),
             'order' => ['id' => $this->order->public_id, 'number' => $this->order->number],
-            /** "requested", "approved", "rejected", "received", "inspected", "completed" or "cancelled". */
+            /** "requested", "approved", "rejected", "received", "inspected", "awaiting_exchange" (its exchange's replacement isn't paid yet), "completed" or "cancelled". */
             'status' => $this->status,
-            /** "refund"; exchanges come in Step 18b. */
+            /** "refund", or "exchange": other items sent in place of the returned ones. */
             'resolution' => $this->resolution,
             /** Why, by code and in the current language. */
             'reason' => ['code' => $this->reason->value, 'label' => $this->reason->label()],
+            /** Whether staff confirmed the store was at fault, when they inspected the items or approved without them coming back; null until then. */
+            'stores_fault' => $this->stores_fault,
+            /** Why staff decided otherwise than the reason claimed. */
+            'fault_overruled_reason' => $this->fault_overruled_reason,
             /** What the buyer or staff added; null once the order was anonymised. */
             'note' => $this->note,
             /** A test order's return: never a sale reduction in reports. */

@@ -344,7 +344,7 @@ it('queues two inspections of the same return on its lock, so stock moves only o
 
         // Another request holds the return and has inspected it, not yet committed.
         $otherRequest = SecondConnection::open()->holdRowLock(OrderReturn::query()->whereKey($return->id)->sole());
-        $otherRequest->run(fn () => DB::connection(SecondConnection::NAME)->table('returns')->where('id', $return->id)->update(['status' => 'inspected', 'inspected_at' => now(), 'stock_location_id' => $location->id]));
+        $otherRequest->run(fn () => DB::connection(SecondConnection::NAME)->table('returns')->where('id', $return->id)->update(['status' => 'inspected', 'inspected_at' => now(), 'stock_location_id' => $location->id, 'stores_fault' => false]));
 
         expect($otherRequest->blockedStatement($inspect))->toContain('"returns"')->toContain('for update');
 

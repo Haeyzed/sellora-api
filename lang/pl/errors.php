@@ -232,4 +232,5 @@ return [
     'replacement_out_of_stock' => 'Jednego z produktów zastępczych nie ma w magazynie. Wybierz inny produkt albo zamiast tego zwróć pieniądze za zwrot.',
     'replacement_currency_not_offered' => 'Waluta zamówienia nie jest już oferowana, więc nie można w niej wycenić zamiennika. Zamiast tego zwróć pieniądze za zwrot.',
     'replacement_shipping_unavailable' => 'Zamiennika nie można wysłać wybraną metodą wysyłki na adres zamówienia. Wybierz inną metodę wysyłki.',
+    'return_fault_reason_required' => 'Podaj powód: to, czy sklep zawinił, różni się od tego, co twierdzi powód zwrotu.',
 ];

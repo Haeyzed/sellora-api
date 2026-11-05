@@ -232,4 +232,5 @@ return [
     'replacement_out_of_stock' => '교환 상품 중 하나의 재고가 없습니다. 다른 상품을 선택하거나 대신 반품을 환불하세요.',
     'replacement_currency_not_offered' => '주문 통화가 더 이상 제공되지 않아 그 통화로 교환 상품의 가격을 매길 수 없습니다. 대신 반품을 환불하세요.',
     'replacement_shipping_unavailable' => '선택한 배송 방법으로는 교환 상품을 주문 주소로 보낼 수 없습니다. 다른 배송 방법을 선택하세요.',
+    'return_fault_reason_required' => '이유를 입력하세요. 상점의 책임 여부가 반품 사유의 주장과 다릅니다.',
 ];

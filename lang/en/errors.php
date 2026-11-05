@@ -255,5 +255,6 @@ return [
     'replacement_out_of_stock' => 'A replacement item is out of stock. Choose another item, or refund the return instead.',
     'replacement_currency_not_offered' => 'The order\'s currency isn\'t offered any more, so no replacement can be priced in it. Refund the return instead.',
     'replacement_shipping_unavailable' => 'The replacement can\'t be sent with the chosen shipping method to the order\'s address. Choose another shipping method.',
+    'return_fault_reason_required' => 'Say why: whether the store was at fault differs from what the return\'s reason claims.',
 
 ];

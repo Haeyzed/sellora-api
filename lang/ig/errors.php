@@ -232,4 +232,5 @@ return [
     'replacement_out_of_stock' => 'Otu ihe nnọchi agwụla n\'ụlọ ahịa. Họrọ ihe ọzọ, ma ọ bụ weghachite ego maka ihe ahụ e weghachiri kama.',
     'replacement_currency_not_offered' => 'A naghị enye ego ọda ahụ ọzọ, ya mere a pụghị itinye ọnụahịa nnọchi na ya. Weghachite ego maka ihe ahụ e weghachiri kama.',
     'replacement_shipping_unavailable' => 'A pụghị iziga nnọchi ahụ n\'adreesị ọda ahụ site n\'ụzọ mbupu a họrọ. Họrọ ụzọ mbupu ọzọ.',
+    'return_fault_reason_required' => 'Kwuo ihe kpatara ya: ma ọ bụ ụlọ ahịa mehiere dị iche n\'ihe ihe kpatara nweghachi ahụ kwuru.',
 ];

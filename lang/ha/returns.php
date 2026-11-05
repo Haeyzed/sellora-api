@@ -12,6 +12,7 @@ return [
     'reasons' => [
         'damaged' => 'Ya iso a lalace',
         'wrong_item' => 'An aiko kayan da ba daidai ba',
+        'faulty' => 'Yana da lahani ko baya aiki',
         'not_as_described' => 'Ba kamar yadda aka bayyana ba',
         'does_not_fit' => 'Bai dace ba',
         'changed_mind' => 'Na canza ra\'ayi',

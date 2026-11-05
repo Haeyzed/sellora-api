@@ -12,6 +12,7 @@ return [
     'reasons' => [
         'damaged' => 'Tiba dalam keadaan rusak',
         'wrong_item' => 'Barang yang dikirim salah',
+        'faulty' => 'Rusak atau tidak berfungsi',
         'not_as_described' => 'Tidak sesuai deskripsi',
         'does_not_fit' => 'Ukurannya tidak pas',
         'changed_mind' => 'Berubah pikiran',

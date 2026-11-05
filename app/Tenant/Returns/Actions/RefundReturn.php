@@ -27,7 +27,7 @@ use App\Tenant\Returns\Services\ReturnRefundAttempts;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Staff refunding an inspected return (or an approved one whose buyer keeps the items) through Payments: every unit that came back, at what the buyer paid for it, with shipping if asked (by default when the store was at fault: damaged or the wrong item), less anything kept back with a reason. Payments decides where the money comes from and when it went back; the return completes once it did.
+ * Staff refunding an inspected return (or an approved one whose buyer keeps the items) through Payments: every unit that came back, at what the buyer paid for it, with shipping if asked (by default when the store was at fault, as staff confirmed it, or else as the reason claims), less anything kept back with a reason. Payments decides where the money comes from and when it went back; the return completes once it did.
  *
  * It goes where the customer chose (Step 18b): back to the original payment
  * unless they chose a module's destination, such as store credit. The choice
@@ -113,7 +113,7 @@ final readonly class RefundReturn
             'attempt' => $number,
             'idempotency_key' => ReturnRefund::keyFor($locked, $number),
             'status' => ReturnRefundStatus::Started,
-            'shipping' => $shipping ?? $locked->reason->isStoresFault(),
+            'shipping' => $shipping ?? $locked->isStoresFault(),
             'withheld_amount' => $withheld?->minorAmount() ?? 0,
             'withheld_reason' => $withheld === null ? null : $withheldReason,
             // The customer's latest choice; asking again under this attempt's key sends the same.

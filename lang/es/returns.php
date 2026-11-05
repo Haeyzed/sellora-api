@@ -12,6 +12,7 @@ return [
     'reasons' => [
         'damaged' => 'Llegó dañado',
         'wrong_item' => 'Se envió un artículo equivocado',
+        'faulty' => 'Defectuoso o no funciona',
         'not_as_described' => 'No es como se describía',
         'does_not_fit' => 'No me queda bien',
         'changed_mind' => 'Cambié de opinión',

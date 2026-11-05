@@ -8,6 +8,7 @@ use App\Shared\Concerns\HasPublicId;
 use App\Shared\Media\PrivateImages;
 use App\Tenant\Inventory\Models\StockLocation;
 use App\Tenant\Orders\Models\Order;
+use App\Tenant\Returns\Enums\ReturnExchangeStatus;
 use App\Tenant\Returns\Enums\ReturnReason;
 use App\Tenant\Returns\Enums\ReturnResolution;
 use App\Tenant\Returns\Enums\ReturnStatus;
@@ -30,6 +31,8 @@ use Spatie\MediaLibrary\InteractsWithMedia;
  * @property ReturnStatus $status
  * @property ReturnResolution $resolution
  * @property ReturnReason $reason
+ * @property bool|null $stores_fault Whether staff confirmed the store was at fault, when they inspected the items or approved without them coming back; null until then.
+ * @property string|null $fault_overruled_reason Why staff decided otherwise than the reason claimed.
  * @property string|null $note What the buyer or staff added about the reason; personal data.
  * @property bool $is_test Copied from its order.
  * @property bool $keep_items Approved without the items coming back.
@@ -55,6 +58,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
  * @property-read Collection<int, ReturnStatusChange> $statusChanges
  * @property-read Collection<int, ReturnRefund> $refunds Its refund attempts, oldest first.
  * @property-read Collection<int, ReturnRefundChoice> $refundChoices Each choice of where its refund goes, oldest first.
+ * @property-read Collection<int, ReturnExchange> $exchanges Each time its exchange was confirmed, oldest first.
  */
 final class OrderReturn extends Model implements HasMedia
 {
@@ -127,6 +131,38 @@ final class OrderReturn extends Model implements HasMedia
     }
 
     /**
+     * @return HasMany<ReturnExchange, $this>
+     */
+    public function exchanges(): HasMany
+    {
+        return $this->hasMany(ReturnExchange::class, 'return_id')->orderBy('id');
+    }
+
+    /**
+     * Its exchange that isn't released: waiting for its replacement to be paid, or committed. Null when there is none.
+     */
+    public function liveExchange(): ?ReturnExchange
+    {
+        return $this->exchanges()->where('status', '<>', ReturnExchangeStatus::Released->value)->first();
+    }
+
+    /**
+     * Whether the store was at fault: as staff confirmed it, or else as the buyer's reason claims.
+     */
+    public function isStoresFault(): bool
+    {
+        return $this->stores_fault ?? $this->reason->isStoresFault();
+    }
+
+    /**
+     * Whether the store's fault is confirmed: by staff, when they inspected the items or approved without them coming back. Only a confirmed fault gives a free like-for-like replacement and free delivery.
+     */
+    public function hasConfirmedStoresFault(): bool
+    {
+        return $this->stores_fault === true;
+    }
+
+    /**
      * The latest choice of where its refund goes, or null when none was made (it goes back to the original payment). Uses the loaded choices when they are.
      */
     public function latestRefundChoice(): ?ReturnRefundChoice
@@ -145,6 +181,7 @@ final class OrderReturn extends Model implements HasMedia
             'status' => ReturnStatus::class,
             'resolution' => ReturnResolution::class,
             'reason' => ReturnReason::class,
+            'stores_fault' => 'boolean',
             'is_test' => 'boolean',
             'keep_items' => 'boolean',
             'stock_location_id' => 'integer',

@@ -232,4 +232,5 @@ return [
     'replacement_out_of_stock' => 'Een vervangend artikel is niet op voorraad. Kies een ander artikel, of betaal de retour in plaats daarvan terug.',
     'replacement_currency_not_offered' => 'De valuta van de bestelling wordt niet meer aangeboden, dus er kan geen vervanging in worden geprijsd. Betaal de retour in plaats daarvan terug.',
     'replacement_shipping_unavailable' => 'De vervanging kan met de gekozen verzendmethode niet naar het adres van de bestelling worden gestuurd. Kies een andere verzendmethode.',
+    'return_fault_reason_required' => 'Geef een reden: of de winkel schuld had, wijkt af van wat de retourreden stelt.',
 ];

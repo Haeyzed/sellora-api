@@ -9,16 +9,19 @@ use App\Tenant\Inventory\Actions\RestockReturnedUnits;
 use App\Tenant\Inventory\Actions\WriteOffReturnedUnits;
 use App\Tenant\Inventory\Data\StockSource;
 use App\Tenant\Inventory\Models\StockLocation;
+use App\Tenant\Returns\Data\FaultConfirmation;
 use App\Tenant\Returns\Enums\ReturnStatus;
+use App\Tenant\Returns\Exceptions\ReturnFaultReasonRequiredException;
 use App\Tenant\Returns\Exceptions\ReturnInspectionMismatchException;
 use App\Tenant\Returns\Exceptions\ReturnTransitionNotAllowedException;
 use App\Tenant\Returns\Models\OrderReturn;
 use App\Tenant\Returns\Models\ReturnLine;
+use App\Tenant\Returns\Services\ReturnFaults;
 use App\Tenant\Returns\Services\ReturnProgress;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Staff checking a received return's items at a location: each unit goes back on the shelf or is written off as damaged, through Inventory, with the return as the source. ReturnInspected is announced once it is saved.
+ * Staff checking a received return's items at a location: each unit goes back on the shelf or is written off as damaged, through Inventory, with the return as the source, and whether the store was at fault is confirmed (or overruled with a reason). ReturnInspected is announced once it is saved.
  *
  * The return is locked before stock levels (the store's lock order), and
  * checked as saved under its lock, so two inspections at the same moment
@@ -30,17 +33,20 @@ final readonly class InspectReturn
         private ReturnProgress $returnProgress,
         private RestockReturnedUnits $restockReturnedUnits,
         private WriteOffReturnedUnits $writeOffReturnedUnits,
+        private ReturnFaults $returnFaults,
     ) {}
 
     /**
      * @param  array<string, array{restocked: int, written_off: int}>  $outcomes  What became of each line's units, by order line public ID; every line of the return, each adding up to its quantity.
+     * @param  FaultConfirmation|null  $fault  Whether the store was at fault; null confirms what the reason claims.
      *
      * @throws ReturnTransitionNotAllowedException When it isn't received.
      * @throws ReturnInspectionMismatchException When a line is missing, isn't the return's, or doesn't add up.
+     * @throws ReturnFaultReasonRequiredException When the reason is overruled without saying why.
      */
-    public function handle(OrderReturn $return, StockLocation $location, array $outcomes, AccountReference $by): OrderReturn
+    public function handle(OrderReturn $return, StockLocation $location, array $outcomes, AccountReference $by, ?FaultConfirmation $fault = null): OrderReturn
     {
-        return DB::transaction(function () use ($return, $location, $outcomes, $by): OrderReturn {
+        return DB::transaction(function () use ($return, $location, $outcomes, $by, $fault): OrderReturn {
             $locked = $this->returnProgress->lock($return);
 
             if (! $locked->status->canMoveTo(ReturnStatus::Inspected)) {
@@ -62,6 +68,8 @@ final readonly class InspectReturn
                 throw new ReturnInspectionMismatchException($wrong);
             }
 
+            $faultFields = $this->returnFaults->confirm($locked, $fault ?? FaultConfirmation::asClaimed());
+
             $restocked = [];
             $writtenOff = [];
 
@@ -76,7 +84,7 @@ final readonly class InspectReturn
             $this->restockReturnedUnits->handle($source, $location, $restocked, $by);
             $this->writeOffReturnedUnits->handle($source, $location, $writtenOff, $by);
 
-            return $this->returnProgress->move($locked, ReturnStatus::Inspected, $by, ['stock_location_id' => $location->id]);
+            return $this->returnProgress->move($locked, ReturnStatus::Inspected, $by, ['stock_location_id' => $location->id, ...$faultFields]);
         });
     }
 }

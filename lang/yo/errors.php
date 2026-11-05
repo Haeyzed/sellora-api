@@ -232,4 +232,5 @@ return [
     'replacement_out_of_stock' => 'Ọ̀kan nínú àwọn ọjà ìrọ́pò ti tán ní ìpamọ́. Yan ọjà mìíràn, tàbí dá owó ọjà tí a dá padà dípò bẹ́ẹ̀.',
     'replacement_currency_not_offered' => 'A kò fúnni ní owó tí a fi san ọjà náà mọ́, nítorí náà a kò lè fi iye owó ìrọ́pò sí i. Dá owó ọjà tí a dá padà dípò bẹ́ẹ̀.',
     'replacement_shipping_unavailable' => 'A kò lè fi ọ̀nà ìfiránṣẹ́ tí a yàn fi ọjà ìrọ́pò ránṣẹ́ sí àdírẹ́sì ọjà náà. Yan ọ̀nà ìfiránṣẹ́ mìíràn.',
+    'return_fault_reason_required' => 'Sọ ìdí rẹ̀: bóyá ẹ̀bi ilé ìtajà ni yàtọ̀ sí ohun tí ìdí ìdápadà sọ.',
 ];

@@ -81,9 +81,9 @@ it('lets staff with returns.view see the settings, and only returns.manage chang
     returnsRequest('GET', 'settings')->assertUnauthorized();
 });
 
-it('names each reason in the buyer\'s language, with damage and the wrong item as the store\'s fault', function (): void {
+it('names each reason in the buyer\'s language, with damage, the wrong item, a fault and not as described claiming the store\'s fault', function (): void {
     expect(ReturnReason::Damaged->label())->toBe('Arrived damaged')
-        ->and(array_values(array_filter(ReturnReason::cases(), static fn (ReturnReason $reason): bool => $reason->isStoresFault())))->toBe([ReturnReason::Damaged, ReturnReason::WrongItem]);
+        ->and(array_values(array_filter(ReturnReason::cases(), static fn (ReturnReason $reason): bool => $reason->isStoresFault())))->toBe([ReturnReason::Damaged, ReturnReason::WrongItem, ReturnReason::Faulty, ReturnReason::NotAsDescribed]);
 
     foreach (glob(lang_path('*'), GLOB_ONLYDIR) ?: [] as $folder) {
         app()->setLocale(basename($folder));

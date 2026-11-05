@@ -26,7 +26,7 @@ final readonly class ReturnSettingsDefaults implements StoreSettingsSetup
     /**
      * The settings row a store starts with.
      *
-     * @return array{id: int, window_days: int, customer_requests: bool, photos_required: bool, created_at: CarbonImmutable, updated_at: CarbonImmutable}
+     * @return array{id: int, window_days: int, customer_requests: bool, photos_required: bool, charge_shipping_on_exchanges: bool, created_at: CarbonImmutable, updated_at: CarbonImmutable}
      */
     public static function row(CarbonImmutable $now): array
     {
@@ -35,6 +35,7 @@ final readonly class ReturnSettingsDefaults implements StoreSettingsSetup
             'window_days' => config()->integer('returns.window_days'),
             'customer_requests' => config()->boolean('returns.customer_requests'),
             'photos_required' => config()->boolean('returns.photos_required'),
+            'charge_shipping_on_exchanges' => config()->boolean('returns.charge_shipping_on_exchanges'),
             'created_at' => $now,
             'updated_at' => $now,
         ];

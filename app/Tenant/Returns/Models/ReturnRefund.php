@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ReturnRefundStatus $status
  * @property string|null $refusal_code
  * @property bool $shipping
+ * @property int|null $refund_amount An amount it gives back instead of the return's lines, in minor units of the order's currency: an exchange's difference (Step 18d). Null when it gives back the lines.
  * @property int $withheld_amount In minor units of the order's currency.
  * @property string|null $withheld_reason
  * @property string $destination Where it asks the refund to go: "original_payment" or a module's destination key, the customer's choice when it was saved.
@@ -67,6 +68,7 @@ final class ReturnRefund extends Model
             'refund_id' => 'integer',
             'status' => ReturnRefundStatus::class,
             'shipping' => 'boolean',
+            'refund_amount' => 'integer',
             'withheld_amount' => 'integer',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',

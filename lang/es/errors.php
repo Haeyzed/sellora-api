@@ -232,4 +232,5 @@ return [
     'replacement_out_of_stock' => 'Un artículo de reemplazo está agotado. Elige otro artículo o reembolsa la devolución.',
     'replacement_currency_not_offered' => 'La moneda del pedido ya no se ofrece, así que no se puede fijar el precio de un reemplazo en ella. Reembolsa la devolución.',
     'replacement_shipping_unavailable' => 'El reemplazo no se puede enviar a la dirección del pedido con el método de envío elegido. Elige otro método de envío.',
+    'return_fault_reason_required' => 'Indica por qué: si la tienda tuvo la culpa no coincide con lo que afirma el motivo de la devolución.',
 ];

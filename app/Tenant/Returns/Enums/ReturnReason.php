@@ -13,6 +13,8 @@ enum ReturnReason: string
 
     case WrongItem = 'wrong_item';
 
+    case Faulty = 'faulty';
+
     case NotAsDescribed = 'not_as_described';
 
     case DoesNotFit = 'does_not_fit';
@@ -22,11 +24,11 @@ enum ReturnReason: string
     case Other = 'other';
 
     /**
-     * The store's fault: shipping is offered back by default, and the store may require a photo.
+     * Whether the buyer's reason claims the store was at fault (damaged, the wrong item, faulty, or not as described): the store may require a photo, and staff confirm it or overrule it with a reason (OrderReturn::isStoresFault()).
      */
     public function isStoresFault(): bool
     {
-        return in_array($this, [self::Damaged, self::WrongItem], true);
+        return in_array($this, [self::Damaged, self::WrongItem, self::Faulty, self::NotAsDescribed], true);
     }
 
     /**

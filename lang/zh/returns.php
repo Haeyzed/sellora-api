@@ -12,6 +12,7 @@ return [
     'reasons' => [
         'damaged' => '到货时已损坏',
         'wrong_item' => '发错了商品',
+        'faulty' => '有缺陷或无法使用',
         'not_as_described' => '与描述不符',
         'does_not_fit' => '尺寸不合适',
         'changed_mind' => '改变主意',

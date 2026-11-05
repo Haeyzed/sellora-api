@@ -232,4 +232,5 @@ return [
     'replacement_out_of_stock' => 'Değişim ürünlerinden biri stokta yok. Başka bir ürün seçin ya da bunun yerine iadeyi geri ödeyin.',
     'replacement_currency_not_offered' => 'Siparişin para birimi artık sunulmuyor, bu yüzden değişim ürünü bu para biriminde fiyatlandırılamaz. Bunun yerine iadeyi geri ödeyin.',
     'replacement_shipping_unavailable' => 'Değişim ürünü seçilen kargo yöntemiyle siparişin adresine gönderilemez. Başka bir kargo yöntemi seçin.',
+    'return_fault_reason_required' => 'Nedenini belirtin: mağazanın kusurlu olup olmadığı iade nedeninin iddia ettiğinden farklı.',
 ];

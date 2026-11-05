@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tenant\Returns\Models;
 
+use App\Tenant\Catalog\Models\ProductVariant;
 use App\Tenant\Orders\Models\OrderLine;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
@@ -15,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $id
  * @property int $return_id
  * @property int $order_line_id
+ * @property int|null $replacement_variant_id The variant sent in place of these units in an exchange, as many of it; null for a refund.
  * @property int $quantity
  * @property int|null $restocked_quantity Null until inspected.
  * @property int|null $written_off_quantity Null until inspected.
@@ -22,6 +24,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property CarbonImmutable|null $updated_at
  * @property-read OrderReturn $orderReturn
  * @property-read OrderLine $orderLine
+ * @property-read ProductVariant|null $replacementVariant
  */
 final class ReturnLine extends Model
 {
@@ -44,6 +47,16 @@ final class ReturnLine extends Model
     }
 
     /**
+     * The variant sent in place of these units in an exchange, even once it is in the trash.
+     *
+     * @return BelongsTo<ProductVariant, $this>
+     */
+    public function replacementVariant(): BelongsTo
+    {
+        return $this->belongsTo(ProductVariant::class, 'replacement_variant_id')->withTrashed();
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array
@@ -51,6 +64,7 @@ final class ReturnLine extends Model
         return [
             'return_id' => 'integer',
             'order_line_id' => 'integer',
+            'replacement_variant_id' => 'integer',
             'quantity' => 'integer',
             'restocked_quantity' => 'integer',
             'written_off_quantity' => 'integer',

@@ -232,4 +232,5 @@ return [
     'replacement_out_of_stock' => 'Ɗaya daga cikin kayan musanya ya ƙare a ajiya. Zaɓi wani kaya, ko ka mayar da kuɗin abin da aka dawo da shi maimakon haka.',
     'replacement_currency_not_offered' => 'Ba a bayar da kuɗin odar kuma, don haka ba za a iya sa farashin musanya da shi ba. Mayar da kuɗin abin da aka dawo da shi maimakon haka.',
     'replacement_shipping_unavailable' => 'Ba za a iya aika musanyar zuwa adireshin odar da hanyar jigilar da aka zaɓa ba. Zaɓi wata hanyar jigila.',
+    'return_fault_reason_required' => 'Faɗi dalili: ko laifin shagon ne ya bambanta da abin da dalilin dawowar ya faɗa.',
 ];

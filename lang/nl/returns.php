@@ -12,6 +12,7 @@ return [
     'reasons' => [
         'damaged' => 'Beschadigd aangekomen',
         'wrong_item' => 'Verkeerd artikel gestuurd',
+        'faulty' => 'Defect of werkt niet',
         'not_as_described' => 'Niet zoals beschreven',
         'does_not_fit' => 'Past niet',
         'changed_mind' => 'Van gedachten veranderd',

@@ -12,6 +12,7 @@ return [
     'reasons' => [
         'damaged' => 'Kilifika kikiwa kimeharibika',
         'wrong_item' => 'Bidhaa isiyo sahihi ilitumwa',
+        'faulty' => 'Lina hitilafu au halifanyi kazi',
         'not_as_described' => 'Si kama ilivyoelezwa',
         'does_not_fit' => 'Hakinitoshi',
         'changed_mind' => 'Nimebadili nia',

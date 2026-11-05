@@ -12,6 +12,7 @@ return [
     'reasons' => [
         'damaged' => 'Ọ bịarutere mebiri emebi',
         'wrong_item' => 'E zitere ihe na-ezighi ezi',
+        'faulty' => 'O nwere ntụpọ ma ọ bụ anaghị arụ ọrụ',
         'not_as_described' => 'Ọ dịghị ka a kọwara ya',
         'does_not_fit' => 'Ọ dabaghị',
         'changed_mind' => 'Agbanwere m obi m',

@@ -12,6 +12,7 @@ return [
     'reasons' => [
         'damaged' => 'क्षतिग्रस्त पहुँचा',
         'wrong_item' => 'गलत सामान भेजा गया',
+        'faulty' => 'खराब है या काम नहीं करता',
         'not_as_described' => 'विवरण के अनुसार नहीं',
         'does_not_fit' => 'फ़िट नहीं होता',
         'changed_mind' => 'मेरा मन बदल गया',

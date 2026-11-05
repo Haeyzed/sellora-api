@@ -12,6 +12,7 @@ return [
     'reasons' => [
         'damaged' => '破損して届いた',
         'wrong_item' => '違う商品が届いた',
+        'faulty' => '不良品、または動作しない',
         'not_as_described' => '説明と異なる',
         'does_not_fit' => 'サイズが合わない',
         'changed_mind' => '気が変わった',

@@ -232,4 +232,5 @@ return [
     'replacement_out_of_stock' => 'Un articolo sostitutivo è esaurito. Scegli un altro articolo, oppure rimborsa il reso.',
     'replacement_currency_not_offered' => 'La valuta dell\'ordine non è più offerta, quindi non si può prezzare un sostituto in essa. Rimborsa invece il reso.',
     'replacement_shipping_unavailable' => 'Il sostituto non può essere spedito all\'indirizzo dell\'ordine con il metodo di spedizione scelto. Scegli un altro metodo di spedizione.',
+    'return_fault_reason_required' => 'Indica il motivo: la responsabilità del negozio è diversa da quanto afferma il motivo del reso.',
 ];
