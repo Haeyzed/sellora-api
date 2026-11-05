@@ -84,13 +84,14 @@ final class ReturnResource extends JsonResource
             /**
              * Each attempt to refund it, oldest first, when showing one return or after refunding it. "started": Payments not yet heard from; "refused": Payments refused it (refusal_code says why); "pending": not gone through yet; "in_review": Payments can't tell whether part went through, and staff must look; "succeeded"; "failed": nothing went back, so it can be tried again; "mixed": part went back and part failed, for staff to settle from the refund.
              *
-             * @var list<array{attempt: int, status: string, refusal_code: string|null, refund: string|null, shipping: bool, withheld: int, withheld_reason: string|null, at: string}>
+             * @var list<array{attempt: int, status: string, refusal_code: string|null, refund: string|null, destination: string, shipping: bool, withheld: int, withheld_reason: string|null, at: string}>
              */
             'refunds' => $this->whenLoaded('refunds', fn (): array => array_values($this->refunds->map(static fn (ReturnRefund $attempt): array => [
                 'attempt' => $attempt->attempt,
                 'status' => $attempt->status->value,
                 'refusal_code' => $attempt->refusal_code,
                 'refund' => $attempt->refund?->public_id,
+                'destination' => $attempt->destination,
                 'shipping' => $attempt->shipping,
                 'withheld' => $attempt->withheld_amount,
                 'withheld_reason' => $attempt->withheld_reason,

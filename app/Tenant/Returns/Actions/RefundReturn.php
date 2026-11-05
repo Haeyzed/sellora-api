@@ -11,6 +11,7 @@ use App\Tenant\Checkout\Enums\PaymentHoldStatus;
 use App\Tenant\Checkout\Models\CheckoutPaymentHold;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Orders\Models\Order;
+use App\Tenant\Payments\Actions\FindRefundDestinations;
 use App\Tenant\Payments\Actions\RefundOrder;
 use App\Tenant\Payments\Data\RefundRequest;
 use App\Tenant\Payments\Exceptions\RefundExceedsRefundableException;
@@ -27,6 +28,14 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Staff refunding an inspected return (or an approved one whose buyer keeps the items) through Payments: every unit that came back, at what the buyer paid for it, with shipping if asked (by default when the store was at fault: damaged or the wrong item), less anything kept back with a reason. Payments decides where the money comes from and when it went back; the return completes once it did.
+ *
+ * It goes where the customer chose (Step 18b): back to the original payment
+ * unless they chose a module's destination, such as store credit. The choice
+ * is saved on the attempt; a new attempt, made once the last one definitely
+ * got nothing back (for example a destination that clearly refused), follows
+ * whatever the customer chose again by then. The choice only covers what was
+ * paid with real money: a return needing a module's payment method's money
+ * is refused as before.
  *
  * Never refunds twice. The attempt is saved, under the return's lock, before
  * Payments is asked, and Payments is asked outside any transaction (it calls
@@ -107,6 +116,8 @@ final readonly class RefundReturn
             'shipping' => $shipping ?? $locked->reason->isStoresFault(),
             'withheld_amount' => $withheld?->minorAmount() ?? 0,
             'withheld_reason' => $withheld === null ? null : $withheldReason,
+            // The customer's latest choice; asking again under this attempt's key sends the same.
+            'destination' => $locked->latestRefundChoice()->destination ?? FindRefundDestinations::ORIGINAL_PAYMENT,
             'requested_by_type' => $by->type,
             'requested_by_id' => $by->publicId,
         ]))->save();
@@ -123,6 +134,7 @@ final readonly class RefundReturn
             idempotencyKey: $attempt->idempotency_key,
             withheld: $attempt->withheld_amount === 0 ? null : Money::ofMinor($attempt->withheld_amount, $order->currency),
             withheldReason: $attempt->withheld_reason,
+            destination: $attempt->destination,
         );
     }
 

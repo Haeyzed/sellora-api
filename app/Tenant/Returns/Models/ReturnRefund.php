@@ -23,6 +23,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property bool $shipping
  * @property int $withheld_amount In minor units of the order's currency.
  * @property string|null $withheld_reason
+ * @property string $destination Where it asks the refund to go: "original_payment" or a module's destination key, the customer's choice when it was saved.
  * @property string $requested_by_type
  * @property string $requested_by_id
  * @property CarbonImmutable|null $created_at

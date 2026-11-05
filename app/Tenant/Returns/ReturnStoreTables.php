@@ -26,7 +26,7 @@ final class ReturnStoreTables implements ClassifiesStoreTables
 
         $registry->table('return_refunds', include: [
             'id', 'return_id', 'attempt', 'idempotency_key', 'refund_id', 'status', 'refusal_code', 'shipping', 'withheld_amount', 'withheld_reason',
-            'requested_by_type', 'requested_by_id', 'created_at', 'updated_at',
+            'destination', 'requested_by_type', 'requested_by_id', 'created_at', 'updated_at',
         ]);
 
         $registry->table('return_refund_choices', include: ['id', 'return_id', 'destination', 'chosen_by_type', 'chosen_by_id', 'note', 'anonymised_at', 'created_at']);

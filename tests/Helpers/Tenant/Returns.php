@@ -129,6 +129,14 @@ function putStoreCreditDestinationIn(string $state): void
 }
 
 /**
+ * The customer choosing, through the API, where their return's refund goes.
+ */
+function chooseRefundDestinationAsCustomer(OrderReturn $return, Customer $customer, string $destination): TestResponse
+{
+    return customerReturnRequest('PUT', "returns/{$return->public_id}/refund-destination", $customer, ['destination' => $destination]);
+}
+
+/**
  * Staff refunding units of the test store's order straight through Payments, to the destination given (the fake store credit unless said otherwise), as Returns does for a customer's choice. Returns the refund freshly read with its parts.
  *
  * @param  array<string, int>  $units  Units by order line public ID.
