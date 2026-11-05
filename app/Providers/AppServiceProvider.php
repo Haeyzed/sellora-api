@@ -220,6 +220,7 @@ use App\Tenant\Payments\PaymentWebhookEventRetention;
 use App\Tenant\Payments\PaymentWebhookPayloadRetention;
 use App\Tenant\Payments\PaymentWebhookReceiver;
 use App\Tenant\Payments\PendingPaymentSweep;
+use App\Tenant\Payments\RefundDestinations;
 use App\Tenant\Payments\Services\RefundCredits;
 use App\Tenant\Pricing\Actions\CalculateTax;
 use App\Tenant\Pricing\Enums\PricingPermission;
@@ -374,6 +375,8 @@ final class AppServiceProvider extends ServiceProvider
 
         // Gateway integrations register themselves here; webhooks find their store through Landlord\Integrations.
         $this->app->singleton(PaymentGatewayRegistry::class);
+        // Where refunds can go besides the original payment: modules add theirs from their service providers.
+        $this->app->singleton(RefundDestinations::class);
         $this->app->bind(WebhookEndpoints::class, CentralWebhookEndpoints::class);
         $this->app->bind(PaymentWebhooks::class, PaymentWebhookReceiver::class);
         $this->app->bind(StorePaymentChecks::class, PendingPaymentSweep::class);

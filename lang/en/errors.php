@@ -247,5 +247,6 @@ return [
     'return_inspection_mismatch' => 'Say what became of every unit that came back: for each line, restocked and written off must add up to its quantity.',
     'returned_units_no_longer_on_hand' => 'Some units put back on the shelf from this return were sold or held since, so they can\'t go back to the buyer.',
     'return_refund_module_held' => 'Part of this order was paid with a method that can only give money back when the whole order is cancelled. Refund what was paid otherwise by amount from the order\'s payments.',
+    'refund_destination_refused' => 'The chosen refund destination refused this refund, so nothing was paid out. Choose again where the refund goes.',
 
 ];

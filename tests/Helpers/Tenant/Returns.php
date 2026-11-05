@@ -83,6 +83,44 @@ function returnsStore(string $subdomain = 'first-store'): array
 }
 
 /**
+ * Registers the fake store-credit refund destination (module "wallet") and puts the module in the state given for the test store: "enabled", "locked" (removed by a downgrade), "disabled" (switched off by the merchant), "suspended" (the store suspended) or "unavailable". The store keeps no storage limit.
+ */
+function useStoreCreditDestination(string $state = 'enabled', bool $register = true): void
+{
+    if ($register) {
+        $features = app(App\Shared\Features\FeatureRegistry::class);
+
+        if (! $features->has(Tests\Fixtures\Payments\FakeStoreCreditDestination::FEATURE)) {
+            $features->register(new App\Shared\Features\FeatureDefinition(Tests\Fixtures\Payments\FakeStoreCreditDestination::FEATURE, App\Shared\Features\FeatureKind::Module));
+        }
+
+        Tests\Fixtures\Payments\FakeStoreCreditDestination::reset();
+        app(App\Tenant\Payments\RefundDestinations::class)->add(Tests\Fixtures\Payments\FakeStoreCreditDestination::class, Tests\Fixtures\Payments\FakeStoreCreditDestination::FEATURE);
+    }
+
+    putStoreCreditDestinationIn($state);
+}
+
+/**
+ * Puts the fake store-credit destination's module ("wallet") in the state given for the test store, as useStoreCreditDestination() names them.
+ */
+function putStoreCreditDestinationIn(string $state): void
+{
+    $module = Tests\Fixtures\Payments\FakeStoreCreditDestination::FEATURE;
+    $limits = ['storage_in_megabytes' => null];
+    $storeId = test()->store->getTenantKey();
+
+    test()->featureSource->give($storeId, match ($state) {
+        'enabled' => FakeFeatureSource::snapshot(entitled: [$module], limits: $limits),
+        'locked' => FakeFeatureSource::snapshot(removed: [$module], limits: $limits),
+        'disabled' => FakeFeatureSource::snapshot(entitled: [$module], merchantDisabled: [$module], limits: $limits),
+        'suspended' => FakeFeatureSource::snapshot(entitled: [$module], limits: $limits, isStoreSuspended: true),
+        'unavailable' => FakeFeatureSource::snapshot(limits: $limits),
+    });
+    app(App\Shared\Features\Features::class)->forget($storeId);
+}
+
+/**
  * A paid order in the test store, by the customer given or else a guest, whose lines each shipped in one shipment: delivered (at the time given, or now), or only shipped when $deliver is false. Paid through the fake gateway (connected first, in test mode for a test order) when asked, or by a bank transfer staff recorded as received, so it can be refunded; else only marked paid. Returns it freshly read with its lines, by position.
  *
  * A bank transfer is refunded by hand, at once, without a gateway: what a

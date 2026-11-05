@@ -6,6 +6,7 @@ use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
 use App\Shared\Http\Middleware\UseDashboardLanguage;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Identity\Models\StaffMember;
+use App\Tenant\Returns\Http\Controllers\CustomerRefundDestinationController;
 use App\Tenant\Returns\Http\Controllers\CustomerReturnController;
 use App\Tenant\Returns\Http\Controllers\GuestReturnController;
 use App\Tenant\Returns\Http\Controllers\ReturnController;
@@ -30,6 +31,8 @@ Route::middleware(['auth:'.Customer::GUARD, UseStoreLanguage::class])->name('cus
     Route::post('customer/orders/{order}/returns', [CustomerReturnController::class, 'store'])->middleware('throttle:return-requests')->name('orders.returns.store');
 
     Route::middleware('throttle:api')->group(static function (): void {
+        Route::get('customer/orders/{order}/refund-destinations', [CustomerRefundDestinationController::class, 'forOrder'])->name('orders.refund-destinations.index');
+        Route::get('customer/returns/{return}/refund-destinations', [CustomerRefundDestinationController::class, 'forReturn'])->name('returns.refund-destinations.index');
         Route::get('customer/returns', [CustomerReturnController::class, 'index'])->name('returns.index');
         Route::get('customer/returns/{return}', [CustomerReturnController::class, 'show'])->name('returns.show');
         Route::post('customer/returns/{return}/cancel', [CustomerReturnController::class, 'cancel'])->name('returns.cancel');

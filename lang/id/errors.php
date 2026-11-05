@@ -224,4 +224,5 @@ return [
     'return_inspection_mismatch' => 'Sebutkan apa yang terjadi pada setiap unit yang kembali: untuk setiap baris, jumlah yang dikembalikan ke stok dan yang dihapusbukukan harus sama dengan kuantitasnya.',
     'returned_units_no_longer_on_hand' => 'Beberapa unit dari retur ini yang dikembalikan ke rak sudah terjual atau ditahan sejak itu, jadi tidak bisa dikembalikan ke pembeli.',
     'return_refund_module_held' => 'Sebagian pesanan ini dibayar dengan metode yang hanya mengembalikan uang jika seluruh pesanan dibatalkan. Kembalikan yang dibayar dengan cara lain sebagai jumlah dari pembayaran pesanan.',
+    'refund_destination_refused' => 'Tujuan pengembalian dana yang dipilih menolak pengembalian ini, jadi tidak ada yang dibayarkan. Pilih lagi ke mana pengembalian dana dikirim.',
 ];

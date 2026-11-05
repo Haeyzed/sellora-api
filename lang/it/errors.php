@@ -224,4 +224,5 @@ return [
     'return_inspection_mismatch' => 'Indica cosa è successo a ogni unità tornata: per ogni riga, le unità rimesse a magazzino e quelle stralciate devono sommare alla sua quantità.',
     'returned_units_no_longer_on_hand' => 'Alcune unità di questo reso rimesse a scaffale sono state vendute o riservate nel frattempo, quindi non possono tornare all\'acquirente.',
     'return_refund_module_held' => 'Parte di questo ordine è stata pagata con un metodo che restituisce denaro solo se l\'intero ordine viene annullato. Rimborsa il resto come importo dai pagamenti dell\'ordine.',
+    'refund_destination_refused' => 'La destinazione di rimborso scelta ha rifiutato questo rimborso, quindi non è stato pagato nulla. Scegli di nuovo dove va il rimborso.',
 ];

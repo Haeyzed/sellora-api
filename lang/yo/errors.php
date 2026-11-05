@@ -224,4 +224,5 @@ return [
     'return_inspection_mismatch' => 'Sọ ohun tí ó ṣẹlẹ̀ sí ẹyọ kọ̀ọ̀kan tí ó padà: fún ìlà kọ̀ọ̀kan, àwọn tí a dá padà sí ọjà àti àwọn tí a pa rẹ́ gbọ́dọ̀ jẹ́ iye rẹ̀ lápapọ̀.',
     'returned_units_no_longer_on_hand' => 'A ti ta tàbí dá àwọn ẹyọ kan tí a dá padà sí pẹpẹ láti inú ìdápadà yìí dúró láti ìgbà náà, nítorí náà wọn kò lè padà sọ́dọ̀ olùrà.',
     'return_refund_module_held' => 'A san apá kan ìbéèrè yìí pẹ̀lú ọ̀nà tí ó máa ń dá owó padà nígbà tí a bá fagilé gbogbo ìbéèrè náà nìkan. Dá èyí tí a san ní ọ̀nà mìíràn padà gẹ́gẹ́ bí iye láti inú àwọn ìsanwó ìbéèrè náà.',
+    'refund_destination_refused' => 'Ibi tí a yàn fún ìdápadà owó kọ ìdápadà yìí, nítorí náà a kò san nǹkan kan. Tún yan ibi tí ìdápadà owó náà yóò lọ.',
 ];

@@ -224,4 +224,5 @@ return [
     'return_inspection_mismatch' => 'Sema kilichotokea kwa kila kipande kilichorudi: kwa kila mstari, vilivyorudishwa stoo na vilivyofutwa lazima vijumlishe idadi yake.',
     'returned_units_no_longer_on_hand' => 'Baadhi ya vipande vya marejesho haya vilivyorudishwa rafuni vimeuzwa au kuhifadhiwa tangu hapo, kwa hivyo haviwezi kurudi kwa mnunuzi.',
     'return_refund_module_held' => 'Sehemu ya oda hii ililipwa kwa njia inayorudisha pesa tu oda nzima ikighairiwa. Rudisha kilicholipwa kwa njia nyingine kama kiasi kutoka kwa malipo ya oda.',
+    'refund_destination_refused' => 'Mahali palipochaguliwa pa kurudishiwa pesa pamekataa marejesho haya, kwa hiyo hakuna kilicholipwa. Chagua tena marejesho yaende wapi.',
 ];

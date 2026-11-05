@@ -224,4 +224,5 @@ return [
     'return_inspection_mismatch' => 'Kwuo ihe mere otu ọ bụla laghachiri: maka ahịrị ọ bụla, ndị eweghachiri n\'ngwongwo na ndị ehichapụrụ ga-ahakọta ọnụ ọgụgụ ya.',
     'returned_units_no_longer_on_hand' => 'Ụfọdụ otu sitere na nlọghachi a eweghachiri n\'shelf erela ma ọ bụ ejidere kemgbe, ya mere ha enweghị ike ịlaghachi n\'aka onye zụrụ.',
     'return_refund_module_held' => 'Akwụrụ ụfọdụ n\'ime ịtụnye a site n\'ụzọ na-eweghachi ego naanị mgbe a kagburu ịtụnye ahụ niile. Weghachite ihe akwụrụ n\'ụzọ ndị ọzọ dị ka ego site na ịkwụ ụgwọ nke ịtụnye ahụ.',
+    'refund_destination_refused' => 'Ebe a họọrọ ka ego ahụ laghachi jụrụ nkwụghachi a, ya mere ọ dịghị ihe a kwụrụ. Họrọ ọzọ ebe nkwụghachi ahụ ga-aga.',
 ];

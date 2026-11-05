@@ -224,4 +224,5 @@ return [
     'return_inspection_mismatch' => 'Geri gelen her birime ne olduğunu belirtin: her satırda stoğa geri konan ve zarar yazılan birimlerin toplamı miktarına eşit olmalıdır.',
     'returned_units_no_longer_on_hand' => 'Bu iadeden rafa geri konan bazı birimler o zamandan beri satıldı veya ayrıldı, bu yüzden alıcıya geri gönderilemez.',
     'return_refund_module_held' => 'Bu siparişin bir kısmı, yalnızca siparişin tamamı iptal edildiğinde para iade eden bir yöntemle ödendi. Geri kalanını siparişin ödemelerinden tutar olarak iade edin.',
+    'refund_destination_refused' => 'Seçilen iade yeri bu iadeyi reddetti, bu yüzden hiçbir şey ödenmedi. İadenin nereye gideceğini yeniden seçin.',
 ];
