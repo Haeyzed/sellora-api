@@ -39,6 +39,22 @@ every store, with its error scrubbed of a database error's SQL and values.
 The daily retention purge deletes it after 30 days
 (`RETENTION_FAILED_JOBS_DAYS`), because the job's own data can name a buyer.
 
+Queued emails are encrypted with `APP_KEY` while they wait in the queue and
+in `failed_jobs`, because they carry links with tokens, codes, email
+addresses and names. What that means when deploying:
+
+- **Jobs queued or failed before encryption** still run: a worker reads a
+  job stored in plain text as before, and decrypts the rest. Those stored in
+  plain text stay so; retrying one queues it again unchanged. They leave
+  `failed_jobs` with the 30-day purge, and none are re-encrypted.
+- **Workers still running the previous release** can run encrypted jobs too,
+  as long as they share the same `APP_KEY`; `queue:restart` above moves them
+  to the new code.
+- **Changing `APP_KEY`:** put the old key in `APP_PREVIOUS_KEYS`
+  (comma-separated) until every job queued before the change has run or left
+  `failed_jobs`. Without it, those jobs can't be decrypted and fail; so does
+  everything else encrypted with the old key.
+
 ## Scheduler
 
 Run `php artisan schedule:run` every minute (retention purges, purge

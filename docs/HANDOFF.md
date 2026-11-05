@@ -1,7 +1,7 @@
 # Handover
 
-**Date:** 3 November 2026.
-**Describes:** `main` at `cb3e372`, and the branch `scrub-error-reports`
+**Date:** 5 November 2026.
+**Describes:** `main` at `53515da`, and the branch `encrypt-queued-messages`
 started from it.
 
 This is for continuing the work on a new PC: for the project owner, and for
@@ -15,30 +15,30 @@ disagrees with `git log`, GitHub or CLAUDE.md, they win.
 
 ## 1. Where things stand
 
-**`main`** is at `cb3e372` ("Leave the helper scripts' output folder out of
-Pint"). CI passed on it: run 41676650226, all three jobs (Pest on
-PostgreSQL 18 and Redis; Pint, Larastan and composer audit; Scramble).
+**`main`** is at `53515da` ("Document how errors are kept free of personal
+data in production"). CI passed on it: run 41862033454, all three jobs (Pest
+on PostgreSQL 18 and Redis; Pint, Larastan and composer audit; Scramble).
 
-**What was finished last:** `handover-scripts`, merged into `main` by
-fast-forward:
+**What was finished last:** `scrub-error-reports` (the error scrubbing that
+was item 2a), merged into `main` by fast-forward:
 
 | Commit | What |
 |---|---|
-| `c3ad6db` | Caps how many refund parts one sweep run checks for credit notes (`orders.credit_note_checks_per_run`) |
-| `fffe4e7` | Adds the helper scripts in [scripts/](../scripts) |
-| `0a07e9d` | Adds this handover and the Windows setup steps in the [documentation home](README.md) |
-| `7b706d2` | The setup steps say to use the port PostgreSQL runs on (default 5432) |
-| `cb3e372` | Pint leaves the helper scripts' output folder (`scripts/output`) alone |
+| `b7172ee` | Database errors are scrubbed before they are reported or shown |
+| `9b8b8c7` | ...and in what the console prints |
+| `3b0b080` | Reported errors go to Sentry, scrubbed, and only with a DSN |
+| `f7fd529` | Failed jobs' errors are scrubbed; failed jobs are purged after 30 days |
+| `53515da` | [Documentation home](README.md): errors and personal data in production |
 
-Before that: the third round of fixes on `fix-payment-holds` (`8e80259` to
-`f0432da`).
+Before that: `handover-scripts` (`c3ad6db` to `cb3e372`), which added the
+helper scripts and this handover.
 
 **Branches:**
 
 | Branch | State |
 |---|---|
-| `scrub-error-reports` | **In progress:** item 2a below. Not merged |
-| `handover-scripts` | Merged; kept on GitHub |
+| `encrypt-queued-messages` | **In progress:** item 2a below. Not merged |
+| `scrub-error-reports`, `handover-scripts` | Merged; kept on GitHub |
 | `step-10-customers` to `step-18-returns`, `step-10b-social-sign-in`, `step-15b-invoices`, `step-16b-paystack` | Merged; kept on GitHub |
 | `docs-schema-comments`, `fix-token-links`, `fix-payment-holds` | Merged; kept on GitHub |
 | `ci-proof-docs`, `ci-proof-pint`, `ci-proof-stan` | Gone, as intended. They existed only on the old laptop (each broke one CI check on purpose, to prove CI catches it) and were never meant to be kept |
@@ -50,54 +50,22 @@ Before that: the third round of fixes on `fix-payment-holds` (`8e80259` to
 Each item is its own branch, starts only when the owner says so, and ends
 with a stop for review (CLAUDE.md section 17).
 
-### a. Error reports without personal data
+### a. Queued emails encrypted (`encrypt-queued-messages`)
 
-**Why:** a database error's message holds the SQL, its values and
-PostgreSQL's "Failing row" detail, which can include a buyer's email. Today
-that text reaches error reports, logs, console output, the debug response
-and failed jobs.
+Every queued notification implements Laravel's ShouldBeEncrypted, so the links with
+tokens, codes, emails and names they carry are unreadable in the queue and
+in `failed_jobs`; an architecture test requires it of every queued
+notification, mailable and listener. The branch also proves the Open
+Exchange Rates app ID never leaks from a failed refresh, and lets
+`scripts/run-suite.ps1` pick a safe number of workers. What deploying it
+means for jobs already stored is in [deployment](deployment.md).
 
-**Where it escapes:**
+### b. Permission labels
 
-- `report($exception)` in `CheckPendingPaymentsCommand`,
-  `ReconcileStockLevelsCommand`, `ReconcileInvoiceBalancesCommand`,
-  `IssueMissingTaxDocumentsCommand`, `ReleaseExpiredReservationsCommand`,
-  `SyncPermissionsCommand`, `BuildStoreExport`, `IssueRefundCreditNote`,
-  `MissingTaxDocumentSweep` and `PaymentHolds` (settling and refunding).
-- Every uncaught exception: `withExceptions` in
-  [bootstrap/app.php](../bootstrap/app.php) only sets how errors are shown.
-- Sentry's "no personal data" setting doesn't clean exception messages.
-- Console output: the exception message printed by
-  `CheckPendingPaymentsCommand`, `ReconcileStockLevelsCommand`,
-  `IssueMissingTaxDocumentsCommand`, `ReleaseExpiredReservationsCommand`,
-  `SyncPermissionsCommand` and `AddDatabaseServerCommand`.
-- `ApiErrorRenderer` returns the message when debug is on.
-- `failed_jobs.exception`, which stores the whole exception text.
-- To check first: Sentry's SQL breadcrumbs and bindings, and Telescope.
+The next small branch, from the section 10 rule that every permission gets
+a translated label, description and group. Not started.
 
-**The plan:**
-
-1. One central scrubber in `App\Shared\Exceptions`, grown from
-   `OrderPaymentsNotRecordedException` (its describe method): from a
-   database error it keeps only the SQLSTATE code and the constraint name.
-2. A `map` in the exceptions setup in
-   [bootstrap/app.php](../bootstrap/app.php) turns every database query
-   error into a scrubbed exception with no link back to the original, so
-   `report()` and uncaught errors are both covered in one place. Code that
-   catches the original error first, such as `VariantDetails`, keeps
-   working.
-3. A Sentry `before_send` hook as a backstop.
-4. The console commands above and the debug response use the scrubber.
-5. `failed_jobs.exception` is scrubbed before it is stored.
-6. Check whether the store export includes `failed_jobs`, and say so in the
-   report either way.
-
-**Tests:** force a constraint failure on a row holding a buyer's email, and
-assert the email is absent from the log, the Sentry event, the console
-output, the debug response and the failed job. Each path gets its own
-probe.
-
-### b. Step 18b: exchanges and the refund-destination extension point
+### c. Step 18b: exchanges and the refund-destination extension point
 
 From CLAUDE.md sections 17 and 18. An exchange is the return plus a linked
 replacement order made by a staff action that reuses checkout's pricing,
@@ -107,12 +75,12 @@ payment is core's default and only destination, and modules add others
 through a core contract. Returns today is described in
 [Returns](tenant/returns.md).
 
-### c. Steps 19, 20 and 21
+### d. Steps 19, 20 and 21
 
 Storefront, then Messaging (email first, see [Messaging](tenant/messaging.md)),
 then Data tools, as CLAUDE.md section 17 lists them.
 
-### d. The frontend, after core
+### e. The frontend, after core
 
 The frontends come after the core API is done. The frontend repository is
 `Haeyzed/sellora-frontend`.
@@ -133,8 +101,9 @@ The frontends come after the core API is done. The frontend repository is
 | **Open decisions** (themes, Horizon, search engine, platform domain, billing for merchants outside Africa) | CLAUDE.md section 16 |
 | **Invoice check false alarms:** it can flag a refund whose credit note is still on its way; the grace period narrows this but doesn't remove it | Only here and in earlier review reports |
 | **A credit note edited outside the app** can leave tax behind that the final credit can't take back; the daily invoice check reports it | Only here and in earlier review reports |
-| **Other errors that can quote personal data:** errors are scrubbed only when they are, or were caused by, a database error. Others pass with their message, for example a mail error quoting the recipient's address. Each needs its own handling in `ErrorScrubber`, one kind of error at a time | Only here (found in item 2a) |
-| **Telescope stores exception messages** in full, including a database error's SQL and values. It runs only locally (never in production or staging with real data), so it was left out of item 2a | Only here |
+| **Other errors that can quote personal data:** errors are scrubbed only when they are, or were caused by, a database error. Others pass with their message, for example a mail error quoting the recipient's address, which also lands in `failed_jobs.exception` (encryption covers the job's data, not its error). Each needs its own handling in `ErrorScrubber`, one kind of error at a time | Only here (found in `scrub-error-reports`) |
+| **Telescope stores exception messages** in full, including a database error's SQL and values. It runs only locally (never in production or staging with real data), so it was left out of `scrub-error-reports` | Only here |
+| **Plain-text queued emails** written before `encrypt-queued-messages` is deployed stay readable in `failed_jobs` until the 30-day purge; they are not re-encrypted | [Deployment](deployment.md) |
 | **The pre-commit hook** was tried by hand only on Windows (PowerShell and Git Bash); CI now runs the hook check (`composer ci:hook`) on Linux on every push | [CI workflow](../.github/workflows/ci.yml) |
 
 ## 4. New PC setup (Windows PowerShell)
