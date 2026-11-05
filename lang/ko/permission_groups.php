@@ -15,6 +15,7 @@ return [
     'payments' => '결제',
     'delivery' => '배달',
     'returns' => '반품',
+    'storefront' => '스토어프런트',
     'stores' => '스토어',
     'legal' => '법률 문서',
 ];

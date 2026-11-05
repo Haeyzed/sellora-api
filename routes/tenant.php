@@ -29,3 +29,4 @@ require __DIR__.'/tenant/payments.php';
 require __DIR__.'/tenant/shipping.php';
 require __DIR__.'/tenant/delivery.php';
 require __DIR__.'/tenant/returns.php';
+require __DIR__.'/tenant/storefront.php';

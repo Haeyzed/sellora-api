@@ -207,4 +207,14 @@ return [
             'description' => 'Confirmar el cambio de una devolución: crea su pedido de reemplazo y liquida lo que valen los artículos devueltos.',
         ],
     ],
+    'storefront' => [
+        'view' => [
+            'label' => 'Ver el contenido de la tienda',
+            'description' => 'Ver las páginas, los menús, los banners y los ajustes de la tienda online.',
+        ],
+        'manage' => [
+            'label' => 'Gestionar el contenido de la tienda',
+            'description' => 'Añadir, cambiar, publicar y quitar las páginas, los menús y los banners de la tienda, y cambiar los ajustes de la tienda online.',
+        ],
+    ],
 ];

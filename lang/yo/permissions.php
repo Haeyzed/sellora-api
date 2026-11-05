@@ -207,4 +207,14 @@ return [
             'description' => 'Jẹ́rìí sí pàṣípààrọ̀ ìdápadà kan: èyí ń ṣe ọjà ìrọ́pò rẹ̀, ó sì ń yanjú iye àwọn ọjà tí a dá padà.',
         ],
     ],
+    'storefront' => [
+        'view' => [
+            'label' => 'Wo àkóónú ojú ìtajà',
+            'description' => 'Wo àwọn ojú-ìwé, mẹ́nù, àsíá àti ètò ojú ìtajà.',
+        ],
+        'manage' => [
+            'label' => 'Ṣàkóso àkóónú ojú ìtajà',
+            'description' => 'Ṣàfikún, yípadà, tẹ̀jáde kí o sì yọ àwọn ojú-ìwé, mẹ́nù àti àsíá ìtajà kúrò, kí o sì yí ètò ojú ìtajà padà.',
+        ],
+    ],
 ];

@@ -15,6 +15,7 @@ return [
     'payments' => 'Biyan kuɗi',
     'delivery' => 'Isar da kaya',
     'returns' => 'Kayan da aka dawo',
+    'storefront' => 'Shagon yanar gizo',
     'stores' => 'Shaguna',
     'legal' => 'Takardun shari\'a',
 ];

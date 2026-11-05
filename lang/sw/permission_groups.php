@@ -15,6 +15,7 @@ return [
     'payments' => 'Malipo',
     'delivery' => 'Uwasilishaji',
     'returns' => 'Marejesho',
+    'storefront' => 'Duka la mtandaoni',
     'stores' => 'Maduka',
     'legal' => 'Nyaraka za kisheria',
 ];

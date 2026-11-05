@@ -213,4 +213,14 @@ return [
             'description' => 'Confirm a return\'s exchange: this places its replacement order and settles what the returned items are worth.',
         ],
     ],
+    'storefront' => [
+        'view' => [
+            'label' => 'View storefront content',
+            'description' => 'See the store\'s pages, menus, banners and storefront settings.',
+        ],
+        'manage' => [
+            'label' => 'Manage storefront content',
+            'description' => 'Add, change, publish and remove the store\'s pages, menus and banners, and change the storefront settings.',
+        ],
+    ],
 ];

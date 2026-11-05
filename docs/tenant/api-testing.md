@@ -69,7 +69,7 @@ the response says which language was used.
 
 ## Endpoint cURL reference
 
-The following commands cover all 333 operations in the current tenant
+The following commands cover all 338 operations in the current tenant
 Scramble OpenAPI export, including the shared geography endpoints available
 on the store domain. Request bodies include required fields (or one
 representative field when all are optional); values such as IDs, email
@@ -3199,6 +3199,53 @@ curl.exe --request GET "${StoreBase}/catalog/products" `
 ```powershell
 curl.exe --request GET "${StoreBase}/catalog/products/${Slug}" `
   --header 'Accept: application/json'
+```
+
+#### StorefrontSeo
+
+**GET** `/storefront/seo` — public. Show the storefront's search engine settings
+
+```powershell
+curl.exe --request GET "${StoreBase}/storefront/seo" `
+  --header 'Accept: application/json' `
+  --header 'Accept-Language: fr'
+```
+
+#### StorefrontSettings
+
+**GET** `/staff/storefront/settings` — staff bearer token. Show the storefront settings (`storefront.view`)
+
+```powershell
+curl.exe --request GET "${StoreBase}/staff/storefront/settings" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
+**PATCH** `/staff/storefront/settings` — staff bearer token. Change the storefront settings (`storefront.manage`)
+
+```powershell
+curl.exe --request PATCH "${StoreBase}/staff/storefront/settings" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw '{"seo_title_pattern":"{title} · {store}","seo_description":{"en":"Handmade fabrics"},"robots":"index_follow"}'
+```
+
+**POST** `/staff/storefront/settings/share-image` — staff bearer token. Set the share image (`storefront.manage`; multipart)
+
+```powershell
+curl.exe --request POST "${StoreBase}/staff/storefront/settings/share-image" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken" `
+  --form 'image=@share.png'
+```
+
+**DELETE** `/staff/storefront/settings/share-image` — staff bearer token. Remove the share image (`storefront.manage`)
+
+```powershell
+curl.exe --request DELETE "${StoreBase}/staff/storefront/settings/share-image" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
 ```
 
 #### StoreLogo

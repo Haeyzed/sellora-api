@@ -15,6 +15,7 @@ return [
     'payments' => 'Pagamentos',
     'delivery' => 'Entregas',
     'returns' => 'Devoluções',
+    'storefront' => 'Vitrine da loja',
     'stores' => 'Lojas',
     'legal' => 'Documentos legais',
 ];

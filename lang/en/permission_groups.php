@@ -20,6 +20,7 @@ return [
     'payments' => 'Payments',
     'delivery' => 'Delivery',
     'returns' => 'Returns',
+    'storefront' => 'Storefront',
     'stores' => 'Stores',
     'legal' => 'Legal documents',
 ];

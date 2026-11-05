@@ -15,6 +15,7 @@ return [
     'payments' => 'भुगतान',
     'delivery' => 'डिलीवरी',
     'returns' => 'रिटर्न',
+    'storefront' => 'स्टोरफ़्रंट',
     'stores' => 'स्टोर',
     'legal' => 'कानूनी दस्तावेज़',
 ];

@@ -34,4 +34,26 @@ trait ValidatesStoreTranslations
                 ->validate($attribute, $value, $fail);
         };
     }
+
+    /**
+     * A translated field's validated text, by language (null for a language to remove), or null when the field wasn't sent or was sent as null.
+     *
+     * @return array<string, string|null>|null
+     */
+    protected function validatedTranslations(string $key): ?array
+    {
+        $texts = $this->validated($key);
+
+        if (! is_array($texts)) {
+            return null;
+        }
+
+        $translations = [];
+
+        foreach ($texts as $locale => $text) {
+            $translations[strval($locale)] = is_string($text) ? $text : null;
+        }
+
+        return $translations;
+    }
 }

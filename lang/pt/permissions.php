@@ -207,4 +207,14 @@ return [
             'description' => 'Confirmar a troca de uma devolução: cria o pedido de substituição e liquida o valor dos artigos devolvidos.',
         ],
     ],
+    'storefront' => [
+        'view' => [
+            'label' => 'Ver o conteúdo da vitrine',
+            'description' => 'Ver as páginas, os menus, os banners e as configurações da vitrine da loja.',
+        ],
+        'manage' => [
+            'label' => 'Gerir o conteúdo da vitrine',
+            'description' => 'Adicionar, alterar, publicar e remover as páginas, os menus e os banners da loja, e alterar as configurações da vitrine.',
+        ],
+    ],
 ];

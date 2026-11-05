@@ -15,6 +15,7 @@ return [
     'payments' => 'Płatności',
     'delivery' => 'Dostawa',
     'returns' => 'Zwroty',
+    'storefront' => 'Witryna sklepu',
     'stores' => 'Sklepy',
     'legal' => 'Dokumenty prawne',
 ];

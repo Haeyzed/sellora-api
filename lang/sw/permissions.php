@@ -207,4 +207,14 @@ return [
             'description' => 'Thibitisha ubadilishaji wa urudishaji: hii huunda agizo la kubadilisha na kutatua thamani ya bidhaa zilizorudishwa.',
         ],
     ],
+    'storefront' => [
+        'view' => [
+            'label' => 'Kuona maudhui ya duka la mtandaoni',
+            'description' => 'Kuona kurasa, menyu, mabango na mipangilio ya duka la mtandaoni.',
+        ],
+        'manage' => [
+            'label' => 'Kusimamia maudhui ya duka la mtandaoni',
+            'description' => 'Kuongeza, kubadilisha, kuchapisha na kuondoa kurasa, menyu na mabango ya duka, na kubadilisha mipangilio ya duka la mtandaoni.',
+        ],
+    ],
 ];

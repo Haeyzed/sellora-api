@@ -15,6 +15,7 @@ return [
     'payments' => 'Ịkwụ ụgwọ',
     'delivery' => 'Nnyefe',
     'returns' => 'Ihe eweghachiri',
+    'storefront' => 'Ihu ụlọ ahịa',
     'stores' => 'Ụlọ ahịa',
     'legal' => 'Akwụkwọ iwu',
 ];

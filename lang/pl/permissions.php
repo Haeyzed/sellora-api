@@ -207,4 +207,14 @@ return [
             'description' => 'Potwierdzenie wymiany zwrotu: tworzy zamówienie zastępcze i rozlicza wartość zwróconych produktów.',
         ],
     ],
+    'storefront' => [
+        'view' => [
+            'label' => 'Wyświetlanie treści witryny',
+            'description' => 'Przeglądanie stron, menu, banerów i ustawień witryny sklepu.',
+        ],
+        'manage' => [
+            'label' => 'Zarządzanie treścią witryny',
+            'description' => 'Dodawanie, zmienianie, publikowanie i usuwanie stron, menu i banerów sklepu oraz zmienianie ustawień witryny.',
+        ],
+    ],
 ];

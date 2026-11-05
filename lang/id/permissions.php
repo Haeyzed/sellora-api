@@ -207,4 +207,14 @@ return [
             'description' => 'Konfirmasi penukaran sebuah retur: ini membuat pesanan penggantinya dan menyelesaikan nilai barang yang diretur.',
         ],
     ],
+    'storefront' => [
+        'view' => [
+            'label' => 'Lihat konten etalase',
+            'description' => 'Melihat halaman, menu, banner, dan pengaturan etalase toko.',
+        ],
+        'manage' => [
+            'label' => 'Kelola konten etalase',
+            'description' => 'Menambah, mengubah, menerbitkan, dan menghapus halaman, menu, dan banner toko, serta mengubah pengaturan etalase.',
+        ],
+    ],
 ];

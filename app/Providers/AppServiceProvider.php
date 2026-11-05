@@ -277,6 +277,11 @@ use App\Tenant\Shipping\Models\ShippingZone;
 use App\Tenant\Shipping\ShippingCarrierRegistry;
 use App\Tenant\Shipping\ShippingPricedRecords;
 use App\Tenant\Shipping\ShippingStoreTables;
+use App\Tenant\Storefront\Enums\StorefrontPermission;
+use App\Tenant\Storefront\Models\StorefrontSettings;
+use App\Tenant\Storefront\StorefrontSettingsDefaults;
+use App\Tenant\Storefront\StorefrontStoreFiles;
+use App\Tenant\Storefront\StorefrontStoreTables;
 use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\Components;
 use Dedoc\Scramble\Support\Generator\OpenApi;
@@ -328,7 +333,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(StoreAccountNotifications::class, StaffAccountNotifications::class);
         $this->app->bind(StoreProfile::class, PlatformStoreProfile::class);
         // Every settings row a store needs, created with it: the store-wide ones first, then each core domain's own.
-        $this->app->bind(StoreSettingsSetup::class, static fn (Application $app): StoreSettingsSetups => new StoreSettingsSetups([$app->make(StoreSettingsDefaults::class), $app->make(ReturnSettingsDefaults::class)]));
+        $this->app->bind(StoreSettingsSetup::class, static fn (Application $app): StoreSettingsSetups => new StoreSettingsSetups([$app->make(StoreSettingsDefaults::class), $app->make(ReturnSettingsDefaults::class), $app->make(StorefrontSettingsDefaults::class)]));
         $this->app->bind(StorePermissions::class, StaffPermissionSync::class);
         $this->app->bind(StoreStockLedger::class, StockLedgerReconciliation::class);
         $this->app->bind(StoreInvoiceBalances::class, InvoiceBalanceReconciliation::class);
@@ -434,6 +439,7 @@ final class AppServiceProvider extends ServiceProvider
             $catalogue->register(PaymentPermission::class);
             $catalogue->register(DeliveryPermission::class);
             $catalogue->register(ReturnPermission::class);
+            $catalogue->register(StorefrontPermission::class);
 
             return $catalogue;
         });
@@ -616,7 +622,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->singleton(StoreExportRegistry::class, static function (Application $app): StoreExportRegistry {
             $registry = new StoreExportRegistry;
 
-            foreach ([SharedStoreTables::class, IdentityStoreTables::class, SettingsStoreTables::class, CustomerStoreTables::class, DeliveryStoreTables::class, CatalogStoreTables::class, InventoryStoreTables::class, PricingStoreTables::class, PromotionStoreTables::class, CartStoreTables::class, CheckoutStoreTables::class, ShippingStoreTables::class, OrderStoreTables::class, PaymentStoreTables::class, ReturnStoreTables::class] as $storeTables) {
+            foreach ([SharedStoreTables::class, IdentityStoreTables::class, SettingsStoreTables::class, CustomerStoreTables::class, DeliveryStoreTables::class, CatalogStoreTables::class, InventoryStoreTables::class, PricingStoreTables::class, PromotionStoreTables::class, CartStoreTables::class, CheckoutStoreTables::class, ShippingStoreTables::class, OrderStoreTables::class, PaymentStoreTables::class, ReturnStoreTables::class, StorefrontStoreTables::class] as $storeTables) {
                 $app->make($storeTables)->classify($registry);
             }
 
@@ -624,6 +630,7 @@ final class AppServiceProvider extends ServiceProvider
             $registry->addFileSource(CatalogStoreFiles::class);
             $registry->addFileSource(DeliveryStoreFiles::class);
             $registry->addFileSource(ReturnStoreFiles::class);
+            $registry->addFileSource(StorefrontStoreFiles::class);
 
             return $registry;
         });
@@ -648,6 +655,7 @@ final class AppServiceProvider extends ServiceProvider
             'return_exchange' => ReturnExchange::class,
             'return_refund_choice' => ReturnRefundChoice::class,
             'return_settings' => ReturnSettings::class,
+            'storefront_settings' => StorefrontSettings::class,
             'staff_invitation' => StaffInvitation::class,
             'role' => Role::class,
             'store' => Tenant::class,

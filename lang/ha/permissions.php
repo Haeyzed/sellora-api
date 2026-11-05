@@ -207,4 +207,14 @@ return [
             'description' => 'Tabbatar da musanyar dawowa: wannan yana yin odar musanya kuma yana warware darajar kayan da aka dawo da su.',
         ],
     ],
+    'storefront' => [
+        'view' => [
+            'label' => 'Duba abubuwan shagon yanar gizo',
+            'description' => 'Duba shafuka, menu, tutoci da saitunan shagon yanar gizo.',
+        ],
+        'manage' => [
+            'label' => 'Sarrafa abubuwan shagon yanar gizo',
+            'description' => 'Ƙara, canza, wallafa da cire shafuka, menu da tutocin shagon, da canza saitunan shagon yanar gizo.',
+        ],
+    ],
 ];

@@ -15,6 +15,7 @@ return [
     'payments' => 'Pagamenti',
     'delivery' => 'Consegne',
     'returns' => 'Resi',
+    'storefront' => 'Vetrina',
     'stores' => 'Negozi',
     'legal' => 'Documenti legali',
 ];

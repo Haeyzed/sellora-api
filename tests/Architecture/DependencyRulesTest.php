@@ -163,6 +163,15 @@ arch('only replacement orders give price allowances: never a cart, a checkout or
         'App\Tenant\Checkout\Actions\QuoteReplacementOrder',
     ]);
 
+// The tenancy package files each store's cache entries under the store's tag only for calls through its cache manager (the Cache facade); a repository taken from the container skips the tag, so every store would share one entry.
+arch('store code never takes the cache repository contract, which skips the store\'s cache tag')
+    ->expect('App\Tenant')
+    ->not->toUse('Illuminate\Contracts\Cache\Repository');
+
+arch('store code never takes the cache repository class, which skips the store\'s cache tag')
+    ->expect('App\Tenant')
+    ->not->toUse('Illuminate\Cache\Repository');
+
 arch('landlord domains are final')
     ->expect('App\Landlord')
     ->classes()

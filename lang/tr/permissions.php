@@ -207,4 +207,14 @@ return [
             'description' => 'Bir iadenin değişimini onaylama: bu, değişim siparişini oluşturur ve iade edilen ürünlerin değerini hesaplar.',
         ],
     ],
+    'storefront' => [
+        'view' => [
+            'label' => 'Vitrin içeriğini görüntüleme',
+            'description' => 'Mağazanın sayfalarını, menülerini, bannerlarını ve vitrin ayarlarını görme.',
+        ],
+        'manage' => [
+            'label' => 'Vitrin içeriğini yönetme',
+            'description' => 'Mağazanın sayfalarını, menülerini ve bannerlarını ekleme, değiştirme, yayımlama ve kaldırma ve vitrin ayarlarını değiştirme.',
+        ],
+    ],
 ];

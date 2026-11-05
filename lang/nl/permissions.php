@@ -207,4 +207,14 @@ return [
             'description' => 'De ruil van een retour bevestigen: dit plaatst de vervangende bestelling en verrekent wat de geretourneerde artikelen waard zijn.',
         ],
     ],
+    'storefront' => [
+        'view' => [
+            'label' => 'Webwinkelinhoud bekijken',
+            'description' => 'De pagina\'s, menu\'s, banners en webwinkelinstellingen van de winkel bekijken.',
+        ],
+        'manage' => [
+            'label' => 'Webwinkelinhoud beheren',
+            'description' => 'Pagina\'s, menu\'s en banners van de winkel toevoegen, wijzigen, publiceren en verwijderen, en de webwinkelinstellingen wijzigen.',
+        ],
+    ],
 ];

@@ -207,4 +207,14 @@ return [
             'description' => 'Den Umtausch einer Rücksendung bestätigen: Das legt die Ersatzbestellung an und rechnet den Wert der zurückgegebenen Artikel ab.',
         ],
     ],
+    'storefront' => [
+        'view' => [
+            'label' => 'Shop-Inhalte ansehen',
+            'description' => 'Die Seiten, Menüs, Banner und Shop-Einstellungen des Shops ansehen.',
+        ],
+        'manage' => [
+            'label' => 'Shop-Inhalte verwalten',
+            'description' => 'Seiten, Menüs und Banner des Shops hinzufügen, ändern, veröffentlichen und entfernen sowie die Shop-Einstellungen ändern.',
+        ],
+    ],
 ];

@@ -37,6 +37,7 @@ it('lists every store permission under its domain\'s group', function (): void {
         'settings.manage' => 'settings', 'settings.view' => 'settings',
         'shipping.manage' => 'shipping', 'shipping.view' => 'shipping',
         'staff.invite' => 'team', 'staff.manage' => 'team', 'staff.view' => 'team',
+        'storefront.manage' => 'storefront', 'storefront.view' => 'storefront',
     ]);
 });
 

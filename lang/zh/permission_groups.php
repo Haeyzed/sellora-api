@@ -15,6 +15,7 @@ return [
     'payments' => '付款',
     'delivery' => '送货',
     'returns' => '退货',
+    'storefront' => '店面',
     'stores' => '店铺',
     'legal' => '法律文件',
 ];

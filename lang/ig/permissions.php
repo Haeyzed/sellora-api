@@ -207,4 +207,14 @@ return [
             'description' => 'Kwado mgbanwe nke nweghachi: nke a na-eme ọda nnọchi ya ma na-edozi uru ihe e weghachiri.',
         ],
     ],
+    'storefront' => [
+        'view' => [
+            'label' => 'Lee ihe dị n\'ihu ụlọ ahịa',
+            'description' => 'Hụ peeji, menu, banner na ntọala ihu ụlọ ahịa.',
+        ],
+        'manage' => [
+            'label' => 'Jikwaa ihe dị n\'ihu ụlọ ahịa',
+            'description' => 'Tinye, gbanwee, bipụta ma wepụ peeji, menu na banner ụlọ ahịa, ma gbanwee ntọala ihu ụlọ ahịa.',
+        ],
+    ],
 ];

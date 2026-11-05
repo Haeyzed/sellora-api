@@ -15,6 +15,7 @@ return [
     'payments' => 'Awọn sisanwo',
     'delivery' => 'Ifijiṣẹ',
     'returns' => 'Awọn ipadabọ',
+    'storefront' => 'Ojú ìtajà',
     'stores' => 'Awọn ile itaja',
     'legal' => 'Awọn iwe aṣẹ ofin',
 ];

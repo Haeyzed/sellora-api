@@ -207,4 +207,14 @@ return [
             'description' => 'Confermare il cambio di un reso: crea il suo ordine sostitutivo e regola il valore degli articoli resi.',
         ],
     ],
+    'storefront' => [
+        'view' => [
+            'label' => 'Visualizzare i contenuti della vetrina',
+            'description' => 'Vedere le pagine, i menu, i banner e le impostazioni della vetrina del negozio.',
+        ],
+        'manage' => [
+            'label' => 'Gestire i contenuti della vetrina',
+            'description' => 'Aggiungere, modificare, pubblicare e rimuovere le pagine, i menu e i banner del negozio, e modificare le impostazioni della vetrina.',
+        ],
+    ],
 ];

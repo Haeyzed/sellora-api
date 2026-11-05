@@ -32,6 +32,6 @@ it('has a label, a description and a group name for every permission, in every l
     }
 
     expect($locales)->toHaveCount(20)
-        ->and($permissions)->toHaveCount(42)
+        ->and($permissions)->toHaveCount(44)
         ->and($missing)->toBe([]);
 });

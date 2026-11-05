@@ -15,6 +15,7 @@ return [
     'payments' => 'Betalingen',
     'delivery' => 'Bezorging',
     'returns' => 'Retouren',
+    'storefront' => 'Webwinkel',
     'stores' => 'Winkels',
     'legal' => 'Juridische documenten',
 ];

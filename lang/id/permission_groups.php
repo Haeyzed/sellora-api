@@ -15,6 +15,7 @@ return [
     'payments' => 'Pembayaran',
     'delivery' => 'Pengantaran',
     'returns' => 'Retur',
+    'storefront' => 'Etalase toko',
     'stores' => 'Toko',
     'legal' => 'Dokumen hukum',
 ];

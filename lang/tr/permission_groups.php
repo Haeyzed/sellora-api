@@ -15,6 +15,7 @@ return [
     'payments' => 'Ödemeler',
     'delivery' => 'Teslimat',
     'returns' => 'İadeler',
+    'storefront' => 'Mağaza vitrini',
     'stores' => 'Mağazalar',
     'legal' => 'Yasal belgeler',
 ];

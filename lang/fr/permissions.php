@@ -207,4 +207,14 @@ return [
             'description' => 'Confirmer l\'échange d\'un retour : cela crée sa commande de remplacement et règle la valeur des articles retournés.',
         ],
     ],
+    'storefront' => [
+        'view' => [
+            'label' => 'Voir le contenu de la vitrine',
+            'description' => 'Voir les pages, menus, bannières et réglages de la vitrine de la boutique.',
+        ],
+        'manage' => [
+            'label' => 'Gérer le contenu de la vitrine',
+            'description' => 'Ajouter, modifier, publier et retirer les pages, menus et bannières de la boutique, et modifier les réglages de la vitrine.',
+        ],
+    ],
 ];

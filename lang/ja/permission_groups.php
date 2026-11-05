@@ -15,6 +15,7 @@ return [
     'payments' => '支払い',
     'delivery' => '配達',
     'returns' => '返品',
+    'storefront' => 'ストアフロント',
     'stores' => 'ストア',
     'legal' => '法的文書',
 ];
