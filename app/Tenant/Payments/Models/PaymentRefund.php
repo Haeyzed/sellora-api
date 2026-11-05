@@ -27,14 +27,15 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property Money $amount
  * @property string $reference Ours, sent with it: Paystack keeps it as the refund's merchant note.
  * @property string|null $gateway_reference
+ * @property string|null $destination_reference The module's reference for paying it out, for a refund to a module's destination; set once, when it went through.
  * @property string|null $failure_code
  * @property string|null $recorded_by_type Who recorded paying it back by hand, by morph name.
  * @property string|null $recorded_by_id
  * @property CarbonImmutable|null $succeeded_at
  * @property CarbonImmutable|null $no_credit_note_at When the hourly sweep found its order had no invoice to credit: it needs no credit note.
  * @property CarbonImmutable|null $failed_at
- * @property CarbonImmutable|null $last_checked_at When the gateway was last asked about it.
- * @property int $checks How often the gateway was asked about it.
+ * @property CarbonImmutable|null $last_checked_at When the gateway (or, for a refund to a module's destination, the module) was last asked about it.
+ * @property int $checks How often the gateway (or the module) was asked about it.
  * @property CarbonImmutable|null $slow_alerted_at When staff were told it was still pending at the gateway.
  * @property int $send_attempts How often it was claimed for sending to the gateway: once, and again at most once.
  * @property CarbonImmutable|null $not_found_at When the gateway first reported having no such refund, since it was last sent.

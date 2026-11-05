@@ -45,6 +45,7 @@ final readonly class VerifyRefund
             return $paymentRefund;
         }
 
+        // Never sent yet: sending it is the next step. A refund to a module's destination is never sent (SendRefundToGateway refuses it), so it never gets past here.
         if ($paymentRefund->send_attempts === 0) {
             return $this->sendRefundToGateway->handle($paymentRefund);
         }

@@ -109,15 +109,36 @@ function putStoreCreditDestinationIn(string $state): void
     $module = Tests\Fixtures\Payments\FakeStoreCreditDestination::FEATURE;
     $limits = ['storage_in_megabytes' => null];
     $storeId = test()->store->getTenantKey();
+    // The fake gateways stay on the plan when a test uses them (useFakeGateway()).
+    $registry = app(App\Shared\Features\FeatureRegistry::class);
+    $gateways = array_values(array_filter([Tests\Fixtures\Payments\FakePaymentGateway::KEY, Tests\Fixtures\Payments\LocalFakePaymentGateway::KEY], $registry->has(...)));
+    $source = app(App\Shared\Features\Contracts\FeatureSource::class);
 
-    test()->featureSource->give($storeId, match ($state) {
-        'enabled' => FakeFeatureSource::snapshot(entitled: [$module], limits: $limits),
-        'locked' => FakeFeatureSource::snapshot(removed: [$module], limits: $limits),
-        'disabled' => FakeFeatureSource::snapshot(entitled: [$module], merchantDisabled: [$module], limits: $limits),
-        'suspended' => FakeFeatureSource::snapshot(entitled: [$module], limits: $limits, isStoreSuspended: true),
-        'unavailable' => FakeFeatureSource::snapshot(limits: $limits),
+    if (! $source instanceof FakeFeatureSource) {
+        throw new LogicException('The refund destination tests need the fake feature source.');
+    }
+
+    $source->give($storeId, match ($state) {
+        'enabled' => FakeFeatureSource::snapshot(entitled: [...$gateways, $module], limits: $limits),
+        'locked' => FakeFeatureSource::snapshot(entitled: $gateways, removed: [$module], limits: $limits),
+        'disabled' => FakeFeatureSource::snapshot(entitled: [...$gateways, $module], merchantDisabled: [$module], limits: $limits),
+        'suspended' => FakeFeatureSource::snapshot(entitled: [...$gateways, $module], limits: $limits, isStoreSuspended: true),
+        'unavailable' => FakeFeatureSource::snapshot(entitled: $gateways, limits: $limits),
     });
     app(App\Shared\Features\Features::class)->forget($storeId);
+}
+
+/**
+ * Staff refunding units of the test store's order straight through Payments, to the destination given (the fake store credit unless said otherwise), as Returns does for a customer's choice. Returns the refund freshly read with its parts.
+ *
+ * @param  array<string, int>  $units  Units by order line public ID.
+ */
+function refundToDestination(Order $order, array $units, string $destination = Tests\Fixtures\Payments\FakeStoreCreditDestination::KEY): App\Tenant\Payments\Models\Refund
+{
+    return test()->store->run(static fn (): App\Tenant\Payments\Models\Refund => app(App\Tenant\Payments\Actions\RefundOrder::class)
+        ->handle(StaffMember::query()->firstOrFail(), $order, new App\Tenant\Payments\Data\RefundRequest(lines: $units, reason: 'Returned', destination: $destination))
+        ->refresh()
+        ->load('paymentRefunds'));
 }
 
 /**

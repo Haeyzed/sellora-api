@@ -50,6 +50,8 @@ final class RefundResource extends JsonResource
             'withheld_reason' => $refund->withheld_reason,
             /** Who asked for it, by account type and ID. */
             'requested_by' => ['type' => $refund->requested_by_type, 'id' => $refund->requested_by_id],
+            /** Where it goes: "original_payment" (back the way each payment came), or a module's destination the customer chose, such as "store_credit", which pays it out itself; no gateway is asked about it then. */
+            'destination' => $refund->destination,
             /**
              * Lines given back, each at what the buyer paid for it, tax included, less its share of anything kept back.
              *
@@ -62,11 +64,11 @@ final class RefundResource extends JsonResource
                 'tax' => new MoneyResource($line->tax),
             ])->all()),
             /**
-             * Each payment it draws on, and how that part stands: through the payment's gateway, or recorded as paid back by hand.
+             * Each payment it draws on, and how that part stands: through the payment's gateway, recorded as paid back by hand, or paid out by the module's destination (destination_reference is then the module's reference once it went through).
              *
-             * A part whose needs_review_at is set waits for staff: the gateway's answers can't tell whether it was made (review_reason: "lookup_failed", "gateway_unclear" or "not_found_after_resend"), so it is never sent again, and it stays pending.
+             * A part whose needs_review_at is set waits for staff: the gateway's (or the destination's) answers can't tell whether it was made (review_reason: "lookup_failed", "gateway_unclear", "not_found_after_resend", "credentials_refused" or "destination_unclear"), so it is never sent again, and it stays pending. A refund to a destination that definitely failed has failure_code "refund_destination_refused", "destination_not_registered" or "destination_unavailable".
              *
-             * @var list<array{id: string, payment: string, status: string, amount: MoneyResource, gateway_reference: string|null, failure_code: string|null, recorded_by: array{type: string, id: string}|null, succeeded_at: string|null, failed_at: string|null, needs_review_at: string|null, review_reason: string|null}>
+             * @var list<array{id: string, payment: string, status: string, amount: MoneyResource, gateway_reference: string|null, destination_reference: string|null, failure_code: string|null, recorded_by: array{type: string, id: string}|null, succeeded_at: string|null, failed_at: string|null, needs_review_at: string|null, review_reason: string|null}>
              */
             'parts' => array_values($refund->paymentRefunds->map(static fn (PaymentRefund $part): array => [
                 'id' => $part->public_id,
@@ -74,6 +76,7 @@ final class RefundResource extends JsonResource
                 'status' => $part->status->value,
                 'amount' => new MoneyResource($part->amount),
                 'gateway_reference' => $part->gateway_reference,
+                'destination_reference' => $part->destination_reference,
                 'failure_code' => $part->failure_code,
                 'recorded_by' => $part->recorded_by_type === null || $part->recorded_by_id === null ? null : ['type' => $part->recorded_by_type, 'id' => $part->recorded_by_id],
                 'succeeded_at' => $part->succeeded_at?->toIso8601String(),

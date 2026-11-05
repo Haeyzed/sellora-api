@@ -59,7 +59,8 @@ final readonly class SendRefundToGateway
         $payment = $paymentRefund->payment;
         $connection = $payment->connection;
 
-        if ($connection === null || ! $connection->holdsCredentials() || ! $this->claim($paymentRefund, $sentBefore)) {
+        // A refund to a module's destination is paid out by the module, never sent to a gateway.
+        if ($paymentRefund->refund->goesToDestination() || $connection === null || ! $connection->holdsCredentials() || ! $this->claim($paymentRefund, $sentBefore)) {
             return $paymentRefund;
         }
 

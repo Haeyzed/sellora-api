@@ -130,6 +130,27 @@ final readonly class RefundSettlement
     }
 
     /**
+     * Records that a module's destination paid out part of a refund, with the module's reference: the part went back, exactly as asked.
+     */
+    public function succeedAtDestination(PaymentRefund $paymentRefund, string $reference): PaymentRefund
+    {
+        return DB::transaction(function () use ($paymentRefund, $reference): PaymentRefund {
+            [$order, $payment, $locked] = $this->lock($paymentRefund);
+            $locked->forceFill(['destination_reference' => $locked->destination_reference ?? $reference]);
+
+            if ($locked->status === RefundStatus::Succeeded) {
+                $locked->save();
+
+                return $locked;
+            }
+
+            $this->succeed($locked, $payment, $order, null);
+
+            return $locked;
+        });
+    }
+
+    /**
      * Records part of a refund staff paid back by hand (saved with who recorded it), inside the caller's transaction, which already holds the order's and the payment's locks.
      */
     public function recordByHand(PaymentRefund $paymentRefund, Payment $payment, Order $order, AccountReference $actor): void
@@ -225,7 +246,7 @@ final readonly class RefundSettlement
 
         $locked->forceFill(['status' => RefundStatus::Failed, 'failure_code' => $failureCode, 'failed_at' => CarbonImmutable::now()])->save();
         $this->paymentEventLog->record($payment, PaymentEventType::RefundFailed, ['refund' => $locked->public_id, 'code' => $failureCode]);
-        Log::warning('A refund failed at the gateway; nothing went back.', ['refund' => $locked->public_id, 'payment' => $payment->public_id]);
+        Log::warning('A refund failed at its gateway or destination; nothing went back.', ['refund' => $locked->public_id, 'payment' => $payment->public_id, 'code' => $failureCode]);
         RefundFailed::dispatch($locked);
     }
 }

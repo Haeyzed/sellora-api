@@ -52,6 +52,26 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Refunds Paid Out to a Module's Destination
+    |--------------------------------------------------------------------------
+    |
+    | A refund the customer chose to go somewhere a module offers (such as
+    | store credit) is paid out by that module, never through a gateway. One
+    | whose outcome is unknown (the module timed out or failed unexpectedly)
+    | is asked again after each of these waits, in minutes, then goes to staff
+    | review; the hourly sweep asks again about any whose next ask was lost.
+    | Asking is claimed for claim_minutes, so two callers at once never both
+    | ask; every wait is longer than that.
+    |
+    */
+
+    'destinations' => [
+        'retry_minutes' => [5, 30, 120, 720],
+        'claim_minutes' => 2,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Payment Methods Paid by Hand
     |--------------------------------------------------------------------------
     |

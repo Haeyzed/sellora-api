@@ -6,6 +6,7 @@ namespace App\Tenant\Payments\Data;
 
 use App\Shared\Money\Money;
 use App\Tenant\Payments\Enums\RefundPurpose;
+use App\Tenant\Payments\RefundDestinations;
 
 /**
  * What staff ask to give back on an order: an amount, or lines and shipping (worked out at what the buyer paid for them, tax included), never both.
@@ -20,6 +21,7 @@ final readonly class RefundRequest
      * @param  string|null  $idempotencyKey  The client's: the same key returns the same refund.
      * @param  RefundPurpose|null  $purpose  What it does to the sale; null for what the order and request imply. Only an amount on an order that was sold can be either: a price reduction, or the overpayment given back.
      * @param  Money|null  $withheld  What to keep back from the lines given back (Returns, Step 18), less than they are worth; only with lines, and only with a reason.
+     * @param  string  $destination  Where it goes: "original_payment" (back the way each payment came), or a module's destination key the order's customer chose (Returns, Step 18b), for a refund that reduces the sale, drawing on no named payment.
      */
     public function __construct(
         public ?Money $amount = null,
@@ -31,10 +33,19 @@ final readonly class RefundRequest
         public ?RefundPurpose $purpose = null,
         public ?Money $withheld = null,
         public ?string $withheldReason = null,
+        public string $destination = RefundDestinations::ORIGINAL_PAYMENT,
     ) {}
 
     public function isByAmount(): bool
     {
         return $this->amount !== null;
+    }
+
+    /**
+     * Whether it goes to a module's destination rather than back the way each payment came.
+     */
+    public function goesToDestination(): bool
+    {
+        return $this->destination !== RefundDestinations::ORIGINAL_PAYMENT;
     }
 }

@@ -9,6 +9,7 @@ use App\Shared\Money\Money;
 use App\Shared\Money\MoneyCast;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Payments\Enums\RefundPurpose;
+use App\Tenant\Payments\RefundDestinations;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -35,6 +36,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property Money $withheld What staff kept back from the lines given back (Returns, Step 18); their amounts are already less this. Zero when nothing was.
  * @property string|null $withheld_reason Why it was kept back; set exactly when something was.
  * @property string|null $idempotency_key The client's.
+ * @property string $destination Where it goes: "original_payment" (back the way each payment came), or a module's destination key the customer chose, such as "store_credit", which pays it out itself.
  * @property string $requested_by_type By morph name.
  * @property string $requested_by_id
  * @property CarbonImmutable $created_at
@@ -56,6 +58,14 @@ final class Refund extends Model implements AuditableContract
      * @var list<string>
      */
     protected $auditExclude = ['id', 'public_id'];
+
+    /**
+     * Whether it goes to a module's destination rather than back the way each payment came: then no gateway is ever asked about it.
+     */
+    public function goesToDestination(): bool
+    {
+        return $this->destination !== RefundDestinations::ORIGINAL_PAYMENT;
+    }
 
     /**
      * @return BelongsTo<Order, $this>

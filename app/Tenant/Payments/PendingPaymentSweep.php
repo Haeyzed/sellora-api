@@ -15,11 +15,13 @@ use App\Tenant\Payments\Events\CashCollectionOverdue;
 use App\Tenant\Payments\Events\RefundStillPending;
 use App\Tenant\Payments\Jobs\CheckPaymentWithGateway;
 use App\Tenant\Payments\Jobs\CheckRefundWithGateway;
+use App\Tenant\Payments\Jobs\GiveRefundToDestinationAgain;
 use App\Tenant\Payments\Jobs\ProcessPaymentWebhook;
 use App\Tenant\Payments\Models\Payment;
 use App\Tenant\Payments\Models\PaymentGatewayConnection;
 use App\Tenant\Payments\Models\PaymentRefund;
 use App\Tenant\Payments\Models\PaymentWebhookEvent;
+use App\Tenant\Payments\Models\Refund;
 use App\Tenant\Payments\Services\GatewayCredentialsKeeper;
 use App\Tenant\Payments\Services\PaymentEventLog;
 use Carbon\CarbonImmutable;
@@ -34,7 +36,8 @@ use Illuminate\Support\Facades\Log;
  * not asked about for recheck_unresolved_after_hours; handles again any
  * recorded webhook still unhandled after as long; and asks again about every
  * gateway refund still pending that long (once a day, and staff alerted once,
- * after refund_daily_after_days). Never gated by the plan or the store's
+ * after refund_daily_after_days), and asks a module's destination again about
+ * any refund to it still waiting that long. Never gated by the plan or the store's
  * status. Also alerts staff about cash on delivery not recorded as collected
  * a while after delivery, and forgets the keys gateways kept only for money
  * in motion once it has settled.
@@ -72,7 +75,13 @@ final readonly class PendingPaymentSweep implements StorePaymentChecks
             CheckRefundWithGateway::dispatch($refundId);
         }
 
-        return $paymentIds->count() + $webhookIds->count() + $refundIds->count();
+        $destinationRefundIds = $this->overdueDestinationRefunds()->orderBy('id')->limit($limit)->pluck('id');
+
+        foreach ($destinationRefundIds as $refundId) {
+            GiveRefundToDestinationAgain::dispatch($refundId);
+        }
+
+        return $paymentIds->count() + $webhookIds->count() + $refundIds->count() + $destinationRefundIds->count();
     }
 
     public function alertOverdueCollections(): int
@@ -174,7 +183,27 @@ final readonly class PendingPaymentSweep implements StorePaymentChecks
     {
         return PaymentRefund::query()
             ->where('status', RefundStatus::Pending->value)
-            ->whereNull('recorded_by_type');
+            ->whereNull('recorded_by_type')
+            ->whereHas('refund', static fn (Builder $refund) => $refund->where('destination', RefundDestinations::ORIGINAL_PAYMENT));
+    }
+
+    /**
+     * Refunds to a module's destination still waiting for its answer, and not asked for a while: an ask whose next one was lost.
+     *
+     * @return Builder<Refund>
+     */
+    private function overdueDestinationRefunds(): Builder
+    {
+        $cutoff = $this->pendingCutoff();
+
+        return Refund::query()
+            ->where('destination', '<>', RefundDestinations::ORIGINAL_PAYMENT)
+            ->whereHas('paymentRefunds', static fn (Builder $parts) => $parts
+                ->where('status', RefundStatus::Pending->value)
+                ->whereNull('needs_review_at')
+                ->where(static fn (Builder $quiet) => $quiet
+                    ->where('last_checked_at', '<', $cutoff)
+                    ->orWhere(static fn (Builder $never) => $never->whereNull('last_checked_at')->where('created_at', '<', $cutoff))));
     }
 
     private function dailyRefundChecksFrom(): CarbonImmutable

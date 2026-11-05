@@ -9,6 +9,7 @@ use App\Tenant\Payments\Enums\RefundStatus;
 use App\Tenant\Payments\Models\Payment;
 use App\Tenant\Payments\Models\PaymentGatewayConnection;
 use App\Tenant\Payments\Models\PaymentRefund;
+use App\Tenant\Payments\RefundDestinations;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
@@ -22,6 +23,8 @@ final readonly class MoneyInMotion
             || PaymentRefund::query()
                 ->where('status', RefundStatus::Pending->value)
                 ->whereHas('payment', static fn (Builder $payment) => $payment->where('connection_id', $connection->id))
+                // A refund to a module's destination goes nowhere near the gateway.
+                ->whereHas('refund', static fn (Builder $refund) => $refund->where('destination', RefundDestinations::ORIGINAL_PAYMENT))
                 ->exists();
     }
 }

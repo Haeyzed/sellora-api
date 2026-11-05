@@ -28,6 +28,7 @@ use App\Tenant\Payments\Models\PaymentRefund;
 use App\Tenant\Payments\Models\Refund;
 use App\Tenant\Payments\Models\RefundLine;
 use App\Tenant\Payments\PaymentGatewayRegistry;
+use App\Tenant\Payments\RefundDestinations;
 use App\Tenant\Payments\Services\PaymentActivity;
 use App\Tenant\Payments\Services\PaymentEventLog;
 use App\Tenant\Payments\Services\RefundAmounts;
@@ -62,6 +63,12 @@ use Illuminate\Support\Str;
  * the overpayment. Reductions never add up to more than the order's total,
  * nor overpayments given back to more than was paid over it.
  *
+ * A refund the order's customer chose to go to a module's destination (such
+ * as store credit; Returns, Step 18b) still draws its parts from the
+ * payments, so what each can give back stays exact, but no gateway is asked:
+ * after commit the module pays it out (GiveRefundToDestination). It always
+ * reduces the sale, so it gets a credit note.
+ *
  * Returns (Step 18) may keep part of a refund of lines back, with a reason,
  * when a return breaks the condition a discount depended on: it comes off the
  * lines themselves (RefundAmounts::withhold), so their credit note credits
@@ -74,6 +81,7 @@ final readonly class RefundOrder
         private RefundSettlement $refundSettlement,
         private RefundChecks $refundChecks,
         private SendRefundToGateway $sendRefundToGateway,
+        private GiveRefundToDestination $giveRefundToDestination,
         private PaymentGatewayRegistry $registry,
         private PaymentEventLog $paymentEventLog,
         private PaymentActivity $paymentActivity,
@@ -97,10 +105,14 @@ final readonly class RefundOrder
             return $refund;
         }
 
-        foreach ($refund->paymentRefunds->where('status', RefundStatus::Pending) as $paymentRefund) {
-            // Before calling the gateway, so the refund is checked on even if this request never finishes.
-            $this->refundChecks->scheduleFirst($paymentRefund);
-            $this->sendRefundToGateway->handle($paymentRefund);
+        if ($refund->goesToDestination()) {
+            $this->giveRefundToDestination->handle($refund);
+        } else {
+            foreach ($refund->paymentRefunds->where('status', RefundStatus::Pending) as $paymentRefund) {
+                // Before calling the gateway, so the refund is checked on even if this request never finishes.
+                $this->refundChecks->scheduleFirst($paymentRefund);
+                $this->sendRefundToGateway->handle($paymentRefund);
+            }
         }
 
         $this->paymentActivity->record($actor, $refund, 'refund_created', 'Refunded part or all of order '.$order->displayNumber());
@@ -120,8 +132,11 @@ final readonly class RefundOrder
         $withholdingIsValid = $request->withheld === null
             ? $request->withheldReason === null
             : $request->lines !== [] && $request->withheld->isPositive() && trim((string) $request->withheldReason) !== '';
+        // A destination is chosen by the order's customer for items given back; it never draws on one named payment.
+        $destinationIsValid = ! $request->goesToDestination()
+            || (preg_match(RefundDestinations::KEY_PATTERN, $request->destination) === 1 && $request->paymentId === null && $request->purpose !== RefundPurpose::ReturnsPayment);
 
-        if ($byItems === $request->isByAmount() || ! $amountIsValid || ! $withholdingIsValid) {
+        if ($byItems === $request->isByAmount() || ! $amountIsValid || ! $withholdingIsValid || ! $destinationIsValid) {
             throw new RefundInvalidException;
         }
     }
@@ -147,6 +162,7 @@ final readonly class RefundOrder
 
         $this->ensureOrderHoldsMoney($locked);
         $purpose = $this->purpose($locked, $request);
+        $this->ensureDestinationFits($locked, $request, $purpose);
         $lines = $this->refundAmounts->lines($locked, $request);
         $lines = $request->withheld === null ? $lines : $this->refundAmounts->withhold($lines, $request->withheld);
         [$shipping, $shippingTax] = $this->refundAmounts->shipping($locked, $request);
@@ -156,7 +172,7 @@ final readonly class RefundOrder
             throw new RefundInvalidException;
         }
 
-        $draws = $this->draws($named === null ? $payments->where('status', PaymentStatus::Succeeded)->sortByDesc('id') : collect([$named]), $amount);
+        $draws = $this->draws($named === null ? $payments->where('status', PaymentStatus::Succeeded)->sortByDesc('id') : collect([$named]), $amount, throughGateways: ! $request->goesToDestination());
         $this->ensureWithinPurpose($locked, $payments, $purpose, $amount);
         $refund = $this->createRefund($actor, $locked, $amount, $shipping, $shippingTax, $purpose, $request);
         $this->createLines($refund, $lines);
@@ -208,6 +224,18 @@ final readonly class RefundOrder
         $this->createParts($actor, $refund, $order, $draws);
 
         return $refund->load(['lines', 'paymentRefunds']);
+    }
+
+    /**
+     * A refund to a module's destination reduces the sale (it still gets a credit note) and goes to the order's own customer: a guest's order only ever gets money back the way it was paid.
+     *
+     * @throws RefundInvalidException
+     */
+    private function ensureDestinationFits(Order $order, RefundRequest $request, RefundPurpose $purpose): void
+    {
+        if ($request->goesToDestination() && ($purpose !== RefundPurpose::ReducesSale || $order->customer_id === null)) {
+            throw new RefundInvalidException;
+        }
     }
 
     /**
@@ -290,13 +318,14 @@ final readonly class RefundOrder
      * How much each payment gives back, filling each in turn up to what it can still give back.
      *
      * @param  iterable<Payment>  $payments  Already locked, in the order to draw on them.
+     * @param  bool  $throughGateways  Whether each part goes back through its payment's gateway; false for a refund to a module's destination, which no gateway is asked about.
      * @return list<array{Payment, Money}>
      *
      * @throws RefundExceedsRefundableException
      * @throws PartialRefundNotSupportedException
      * @throws PaymentGatewayNotConnectedException
      */
-    private function draws(iterable $payments, Money $amount): array
+    private function draws(iterable $payments, Money $amount, bool $throughGateways = true): array
     {
         $left = $amount;
         $draws = [];
@@ -309,7 +338,11 @@ final readonly class RefundOrder
             }
 
             $draw = $left->isLessThan($available) ? $left : $available;
-            $this->ensureGatewayCanRefund($payment, $draw);
+
+            if ($throughGateways) {
+                $this->ensureGatewayCanRefund($payment, $draw);
+            }
+
             $draws[] = [$payment, $draw];
             $left = $left->subtract($draw);
         }
@@ -368,6 +401,7 @@ final readonly class RefundOrder
             'withheld' => $request->withheld ?? Money::zero($order->currency),
             'withheld_reason' => $request->withheld === null ? null : trim((string) $request->withheldReason),
             'idempotency_key' => $request->idempotencyKey,
+            'destination' => $request->destination,
             'requested_by_type' => $actor->type,
             'requested_by_id' => $actor->publicId,
         ])->save();
@@ -392,14 +426,14 @@ final readonly class RefundOrder
     }
 
     /**
-     * One part per payment drawn on: pending for a gateway (sent after commit), paid back by hand at once otherwise.
+     * One part per payment drawn on: pending for a gateway (sent after commit) or a module's destination (paid out after commit), paid back by hand at once otherwise.
      *
      * @param  list<array{Payment, Money}>  $draws
      */
     private function createParts(AccountReference $actor, Refund $refund, Order $order, array $draws): void
     {
         foreach ($draws as [$payment, $draw]) {
-            $byHand = $payment->method !== PaymentMethod::Gateway;
+            $byHand = $payment->method !== PaymentMethod::Gateway && ! $refund->goesToDestination();
             $part = new PaymentRefund;
             $part->forceFill([
                 'refund_id' => $refund->id,

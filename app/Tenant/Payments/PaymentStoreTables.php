@@ -33,11 +33,11 @@ final class PaymentStoreTables implements ClassifiesStoreTables
         $registry->table('payment_events', include: ['id', 'payment_id', 'type', 'data', 'actor_type', 'actor_id', 'created_at']);
         $registry->table('refunds', include: [
             'id', 'public_id', 'order_id', 'currency', 'amount_amount', 'shipping_amount', 'shipping_tax_amount', 'purpose', 'reason', 'withheld_amount',
-            'withheld_reason', 'idempotency_key', 'requested_by_type', 'requested_by_id', 'created_at',
+            'withheld_reason', 'idempotency_key', 'destination', 'requested_by_type', 'requested_by_id', 'created_at',
         ]);
         $registry->table('refund_lines', include: ['id', 'refund_id', 'order_line_id', 'quantity', 'currency', 'amount_amount', 'tax_amount', 'created_at']);
         $registry->table('payment_refunds', include: [
-            'id', 'public_id', 'refund_id', 'payment_id', 'status', 'currency', 'amount_amount', 'reference', 'gateway_reference', 'failure_code',
+            'id', 'public_id', 'refund_id', 'payment_id', 'status', 'currency', 'amount_amount', 'reference', 'gateway_reference', 'destination_reference', 'failure_code',
             'recorded_by_type', 'recorded_by_id', 'succeeded_at', 'no_credit_note_at', 'failed_at', 'last_checked_at', 'checks', 'slow_alerted_at',
             'send_attempts', 'not_found_at', 'needs_review_at', 'review_reason', 'created_at', 'updated_at',
         ]);
