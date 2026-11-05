@@ -7,6 +7,7 @@ namespace App\Tenant\Catalog\Models;
 use App\Shared\Concerns\HasPublicId;
 use App\Shared\Money\Money;
 use App\Shared\Money\MoneyCast;
+use App\Tenant\Catalog\Enums\ProductStatus;
 use App\Tenant\Catalog\Services\ProductSearchText;
 use Carbon\CarbonImmutable;
 use Database\Factories\Tenant\ProductVariantFactory;
@@ -110,6 +111,19 @@ final class ProductVariant extends Model implements AuditableContract
     public function attributeValues(): BelongsToMany
     {
         return $this->belongsToMany(AttributeValue::class)->withPivot('attribute_id')->orderByPivot('attribute_id');
+    }
+
+    /**
+     * Whether customers can buy it at all, stock aside (section 3.3): priced, outside the trash, and its product published and outside the trash.
+     *
+     * The one copy of this rule: the cart, checkout and replacement orders all ask here.
+     */
+    public function isForSale(): bool
+    {
+        return ! $this->trashed()
+            && $this->price !== null
+            && ! $this->product->trashed()
+            && $this->product->status === ProductStatus::Active;
     }
 
     /**

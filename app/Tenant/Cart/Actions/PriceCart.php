@@ -14,7 +14,6 @@ use App\Tenant\Cart\Enums\CartLineStatus;
 use App\Tenant\Cart\Models\Cart;
 use App\Tenant\Cart\Models\CartLine;
 use App\Tenant\Cart\Services\CartPrices;
-use App\Tenant\Cart\Services\CartVariants;
 use App\Tenant\Inventory\Actions\FindVariantStockStatus;
 use App\Tenant\Inventory\Enums\StockStatus;
 use App\Tenant\Pricing\Data\TaxAddress;
@@ -157,7 +156,7 @@ final readonly class PriceCart
     private static function statusOf(CartLine $line, array $statuses): CartLineStatus
     {
         return match (true) {
-            ! CartVariants::isForSale($line->variant) => CartLineStatus::Unavailable,
+            ! $line->variant->isForSale() => CartLineStatus::Unavailable,
             ! $statuses[$line->product_variant_id]->canBeBought() => CartLineStatus::OutOfStock,
             default => CartLineStatus::Available,
         };

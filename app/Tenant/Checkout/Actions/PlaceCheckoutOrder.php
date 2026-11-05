@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Tenant\Checkout\Actions;
 
 use App\Shared\Exceptions\DomainException;
-use App\Shared\Money\Money;
 use App\Tenant\Cart\Actions\ClearOrderedCart;
 use App\Tenant\Cart\Data\PricedCartLine;
 use App\Tenant\Cart\Data\Shopper;
@@ -15,7 +14,6 @@ use App\Tenant\Checkout\Data\CheckoutQuote;
 use App\Tenant\Checkout\Data\OfferedPaymentMethod;
 use App\Tenant\Checkout\Data\PlacedCheckout;
 use App\Tenant\Checkout\Enums\CheckoutStatus;
-use App\Tenant\Checkout\Enums\PaymentHoldStatus;
 use App\Tenant\Checkout\Enums\PaymentMethodKind;
 use App\Tenant\Checkout\Exceptions\CheckoutNotFoundException;
 use App\Tenant\Checkout\Exceptions\CheckoutNotReadyException;
@@ -85,6 +83,7 @@ final readonly class PlaceCheckoutOrder
         private IssueOrderAccessToken $issueOrderAccessToken,
         private ClearOrderedCart $clearOrderedCart,
         private RecalculateOrderPayments $recalculateOrderPayments,
+        private RecordPaymentHold $recordPaymentHold,
     ) {}
 
     /**
@@ -257,26 +256,14 @@ final readonly class PlaceCheckoutOrder
                 throw new QuoteNoLongerStands;
             }
 
-            $this->recordHold($order, $key, $held->amount, $held->reference);
+            $this->recordPaymentHold->handle($order, $key, $held->amount, $held->reference);
         }
 
         if ($quote->paymentMethod !== null) {
             [$offer, $method] = $quote->offer($quote->paymentMethod->key);
             $held = $method->hold($offer, $order, $quote->amountDue());
-            $this->recordHold($order, $offer->key, $held->amount, $held->reference);
+            $this->recordPaymentHold->handle($order, $offer->key, $held->amount, $held->reference);
         }
-    }
-
-    private function recordHold(Order $order, string $key, Money $amount, ?string $reference): void
-    {
-        $hold = new CheckoutPaymentHold;
-        $hold->forceFill([
-            'order_id' => $order->id,
-            'method' => $key,
-            'reference' => $reference,
-            'amount' => $amount,
-            'status' => PaymentHoldStatus::Held,
-        ])->save();
     }
 
     private function recordConsents(Checkout $checkout): void
