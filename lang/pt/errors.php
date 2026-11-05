@@ -233,4 +233,7 @@ return [
     'replacement_currency_not_offered' => 'A moeda do pedido já não é oferecida, por isso não é possível definir o preço de uma substituição nela. Reembolse a devolução.',
     'replacement_shipping_unavailable' => 'A substituição não pode ser enviada para a morada do pedido com o método de envio escolhido. Escolha outro método de envio.',
     'return_fault_reason_required' => 'Indique porquê: a culpa da loja difere do que o motivo da devolução afirma.',
+    'return_replacement_invalid' => 'Uma troca indica um artigo da loja a enviar em vez de cada linha devolvida, e um reembolso não indica nenhum.',
+    'return_replacement_not_available' => 'Um artigo desta troca não pode ser enviado agora: já não está à venda ou está esgotado. Escolha outro ou reembolse a devolução.',
+    'return_is_an_exchange' => 'Esta devolução é resolvida com uma troca. Confirme a troca ou altere primeiro a forma de a resolver para um reembolso.',
 ];

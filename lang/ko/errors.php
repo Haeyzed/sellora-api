@@ -233,4 +233,7 @@ return [
     'replacement_currency_not_offered' => '주문 통화가 더 이상 제공되지 않아 그 통화로 교환 상품의 가격을 매길 수 없습니다. 대신 반품을 환불하세요.',
     'replacement_shipping_unavailable' => '선택한 배송 방법으로는 교환 상품을 주문 주소로 보낼 수 없습니다. 다른 배송 방법을 선택하세요.',
     'return_fault_reason_required' => '이유를 입력하세요. 상점의 책임 여부가 반품 사유의 주장과 다릅니다.',
+    'return_replacement_invalid' => '교환은 반품한 각 줄 대신 보낼 상점 상품을 하나씩 지정하고, 환불은 아무것도 지정하지 않습니다.',
+    'return_replacement_not_available' => '이 교환에서 보낼 상품 중 하나를 지금 보낼 수 없습니다. 더 이상 판매되지 않거나 재고가 없습니다. 다른 상품을 선택하거나 대신 반품을 환불하세요.',
+    'return_is_an_exchange' => '이 반품은 교환으로 처리됩니다. 교환을 확정하거나 먼저 처리 방식을 환불로 변경하세요.',
 ];

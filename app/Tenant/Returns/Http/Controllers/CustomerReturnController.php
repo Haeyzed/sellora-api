@@ -34,7 +34,7 @@ use Illuminate\Http\Response;
  */
 final class CustomerReturnController extends Controller
 {
-    private const array WITH = ['order', 'lines.orderLine', 'media', 'refundChoices'];
+    private const array WITH = ['order', 'lines.orderLine', 'lines.replacementVariant.product', 'media', 'refundChoices'];
 
     /**
      * Ask to return units of an order.
@@ -65,6 +65,8 @@ final class CustomerReturnController extends Controller
             $request->note(),
             $request->photos(),
             refundDestination: $request->refundDestination(),
+            resolution: $request->resolution(),
+            replacements: $request->replacements(),
         );
 
         return (new BuyerReturnResource($return->load(self::WITH)))->response()->setStatusCode(Response::HTTP_CREATED);

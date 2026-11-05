@@ -462,3 +462,41 @@ function replacementSettlement(App\Tenant\Checkout\Data\ReplacementQuote $quote)
 {
     return [$quote->returnedValue->minorAmount(), $quote->total->minorAmount(), $quote->credit->minorAmount(), $quote->amountDue->minorAmount(), $quote->difference->minorAmount()];
 }
+
+/*
+|--------------------------------------------------------------------------
+| For the exchange tests (Step 18d)
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * An exchange of every unit of every line of the test store's order, requested by staff for the buyer, sending the variant given in place of each line (by order line public ID), or one variant for every line.
+ *
+ * @param  array<string, App\Tenant\Catalog\Models\ProductVariant>|App\Tenant\Catalog\Models\ProductVariant  $replacements
+ */
+function requestedExchange(Order $order, array|App\Tenant\Catalog\Models\ProductVariant $replacements, ReturnReason $reason = ReturnReason::ChangedMind): OrderReturn
+{
+    $units = $order->lines->mapWithKeys(static fn ($line): array => [$line->public_id => $line->quantity])->all();
+    $variants = $replacements instanceof App\Tenant\Catalog\Models\ProductVariant ? array_map(static fn (): App\Tenant\Catalog\Models\ProductVariant => $replacements, $units) : $replacements;
+
+    return test()->store->run(static fn (): OrderReturn => app(RequestReturn::class)->handle(
+        ReturnRequester::staff(StaffMember::query()->firstOrFail()),
+        $order,
+        $units,
+        $reason,
+        resolution: App\Tenant\Returns\Enums\ReturnResolution::Exchange,
+        replacements: array_map(static fn (App\Tenant\Catalog\Models\ProductVariant $variant): string => $variant->public_id, $variants),
+    ));
+}
+
+/**
+ * The lines of a return request, each with the variant to send in its place.
+ *
+ * @param  array<string, int>  $units  Units by order line public ID.
+ * @param  array<string, string>  $replacements  Variant public IDs by order line public ID.
+ * @return list<array{line: string, quantity: int, replacement?: string}>
+ */
+function exchangeLinesPayload(array $units, array $replacements): array
+{
+    return array_map(static fn (array $line): array => [...$line, ...(isset($replacements[$line['line']]) ? ['replacement' => $replacements[$line['line']]] : [])], returnLinesPayload($units));
+}

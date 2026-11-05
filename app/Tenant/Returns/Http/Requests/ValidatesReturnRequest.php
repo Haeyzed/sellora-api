@@ -7,12 +7,13 @@ namespace App\Tenant\Returns\Http\Requests;
 use App\Shared\Media\EncodedImage;
 use App\Shared\Media\PrivateImages;
 use App\Tenant\Returns\Enums\ReturnReason;
+use App\Tenant\Returns\Enums\ReturnResolution;
 use App\Tenant\Returns\Services\ReturnPhotos;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 /**
- * The rules for asking to return units: which lines and how many, why, an optional note and photos. Sent as multipart form data when there are photos.
+ * The rules for asking to return units: which lines and how many, why, an optional note and photos, and for an exchange what to send in their place. Sent as multipart form data when there are photos.
  */
 trait ValidatesReturnRequest
 {
@@ -30,11 +31,15 @@ trait ValidatesReturnRequest
             /** An order line's ID. */
             'lines.*.line' => ['required', 'string', 'max:26', 'distinct'],
             'lines.*.quantity' => ['required', 'integer', 'min:1', 'max:100000'],
-            /** Why: "damaged", "wrong_item", "not_as_described", "does_not_fit", "changed_mind" or "other" (GET /returns/reasons names them in the buyer's language). */
+            /** For an exchange: the ID of the variant to send in place of these units, as many of it; it must be for sale and in stock. Left out for a refund. */
+            'lines.*.replacement' => ['sometimes', 'nullable', 'string', 'max:26'],
+            /** "refund" (the default), or "exchange": other items sent in place of these, naming a replacement for every line. Any difference in an exchange goes where a refund would. */
+            'resolution' => ['sometimes', 'string', Rule::enum(ReturnResolution::class)],
+            /** Why: "damaged", "wrong_item", "faulty", "not_as_described", "does_not_fit", "changed_mind" or "other" (GET /returns/reasons names them in the buyer's language). */
             'reason' => ['required', 'string', Rule::enum(ReturnReason::class)],
             /** Anything to add about the reason. */
             'note' => ['sometimes', 'nullable', 'string', 'max:1000'],
-            /** Photos of the items, such as the damage: JPEG, PNG or WebP. Required for damage or the wrong item when the store asks for them. */
+            /** Photos of the items, such as the damage: JPEG, PNG or WebP. Required, when the store asks for them, for a reason that claims the store was at fault. */
             'photos' => ['sometimes', 'array', 'max:'.config()->integer('returns.max_photos')],
             'photos.*' => PrivateImages::rules(ReturnPhotos::KIND),
         ];
@@ -87,6 +92,28 @@ trait ValidatesReturnRequest
         }
 
         return $lines;
+    }
+
+    public function resolution(): ReturnResolution
+    {
+        return ReturnResolution::tryFrom($this->string('resolution')->value()) ?? ReturnResolution::Refund;
+    }
+
+    /**
+     * @return array<string, string> The variant sent in place of each line, by order line public ID; only lines that name one.
+     */
+    public function replacements(): array
+    {
+        $replacements = [];
+
+        foreach ((array) $this->validated('lines') as $line) {
+            /** @var array{line: string, replacement?: string|null} $line */
+            if (isset($line['replacement']) && $line['replacement'] !== '') {
+                $replacements[$line['line']] = $line['replacement'];
+            }
+        }
+
+        return $replacements;
     }
 
     public function reason(): ReturnReason

@@ -233,4 +233,7 @@ return [
     'replacement_currency_not_offered' => 'Ba a bayar da kuɗin odar kuma, don haka ba za a iya sa farashin musanya da shi ba. Mayar da kuɗin abin da aka dawo da shi maimakon haka.',
     'replacement_shipping_unavailable' => 'Ba za a iya aika musanyar zuwa adireshin odar da hanyar jigilar da aka zaɓa ba. Zaɓi wata hanyar jigila.',
     'return_fault_reason_required' => 'Faɗi dalili: ko laifin shagon ne ya bambanta da abin da dalilin dawowar ya faɗa.',
+    'return_replacement_invalid' => 'Musanya na ambaci kayan shago ɗaya da za a aika maimakon kowane layin da aka dawo da shi, kuma mayar da kuɗi bai ambaci ko ɗaya ba.',
+    'return_replacement_not_available' => 'Ba za a iya aika wani kaya na wannan musanyar yanzu ba: ba a sayar da shi kuma, ko ya ƙare. Zaɓi wani, ko ka mayar da kuɗin maimakon haka.',
+    'return_is_an_exchange' => 'Ana warware wannan dawowar ta hanyar musanya. Tabbatar da musanyar, ko ka canza yadda za a warware ta zuwa mayar da kuɗi tukuna.',
 ];

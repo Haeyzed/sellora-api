@@ -233,4 +233,7 @@ return [
     'replacement_currency_not_offered' => '该订单的币种已不再提供，因此无法以该币种为换货定价。请改为退款。',
     'replacement_shipping_unavailable' => '无法使用所选的配送方式将换货寄到订单地址。请选择其他配送方式。',
     'return_fault_reason_required' => '请说明原因：店铺是否有过错与退货原因所述不同。',
+    'return_replacement_invalid' => '换货需为每一行退回的商品指定一件店铺商品寄出替换，退款则不指定任何商品。',
+    'return_replacement_not_available' => '此次换货中的一件商品现在无法寄出：已不再销售或缺货。请选择其他商品，或改为退款。',
+    'return_is_an_exchange' => '此退货以换货方式处理。请确认换货，或先将处理方式改为退款。',
 ];

@@ -6,16 +6,20 @@ namespace App\Tenant\Returns\Actions;
 
 use App\Shared\Features\Exceptions\UsageLimitReachedException;
 use App\Shared\Media\EncodedImage;
+use App\Tenant\Catalog\Models\ProductVariant;
 use App\Tenant\Orders\Enums\OrderStatus;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Returns\Data\ReturnableLine;
 use App\Tenant\Returns\Data\ReturnRequester;
 use App\Tenant\Returns\Enums\ReturnReason;
+use App\Tenant\Returns\Enums\ReturnResolution;
 use App\Tenant\Returns\Enums\ReturnStatus;
 use App\Tenant\Returns\Exceptions\OrderNotReturnableException;
 use App\Tenant\Returns\Exceptions\RefundDestinationNotOfferedException;
 use App\Tenant\Returns\Exceptions\ReturnPhotoRequiredException;
 use App\Tenant\Returns\Exceptions\ReturnQuantityTooHighException;
+use App\Tenant\Returns\Exceptions\ReturnReplacementInvalidException;
+use App\Tenant\Returns\Exceptions\ReturnReplacementNotAvailableException;
 use App\Tenant\Returns\Exceptions\ReturnsNotOfferedException;
 use App\Tenant\Returns\Exceptions\ReturnStaffReasonRequiredException;
 use App\Tenant\Returns\Exceptions\ReturnWindowClosedException;
@@ -25,6 +29,7 @@ use App\Tenant\Returns\Models\ReturnSettings;
 use App\Tenant\Returns\Services\ReturnableUnits;
 use App\Tenant\Returns\Services\ReturnPhotos;
 use App\Tenant\Returns\Services\ReturnProgress;
+use App\Tenant\Returns\Services\ReturnReplacements;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
@@ -40,7 +45,7 @@ use Illuminate\Support\Facades\DB;
  * can't be returned again. What can be returned is read under the order's
  * returns lock, so two requests at once never claim the same units. Photos
  * are kept in the same transaction, counted against the store's storage.
- * ReturnRequested is announced once it is saved.
+ * An exchange names the variant sent in place of each returned line, which must be for sale and in stock (or take backorders); no stock is held for it until staff confirm the exchange. ReturnRequested is announced once it is saved.
  */
 final readonly class RequestReturn
 {
@@ -49,12 +54,15 @@ final readonly class RequestReturn
         private ReturnProgress $returnProgress,
         private ReturnPhotos $returnPhotos,
         private ChooseRefundDestination $chooseRefundDestination,
+        private ReturnReplacements $returnReplacements,
     ) {}
 
     /**
      * @param  array<string, int>  $lines  Units to return, by order line public ID.
      * @param  list<EncodedImage>  $photos  Already re-encoded; their temporary files are deleted either way.
-     * @param  string|null  $refundDestination  Where the signed-in customer asking wants the refund to go; null leaves it going back to the original payment.
+     * @param  string|null  $refundDestination  Where the signed-in customer asking wants the refund to go; null leaves it going back to the original payment. For an exchange, where any difference goes.
+     * @param  ReturnResolution  $resolution  A refund, or an exchange (Step 18d): other items sent in place of the returned ones.
+     * @param  array<string, string>  $replacements  For an exchange: the variant sent in place of each returned line, by order line public ID; none for a refund.
      *
      * @throws RefundDestinationNotOfferedException When anyone but the order's signed-in customer chooses, or the destination isn't on offer.
      * @throws ReturnsNotOfferedException
@@ -64,6 +72,8 @@ final readonly class RequestReturn
      * @throws ReturnQuantityTooHighException
      * @throws ReturnStaffReasonRequiredException
      * @throws UsageLimitReachedException When the photos would take the store over its plan's storage.
+     * @throws ReturnReplacementInvalidException When the replacements don't fit the resolution.
+     * @throws ReturnReplacementNotAvailableException When a replacement can't be sent now.
      */
     public function handle(
         ReturnRequester $requester,
@@ -75,9 +85,11 @@ final readonly class RequestReturn
         ?string $outsideWindowReason = null,
         ?string $undeliveredReason = null,
         ?string $refundDestination = null,
+        ReturnResolution $resolution = ReturnResolution::Refund,
+        array $replacements = [],
     ): OrderReturn {
         try {
-            return DB::transaction(function () use ($requester, $order, $lines, $reason, $note, $photos, $outsideWindowReason, $undeliveredReason, $refundDestination): OrderReturn {
+            return DB::transaction(function () use ($requester, $order, $lines, $reason, $note, $photos, $outsideWindowReason, $undeliveredReason, $refundDestination, $resolution, $replacements): OrderReturn {
                 $settings = ReturnSettings::current();
                 $this->ensureBuyerMayAsk($requester, $settings, $reason, $photos);
 
@@ -89,9 +101,11 @@ final readonly class RequestReturn
                 $this->returnProgress->lockOrderReturns($order);
                 $returnable = $this->returnableUnits->of($order, $settings->window_days, CarbonImmutable::now());
                 $this->ensureReturnable($requester, $returnable, $lines, $outsideWindowReason, $undeliveredReason);
+                $variants = $this->returnReplacements->resolve(array_keys($lines), $resolution, $replacements);
+                $this->returnReplacements->ensureAvailable($variants);
 
-                $return = $this->createReturn($requester, $order, $reason, $note, $outsideWindowReason, $undeliveredReason);
-                $this->createLines($return, $returnable, $lines);
+                $return = $this->createReturn($requester, $order, $reason, $note, $outsideWindowReason, $undeliveredReason, $resolution);
+                $this->createLines($return, $returnable, $lines, $variants);
                 $this->returnProgress->record($return, null, ReturnStatus::Requested, $requester->account);
                 $this->returnPhotos->keep($return, $photos);
 
@@ -175,13 +189,14 @@ final readonly class RequestReturn
         }
     }
 
-    private function createReturn(ReturnRequester $requester, Order $order, ReturnReason $reason, ?string $note, ?string $outsideWindowReason, ?string $undeliveredReason): OrderReturn
+    private function createReturn(ReturnRequester $requester, Order $order, ReturnReason $reason, ?string $note, ?string $outsideWindowReason, ?string $undeliveredReason, ReturnResolution $resolution): OrderReturn
     {
         $return = new OrderReturn;
         $return->forceFill([
             'order_id' => $order->id,
             'sequence' => (int) OrderReturn::query()->where('order_id', $order->id)->max('sequence') + 1,
             'status' => ReturnStatus::Requested,
+            'resolution' => $resolution,
             'reason' => $reason,
             'note' => $note,
             'is_test' => $order->is_test,
@@ -199,13 +214,15 @@ final readonly class RequestReturn
     /**
      * @param  array<string, ReturnableLine>  $returnable
      * @param  array<string, int>  $lines
+     * @param  array<string, ProductVariant|null>  $replacements
      */
-    private function createLines(OrderReturn $return, array $returnable, array $lines): void
+    private function createLines(OrderReturn $return, array $returnable, array $lines, array $replacements): void
     {
         foreach ($lines as $publicId => $quantity) {
             (new ReturnLine)->forceFill([
                 'return_id' => $return->id,
                 'order_line_id' => $returnable[$publicId]->line->id,
+                'replacement_variant_id' => $replacements[$publicId]?->id,
                 'quantity' => $quantity,
             ])->save();
         }

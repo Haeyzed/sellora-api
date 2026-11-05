@@ -16,7 +16,9 @@ use App\Tenant\Payments\Actions\RefundOrder;
 use App\Tenant\Payments\Data\RefundRequest;
 use App\Tenant\Payments\Exceptions\RefundExceedsRefundableException;
 use App\Tenant\Returns\Enums\ReturnRefundStatus;
+use App\Tenant\Returns\Enums\ReturnResolution;
 use App\Tenant\Returns\Enums\ReturnStatus;
+use App\Tenant\Returns\Exceptions\ReturnIsExchangeException;
 use App\Tenant\Returns\Exceptions\ReturnRefundModuleHeldException;
 use App\Tenant\Returns\Exceptions\ReturnTransitionNotAllowedException;
 use App\Tenant\Returns\Models\OrderReturn;
@@ -59,6 +61,7 @@ final readonly class RefundReturn
      *
      * @throws ReturnTransitionNotAllowedException When it is neither inspected nor approved with the buyer keeping the items.
      * @throws ReturnRefundModuleHeldException
+     * @throws ReturnIsExchangeException When the return is settled by an exchange.
      * @throws DomainException What Payments refused it with; the refusal is saved on the attempt.
      */
     public function handle(OrderReturn $return, StaffMember $actor, ?bool $shipping = null, ?Money $withheld = null, ?string $withheldReason = null): ReturnRefund
@@ -91,6 +94,7 @@ final readonly class RefundReturn
      * The attempt to ask Payments about: the last one, unless it definitely got nothing back, else a new one saved now.
      *
      * @throws ReturnTransitionNotAllowedException
+     * @throws ReturnIsExchangeException
      */
     private function attemptFor(OrderReturn $return, AccountReference $by, ?bool $shipping, ?Money $withheld, ?string $withheldReason): ReturnRefund
     {
@@ -104,6 +108,11 @@ final readonly class RefundReturn
 
         if ($locked->status !== ReturnStatus::Inspected && ! ($locked->status === ReturnStatus::Approved && $locked->keep_items)) {
             throw new ReturnTransitionNotAllowedException;
+        }
+
+        // An exchange is settled by its replacement: confirm it, or make the return a refund first.
+        if ($locked->resolution === ReturnResolution::Exchange) {
+            throw new ReturnIsExchangeException;
         }
 
         $number = ($last->attempt ?? 0) + 1;

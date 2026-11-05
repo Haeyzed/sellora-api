@@ -6,12 +6,15 @@ namespace App\Tenant\Returns\Actions;
 
 use App\Shared\Auth\AccountReference;
 use App\Tenant\Returns\Data\FaultConfirmation;
+use App\Tenant\Returns\Enums\ReturnResolution;
 use App\Tenant\Returns\Enums\ReturnStatus;
 use App\Tenant\Returns\Exceptions\ReturnFaultReasonRequiredException;
+use App\Tenant\Returns\Exceptions\ReturnReplacementNotAvailableException;
 use App\Tenant\Returns\Exceptions\ReturnTransitionNotAllowedException;
 use App\Tenant\Returns\Models\OrderReturn;
 use App\Tenant\Returns\Services\ReturnFaults;
 use App\Tenant\Returns\Services\ReturnProgress;
+use App\Tenant\Returns\Services\ReturnReplacements;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -27,6 +30,7 @@ final readonly class ApproveReturn
     public function __construct(
         private ReturnProgress $returnProgress,
         private ReturnFaults $returnFaults,
+        private ReturnReplacements $returnReplacements,
     ) {}
 
     /**
@@ -34,11 +38,17 @@ final readonly class ApproveReturn
      *
      * @throws ReturnTransitionNotAllowedException When it isn't requested any more.
      * @throws ReturnFaultReasonRequiredException When the reason is overruled without saying why.
+     * @throws ReturnReplacementNotAvailableException When an exchange's replacement can't be sent now; no stock is held for it.
      */
     public function handle(OrderReturn $return, AccountReference $by, bool $keepItems = false, ?FaultConfirmation $fault = null): OrderReturn
     {
         return DB::transaction(function () use ($return, $by, $keepItems, $fault): OrderReturn {
             $locked = $this->returnProgress->lock($return);
+
+            if ($locked->resolution === ReturnResolution::Exchange) {
+                $this->returnReplacements->ensureAvailable($this->returnReplacements->of($locked));
+            }
+
             // Nothing comes back to inspect, so the fault is confirmed now.
             $faultFields = $keepItems ? $this->returnFaults->confirm($locked, $fault ?? FaultConfirmation::asClaimed()) : [];
 

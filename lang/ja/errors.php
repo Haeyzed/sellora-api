@@ -233,4 +233,7 @@ return [
     'replacement_currency_not_offered' => '注文の通貨は現在提供されていないため、その通貨で交換品の価格を決められません。代わりに返品を返金してください。',
     'replacement_shipping_unavailable' => '選択した配送方法では、交換品を注文の住所に送れません。別の配送方法を選んでください。',
     'return_fault_reason_required' => '理由を入力してください。ストアの責任かどうかが、返品理由の内容と異なります。',
+    'return_replacement_invalid' => '交換では返品した各行の代わりに送るストアの商品を一つずつ指定し、返金では何も指定しません。',
+    'return_replacement_not_available' => 'この交換で送る商品の一つを現在送れません。販売終了か在庫切れです。別の商品を選ぶか、代わりに返品を返金してください。',
+    'return_is_an_exchange' => 'この返品は交換で処理されます。交換を確定するか、先に処理方法を返金に変更してください。',
 ];

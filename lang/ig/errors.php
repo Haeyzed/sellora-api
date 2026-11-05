@@ -233,4 +233,7 @@ return [
     'replacement_currency_not_offered' => 'A naghị enye ego ọda ahụ ọzọ, ya mere a pụghị itinye ọnụahịa nnọchi na ya. Weghachite ego maka ihe ahụ e weghachiri kama.',
     'replacement_shipping_unavailable' => 'A pụghị iziga nnọchi ahụ n\'adreesị ọda ahụ site n\'ụzọ mbupu a họrọ. Họrọ ụzọ mbupu ọzọ.',
     'return_fault_reason_required' => 'Kwuo ihe kpatara ya: ma ọ bụ ụlọ ahịa mehiere dị iche n\'ihe ihe kpatara nweghachi ahụ kwuru.',
+    'return_replacement_invalid' => 'Mgbanwe na-akpọ otu ihe ụlọ ahịa a ga-eziga n\'ọnọdụ ahịrị ọ bụla e weghachiri, nweghachi ego anaghị akpọ nke ọ bụla.',
+    'return_replacement_not_available' => 'A pụghị iziga otu ihe nke mgbanwe a ugbu a: a naghị ere ya ọzọ, ma ọ bụ ọ gwụla. Họrọ ọzọ, ma ọ bụ weghachite ego kama.',
+    'return_is_an_exchange' => 'A na-edozi nweghachi a site na mgbanwe. Kwado mgbanwe ya, ma ọ bụ buru ụzọ gbanwee ka e si edozi ya ka ọ bụrụ nweghachi ego.',
 ];

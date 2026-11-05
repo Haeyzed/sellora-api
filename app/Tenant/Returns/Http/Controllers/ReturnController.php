@@ -17,6 +17,8 @@ use App\Tenant\Payments\Exceptions\RefundExceedsSaleException;
 use App\Tenant\Payments\Exceptions\RefundInvalidException;
 use App\Tenant\Returns\Actions\ApproveReturn;
 use App\Tenant\Returns\Actions\CancelReturn;
+use App\Tenant\Returns\Actions\ChangeReturnReplacements;
+use App\Tenant\Returns\Actions\ChangeReturnResolution;
 use App\Tenant\Returns\Actions\ChooseRefundDestination;
 use App\Tenant\Returns\Actions\InspectReturn;
 use App\Tenant\Returns\Actions\ReceiveReturn;
@@ -30,9 +32,13 @@ use App\Tenant\Returns\Exceptions\RefundDestinationNotOfferedException;
 use App\Tenant\Returns\Exceptions\ReturnInspectionMismatchException;
 use App\Tenant\Returns\Exceptions\ReturnQuantityTooHighException;
 use App\Tenant\Returns\Exceptions\ReturnRefundModuleHeldException;
+use App\Tenant\Returns\Exceptions\ReturnReplacementInvalidException;
+use App\Tenant\Returns\Exceptions\ReturnReplacementNotAvailableException;
 use App\Tenant\Returns\Exceptions\ReturnStaffReasonRequiredException;
 use App\Tenant\Returns\Exceptions\ReturnTransitionNotAllowedException;
 use App\Tenant\Returns\Http\Requests\ApproveReturnRequest;
+use App\Tenant\Returns\Http\Requests\ChangeReturnReplacementsRequest;
+use App\Tenant\Returns\Http\Requests\ChangeReturnResolutionRequest;
 use App\Tenant\Returns\Http\Requests\InspectReturnRequest;
 use App\Tenant\Returns\Http\Requests\ListReturnsRequest;
 use App\Tenant\Returns\Http\Requests\ManageReturnRequest;
@@ -57,7 +63,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
  */
 final class ReturnController extends Controller
 {
-    private const array WITH = ['order', 'lines.orderLine', 'stockLocation', 'media', 'refundChoices'];
+    private const array WITH = ['order', 'lines.orderLine', 'lines.replacementVariant.product', 'stockLocation', 'media', 'refundChoices'];
 
     /**
      * List returns.
@@ -106,6 +112,8 @@ final class ReturnController extends Controller
             $request->photos(),
             $request->outsideWindowReason(),
             $request->undeliveredReason(),
+            resolution: $request->resolution(),
+            replacements: $request->replacements(),
         );
 
         return (new ReturnResource($return->load(self::WITH)))->response()->setStatusCode(Response::HTTP_CREATED);
@@ -223,6 +231,42 @@ final class ReturnController extends Controller
         $chooseRefundDestination->handle($return, $request->destination(), $request->actor(), $request->note());
 
         return new ReturnResource($return->refresh()->load(self::WITH));
+    }
+
+    /**
+     * Choose what an exchange sends.
+     *
+     * Needs the returns.manage permission. For every line of an exchange, the
+     * variant to send in its place, as many of it, such as another size when
+     * the one asked for sold out. Each must be for sale and in stock (or take
+     * backorders); no stock is held for them until the exchange is confirmed.
+     * Only before then, and while the return isn't finished.
+     *
+     * @throws ReturnTransitionNotAllowedException
+     * @throws ReturnReplacementInvalidException
+     * @throws ReturnReplacementNotAvailableException
+     */
+    public function replacements(ChangeReturnReplacementsRequest $request, OrderReturn $return, ChangeReturnReplacements $changeReturnReplacements): ReturnResource
+    {
+        return new ReturnResource($changeReturnReplacements->handle($return, $request->replacements())->load(self::WITH));
+    }
+
+    /**
+     * Change how a return is settled.
+     *
+     * Needs the returns.manage permission. "refund" clears an exchange's
+     * replacements, such as when none can be sent or the order's currency is
+     * no longer offered; "exchange" names a replacement for every line. Only
+     * before an exchange is confirmed, and never once a refund of it may have
+     * given money back. Recorded in the store's activity.
+     *
+     * @throws ReturnTransitionNotAllowedException
+     * @throws ReturnReplacementInvalidException
+     * @throws ReturnReplacementNotAvailableException
+     */
+    public function resolution(ChangeReturnResolutionRequest $request, OrderReturn $return, ChangeReturnResolution $changeReturnResolution): ReturnResource
+    {
+        return new ReturnResource($changeReturnResolution->handle($return, $request->resolution(), $request->replacements(), $request->actor())->load(self::WITH));
     }
 
     /**

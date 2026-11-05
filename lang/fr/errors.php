@@ -233,4 +233,7 @@ return [
     'replacement_currency_not_offered' => 'La devise de la commande n\'est plus proposée : aucun remplacement ne peut y être tarifé. Remboursez plutôt le retour.',
     'replacement_shipping_unavailable' => 'Le remplacement ne peut pas être envoyé à l\'adresse de la commande avec le mode de livraison choisi. Choisissez un autre mode de livraison.',
     'return_fault_reason_required' => 'Indiquez pourquoi : la responsabilité de la boutique diffère de ce qu\'affirme le motif du retour.',
+    'return_replacement_invalid' => 'Un échange indique un article de la boutique à envoyer à la place de chaque ligne retournée ; un remboursement n\'en indique aucun.',
+    'return_replacement_not_available' => 'Un article de cet échange ne peut pas être envoyé pour le moment : il n\'est plus en vente ou est en rupture de stock. Choisissez-en un autre, ou remboursez plutôt le retour.',
+    'return_is_an_exchange' => 'Ce retour est réglé par un échange. Confirmez l\'échange, ou passez d\'abord son règlement en remboursement.',
 ];

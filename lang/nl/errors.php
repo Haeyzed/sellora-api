@@ -233,4 +233,7 @@ return [
     'replacement_currency_not_offered' => 'De valuta van de bestelling wordt niet meer aangeboden, dus er kan geen vervanging in worden geprijsd. Betaal de retour in plaats daarvan terug.',
     'replacement_shipping_unavailable' => 'De vervanging kan met de gekozen verzendmethode niet naar het adres van de bestelling worden gestuurd. Kies een andere verzendmethode.',
     'return_fault_reason_required' => 'Geef een reden: of de winkel schuld had, wijkt af van wat de retourreden stelt.',
+    'return_replacement_invalid' => 'Een ruil noemt voor elke geretourneerde regel een artikel van de winkel om in plaats daarvan te sturen; een terugbetaling noemt er geen.',
+    'return_replacement_not_available' => 'Een artikel voor deze ruil kan nu niet worden verstuurd: het wordt niet meer verkocht of is niet op voorraad. Kies een ander, of betaal de retour in plaats daarvan terug.',
+    'return_is_an_exchange' => 'Deze retour wordt afgehandeld met een ruil. Bevestig de ruil, of wijzig de afhandeling eerst in een terugbetaling.',
 ];

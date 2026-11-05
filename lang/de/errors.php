@@ -233,4 +233,7 @@ return [
     'replacement_currency_not_offered' => 'Die Währung der Bestellung wird nicht mehr angeboten, daher kann kein Ersatz in ihr berechnet werden. Erstatte die Rücksendung stattdessen.',
     'replacement_shipping_unavailable' => 'Der Ersatz kann mit der gewählten Versandart nicht an die Adresse der Bestellung geschickt werden. Wähle eine andere Versandart.',
     'return_fault_reason_required' => 'Gib einen Grund an: Ob der Shop schuld war, weicht von dem ab, was der Rückgabegrund angibt.',
+    'return_replacement_invalid' => 'Ein Umtausch nennt für jede zurückgegebene Position einen Artikel des Shops, der stattdessen geschickt wird; eine Erstattung nennt keinen.',
+    'return_replacement_not_available' => 'Ein Artikel für diesen Umtausch kann gerade nicht geschickt werden: Er wird nicht mehr verkauft oder ist nicht vorrätig. Wähle einen anderen oder erstatte die Rücksendung stattdessen.',
+    'return_is_an_exchange' => 'Diese Rücksendung wird durch einen Umtausch abgewickelt. Bestätige den Umtausch oder ändere die Abwicklung zuerst auf eine Erstattung.',
 ];

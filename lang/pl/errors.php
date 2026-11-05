@@ -233,4 +233,7 @@ return [
     'replacement_currency_not_offered' => 'Waluta zamówienia nie jest już oferowana, więc nie można w niej wycenić zamiennika. Zamiast tego zwróć pieniądze za zwrot.',
     'replacement_shipping_unavailable' => 'Zamiennika nie można wysłać wybraną metodą wysyłki na adres zamówienia. Wybierz inną metodę wysyłki.',
     'return_fault_reason_required' => 'Podaj powód: to, czy sklep zawinił, różni się od tego, co twierdzi powód zwrotu.',
+    'return_replacement_invalid' => 'Wymiana wskazuje produkt sklepu do wysłania w miejsce każdej zwracanej pozycji, a zwrot pieniędzy nie wskazuje żadnego.',
+    'return_replacement_not_available' => 'Jednego z produktów tej wymiany nie można teraz wysłać: nie jest już w sprzedaży lub go brak. Wybierz inny albo zamiast tego zwróć pieniądze.',
+    'return_is_an_exchange' => 'Ten zwrot jest rozliczany wymianą. Potwierdź wymianę albo najpierw zmień sposób rozliczenia na zwrot pieniędzy.',
 ];

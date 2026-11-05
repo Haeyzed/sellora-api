@@ -233,4 +233,7 @@ return [
     'replacement_currency_not_offered' => 'Mata uang pesanan tidak ditawarkan lagi, jadi pengganti tidak bisa diberi harga dalam mata uang itu. Kembalikan dana retur ini saja.',
     'replacement_shipping_unavailable' => 'Pengganti tidak bisa dikirim ke alamat pesanan dengan metode pengiriman yang dipilih. Pilih metode pengiriman lain.',
     'return_fault_reason_required' => 'Sebutkan alasannya: apakah toko bersalah berbeda dari yang diklaim alasan retur.',
+    'return_replacement_invalid' => 'Penukaran menyebut satu barang toko untuk dikirim sebagai ganti setiap baris yang diretur, dan pengembalian dana tidak menyebut apa pun.',
+    'return_replacement_not_available' => 'Salah satu barang untuk penukaran ini tidak bisa dikirim sekarang: sudah tidak dijual atau stoknya habis. Pilih yang lain, atau kembalikan dana retur ini saja.',
+    'return_is_an_exchange' => 'Retur ini diselesaikan dengan penukaran. Konfirmasi penukarannya, atau ubah dulu cara penyelesaiannya menjadi pengembalian dana.',
 ];

@@ -30,7 +30,7 @@ use Illuminate\Http\Response;
  */
 final class GuestReturnController extends Controller
 {
-    private const array WITH = ['order', 'lines.orderLine', 'media', 'refundChoices'];
+    private const array WITH = ['order', 'lines.orderLine', 'lines.replacementVariant.product', 'media', 'refundChoices'];
 
     /**
      * Ask to return units of my order.
@@ -46,7 +46,7 @@ final class GuestReturnController extends Controller
      */
     public function store(GuestReturnRequest $request, Order $order, RequestReturn $requestReturn): JsonResponse
     {
-        $return = $requestReturn->handle(ReturnRequester::guest(), $request->guestOrder($order), $request->returnLines(), $request->reason(), $request->note(), $request->photos());
+        $return = $requestReturn->handle(ReturnRequester::guest(), $request->guestOrder($order), $request->returnLines(), $request->reason(), $request->note(), $request->photos(), resolution: $request->resolution(), replacements: $request->replacements());
 
         return (new BuyerReturnResource($return->load(self::WITH)))->response()->setStatusCode(Response::HTTP_CREATED);
     }

@@ -233,4 +233,7 @@ return [
     'replacement_currency_not_offered' => 'La valuta dell\'ordine non è più offerta, quindi non si può prezzare un sostituto in essa. Rimborsa invece il reso.',
     'replacement_shipping_unavailable' => 'Il sostituto non può essere spedito all\'indirizzo dell\'ordine con il metodo di spedizione scelto. Scegli un altro metodo di spedizione.',
     'return_fault_reason_required' => 'Indica il motivo: la responsabilità del negozio è diversa da quanto afferma il motivo del reso.',
+    'return_replacement_invalid' => 'Un cambio indica un articolo del negozio da inviare al posto di ogni riga resa; un rimborso non ne indica nessuno.',
+    'return_replacement_not_available' => 'Un articolo di questo cambio non può essere inviato ora: non è più in vendita o è esaurito. Scegline un altro, oppure rimborsa il reso.',
+    'return_is_an_exchange' => 'Questo reso si chiude con un cambio. Conferma il cambio, oppure cambia prima la chiusura in un rimborso.',
 ];

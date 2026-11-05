@@ -63,9 +63,10 @@ final class ReturnResource extends JsonResource
             /** Where its refund goes, as the customer chose (or staff recorded at their request, with how they asked in `note`): "original_payment" unless a choice was made. `chosen_by` and `chosen_at` are null when none was. Covers only what was paid with real money. */
             'refund_destination' => $this->refundDestination(),
             /**
-             * The units coming back, and once inspected how many went back on the shelf and how many were written off.
+             * The units coming back, and once inspected how many went back on the shelf and how many were written off. For an exchange,
+eplacement is the variant sent in their place, as many of it; null for a refund.
              *
-             * @var list<array{line: string, product_name: string, variant_name: string|null, sku: string|null, quantity: int, restocked_quantity: int|null, written_off_quantity: int|null}>
+             * @var list<array{line: string, product_name: string, variant_name: string|null, sku: string|null, quantity: int, restocked_quantity: int|null, written_off_quantity: int|null, replacement: array{id: string, sku: string|null, product: string}|null}>
              */
             'lines' => array_values($this->lines->map(static fn (ReturnLine $line): array => [
                 'line' => $line->orderLine->public_id,
@@ -75,6 +76,7 @@ final class ReturnResource extends JsonResource
                 'quantity' => $line->quantity,
                 'restocked_quantity' => $line->restocked_quantity,
                 'written_off_quantity' => $line->written_off_quantity,
+                'replacement' => self::replacementOf($line),
             ])->all()),
             /** How many photos the buyer added; staff download each by its position from 1. */
             'photos' => $this->getMedia(ReturnPhotos::COLLECTION)->count(),
@@ -138,5 +140,17 @@ final class ReturnResource extends JsonResource
     private function destinationLabel(string $key): string
     {
         return resolve(FindRefundDestinations::class)->labelOf($key);
+    }
+
+    /**
+     * The variant an exchange sends in place of a line, as staff see it; null for a refund.
+     *
+     * @return array{id: string, sku: string|null, product: string}|null
+     */
+    public static function replacementOf(ReturnLine $line): ?array
+    {
+        $variant = $line->replacementVariant;
+
+        return $variant === null ? null : ['id' => $variant->public_id, 'sku' => $variant->sku, 'product' => $variant->product->public_id];
     }
 }

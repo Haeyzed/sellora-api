@@ -233,4 +233,7 @@ return [
     'replacement_currency_not_offered' => 'Sarafu ya agizo haitolewi tena, kwa hivyo hakuna bidhaa ya kubadilisha inayoweza kupangiwa bei kwa sarafu hiyo. Rudisha pesa ya bidhaa iliyorudishwa badala yake.',
     'replacement_shipping_unavailable' => 'Bidhaa ya kubadilisha haiwezi kutumwa kwa anwani ya agizo kwa njia ya usafirishaji iliyochaguliwa. Chagua njia nyingine ya usafirishaji.',
     'return_fault_reason_required' => 'Eleza sababu: kama duka lilikuwa na kosa kunatofautiana na kile sababu ya kurudisha inadai.',
+    'return_replacement_invalid' => 'Ubadilishaji unataja bidhaa moja ya duka itakayotumwa badala ya kila mstari uliorudishwa, na kurudishiwa pesa hakutaji yoyote.',
+    'return_replacement_not_available' => 'Bidhaa moja ya ubadilishaji huu haiwezi kutumwa sasa: haiuzwi tena au imeisha. Chagua nyingine, au rudisha pesa badala yake.',
+    'return_is_an_exchange' => 'Urudishaji huu unatatuliwa kwa ubadilishaji. Thibitisha ubadilishaji, au badilisha kwanza njia ya kutatua iwe kurudishiwa pesa.',
 ];

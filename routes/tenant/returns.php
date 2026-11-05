@@ -65,6 +65,8 @@ Route::middleware([UseDashboardLanguage::class, 'auth:'.StaffMember::GUARD, Ensu
         Route::post('{return}/inspect', [ReturnController::class, 'inspect'])->name('inspect');
         Route::post('{return}/refund', [ReturnController::class, 'refund'])->middleware('idempotent')->name('refund');
         Route::post('{return}/cancel', [ReturnController::class, 'cancel'])->name('cancel');
+        Route::put('{return}/replacements', [ReturnController::class, 'replacements'])->name('replacements.update');
+        Route::put('{return}/resolution', [ReturnController::class, 'resolution'])->name('resolution.update');
         Route::put('{return}/refund-destination', [ReturnController::class, 'recordRefundDestination'])->name('refund-destination.update');
     });
 });

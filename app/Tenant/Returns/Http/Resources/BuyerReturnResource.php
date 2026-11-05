@@ -33,8 +33,10 @@ final class BuyerReturnResource extends JsonResource
             /** Its order's number and its own, such as "#1042-R1". */
             'number' => $this->displayNumber(),
             'order' => ['id' => $this->order->public_id, 'number' => $this->order->number],
-            /** "requested", "approved", "rejected", "received", "inspected", "completed" or "cancelled". */
+            /** "requested", "approved", "rejected", "received", "inspected", "awaiting_exchange" (its exchange's replacement isn't paid yet), "completed" or "cancelled". */
             'status' => $this->status,
+            /** "refund", or "exchange": other items sent in place of the returned ones. */
+            'resolution' => $this->resolution,
             /** Why, by code and in the buyer's language. */
             'reason' => ['code' => $this->reason->value, 'label' => $this->reason->label()],
             'note' => $this->note,
@@ -45,15 +47,16 @@ final class BuyerReturnResource extends JsonResource
             /** Where its refund goes: "original_payment" (back to how the buyer paid) unless they chose otherwise; `chosen_at` is null when no choice was made. Covers only what was paid with real money. */
             'refund_destination' => $this->refundDestination(),
             /**
-             * The units coming back.
+             * The units coming back, and for an exchange the variant sent in their place (null for a refund).
              *
-             * @var list<array{line: string, product_name: string, variant_name: string|null, quantity: int}>
+             * @var list<array{line: string, product_name: string, variant_name: string|null, quantity: int, replacement: array{id: string, sku: string|null, product: string}|null}>
              */
             'lines' => array_values($this->lines->map(static fn (ReturnLine $line): array => [
                 'line' => $line->orderLine->public_id,
                 'product_name' => $line->orderLine->product_name,
                 'variant_name' => $line->orderLine->variant_name,
                 'quantity' => $line->quantity,
+                'replacement' => ReturnResource::replacementOf($line),
             ])->all()),
             /** How many photos were added. */
             'photos' => $this->getMedia(ReturnPhotos::COLLECTION)->count(),
