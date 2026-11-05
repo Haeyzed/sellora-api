@@ -35,7 +35,9 @@ the owner's review (item 2a):
 | `fc3f426` | Asking for an exchange, choosing its replacements, changing the resolution |
 | `7df1fbb` | Previewing and confirming an exchange, with the `returns.exchange` permission (D2, D3, D6) |
 | `b2df871` | Settling the exchange once its replacement is paid, or sending the return back when it isn't |
-| (docs) | This handover, Returns, API testing and the README |
+| `b73ec21` | Docs: this handover, Returns, API testing and the README |
+| `8b24cf7` | Return lines read by their real types, without inline `@var` |
+| (docs) | This handover's follow-ups after the review |
 
 Before 18c: Step 18b (`step-18b-refund-destinations`, `cbf42a5` to
 `1d0e037`), `permission-labels`, `encrypt-queued-messages` and
@@ -144,7 +146,8 @@ The frontends come after the core API is done. The frontend repository is
 | **Plain-text queued emails** written before `encrypt-queued-messages` is deployed stay readable in `failed_jobs` until the 30-day purge; they are not re-encrypted | [Deployment](deployment.md) |
 | **A saved preferred language for staff and platform admins** (a column on each), for Step 20: today a dashboard's language comes only from `Accept-Language`, so emails and alerts sent outside a request (by a job or the scheduler) have no language to use | Only here (decided in `permission-labels`) |
 | **Native review of the permission labels and group names** before real merchants use them: Yoruba, Hausa, Igbo and Swahili above all, and ideally every non-English language. They were written without a native speaker; the descriptions were too, and so were 18b's refund destination label and its three error messages, and 18c's `exchange` destination label and its five `replacement_*` error messages, and 18d's `returns.exchange` permission and allowance label, the `faulty` reason, and the `return_fault_reason_required`, `return_replacement_invalid`, `return_replacement_not_available`, `return_is_an_exchange` and `exchange_not_ready` messages | `lang/*/permissions.php`, `lang/*/permission_groups.php`, `lang/*/refunds.php`, `lang/*/returns.php` and the `refund_destination_*`, `replacement_*`, `return_*` and `exchange_not_ready` entries in `lang/*/errors.php` |
-| **Inline `@var` on validated request arrays:** the Returns requests type each validated line with an inline `@var` (from Step 18.5's `ValidatesReturnRequest`, copied by 18d's replacement requests), which CLAUDE.md section 13 rules out. They should get a typed accessor instead, in a change of their own | `app/Tenant/Returns/Http/Requests` |
+| **Inline `@var` outside Returns:** CLAUDE.md section 13 rules them out; Returns has none since `8b24cf7` (its requests read lines through `ReadsReturnLines`). 91 remain on variables: 69 in `app/` and `integrations/` (most in Catalog's and other domains' form requests, then Orders, Payments, Shared), 22 in `tests/`. Each domain's are fixed in a change of their own. The `@var` above array keys in API resources (88) document response fields for Scramble and are not inline type casts | Found with `git grep -nE '/\*\* @var [^*]+ \$[A-Za-z_]+ \*/'` |
+| **The `stores_fault` backfill** (18d) set the fault from the buyer's claim for returns already inspected or kept. That was acceptable only because no live store data exists yet; on live data, a backfill like this must leave the fault unconfirmed for staff | The 18d exchanges migration |
 | **The pre-commit hook** was tried by hand only on Windows (PowerShell and Git Bash); CI now runs the hook check (`composer ci:hook`) on Linux on every push | [CI workflow](../.github/workflows/ci.yml) |
 
 ## 4. New PC setup (Windows PowerShell)
