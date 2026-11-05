@@ -215,6 +215,22 @@ it('gives a platform admin permissions directly, on top of their roles, audited 
         ->assertJsonPath('data.permissions.0.sources', [['type' => 'role', 'role' => 'super_admin']]);
 });
 
+it('shows a leftover permission no code defines, which still lets its holder through, marked unknown and sensitive', function (): void {
+    $support = platformTeamMember('Sam Support', 'Support');
+    $support->givePermissionTo(Spatie\Permission\Models\Permission::findOrCreate('legacy.billing', PlatformAdmin::GUARD), PlatformPermission::StoresView->value);
+
+    expect($support->fresh()?->can('legacy.billing'))->toBeTrue();
+
+    platformTeam('GET', "team/admins/{$support->public_id}/permissions", as: $this->superAdmin)
+        ->assertOk()
+        ->assertJsonPath('data.permissions.*.name', ['legacy.billing', 'stores.view'])
+        ->assertJsonPath('data.permissions.0', [
+            'name' => 'legacy.billing', 'label' => 'legacy.billing', 'description' => null, 'group' => null,
+            'is_sensitive' => true, 'is_unknown' => true, 'sources' => [['type' => 'direct', 'role' => null]],
+        ])
+        ->assertJsonPath('data.permissions.1.is_unknown', false);
+});
+
 it('never lets an admin change their own permissions, gives super admins none directly, and is for super admins only', function (): void {
     $otherSuperAdmin = platformTeamMember('Bo Super', PlatformRole::SuperAdmin->value);
     $support = platformTeamMember('Sam Support', 'Support');

@@ -470,6 +470,13 @@ curl.exe --request POST "${PlatformBase}/team/admins/${PlatformAdmin}/deactivate
 
 **GET** `/team/admins/{platformAdmin}/permissions` — platform bearer token. Show what a platform admin may do, and why
 
+Each permission carries the same fields as the list above, plus `sources`
+and `is_unknown`. `is_unknown: true` marks a leftover grant: a permission no
+code defines any more, kept in the central database until no role or admin
+holds it, which still lets its holder through. It is labelled with its key,
+its `description` and `group` are `null`, and `is_sensitive` is `true`.
+Remove it from the role or the admin that holds it.
+
 ```powershell
 curl.exe --request GET "${PlatformBase}/team/admins/${PlatformAdmin}/permissions" `
   --header 'Accept: application/json' `

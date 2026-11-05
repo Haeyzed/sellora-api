@@ -375,11 +375,11 @@ it('gives a team member permissions directly, on top of their roles, audited and
         ->assertJsonPath('data.permissions', [
             [
                 'name' => 'catalog.view', 'label' => __('permissions.catalog.view.label'), 'description' => __('permissions.catalog.view.description'),
-                'group' => ['key' => 'catalog', 'label' => __('permission_groups.catalog')], 'is_sensitive' => false, 'sources' => [['type' => 'direct', 'role' => null]],
+                'group' => ['key' => 'catalog', 'label' => __('permission_groups.catalog')], 'is_sensitive' => false, 'is_unknown' => false, 'sources' => [['type' => 'direct', 'role' => null]],
             ],
             [
                 'name' => 'settings.view', 'label' => __('permissions.settings.view.label'), 'description' => __('permissions.settings.view.description'),
-                'group' => ['key' => 'settings', 'label' => __('permission_groups.settings')], 'is_sensitive' => false, 'sources' => [['type' => 'role', 'role' => 'Cashier']],
+                'group' => ['key' => 'settings', 'label' => __('permission_groups.settings')], 'is_sensitive' => false, 'is_unknown' => false, 'sources' => [['type' => 'role', 'role' => 'Cashier']],
             ],
         ]);
 
@@ -412,6 +412,22 @@ it('shows where each permission comes from: every role that gives it, and direct
     $owner = teamRequest('GET', "team/members/{$this->owner->public_id}/permissions", as: $viewer)->assertOk()->assertJsonPath('data.holds_every_permission', true);
     expect($owner->json('data.permissions.*.name'))->toBe(app(StaffPermissionCatalogue::class)->all())
         ->and(collect($owner->json('data.permissions.*.sources'))->unique()->values()->all())->toBe([[['type' => 'role', 'role' => 'owner']]]);
+});
+
+it('shows a leftover permission no code defines, which still lets its holder through, marked unknown and sensitive', function (): void {
+    $viewer = colleagueWith('viewer@example.com', roleWith('Viewer', ['staff.view']));
+    $holder = colleagueWith('holder@example.com', roleWith('Legacy', ['legacy.reports', 'catalog.view']));
+
+    expect($this->store->run(static fn (): bool => $holder->fresh()?->can('legacy.reports') ?? false))->toBeTrue();
+
+    teamRequest('GET', "team/members/{$holder->public_id}/permissions", as: $viewer)
+        ->assertOk()
+        ->assertJsonPath('data.permissions.*.name', ['catalog.view', 'legacy.reports'])
+        ->assertJsonPath('data.permissions.0.is_unknown', false)
+        ->assertJsonPath('data.permissions.1', [
+            'name' => 'legacy.reports', 'label' => 'legacy.reports', 'description' => null, 'group' => null,
+            'is_sensitive' => true, 'is_unknown' => true, 'sources' => [['type' => 'role', 'role' => 'Legacy']],
+        ]);
 });
 
 it('gives direct permissions under the same rules as roles', function (): void {

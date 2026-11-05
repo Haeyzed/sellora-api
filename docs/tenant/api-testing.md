@@ -3320,6 +3320,13 @@ curl.exe --request POST "${StoreBase}/staff/team/members/${StaffMember}/deactiva
 
 **GET** `/staff/team/members/{staffMember}/permissions` — staff bearer token. Show what a team member may do, and why
 
+Each permission carries the same fields as the list above, plus `sources`
+and `is_unknown`. `is_unknown: true` marks a leftover grant: a permission no
+code defines any more, kept in the store's database until no role or person
+holds it, which still lets its holder through. It is labelled with its key,
+its `description` and `group` are `null`, and `is_sensitive` is `true`.
+Remove it from the role or the person that holds it.
+
 ```powershell
 curl.exe --request GET "${StoreBase}/staff/team/members/${StaffMember}/permissions" `
   --header 'Accept: application/json' `
