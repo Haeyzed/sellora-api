@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tenant\Checkout\Actions;
 
 use App\Shared\Money\Money;
+use App\Tenant\Catalog\Models\ProductVariant;
 use App\Tenant\Checkout\Data\ReplacementLine;
 use App\Tenant\Checkout\Data\ReplacementQuote;
 use App\Tenant\Checkout\Data\ReplacementRequest;
@@ -19,16 +20,14 @@ use App\Tenant\Promotions\Data\DiscountedBasket;
 use App\Tenant\Promotions\Data\DiscountProposal;
 use App\Tenant\Promotions\Data\PriceAllowances;
 use App\Tenant\Promotions\Data\RedemptionHolder;
-use App\Tenant\Shipping\Actions\QuoteShipping;
+use App\Tenant\Shipping\Actions\PriceBasketWithShipping;
 use App\Tenant\Shipping\Data\CarrierAddress;
-use App\Tenant\Shipping\Data\ShippableLine;
 use App\Tenant\Shipping\Data\ShippingOption;
-use App\Tenant\Shipping\Data\ShippingQuoteRequest;
 use App\Tenant\Shipping\Data\ShippingRegion;
 use LogicException;
 
 /**
- * Works out what a replacement order in an exchange comes to now (Step 18c), through the same public steps checkout uses: whether each variant is for sale (Catalog) and can be bought (Inventory), today's prices with today's automatic promotions and tax (PriceWithDiscounts, never a code), and shipping (QuoteShipping).
+ * Works out what a replacement order in an exchange comes to now (Step 18c), through the same public steps checkout uses: whether each variant is for sale (Catalog) and can be bought (Inventory), and today's prices with today's automatic promotions, tax and shipping (PriceBasketWithShipping, never a code), then the exchange's allowances (PriceWithDiscounts).
  *
  * It is priced in the order's own currency at today's rate, sent to the
  * order's current shipping address (or pickup), for the order's buyer.
@@ -55,7 +54,7 @@ final readonly class QuoteReplacementOrder
         private FindExchangeRates $findExchangeRates,
         private FindVariantStockStatus $findVariantStockStatus,
         private PriceWithDiscounts $priceWithDiscounts,
-        private QuoteShipping $quoteShipping,
+        private PriceBasketWithShipping $priceBasketWithShipping,
     ) {}
 
     public function handle(ReplacementRequest $request): ReplacementQuote
@@ -79,15 +78,30 @@ final readonly class QuoteReplacementOrder
         $buyer = $request->discountBuyer();
         $holder = $request->redemptionHolder();
 
-        // The lines with their promotions and no delivery yet: what shipping is priced by.
-        $withoutShipping = $this->price($request, $rate, $taxDestination, null, $buyer, $holder, null);
-        $shipping = $this->shippingOption($request, $rate, $withoutShipping, $shippingAddress);
+        $destination = $this->shippingDestination($request, $shippingAddress, $billingAddress);
+
+        if ($destination === null) {
+            return $this->withIssues($request, [self::SHIPPING_UNAVAILABLE]);
+        }
+
+        // Priced with the delivery the way a cart and a checkout are, then the exchange's allowances on top.
+        $shipped = $this->priceBasketWithShipping->handle(
+            $rate,
+            $this->pricingLines($request),
+            $taxDestination,
+            $destination,
+            $shippingAddress === null ? null : new CarrierAddress($shippingAddress->countryCode, $shippingAddress->stateCode, $shippingAddress->postalCode, $shippingAddress->city, $shippingAddress->line1),
+            $method,
+            $buyer,
+            holder: $holder,
+        );
+        $shipping = $shipped->option;
 
         if ($method !== null && $shipping?->amount === null) {
             return $this->withIssues($request, [self::SHIPPING_UNAVAILABLE]);
         }
 
-        $basket = $this->priceWithAllowances($request, $rate, $taxDestination, $shipping?->amount, $buyer, $holder);
+        $basket = $this->withAllowances($request, $rate, $taxDestination, $shipped->basket ?? throw new LogicException('A replacement has lines.'), $shipping?->amount, $buyer, $holder);
         $total = $basket->priced->total();
         $credit = $request->returnedValue->isGreaterThan($total) ? $total : $request->returnedValue;
 
@@ -139,40 +153,27 @@ final readonly class QuoteReplacementOrder
         return new ReplacementQuote(null, null, $request->returnedValue, $zero, $zero, $zero, $request->returnedValue, $issues, hash('sha256', (string) json_encode($issues)));
     }
 
-    private function shippingOption(ReplacementRequest $request, AppliedExchangeRate $rate, DiscountedBasket $basket, ?AddressSnapshot $address): ?ShippingOption
+    /**
+     * Where the replacement would be sent, for shipping: the order's shipping address, a pickup's own region, or where the buyer is billed when nothing ships. Null when it must be sent to an address the order no longer has.
+     */
+    private function shippingDestination(ReplacementRequest $request, ?AddressSnapshot $shippingAddress, ?AddressSnapshot $billingAddress): ?ShippingRegion
     {
         $method = $request->shippingMethod;
 
-        if ($method === null) {
-            return null;
-        }
-
-        $destination = $address === null ? null : new ShippingRegion($address->countryCode, $address->stateCode);
-
-        if ($destination === null && $method->fulfilment->needsAddress()) {
-            return null;
-        }
-
-        $quote = $this->quoteShipping->handle(new ShippingQuoteRequest(
-            $rate,
-            array_map(static function (ReplacementLine $line, int $position) use ($basket): ShippableLine {
-                $priced = $basket->priced->lines[self::key($position)] ?? throw new LogicException('Every replacement line is priced.');
-
-                return new ShippableLine($line->variant, $line->quantity, $priced->subtotal->subtract($priced->discount));
-            }, $request->lines, array_keys($request->lines)),
-            $destination ?? new ShippingRegion((string) $method->pickup_country_code, $method->pickup_state_code),
-            $address === null ? null : new CarrierAddress($address->countryCode, $address->stateCode, $address->postalCode, $address->city, $address->line1),
-        ));
-
-        return $quote->option($method->public_id);
+        return match (true) {
+            $shippingAddress !== null => new ShippingRegion($shippingAddress->countryCode, $shippingAddress->stateCode),
+            $method !== null && $method->fulfilment->needsAddress() => null,
+            $method?->pickup_country_code !== null => new ShippingRegion($method->pickup_country_code, $method->pickup_state_code),
+            $billingAddress !== null => new ShippingRegion($billingAddress->countryCode, $billingAddress->stateCode),
+            default => null,
+        };
     }
 
     /**
-     * Priced with the delivery, then again with each free line's allowance (and a free delivery's), nudged by a minor unit while tax rounding leaves a free line over what it may cost.
+     * The basket as priced with its delivery, then again with each free line's allowance (and a free delivery's), nudged by a minor unit while tax rounding leaves a free line over what it may cost.
      */
-    private function priceWithAllowances(ReplacementRequest $request, AppliedExchangeRate $rate, ?TaxAddress $destination, ?Money $shipping, DiscountBuyer $buyer, RedemptionHolder $holder): DiscountedBasket
+    private function withAllowances(ReplacementRequest $request, AppliedExchangeRate $rate, ?TaxAddress $destination, DiscountedBasket $basket, ?Money $shipping, DiscountBuyer $buyer, RedemptionHolder $holder): DiscountedBasket
     {
-        $basket = $this->price($request, $rate, $destination, $shipping, $buyer, $holder, null);
         $shippingAllowance = $request->chargesShipping ? null : $shipping;
         $lineAllowances = [];
 
@@ -222,7 +223,7 @@ final readonly class QuoteReplacementOrder
     {
         return $this->priceWithDiscounts->handle(
             $rate->currency,
-            array_map(static fn (ReplacementLine $line, int $position): array => ['key' => self::key($position), 'variant' => $line->variant, 'quantity' => $line->quantity], $request->lines, array_keys($request->lines)),
+            $this->pricingLines($request),
             $destination,
             $shipping,
             $buyer,
@@ -231,6 +232,14 @@ final readonly class QuoteReplacementOrder
             rate: $rate,
             allowances: $allowances,
         );
+    }
+
+    /**
+     * @return list<array{key: string, variant: ProductVariant, quantity: int}>
+     */
+    private function pricingLines(ReplacementRequest $request): array
+    {
+        return array_map(static fn (ReplacementLine $line, int $position): array => ['key' => self::key($position), 'variant' => $line->variant, 'quantity' => $line->quantity], $request->lines, array_keys($request->lines));
     }
 
     private static function key(int $position): string

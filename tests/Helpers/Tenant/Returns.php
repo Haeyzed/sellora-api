@@ -407,12 +407,15 @@ function returnsRequest(string $method, string $path, array $data = [], ?StaffMe
 */
 
 /**
- * A shipping method of the test store that sends anywhere in Nigeria for the flat price given, in minor units, made through the staff API. Make one per test: each makes its own zone.
+ * A shipping method of the test store that sends anywhere in Nigeria for the flat price given, in minor units, or by the order-value brackets given, made through the staff API in a zone of its own.
+ *
+ * @param  list<array{from: int, to: int|null, amount: int}>|null  $rates
+ * @param  list<string>  $regions  Such as "NG", or "NG-LA" for Lagos alone.
  */
-function replacementShippingMethod(int $amount = 1500): App\Tenant\Shipping\Models\ShippingMethod
+function replacementShippingMethod(int $amount = 1500, ?array $rates = null, string $zoneName = 'Nigeria', array $regions = ['NG']): App\Tenant\Shipping\Models\ShippingMethod
 {
-    $zone = shippingZone('Nigeria', ['NG'], subdomain: 'first-store');
-    $id = shippingRequest('POST', '/methods', ['fulfilment' => 'ship', 'pricing' => 'flat', 'zone' => $zone, 'name' => ['en' => 'Replacement post'], 'rates' => [['from' => 0, 'to' => null, 'amount' => $amount]]], subdomain: 'first-store')->assertCreated()->json('data.id');
+    $zone = shippingZone($zoneName, $regions, subdomain: 'first-store');
+    $id = shippingRequest('POST', '/methods', ['fulfilment' => 'ship', 'pricing' => $rates === null ? 'flat' : 'order_value', 'zone' => $zone, 'name' => ['en' => 'Replacement post'], 'rates' => $rates ?? [['from' => 0, 'to' => null, 'amount' => $amount]]], subdomain: 'first-store')->assertCreated()->json('data.id');
 
     return test()->store->run(static fn (): App\Tenant\Shipping\Models\ShippingMethod => App\Tenant\Shipping\Models\ShippingMethod::query()->where('public_id', $id)->sole());
 }

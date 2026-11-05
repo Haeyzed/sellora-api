@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tenant\Cart\Actions;
 
-use App\Shared\Money\Money;
 use App\Tenant\Cart\Data\CartCurrency;
 use App\Tenant\Cart\Data\CartShipping;
 use App\Tenant\Cart\Data\CheckoutPricing;
@@ -17,24 +16,19 @@ use App\Tenant\Cart\Services\CartPrices;
 use App\Tenant\Inventory\Actions\FindVariantStockStatus;
 use App\Tenant\Inventory\Enums\StockStatus;
 use App\Tenant\Pricing\Data\TaxAddress;
-use App\Tenant\Promotions\Actions\PriceWithDiscounts;
 use App\Tenant\Promotions\Data\DiscountBuyer;
 use App\Tenant\Promotions\Data\DiscountedBasket;
 use App\Tenant\Settings\Actions\FindStoreSettings;
-use App\Tenant\Shipping\Actions\QuoteShipping;
+use App\Tenant\Shipping\Actions\PriceBasketWithShipping;
 use App\Tenant\Shipping\Data\CarrierAddress;
-use App\Tenant\Shipping\Data\ShippableLine;
-use App\Tenant\Shipping\Data\ShippingQuoteRequest;
 use App\Tenant\Shipping\Data\ShippingRegion;
-use Illuminate\Database\Eloquent\Collection;
-use LogicException;
 
 /**
  * Works out what a cart comes to now, for the shopper and for Checkout (section 6): never stored, so a cart always shows today's prices, discounts, stock and shipping.
  *
  * Lines that can't be bought (no longer for sale, or out of stock without
  * backorders) stay in the cart, marked, and are left out of the totals. The
- * rest are priced through PriceWithDiscounts, the same calculation checkout
+ * rest are priced through PriceBasketWithShipping, the same calculation checkout
  * charges (automatic promotions and the cart's code), in the cart's currency
  * or the store's own while that isn't offered. Shipping is quoted to the
  * country (and state) the shopper gave, or the store's own, by the weight
@@ -53,8 +47,7 @@ final readonly class PriceCart
     public function __construct(
         private CartPrices $cartPrices,
         private FindVariantStockStatus $findVariantStockStatus,
-        private PriceWithDiscounts $priceWithDiscounts,
-        private QuoteShipping $quoteShipping,
+        private PriceBasketWithShipping $priceBasketWithShipping,
         private FindStoreSettings $findStoreSettings,
     ) {}
 
@@ -84,27 +77,20 @@ final readonly class PriceCart
         };
         $buyer = $cart->customer === null ? DiscountBuyer::guest($checkout?->email) : DiscountBuyer::customer($cart->customer);
 
-        // Lines priced with their discounts but no shipping yet: what shipping brackets and thresholds look at.
-        $basket = $buyable->isEmpty() ? null : $this->basket($cart, $currency, $buyable, $taxDestination, null, $buyer);
-
         $destination = $address === null
             ? new ShippingRegion($cart->destination_country_code ?? $storeCountry, $cart->destination_state_code)
             : new ShippingRegion($address->countryCode, $address->stateCode);
-        $quote = $this->quoteShipping->handle(new ShippingQuoteRequest(
+        $shipped = $this->priceBasketWithShipping->handle(
             $currency->rate,
-            array_values($buyable->map(static function (CartLine $line) use ($basket): ShippableLine {
-                $priced = $basket?->priced->lines[$line->public_id] ?? null;
-
-                return new ShippableLine($line->variant, $line->quantity, $priced === null ? throw new LogicException('Every line that can be bought is priced.') : $priced->subtotal->subtract($priced->discount));
-            })->all()),
+            array_values($buyable->map(static fn (CartLine $line): array => ['key' => $line->public_id, 'variant' => $line->variant, 'quantity' => $line->quantity])->all()),
+            $taxDestination,
             $destination,
             $address === null ? null : new CarrierAddress($address->countryCode, $address->stateCode, $address->postalCode, $address->city, $address->line1),
-        ));
-        $option = $chosen === null ? null : $quote->option($chosen->public_id);
-
-        if ($basket !== null && $option?->amount !== null) {
-            $basket = $this->basket($cart, $currency, $buyable, $taxDestination, $option->amount, $buyer);
-        }
+            $chosen,
+            $buyer,
+            $cart->promotion_code,
+        );
+        [$basket, $quote, $option] = [$shipped->basket, $shipped->quote, $shipped->option];
 
         return new PricedCart(
             $cart,
@@ -113,22 +99,6 @@ final readonly class PriceCart
             $basket,
             $basket?->priced->destination ?? $taxDestination,
             new CartShipping($quote, $destination, $chosen, $option, $basket?->priced->shipping === null ? null : $basket->discounts->shippingDiscount),
-        );
-    }
-
-    /**
-     * @param  Collection<int, CartLine>  $buyable
-     */
-    private function basket(Cart $cart, CartCurrency $currency, Collection $buyable, ?TaxAddress $taxDestination, ?Money $shipping, DiscountBuyer $buyer): DiscountedBasket
-    {
-        return $this->priceWithDiscounts->handle(
-            $currency->code(),
-            array_values($buyable->map(static fn (CartLine $line): array => ['key' => $line->public_id, 'variant' => $line->variant, 'quantity' => $line->quantity])->all()),
-            $taxDestination,
-            $shipping,
-            $buyer,
-            $cart->promotion_code,
-            rate: $currency->rate,
         );
     }
 

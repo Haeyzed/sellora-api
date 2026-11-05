@@ -71,6 +71,22 @@ it('prices a dearer replacement at today\'s price with today\'s automatic promot
         ->and($discounts)->toBe(1200);
 });
 
+it('prices the delivery by what the replacement costs after its promotions, as a cart does', function (): void {
+    $return = $this->return;
+    $bracketed = replacementShippingMethod(rates: [['from' => 0, 'to' => 10000, 'amount' => 1500], ['from' => 10000, 'to' => null, 'amount' => 500]], zoneName: 'Lagos', regions: ['NG-LA']);
+
+    [$full, $discounted] = $this->store->run(static function () use ($return, $bracketed): array {
+        $variant = cartVariant(12000, stock: 5);
+        $full = app(QuoteReplacementOrder::class)->handle(replacementRequest($return, [[$variant, 1]], 10000, $bracketed))->shipping?->amount?->minorAmount();
+        Promotion::factory()->create(['percent' => Decimal::of(25)]);
+
+        return [$full, app(QuoteReplacementOrder::class)->handle(replacementRequest($return, [[$variant, 1]], 10000, $bracketed))->shipping?->amount?->minorAmount()];
+    });
+
+    // 12000 is in the upper bracket; 25% off brings it to 9000, in the lower one.
+    expect([$full, $discounted])->toBe([500, 1500]);
+});
+
 it('credits what a cheaper replacement costs, pays it at once, and leaves the rest to go back to the buyer', function (): void {
     Event::fake([ExchangeCreditCommitted::class]);
     [$return, $method] = [$this->return, $this->method];
