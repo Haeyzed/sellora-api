@@ -53,6 +53,15 @@ several, such as a gift-card portion followed by a gateway payment.
   way, so their credit note credits only what went back. It is never as much
   as the lines are worth, and only ever with a reason.
 
+- A refund can go to a module's destination the customer chose for their
+  return, such as store credit, instead of back the way each payment came
+  (see [where a refund goes](returns.md#where-a-refund-goes)). Its parts
+  are still drawn from the payments, so what each can give back stays
+  exact, and it reduces the sale, so it gets a credit note; but no gateway
+  is asked about it: the module pays it out. Only for the order's own
+  customer, never for one named payment or for money that was never part
+  of the sale.
+
 Refund requests and their amounts never change. Gateway outcomes are
 checked, and unclear cases go to staff review rather than being declared
 successful.

@@ -910,8 +910,49 @@ curl.exe --request POST "${StoreBase}/customer/orders/${Order}/returns" `
   --form 'lines[0][quantity]=1' `
   --form 'reason=damaged' `
   --form 'note=The box was crushed' `
-  --form 'photos[]=@damage.jpg'
+  --form 'photos[]=@damage.jpg' `
+  --form 'refund_destination=original_payment'
 ```
+
+`refund_destination` is optional: left out, the refund goes back to how the
+customer paid. Any other key must come from the order's refund destinations
+below, or the request is refused (`refund_destination_not_offered`) and no
+return is made.
+
+**GET** `/customer/orders/{order}/refund-destinations` — customer bearer token. List where an order's return refunds can go
+
+```powershell
+curl.exe --request GET "${StoreBase}/customer/orders/${Order}/refund-destinations" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $CustomerToken"
+```
+
+Always `original_payment` ("Back to how you paid") first; a module's
+destination, such as `store_credit`, only while the store uses that module.
+Each comes with its `key` and its `label` in the language asked for.
+
+**GET** `/customer/returns/{return}/refund-destinations` — customer bearer token. List where a return's refund can go
+
+```powershell
+curl.exe --request GET "${StoreBase}/customer/returns/${Return}/refund-destinations" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $CustomerToken"
+```
+
+**PUT** `/customer/returns/{return}/refund-destination` — customer bearer token. Choose where my return's refund goes
+
+```powershell
+curl.exe --request PUT "${StoreBase}/customer/returns/${Return}/refund-destination" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $CustomerToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw '{"destination":"original_payment"}'
+```
+
+Only before the refund starts, and again only once the last refund
+definitely failed; otherwise 409 `refund_destination_choice_closed`. The
+return's `refund_destination` shows the current choice (`chosen_at` is null
+when none was made).
 
 **GET** `/customer/returns` — customer bearer token. List my returns
 
@@ -2260,6 +2301,29 @@ curl.exe --request POST "${StoreBase}/staff/returns/${Return}/refund" `
   --header 'Idempotency-Key: return-refund-0001' `
   --data-raw '{"shipping":true}'
 ```
+
+The refund goes where the customer chose (the return's
+`refund_destination`), and each attempt in `refunds` shows its
+`destination`. A refund to a module's destination is paid out by the
+module, never through a gateway; one that definitely failed (its parts'
+`failure_code` is `refund_destination_refused`, `destination_not_registered`
+or `destination_unavailable`) lets the customer choose again before the
+next attempt.
+
+**PUT** `/staff/returns/{return}/refund-destination` — staff bearer token. Record where the customer asked a return's refund to go (`returns.manage`)
+
+```powershell
+curl.exe --request PUT "${StoreBase}/staff/returns/${Return}/refund-destination" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw '{"destination":"original_payment","note":"Phone call, 3 November"}'
+```
+
+Staff never choose for the customer: `note` (required) says how the
+customer asked, and the recording goes in the activity log. A module's
+destination only for an order with a customer account; a guest's return
+always goes back to how they paid.
 
 **POST** `/staff/returns/{return}/cancel` — staff bearer token. Cancel a return
 

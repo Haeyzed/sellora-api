@@ -7,8 +7,9 @@ the buyer. Field-level detail is in the database's own column comments.
 
 Returns never moves money or stock itself: refunds go through
 [Payments](payments.md) and stock through [Inventory](inventory.md), each
-through their own actions. Exchanges come in Step 18b; until then every
-return is settled by a refund.
+through their own actions. Exchanges come in Step 18c; until then every
+return is settled by a refund, back to how the buyer paid unless they chose
+another [destination](#where-a-refund-goes) a module offers.
 
 ## A return from start to finish
 
@@ -156,19 +157,75 @@ beyond what was paid, for staff to recover the money.
   (`return_refund_module_held`): refund what was paid otherwise by amount
   from the order's payments.
 
+## Where a refund goes
+
+A return's refund goes back to how the buyer paid (`original_payment`),
+core's own destination and the only one without modules. A module can offer
+others, such as store credit (`Wallet`) or a voucher (`GiftCards`), by
+registering a `RefundDestination` with Payments' `RefundDestinations` from
+its service provider, under its feature key.
+
+**Who chooses.** The customer, never staff:
+
+- A module's destination is offered only to the signed-in customer whose
+  order it is, only while the module is Enabled, and only when the module's
+  own rules allow. A guest's return always goes back to how they paid.
+- The customer chooses when asking for the return (`refund_destination`),
+  or afterwards (`PUT /customer/returns/{return}/refund-destination`), from
+  the list for the order or the return.
+- Staff (`returns.manage`) only record the customer's choice
+  (`PUT /staff/returns/{return}/refund-destination`), with a required `note`
+  on how the customer asked. It goes in the store's activity log; the audit
+  trail leaves the note out.
+- With no choice, the refund goes back to how the buyer paid.
+
+**When.** The choice is open until a refund attempt starts. It reopens only
+once the last attempt definitely got nothing back: refused by Payments, or
+failed in full, such as a destination that clearly refused it or one no
+module registers any more. While an attempt may be giving money back
+(started, pending, in review or mixed) it is closed
+(`refund_destination_choice_closed`, 409). Each attempt saves the
+destination it asked for; the next attempt follows the latest choice.
+
+**Only real money.** The choice covers only what was paid with real money
+(card, transfer, cash). What a module's payment method paid, such as a gift
+card, is never sent to the chosen destination: such a return is refused as
+before (`return_refund_module_held`). Store-issued value can never be
+turned into cash.
+
+**How it is paid out.** A refund to a module's destination still draws its
+parts from the order's payments, so what each can give back stays exact,
+and it reduces the sale, so it gets a credit note. No gateway is ever asked
+about it. After the refund is saved, the module pays it out, outside any
+transaction, under a claim so two callers at once never both ask:
+
+| The module | What happens |
+|---|---|
+| paid it out | every part succeeds, with the module's reference; the return completes |
+| definitely refused (`refund_destination_refused`) | every part fails; the choice reopens |
+| is no longer registered (`destination_not_registered`) or unavailable to the store (`destination_unavailable`) | every part fails, never a crash; the choice reopens |
+| gave no answer (an error or a timeout) | asked again after 5, 30, 120 and 720 minutes, then sent to staff review (`destination_unclear`); the choice stays closed |
+
+A destination already chosen is paid out whatever state its module is in
+(Locked, Disabled, the store Suspended), except Unavailable: money in
+motion is never blocked by plan gating. A test order's refund is marked as
+such for the module.
+
 ## Privacy and retention
 
-A return's note and photos are the buyer's personal data. When an order is
-anonymised (its customer or guest buyer is erased, or its retention ends),
-its returns lose their note and photos in the same erasure run and are
-marked anonymised; the photo files are deleted once that run commits. The
-returns keep their lines, statuses, times and refunds. A customer's or
-guest's data export includes their returns.
+A return's note and photos are the buyer's personal data, and so are
+staff's notes on how the buyer asked for their refund to go somewhere. When
+an order is anonymised (its customer or guest buyer is erased, or its
+retention ends), its returns lose their note, photos and those notes in the
+same erasure run and are marked anonymised; the photo files are deleted
+once that run commits. The returns keep their lines, statuses, times,
+refunds and destination choices. A customer's or guest's data export
+includes their returns, with every destination choice.
 
 | What | Kept for | Setting |
 |---|---|---|
 | Return photos | 180 days after the return ends (completed, rejected or cancelled) | `RETENTION_RETURN_PHOTOS_DAYS` |
-| Returns, their lines, history and refund attempts | as business records | — |
+| Returns, their lines, history, refund attempts and destination choices | as business records | — |
 
 Every Returns table and column is classified for the store export; photos
 are in it until purged.
@@ -178,7 +235,7 @@ are in it until purged.
 | Permission | Lets staff |
 |---|---|
 | `returns.view` | see returns, their history, refund attempts and photos, and the return settings |
-| `returns.manage` | start, approve, reject, receive, inspect and cancel returns, and change the return settings |
+| `returns.manage` | start, approve, reject, receive, inspect and cancel returns, record where the customer asked a refund to go, and change the return settings |
 | `payments.refund` (with `returns.manage`) | refund a return, and approve one with the buyer keeping the items |
 
 ## Endpoints
@@ -188,9 +245,9 @@ Every endpoint has a cURL example in [API testing](api-testing.md).
 | Who | Endpoints |
 |---|---|
 | Anyone | `returns/reasons` |
-| Customer, under `/api/v1/customer` | `orders/{order}/returns` (ask), `returns` (list), `returns/{return}`, `returns/{return}/cancel` |
+| Customer, under `/api/v1/customer` | `orders/{order}/returns` (ask), `orders/{order}/refund-destinations`; `returns` (list), `returns/{return}`, `returns/{return}/cancel`, `returns/{return}/refund-destinations`, `returns/{return}/refund-destination` (choose) |
 | Guest, under `/api/v1/guest/orders/{order}/returns`, with `X-Order-Token` | ask, list, `{return}`, `{return}/cancel` |
-| Staff, under `/api/v1/staff` | `orders/{order}/returns` (start); `returns` (list by status or order), `returns/{return}`, `/photos/{position}`, `/approve`, `/reject`, `/receive`, `/inspect`, `/refund` (with an `Idempotency-Key`), `/cancel`; `returns/settings` (show, change) |
+| Staff, under `/api/v1/staff` | `orders/{order}/returns` (start); `returns` (list by status or order), `returns/{return}`, `/photos/{position}`, `/approve`, `/reject`, `/receive`, `/inspect`, `/refund` (with an `Idempotency-Key`), `/cancel`, `/refund-destination` (record the customer's choice); `returns/settings` (show, change) |
 
 Lists are paged by cursor.
 
@@ -215,8 +272,14 @@ shipments and Payments' `FindRefundedUnits`, and keeps the photos.
 `InspectReturn` each lock the return and move it on; `InspectReturn` calls
 Inventory's `RestockReturnedUnits` and `WriteOffReturnedUnits`, and
 `RejectReturn` of an inspected return calls `SendReturnedUnitsBack`.
-`RefundReturn` saves an attempt, calls Payments' `RefundOrder` outside its
-transaction, and records what Payments answered.
+`RefundReturn` saves an attempt with the customer's chosen destination,
+calls Payments' `RefundOrder` outside its transaction, and records what
+Payments answered. `ChooseRefundDestination` locks the return, checks the
+choice is open, and asks Payments' `FindRefundDestinations` whether the
+destination is on offer. For a refund to a module's destination, Payments'
+`GiveRefundToDestination` asks the module after commit, and its
+`GiveRefundToDestinationAgain` job and the hourly sweep ask again after an
+unknown outcome.
 
 Returns listens to Payments' `RefundSucceeded`, `RefundFailed` and
 `RefundNeedsReview`, after Payments commits, to bring its attempts up to
@@ -227,5 +290,7 @@ stock levels; nothing locks the order before the return.
 
 Returns announces `ReturnRequested`, `ReturnApproved`, `ReturnRejected`,
 `ReturnReceived`, `ReturnInspected`, `ReturnRefundStarted` (once per
-attempt Payments made a refund for), `ReturnCompleted` and
-`ReturnCancelled`, each once it is saved, for Messaging (Step 20).
+attempt Payments made a refund for), `ReturnCompleted`, `ReturnCancelled`
+and `ReturnRefundDestinationChosen`, each once it is saved, for Messaging
+(Step 20). Payments announces `RefundGivenToDestination` and
+`RefundDestinationFailed` for refunds to a module's destination.

@@ -1,8 +1,8 @@
 # Handover
 
 **Date:** 5 November 2026.
-**Describes:** `main` at `a796b80`, and the branch `permission-labels`
-started from it.
+**Describes:** `main` at `175685b`, and the branch
+`step-18b-refund-destinations` started from it.
 
 This is for continuing the work on a new PC: for the project owner, and for
 a fresh Claude Code session that remembers nothing of the sessions before
@@ -15,32 +15,33 @@ disagrees with `git log`, GitHub or CLAUDE.md, they win.
 
 ## 1. Where things stand
 
-**`main`** is at `a796b80` ("Update Symfony to 8.1.11 for eight security
-advisories"). CI passed on it: run 41949795261, all three jobs (Pest on
-PostgreSQL 18 and Redis; Pint, Larastan and composer audit; Scramble).
+**`main`** is at `175685b` ("Show leftover permissions in each person's
+list instead of hiding them"). CI passed on it: run 42002047945, all three
+jobs (Pest on PostgreSQL 18 and Redis; Pint, Larastan and composer audit;
+Scramble).
 
-**What was finished last:** `encrypt-queued-messages`, merged into `main` by
+**What was finished last:** `permission-labels`, merged into `main` by
 fast-forward:
 
 | Commit | What |
 |---|---|
-| `842adec` | `scripts/run-suite.ps1` picks a safe number of parallel workers (`-Processes`) |
-| `0394a84` | Every queued notification is encrypted in the queue and in `failed_jobs`; an architecture test requires it |
-| `8a6b235` | CLAUDE.md: gateways on demand, billing gateway per merchant, permission labels |
-| `8f99aa9` | A test proves the exchange-rate app ID never leaks from a failed refresh |
-| `0aab2cc` | [Deployment](deployment.md): encrypted jobs and changing `APP_KEY` |
-| `a796b80` | Symfony 8.1.11, for eight security advisories |
+| `f00916a` | `scripts/wait-for-ci.ps1` survives a sleep and waits for the CI workflow only |
+| `30137e0` | Every permission has a group and a sensitive flag |
+| `62595f7` | Every permission has a label and every group a name, in all 20 languages |
+| `c1d6c03` | Both permission lists return label, description, group and sensitive, sorted and searchable; staff and platform routes answer in the dashboard's language |
+| `8c526f0` | The API guides and this handover |
+| `175685b` | A leftover permission no code defines is shown in each person's list (`is_unknown`), not hidden |
 
-Before that: `scrub-error-reports` (`b7172ee` to `53515da`), which keeps
-database errors' personal data out of reports, logs, the console, Sentry and
-failed jobs.
+Before that: `encrypt-queued-messages` (`842adec` to `a796b80`), which
+encrypts every queued notification, and `scrub-error-reports` (`b7172ee` to
+`53515da`).
 
 **Branches:**
 
 | Branch | State |
 |---|---|
-| `permission-labels` | **In progress:** item 2a below. Not merged |
-| `encrypt-queued-messages`, `scrub-error-reports`, `handover-scripts` | Merged; kept on GitHub |
+| `step-18b-refund-destinations` | **In progress:** item 2a below. Not merged |
+| `permission-labels`, `encrypt-queued-messages`, `scrub-error-reports`, `handover-scripts` | Merged; kept on GitHub |
 | `step-10-customers` to `step-18-returns`, `step-10b-social-sign-in`, `step-15b-invoices`, `step-16b-paystack` | Merged; kept on GitHub |
 | `docs-schema-comments`, `fix-token-links`, `fix-payment-holds` | Merged; kept on GitHub |
 | `ci-proof-docs`, `ci-proof-pint`, `ci-proof-stan` | Gone, as intended. They existed only on the old laptop (each broke one CI check on purpose, to prove CI catches it) and were never meant to be kept |
@@ -52,25 +53,55 @@ failed jobs.
 Each item is its own branch, starts only when the owner says so, and ends
 with a stop for review (CLAUDE.md section 17).
 
-### a. Permission labels (`permission-labels`)
+### a. Step 18b: refund destinations (`step-18b-refund-destinations`)
 
-From the CLAUDE.md section 10 rule. Every permission has a translated label
-and description and a group, in all 20 languages, and says whether it is
-sensitive. Both permission lists return them, sorted by group and label and
-searchable. Every staff and platform route answers in the dashboard's
-language (`Accept-Language`), while store content stays in the store's
-language. The branch also makes `scripts/wait-for-ci.ps1` survive a sleep
-and wait for the CI workflow only.
+From CLAUDE.md section 13. Where a return's refund goes is an extension
+point: back to the original payment is core's own and only destination
+without modules; modules register others (`RefundDestination`). The
+customer chooses; staff only record the customer's choice, with a note on
+how they asked; the choice covers only what was paid with real money. A
+refund to a destination is paid out by the module, never through a gateway.
+Once a destination refund definitely failed, the choice reopens. Described
+in [Returns](tenant/returns.md#where-a-refund-goes).
 
-### b. Step 18b: exchanges and the refund-destination extension point
+The exchange was split off into its own step (the owner's decision), 18c,
+because building an order outside checkout is large.
 
-From CLAUDE.md sections 17 and 18. An exchange is the return plus a linked
+### b. Step 18c: exchanges (its own branch, after 18b is merged)
+
+From CLAUDE.md sections 13 and 17. An exchange is the return plus a linked
 replacement order made by a staff action that reuses checkout's pricing,
 stock and tax steps; the price difference is settled by a payment or a
-refund. Where a refund goes becomes an extension point: the original
-payment is core's default and only destination, and modules add others
-through a core contract. Returns today is described in
-[Returns](tenant/returns.md).
+refund. The plan outlined in 18b, with the owner's decisions:
+
+- **Flow:** the buyer or staff ask for a return with resolution `exchange`
+  and one replacement variant per returned line (same quantity). Approval
+  checks the replacements can be bought but holds no stock. After
+  inspection (or approval when the buyer keeps the items), staff preview
+  the exchange and confirm it with the preview's hash. In one transaction
+  the stock is reserved, the replacement order is placed (by a new Orders
+  action, numbered, linked to the return, with the original's test flag) and the exchange credit is held on it.
+- **The credit** follows the payment-hold lifecycle: committed when the
+  replacement is paid in full (the original order then gets a refund with
+  destination `exchange` and its credit note; the replacement its invoice),
+  released if the replacement expires or is cancelled unpaid (the return
+  goes back to inspected). A dearer replacement leaves the rest due; a
+  cheaper one's difference goes back through the saved refund attempt, to
+  the customer's chosen destination.
+- **Replacement price (decided):** when the return is the store's fault
+  (damaged or the wrong item), a like-for-like replacement (same product, a
+  variant at the same price as the returned one) costs nothing: the
+  difference is zero whatever today's price is. Otherwise today's price
+  with today's automatic promotions, at today's rate in the order's
+  currency (refused if that currency isn't offered any more), and the
+  difference is settled either way.
+- **Replacement shipping (decided):** always free when the store is at
+  fault. Otherwise a new core store setting, charge shipping on exchanges,
+  off by default.
+- **Data:** `orders.checkout_id` becomes nullable plus `replaces_return_id`
+  (exactly one set), `returns.resolution` allows `exchange`, return lines get
+  the replacement variant, payment holds the `exchange_credit` method; a new
+  sensitive permission `returns.exchange`, labelled in all 20 languages.
 
 ### c. Steps 19, 20 and 21
 
@@ -89,7 +120,8 @@ The frontends come after the core API is done. The frontend repository is
 | **Audit ignore** GHSA-9vw2-f4vp-x7gf / PKSA-qhjm-rpqc-qkn6 is still in place. It is the same entry as the PHPUnit one below | [composer.json](../composer.json), `config.audit.ignore` |
 | **PHPUnit ignore:** remove it once Pest allows PHPUnit 13.4.4 or later, then run `composer update` for PHPUnit and `composer ci` | The same entry's note in [composer.json](../composer.json) |
 | **Step 20 alerts with no listener:** `OrderRefundedBeyondPaid`, `OrderPaidAfterCancellation`, `OrderPaymentsKeepFailing`, `PaymentHoldKeepsFailing`, `CommittedPaymentRefundFailed`, `PaymentDisputed`, `PaymentNeedsReview`, `PaymentOverpaid`, `PaymentUnresolved`, `PaymentGatewayNeedsReconnecting`, `RefundStillPending`, `RefundSucceededAfterFailing`, `CashCollectionOverdue`, `DeliveryFailed`, `StockRunningLow`, `VariantSoldOut` (16), plus `RefundNeedsReview` and `RefundFailed`, which have a listener but don't reach staff: 18 in all. Until Step 20, staff see none of them | Only here and in earlier review reports |
-| **Return messages for Step 20:** `ReturnRequested`, `ReturnApproved`, `ReturnRejected`, `ReturnReceived`, `ReturnInspected`, `ReturnRefundStarted`, `ReturnCompleted`, `ReturnCancelled` | [Returns](tenant/returns.md) |
+| **Return messages for Step 20:** `ReturnRequested`, `ReturnApproved`, `ReturnRejected`, `ReturnReceived`, `ReturnInspected`, `ReturnRefundStarted`, `ReturnCompleted`, `ReturnCancelled`, and from 18b `ReturnRefundDestinationChosen`, `RefundGivenToDestination` and `RefundDestinationFailed` (staff should hear of a definite failure, and the customer that they can choose again) | [Returns](tenant/returns.md) |
+| **The first real refund destination** (`Wallet` store credit or `GiftCards` vouchers): today only a test fixture implements `RefundDestination`, so the contract is proven against a fake. When the first module is built, check its payout is idempotent on our refund ID and that it never pays a test order's refund out as real value | [Returns](tenant/returns.md#where-a-refund-goes) |
 | **Real mixed-refund tests** (part of a refund went back, part failed, across payments) once `Wallet` or `GiftCards` exists; today only a fake gateway produces the mixed case | [Returns](tenant/returns.md), the "Never twice" table |
 | **Split-paid refunds:** which part of a split-paid order goes back first is decided when the first payment module is built | CLAUDE.md section 18, the refund-destination rule |
 | **Driver app, for the frontend:** a delivery is handed over in three calls: pick up, on the way, then delivered (multipart, with proof and the recipient's name, and an `Idempotency-Key`). The API also allows delivered straight after pick-up, but the buyer can follow a delivery only while it is on the way, so the app should not skip that call | [Delivery](tenant/delivery.md); the note itself only here |
@@ -102,7 +134,7 @@ The frontends come after the core API is done. The frontend repository is
 | **Telescope stores exception messages** in full, including a database error's SQL and values. It runs only locally (never in production or staging with real data), so it was left out of `scrub-error-reports` | Only here |
 | **Plain-text queued emails** written before `encrypt-queued-messages` is deployed stay readable in `failed_jobs` until the 30-day purge; they are not re-encrypted | [Deployment](deployment.md) |
 | **A saved preferred language for staff and platform admins** (a column on each), for Step 20: today a dashboard's language comes only from `Accept-Language`, so emails and alerts sent outside a request (by a job or the scheduler) have no language to use | Only here (decided in `permission-labels`) |
-| **Native review of the permission labels and group names** before real merchants use them: Yoruba, Hausa, Igbo and Swahili above all, and ideally every non-English language. They were written without a native speaker; the descriptions were too | `lang/*/permissions.php` and `lang/*/permission_groups.php` |
+| **Native review of the permission labels and group names** before real merchants use them: Yoruba, Hausa, Igbo and Swahili above all, and ideally every non-English language. They were written without a native speaker; the descriptions were too, and so were 18b's refund destination label and its three error messages | `lang/*/permissions.php`, `lang/*/permission_groups.php`, `lang/*/refunds.php` and the `refund_destination_*` entries in `lang/*/errors.php` |
 | **The pre-commit hook** was tried by hand only on Windows (PowerShell and Git Bash); CI now runs the hook check (`composer ci:hook`) on Linux on every push | [CI workflow](../.github/workflows/ci.yml) |
 
 ## 4. New PC setup (Windows PowerShell)

@@ -100,9 +100,10 @@ tokens; a token for one never works for another.
 These are in the approved build order (CLAUDE.md section 17) but don't exist
 yet:
 
-- **Step 18b, Exchanges:** a return settled with a replacement order, and
-  refunds to destinations other than the original payment. Returns with a
-  refund are built ([Returns](tenant/returns.md)).
+- **Step 18c, Exchanges:** a return settled with a replacement order.
+  Returns with a refund are built, and so is choosing where a refund goes
+  (Step 18b), though only core's own destination, the original payment,
+  exists until a module adds another ([Returns](tenant/returns.md)).
 - **Step 19, Storefront:** content pages, menus, banners, SEO, wishlists,
   fetching several products for comparison, related and similar products and
   best sellers.
