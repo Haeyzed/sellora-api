@@ -277,13 +277,13 @@ it('holds case-insensitive role names in the store database, and audits changes 
 it('lists the permissions roles can grant, with descriptions', function (): void {
     teamRequest('GET', 'team/permissions', as: $this->owner)
         ->assertOk()
-        ->assertJsonFragment(['name' => 'staff.invite', 'description' => __('permissions.staff.invite')]);
+        ->assertJsonFragment(['name' => 'staff.invite', 'description' => __('permissions.staff.invite.description')]);
 });
 
 it('describes every permission a store\'s or the platform\'s roles can grant', function (): void {
     $permissionNames = [...app(StaffPermissionCatalogue::class)->all(), ...array_column(PlatformPermission::cases(), 'value')];
 
-    expect(array_values(array_filter($permissionNames, static fn (string $name): bool => ! Lang::has("permissions.{$name}", 'en', false))))->toBe([]);
+    expect(array_values(array_filter($permissionNames, static fn (string $name): bool => ! Lang::has("permissions.{$name}.description", 'en', false))))->toBe([]);
 });
 
 it('keeps invitations and roles inside their own store', function (): void {
@@ -327,8 +327,8 @@ it('gives a team member permissions directly, on top of their roles, audited and
         ->assertOk()
         ->assertJsonPath('data.holds_every_permission', false)
         ->assertJsonPath('data.permissions', [
-            ['name' => 'catalog.view', 'description' => __('permissions.catalog.view'), 'sources' => [['type' => 'direct', 'role' => null]]],
-            ['name' => 'settings.view', 'description' => __('permissions.settings.view'), 'sources' => [['type' => 'role', 'role' => 'Cashier']]],
+            ['name' => 'catalog.view', 'description' => __('permissions.catalog.view.description'), 'sources' => [['type' => 'direct', 'role' => null]]],
+            ['name' => 'settings.view', 'description' => __('permissions.settings.view.description'), 'sources' => [['type' => 'role', 'role' => 'Cashier']]],
         ]);
 
     teamRequest('GET', 'catalog/brands', as: $cashier)->assertOk();

@@ -34,7 +34,7 @@ final class EffectivePermissionsResource extends JsonResource
              * @var list<array{name: string, description: string, sources: list<array{type: 'role'|'direct', role: string|null}>}>
              */
             'permissions' => array_map(static function (array $permission): array {
-                $description = __('permissions.'.$permission['name']);
+                $description = __('permissions.'.$permission['name'].'.description');
 
                 return [
                     'name' => $permission['name'],

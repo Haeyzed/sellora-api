@@ -4,80 +4,203 @@ declare(strict_types=1);
 
 return [
     'legal_documents' => [
-        'manage' => 'Hizmet şartları gibi satıcıların kabul ettiği yasal belgeleri hazırlayın, düzenleyin ve yayınlayın.',
+        'manage' => [
+            'label' => 'Yasal belgeleri yönet',
+            'description' => 'Hizmet şartları gibi satıcıların kabul ettiği yasal belgeleri hazırlayın, düzenleyin ve yayınlayın.',
+        ],
     ],
     'stores' => [
-        'view' => 'Her mağazayı, durumunu, planını, özellik izinlerini ve limit geçersiz kılmalarını görün.',
-        'manage' => 'Mağazaları askıya alın, yeniden etkinleştirin, kapatın ve geri yükleyin ve kurulumu başarısız olan bir mağazayı kurmayı yeniden deneyin.',
-        'grant' => 'Mağazalara planlarının dışında modül ve entegrasyonlar verin, kullanım limitlerini değiştirin.',
-        'export' => 'Her müşterinin kişisel verileri de dahil olmak üzere mağazanın tüm verilerini dışa aktarın.',
+        'view' => [
+            'label' => 'Mağazaları görüntüle',
+            'description' => 'Her mağazayı, durumunu, planını, özellik izinlerini ve limit geçersiz kılmalarını görün.',
+        ],
+        'manage' => [
+            'label' => 'Mağazaları yönet',
+            'description' => 'Mağazaları askıya alın, yeniden etkinleştirin, kapatın ve geri yükleyin ve kurulumu başarısız olan bir mağazayı kurmayı yeniden deneyin.',
+        ],
+        'grant' => [
+            'label' => 'Özellik ve limit tanımla',
+            'description' => 'Mağazalara planlarının dışında modül ve entegrasyonlar verin, kullanım limitlerini değiştirin.',
+        ],
+        'export' => [
+            'label' => 'Mağaza verilerini dışa aktar',
+            'description' => 'Her müşterinin kişisel verileri de dahil olmak üzere mağazanın tüm verilerini dışa aktarın.',
+        ],
     ],
     'staff' => [
-        'view' => 'Ekibi görün: personel üyeleri, rolleri ve bekleyen davetler.',
-        'invite' => 'İnsanları ekibe katılmaya davet edin ve davetiyeleri yeniden gönderin veya iptal edin.',
-        'manage' => 'Personel üyelerinin rollerini değiştirin ve bunları devre dışı bırakın veya yeniden etkinleştirin.',
+        'view' => [
+            'label' => 'Ekibi görüntüle',
+            'description' => 'Ekibi görün: personel üyeleri, rolleri ve bekleyen davetler.',
+        ],
+        'invite' => [
+            'label' => 'Personel davet et',
+            'description' => 'İnsanları ekibe katılmaya davet edin ve davetiyeleri yeniden gönderin veya iptal edin.',
+        ],
+        'manage' => [
+            'label' => 'Personeli yönet',
+            'description' => 'Personel üyelerinin rollerini değiştirin ve bunları devre dışı bırakın veya yeniden etkinleştirin.',
+        ],
     ],
     'catalog' => [
-        'view' => 'Kataloğa bakın: taslaklar, arşivlenmiş öğeler ve çöp kutusu da dahil olmak üzere markalar, kategoriler ve ürünler.',
-        'manage' => 'Markaları, kategorileri ve ürünleri oluşturup değiştirin, bunları çöp kutusuna taşıyın ve geri yükleyin.',
+        'view' => [
+            'label' => 'Kataloğu görüntüle',
+            'description' => 'Kataloğa bakın: taslaklar, arşivlenmiş öğeler ve çöp kutusu da dahil olmak üzere markalar, kategoriler ve ürünler.',
+        ],
+        'manage' => [
+            'label' => 'Kataloğu yönet',
+            'description' => 'Markaları, kategorileri ve ürünleri oluşturup değiştirin, bunları çöp kutusuna taşıyın ve geri yükleyin.',
+        ],
     ],
     'inventory' => [
-        'view' => 'Stok seviyelerini, konumlarını ve her stok değişiminin geçmişini görün.',
-        'adjust' => 'Stok alın, stok sayımlarını düzeltin ve her bir varyantın stoğunun işlenme şeklini değiştirin.',
-        'costs' => 'Her birimin mağazaya maliyetini görün ve değiştirin. Maliyetler dahilidir ve müşterilere asla gösterilmez.',
+        'view' => [
+            'label' => 'Stoğu görüntüle',
+            'description' => 'Stok seviyelerini, konumlarını ve her stok değişiminin geçmişini görün.',
+        ],
+        'adjust' => [
+            'label' => 'Stoğu düzelt',
+            'description' => 'Stok alın, stok sayımlarını düzeltin ve her bir varyantın stoğunun işlenme şeklini değiştirin.',
+        ],
+        'costs' => [
+            'label' => 'Birim maliyetleri',
+            'description' => 'Her birimin mağazaya maliyetini görün ve değiştirin. Maliyetler dahilidir ve müşterilere asla gösterilmez.',
+        ],
     ],
     'customers' => [
-        'view' => 'Devre dışı bırakılan ve çöpe atılan hesaplar da dahil olmak üzere müşterileri, profillerini, adreslerini, personel notlarını ve gruplarını görün.',
-        'manage' => 'Müşteri profillerini değiştirin, hesapları devre dışı bırakın, yeniden etkinleştirin, çöpe atın ve geri yükleyin, not ekleyin veya silin ve müşteri gruplarını yönetin.',
-        'tax_exemption' => 'Müşteriyi vergiden muaf tutun veya vergi kimlik numaralarını kontrol ettikten sonra bu durumu sonlandırın.',
-        'privacy' => 'Müşterinin isteği üzerine, müşterinin tüm kişisel verilerini indirin veya tamamen silin.',
+        'view' => [
+            'label' => 'Müşterileri görüntüle',
+            'description' => 'Devre dışı bırakılan ve çöpe atılan hesaplar da dahil olmak üzere müşterileri, profillerini, adreslerini, personel notlarını ve gruplarını görün.',
+        ],
+        'manage' => [
+            'label' => 'Müşterileri yönet',
+            'description' => 'Müşteri profillerini değiştirin, hesapları devre dışı bırakın, yeniden etkinleştirin, çöpe atın ve geri yükleyin, not ekleyin veya silin ve müşteri gruplarını yönetin.',
+        ],
+        'tax_exemption' => [
+            'label' => 'Vergi muafiyetleri',
+            'description' => 'Müşteriyi vergiden muaf tutun veya vergi kimlik numaralarını kontrol ettikten sonra bu durumu sonlandırın.',
+        ],
+        'privacy' => [
+            'label' => 'Müşteri veri talepleri',
+            'description' => 'Müşterinin isteği üzerine, müşterinin tüm kişisel verilerini indirin veya tamamen silin.',
+        ],
     ],
     'promotions' => [
-        'view' => 'Promosyonları, kodlarını ve ne sıklıkta kullanıldığını görün ve bir sepetin ne getireceğini önizleyin.',
-        'manage' => 'Promosyonları oluşturun, değiştirin, etkinleştirin, devre dışı bırakın ve arşivleyin, kodlarını ekleyin, oluşturun veya değiştirin.',
+        'view' => [
+            'label' => 'Promosyonları görüntüle',
+            'description' => 'Promosyonları, kodlarını ve ne sıklıkta kullanıldığını görün ve bir sepetin ne getireceğini önizleyin.',
+        ],
+        'manage' => [
+            'label' => 'Promosyonları yönet',
+            'description' => 'Promosyonları oluşturun, değiştirin, etkinleştirin, devre dışı bırakın ve arşivleyin, kodlarını ekleyin, oluşturun veya değiştirin.',
+        ],
     ],
     'shipping' => [
-        'view' => 'Gönderim bölgelerini, yöntemlerini ve ücretlerini görün ve bir sepetin gönderim için ne kadar ödeyeceğini önizleyin.',
-        'manage' => 'Gönderim bölgelerini oluşturun, değiştirin ve silin; gönderim yöntemlerini ve ücretlerini oluşturun, değiştirin ve arşivleyin.',
+        'view' => [
+            'label' => 'Kargoyu görüntüle',
+            'description' => 'Gönderim bölgelerini, yöntemlerini ve ücretlerini görün ve bir sepetin gönderim için ne kadar ödeyeceğini önizleyin.',
+        ],
+        'manage' => [
+            'label' => 'Kargoyu yönet',
+            'description' => 'Gönderim bölgelerini oluşturun, değiştirin ve silin; gönderim yöntemlerini ve ücretlerini oluşturun, değiştirin ve arşivleyin.',
+        ],
     ],
     'orders' => [
-        'view' => 'Siparişleri, satırlarını, ödemelerini, geçmişini ve gönderilerini görün.',
-        'manage' => 'Siparişleri iptal edin, notlar ve etiketler ekleyin ve alıcıların iletişim bilgilerini ve teslimat adreslerini düzeltin.',
-        'fulfil' => 'Gönderiler oluşturun, takip ekleyin ve kalanları, teslim alınmaya hazır olanları veya ulaşanları işaretleyin.',
+        'view' => [
+            'label' => 'Siparişleri görüntüle',
+            'description' => 'Siparişleri, satırlarını, ödemelerini, geçmişini ve gönderilerini görün.',
+        ],
+        'manage' => [
+            'label' => 'Siparişleri yönet',
+            'description' => 'Siparişleri iptal edin, notlar ve etiketler ekleyin ve alıcıların iletişim bilgilerini ve teslimat adreslerini düzeltin.',
+        ],
+        'fulfil' => [
+            'label' => 'Siparişleri hazırla',
+            'description' => 'Gönderiler oluşturun, takip ekleyin ve kalanları, teslim alınmaya hazır olanları veya ulaşanları işaretleyin.',
+        ],
     ],
     'invoices' => [
-        'view' => 'Alıcının bilgileriyle birlikte faturaları ve kredi notlarını görün ve PDF’lerini indirin.',
+        'view' => [
+            'label' => 'Faturaları görüntüle',
+            'description' => 'Alıcının bilgileriyle birlikte faturaları ve kredi notlarını görün ve PDF’lerini indirin.',
+        ],
     ],
     'payments' => [
-        'view' => 'Ödemeleri, geri ödemeleri ve ödeme ağ geçitlerinin nasıl bağlandığını görün.',
-        'confirm' => 'Bir banka havalesinin ulaştığını veya teslimatta nakit paranın tahsil edildiğini doğrulayın ve ağ geçidinden ödeme hakkında tekrar bilgi isteyin.',
-        'refund' => 'Ödemeleri ağ geçidi aracılığıyla veya elden kaydedilerek iade edin.',
-        'manage_gateways' => 'Ödeme ağ geçitlerini ve ödeme yöntemlerini bağlayın, bağlantısını kesin ve ayarlayın.',
+        'view' => [
+            'label' => 'Ödemeleri görüntüle',
+            'description' => 'Ödemeleri, geri ödemeleri ve ödeme ağ geçitlerinin nasıl bağlandığını görün.',
+        ],
+        'confirm' => [
+            'label' => 'Ödemeleri onayla',
+            'description' => 'Bir banka havalesinin ulaştığını veya teslimatta nakit paranın tahsil edildiğini doğrulayın ve ağ geçidinden ödeme hakkında tekrar bilgi isteyin.',
+        ],
+        'refund' => [
+            'label' => 'Ödemeleri iade et',
+            'description' => 'Ödemeleri ağ geçidi aracılığıyla veya elden kaydedilerek iade edin.',
+        ],
+        'manage_gateways' => [
+            'label' => 'Ödeme sağlayıcılarını yönet',
+            'description' => 'Ödeme ağ geçitlerini ve ödeme yöntemlerini bağlayın, bağlantısını kesin ve ayarlayın.',
+        ],
     ],
     'pricing' => [
-        'view' => 'Vergi sınıflarını, vergi oranlarını, her bir varyantın hangi sınıfta olduğunu ve mağazanın para birimlerini ve döviz kurlarını görün.',
-        'manage' => 'Vergi sınıflarını, vergi oranlarını, varyantların vergi sınıflarını, mağazanın para birimlerini, döviz kurlarını ve sabit fiyatları değiştirin.',
+        'view' => [
+            'label' => 'Vergi ve para birimlerini görüntüle',
+            'description' => 'Vergi sınıflarını, vergi oranlarını, her bir varyantın hangi sınıfta olduğunu ve mağazanın para birimlerini ve döviz kurlarını görün.',
+        ],
+        'manage' => [
+            'label' => 'Vergi ve para birimlerini yönet',
+            'description' => 'Vergi sınıflarını, vergi oranlarını, varyantların vergi sınıflarını, mağazanın para birimlerini, döviz kurlarını ve sabit fiyatları değiştirin.',
+        ],
     ],
     'settings' => [
-        'view' => 'Mağazanın ayarlarına bakın: ad, ülke, para birimi, diller, vergi modu, birimler ve iletişim bilgileri.',
-        'manage' => 'Mağazanın ayarlarını değiştirin. Personelin sahibinde kalması için iki faktörlü kimlik doğrulamanın zorunlu kılınması.',
+        'view' => [
+            'label' => 'Ayarları görüntüle',
+            'description' => 'Mağazanın ayarlarına bakın: ad, ülke, para birimi, diller, vergi modu, birimler ve iletişim bilgileri.',
+        ],
+        'manage' => [
+            'label' => 'Ayarları yönet',
+            'description' => 'Mağazanın ayarlarını değiştirin. Personelin sahibinde kalması için iki faktörlü kimlik doğrulamanın zorunlu kılınması.',
+        ],
     ],
     'roles' => [
-        'view' => 'Mağazanın rollerini ve her birinin neye izin verdiğini görün.',
-        'manage' => 'Rolleri oluşturun, yeniden adlandırın, silin ve her birinin neye izin vereceğini seçin.',
+        'view' => [
+            'label' => 'Rolleri görüntüle',
+            'description' => 'Mağazanın rollerini ve her birinin neye izin verdiğini görün.',
+        ],
+        'manage' => [
+            'label' => 'Rolleri yönet',
+            'description' => 'Rolleri oluşturun, yeniden adlandırın, silin ve her birinin neye izin vereceğini seçin.',
+        ],
     ],
     'delivery' => [
-        'view' => 'Mağazanın sürücülerini ve teslimatlarını görüntüleyin.',
-        'manage' => 'Sürücülere gönderi vermek; teslimatlarını ilerletmek, yeniden denemek, geri almak veya iptal etmek.',
+        'view' => [
+            'label' => 'Teslimatları görüntüle',
+            'description' => 'Mağazanın sürücülerini ve teslimatlarını görüntüleyin.',
+        ],
+        'manage' => [
+            'label' => 'Teslimatları yönet',
+            'description' => 'Sürücülere gönderi vermek; teslimatlarını ilerletmek, yeniden denemek, geri almak veya iptal etmek.',
+        ],
         'cash' => [
-            'manage' => 'Sürücülerin teslim ettiği nakdi kaydetmek; asla ellerindekinden fazla değil.',
+            'manage' => [
+                'label' => 'Sürücü nakdini kaydet',
+                'description' => 'Sürücülerin teslim ettiği nakdi kaydetmek; asla ellerindekinden fazla değil.',
+            ],
         ],
     ],
     'drivers' => [
-        'manage' => 'Sürücü ekleyin, değiştirin, devre dışı bırakın ve silin; PIN seçmeleri için kod verin.',
+        'manage' => [
+            'label' => 'Sürücüleri yönet',
+            'description' => 'Sürücü ekleyin, değiştirin, devre dışı bırakın ve silin; PIN seçmeleri için kod verin.',
+        ],
     ],
     'returns' => [
-        'view' => 'İadeleri, fotoğraflarını ve geçmişini, ayrıca iade ayarlarını görüntüleme.',
-        'manage' => 'İade başlatma, onaylama, reddetme, teslim alma, inceleme ve iptal etme ile iade ayarlarını değiştirme.',
+        'view' => [
+            'label' => 'İadeleri görüntüle',
+            'description' => 'İadeleri, fotoğraflarını ve geçmişini, ayrıca iade ayarlarını görüntüleme.',
+        ],
+        'manage' => [
+            'label' => 'İadeleri yönet',
+            'description' => 'İade başlatma, onaylama, reddetme, teslim alma, inceleme ve iptal etme ile iade ayarlarını değiştirme.',
+        ],
     ],
 ];

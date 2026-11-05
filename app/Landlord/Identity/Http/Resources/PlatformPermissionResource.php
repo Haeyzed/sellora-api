@@ -25,7 +25,7 @@ final class PlatformPermissionResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $description = __('permissions.'.$this->resource->value);
+        $description = __('permissions.'.$this->resource->value.'.description');
 
         return [
             'name' => $this->resource->value,

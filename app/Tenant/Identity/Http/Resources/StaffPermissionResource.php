@@ -26,7 +26,7 @@ final class StaffPermissionResource extends JsonResource
     public function toArray(Request $request): array
     {
         $name = $this->resource->name;
-        $description = __('permissions.'.$name);
+        $description = __('permissions.'.$name.'.description');
 
         return [
             'name' => $name,
