@@ -1,17 +1,17 @@
 # Returns
 
 The Returns area lets a buyer send units of their order back to be
-refunded: asking for a return, staff approving, receiving and inspecting
-it, putting what came back on the shelf or writing it off, and refunding
-the buyer. Field-level detail is in the database's own column comments.
+refunded or exchanged: asking for a return, staff approving, receiving and
+inspecting it, putting what came back on the shelf or writing it off, and
+then refunding the buyer or sending them a replacement. Field-level detail
+is in the database's own column comments.
 
 Returns never moves money or stock itself: refunds go through
-[Payments](payments.md) and stock through [Inventory](inventory.md), each
-through their own actions. Exchanges are being built: the replacement
-order is ready ([replacement orders](checkout.md#replacement-orders-exchanges),
-Step 18c), and asking for an exchange from a return comes in Step 18d.
-Until then every return is settled by a refund, back to how the buyer paid
-unless they chose another [destination](#where-a-refund-goes) a module offers.
+[Payments](payments.md), stock through [Inventory](inventory.md), and an
+exchange's replacement order through Checkout's
+[replacement orders](checkout.md#replacement-orders-exchanges), each
+through their own actions. A refund goes back to how the buyer paid unless
+they chose another [destination](#where-a-refund-goes) a module offers.
 
 ## A return from start to finish
 
@@ -25,17 +25,20 @@ unless they chose another [destination](#where-a-refund-goes) a module offers.
 4. Staff inspect the items at a stock location: each unit goes back on the
    shelf or is written off as damaged.
 5. Staff refund it. The return completes once the refund has gone back in
-   full. Or, when nothing is owed (such as damage the buyer caused), staff
-   reject it and the items go back to the buyer.
+   full. Or, for an exchange, staff confirm the replacement order, and the
+   return completes once it is paid (see [Exchanges](#exchanges)). Or, when
+   nothing is owed (such as damage the buyer caused), staff reject it and
+   the items go back to the buyer.
 
 The buyer can call a return off while it is still requested; staff can
 cancel it any time before the items arrive.
 
 ```text
-requested → approved | rejected | cancelled
-approved  → received | cancelled | completed (the buyer keeps the items)
-received  → inspected
-inspected → completed | rejected
+requested         → approved | rejected | cancelled
+approved          → received | cancelled | completed | awaiting_exchange (the buyer keeps the items)
+received          → inspected
+inspected         → completed | rejected | awaiting_exchange
+awaiting_exchange → completed | back to inspected or approved (the replacement expired or was cancelled unpaid)
 ```
 
 Each return is numbered within its order, shown as the order number and its
@@ -70,9 +73,17 @@ whatever the settings, and may go further, saying why:
 Nobody can return units of a cancelled order, an order never sold, or an
 order whose buyer's personal data was anonymised.
 
-**Reasons** are a fixed list, translated: damaged, wrong item, not as
-described, doesn't fit, changed mind, other. `GET /api/v1/returns/reasons`
-lists them in the store's language.
+**Reasons** are a fixed list, translated: damaged, wrong item, faulty, not
+as described, doesn't fit, changed mind, other. `GET /api/v1/returns/reasons`
+lists them in the store's language. The first four claim the store was at
+fault; staff confirm or overrule that (see
+[The store's fault](#the-stores-fault)).
+
+**Refund or exchange.** A return is settled by a refund (`resolution`
+`refund`, the default) or an exchange (`exchange`), naming a replacement
+variant for every line (`lines.*.replacement`, same quantity). The
+replacement must be for sale when asked for, and again at approval, but
+nothing holds its stock until the exchange is confirmed.
 
 **Photos.** Up to 5 JPEG, PNG or WebP images of at most 5 MB and 4096
 pixels each. Each is re-encoded without its metadata, kept on the store's
@@ -108,6 +119,19 @@ Each change works from the return as saved under its lock, so two staff
 approving, rejecting, cancelling or inspecting it at the same moment never
 both succeed: the second gets `return_transition_not_allowed` (409).
 
+### The store's fault
+
+The buyer's reason is a claim: damaged, wrong item, faulty and not as
+described say the store was at fault. Staff confirm it when they inspect
+the items, or when they approve a return whose buyer keeps them
+(`stores_fault`, true or false; left out, the claim stands). Saying
+otherwise than the reason claims needs `fault_overruled_reason`
+(`return_fault_reason_required`, 422 without it), shown in the return and
+kept in its history; it is not for personal data. Until staff confirm, the
+claim counts. Only a confirmed fault gives an exchange a free like-for-like
+replacement and free delivery; it also decides whether a refund gives the
+shipping back by default.
+
 ## Refunds
 
 Staff with `returns.manage` and `payments.refund` refund an inspected
@@ -117,7 +141,7 @@ back at what the buyer paid for it after discounts, tax included:
 
 - every unit that came back, written off or not;
 - shipping, when `shipping` is true. Left out, it is given back when the
-  reason is damaged or the wrong item (the store was at fault), else not;
+  store was at fault ([as confirmed](#the-stores-fault)), else not;
 - less `withheld` (minor units) with a `withheld_reason`, such as when the
   return breaks a discount's condition. It comes off the lines, so their
   credit note credits only what went back.
@@ -213,6 +237,85 @@ A destination already chosen is paid out whatever state its module is in
 motion is never blocked by plan gating. A test order's refund is marked as
 such for the module.
 
+## Exchanges
+
+An exchange sends the buyer other items in place of the returned ones, as
+a replacement order paid with what the returned items were worth. It never
+reruns the original order's promotions.
+
+**Choosing.** Staff with `returns.manage` change a return's replacements
+(`PUT /staff/returns/{return}/replacements`), or how it is settled
+(`PUT /staff/returns/{return}/resolution`: an exchange made a refund, its
+replacements cleared, such as when nothing can be sent; or a refund made an
+exchange, naming every replacement). Both only before the exchange is
+confirmed, and never once a refund of it may have given money back. A
+change of resolution goes in the store's activity log. Refunding an
+exchange is refused (`return_is_an_exchange`, 409): make it a refund first.
+
+**Preview.** Once the return is inspected (or approved with the buyer
+keeping the items), staff with `returns.view` preview it
+(`GET /staff/returns/{return}/exchange-preview`, optionally with a
+`shipping_method`; the way the order was sent otherwise). Before that it is
+`exchange_not_ready` (409). The preview prices the replacement with
+Checkout's replacement quote, today's prices and today's automatic
+promotions, and shows:
+
+- **What the returned items are worth:** what their units cost the buyer
+  after discounts, tax included, as a refund would give back.
+- **Like-for-like:** with a [confirmed fault](#the-stores-fault), a
+  replacement of the same product at the same price as the returned variant
+  today (or, when that has no price today, as what the buyer paid) costs no
+  more than the returned units did.
+- **Delivery:** free when the store was at fault; otherwise charged only
+  when the return setting `charge_shipping_on_exchanges` is on (off by
+  default).
+- **The settlement:** what the returned items credit toward the
+  replacement, the difference that goes back to the buyer when the
+  replacement costs less, and what the store keeps (only for a free
+  like-for-like replacement that cost less than the returned units). What
+  the buyer still owes on a dearer replacement is the replacement order's
+  amount to pay.
+- **`quote_hash`**, to confirm with.
+
+**Confirming.** Staff with `returns.exchange` (sensitive) and
+`payments.refund` confirm it as previewed (`POST /staff/returns/{return}/exchange`,
+with the `quote_hash` and an `Idempotency-Key`). In one transaction the
+return is locked, the replacement order is placed through Checkout, with
+the credit held on it and its stock and promotion uses held, and the
+exchange is saved; the return moves to `awaiting_exchange`. When anything
+changed since the preview, or the replacement can't be sent, nothing is
+placed and the answer is 409 with the new preview. Confirming again returns
+the same exchange.
+
+**Settling.** When the credit covers the replacement, it is paid at once;
+otherwise the buyer pays the rest as for any order. Once it is paid:
+
+1. The original order gets a refund of the returned lines to the
+   `exchange` destination, for what they credited, the rest withheld, so
+   its credit note credits exactly that. It is made once, under the key
+   `exchange:{exchange id}`, however often settling runs.
+2. With no difference, the return completes.
+3. A difference goes back to the buyer by amount, to the
+   [destination](#where-a-refund-goes) they chose, as a refund attempt of
+   the return, under the same rules as any refund. It reduces the sale, so
+   it gets a credit note. Once it went back, the return completes.
+
+Nothing is refunded while the replacement is unpaid. A replacement that
+expires or is cancelled unpaid releases the exchange: the return goes back
+to inspected, or approved when the buyer keeps the items, with its earlier
+times, ready for another exchange or a refund.
+
+If Payments refuses the refund or the difference, the credit stays final;
+the refusal is logged and sent to the error tracker. Staff settle again
+from the return's refund endpoint, which on a return awaiting its exchange
+settles it (an exchange not yet settled) or gives the difference again (one
+whose last attempt definitely failed, after the customer may choose again).
+
+**Open.** A paid replacement that is cancelled leaves its order flagged
+`refund_due` for staff: its credit can't be given back yet, and how it goes
+back is still to be decided. Which part of a split-paid original order goes
+back first is decided with the first payment module.
+
 ## Privacy and retention
 
 A return's note and photos are the buyer's personal data, and so are
@@ -227,7 +330,7 @@ includes their returns, with every destination choice.
 | What | Kept for | Setting |
 |---|---|---|
 | Return photos | 180 days after the return ends (completed, rejected or cancelled) | `RETENTION_RETURN_PHOTOS_DAYS` |
-| Returns, their lines, history, refund attempts and destination choices | as business records | — |
+| Returns, their lines, history, refund attempts, destination choices and exchanges | as business records | — |
 
 Every Returns table and column is classified for the store export; photos
 are in it until purged.
@@ -236,9 +339,10 @@ are in it until purged.
 
 | Permission | Lets staff |
 |---|---|
-| `returns.view` | see returns, their history, refund attempts and photos, and the return settings |
-| `returns.manage` | start, approve, reject, receive, inspect and cancel returns, record where the customer asked a refund to go, and change the return settings |
+| `returns.view` | see returns, their history, refund attempts, photos and exchanges, preview an exchange, and see the return settings |
+| `returns.manage` | start, approve, reject, receive, inspect and cancel returns, confirm the store's fault, change replacements and the resolution, record where the customer asked a refund to go, and change the return settings |
 | `payments.refund` (with `returns.manage`) | refund a return, and approve one with the buyer keeping the items |
+| `returns.exchange` (sensitive, with `payments.refund`) | confirm an exchange, placing its replacement order |
 
 ## Endpoints
 
@@ -249,7 +353,7 @@ Every endpoint has a cURL example in [API testing](api-testing.md).
 | Anyone | `returns/reasons` |
 | Customer, under `/api/v1/customer` | `orders/{order}/returns` (ask), `orders/{order}/refund-destinations`; `returns` (list), `returns/{return}`, `returns/{return}/cancel`, `returns/{return}/refund-destinations`, `returns/{return}/refund-destination` (choose) |
 | Guest, under `/api/v1/guest/orders/{order}/returns`, with `X-Order-Token` | ask, list, `{return}`, `{return}/cancel` |
-| Staff, under `/api/v1/staff` | `orders/{order}/returns` (start); `returns` (list by status or order), `returns/{return}`, `/photos/{position}`, `/approve`, `/reject`, `/receive`, `/inspect`, `/refund` (with an `Idempotency-Key`), `/cancel`, `/refund-destination` (record the customer's choice); `returns/settings` (show, change) |
+| Staff, under `/api/v1/staff` | `orders/{order}/returns` (start); `returns` (list by status or order), `returns/{return}`, `/photos/{position}`, `/approve`, `/reject`, `/receive`, `/inspect`, `/refund` (with an `Idempotency-Key`), `/cancel`, `/refund-destination` (record the customer's choice), `/replacements`, `/resolution`, `/exchange-preview`, `/exchange` (confirm, with an `Idempotency-Key`); `returns/settings` (show, change) |
 
 Lists are paged by cursor.
 
@@ -262,8 +366,10 @@ Lists are paged by cursor.
 | `RATE_LIMIT_RETURN_REQUESTS_IP_CEILING` | 60 | requests a minute per address |
 | `RETENTION_RETURN_PHOTOS_DAYS` | 180 | see Privacy and retention |
 
-The window, buyers' requests and required photos are store settings, changed
-by staff; their defaults are in `config/returns.php`.
+The window, buyers' requests, required photos and
+`charge_shipping_on_exchanges` are return settings, changed by staff. Every
+store has its row from the moment it is set up, with the defaults in
+`config/returns.php`; a missing row is an error, never filled in.
 
 ## Action flow and domain handoffs
 
@@ -283,16 +389,29 @@ destination is on offer. For a refund to a module's destination, Payments'
 `GiveRefundToDestinationAgain` job and the hourly sweep ask again after an
 unknown outcome.
 
+For exchanges, `ChangeReturnReplacements` and `ChangeReturnResolution` lock
+the return and check the replacements with Catalog. `PreviewExchange` works
+out the terms (`ReturnExchangeTerms`, with Payments'
+`FindReturnedUnitValues`) and asks Checkout's `QuoteReplacementOrder`;
+`ConfirmExchange` locks the return and calls Checkout's
+`PlaceReplacementOrder`, whose quote hash is the one check of what staff
+were shown. `SettleExchange` makes the refund to the exchange with
+`RefundOrder` and the difference with `RefundReturn`, each outside its
+transaction.
+
 Returns listens to Payments' `RefundSucceeded`, `RefundFailed` and
 `RefundNeedsReview`, after Payments commits, to bring its attempts up to
-date and complete the return; and to Orders' `OrderAnonymised`, to clear
-the buyer's data. Locks go: the order's returns, then the return, then
+date and complete the return; to Checkout's `ExchangeCreditCommitted` and
+`ExchangeCreditReleased`, after Checkout commits, to settle or release an
+exchange; and to Orders' `OrderAnonymised`, to clear the buyer's data. Locks go: the order's returns, then the return, then
 (through Payments) the order and its payments, then (through Inventory)
 stock levels; nothing locks the order before the return.
 
 Returns announces `ReturnRequested`, `ReturnApproved`, `ReturnRejected`,
 `ReturnReceived`, `ReturnInspected`, `ReturnRefundStarted` (once per
 attempt Payments made a refund for), `ReturnCompleted`, `ReturnCancelled`
-and `ReturnRefundDestinationChosen`, each once it is saved, for Messaging
-(Step 20). Payments announces `RefundGivenToDestination` and
+`ReturnRefundDestinationChosen`, `ReturnExchangeConfirmed` (the return
+awaits its replacement) and `ReturnExchangeReleased` (the replacement
+expired or was cancelled unpaid, and the return went back), each once it is
+saved, for Messaging (Step 20). Payments announces `RefundGivenToDestination` and
 `RefundDestinationFailed` for refunds to a module's destination.

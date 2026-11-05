@@ -1,7 +1,7 @@
 # Handover
 
 **Date:** 5 November 2026.
-**Describes:** `main` at `1d0e037`, and the branch `step-18c-exchanges`
+**Describes:** `main` at `3b19453`, and the branch `step-18d-exchange-flow`
 started from it.
 
 This is for continuing the work on a new PC: for the project owner, and for
@@ -15,30 +15,38 @@ disagrees with `git log`, GitHub or CLAUDE.md, they win.
 
 ## 1. Where things stand
 
-**`main`** is at `1d0e037` ("Document refund destinations and the Step 18c
-plan"). CI passed on it: run 42045068261, all three jobs (Pest on
-PostgreSQL 18 and Redis; Pint, Larastan and composer audit; Scramble).
+**`main`** is at `3b19453` ("Price lines with their delivery in one
+Shipping action"). CI passed on it: run 42079725707, all three jobs (Pest
+on PostgreSQL 18 and Redis; Pint, Larastan and composer audit; Scramble).
 
-**What was finished last:** Step 18b, `step-18b-refund-destinations`,
-merged into `main` by fast-forward:
+**What was finished last:** Step 18c, `step-18c-exchanges` (replacement
+orders), merged into `main` by fast-forward: `b300d53` (a core domain's own
+settings table, in CLAUDE.md), `355d6d1`, `ffd4c4d`, `a28aa84`, `2c19d1a`,
+`4de9df4` (docs) and `3b19453` (one `PriceBasketWithShipping` action for
+the cart and the replacement quote).
+
+**In progress:** Step 18d, `step-18d-exchange-flow`, built and waiting for
+the owner's review (item 2a):
 
 | Commit | What |
 |---|---|
-| `cbf42a5` | The `RefundDestination` contract, the registry and what is offered for an order or a return |
-| `a75f1ed` | The customer's choice of where a return's refund goes; staff record it only with a note |
-| `5098426` | Refunds paid out to a module's destination, never through a gateway |
-| `6417706` | A return's refund follows the choice, which reopens after a definite failure |
-| `1d0e037` | Docs and the exchange plan |
+| `c15b9ea` | Every store's `return_settings` row, created by a migration and at store setup; a missing row fails loudly |
+| `edca505` | Exchanges in the returns data, and confirming the store's fault (D1) |
+| `fc3f426` | Asking for an exchange, choosing its replacements, changing the resolution |
+| `7df1fbb` | Previewing and confirming an exchange, with the `returns.exchange` permission (D2, D3, D6) |
+| `b2df871` | Settling the exchange once its replacement is paid, or sending the return back when it isn't |
+| (docs) | This handover, Returns, API testing and the README |
 
-Before that: `permission-labels` (`f00916a` to `175685b`), then
-`encrypt-queued-messages` and `scrub-error-reports`.
+Before 18c: Step 18b (`step-18b-refund-destinations`, `cbf42a5` to
+`1d0e037`), `permission-labels`, `encrypt-queued-messages` and
+`scrub-error-reports`.
 
 **Branches:**
 
 | Branch | State |
 |---|---|
-| `step-18c-exchanges` | **In progress:** item 2a below. Not merged |
-| `step-18b-refund-destinations`, `permission-labels`, `encrypt-queued-messages`, `scrub-error-reports`, `handover-scripts` | Merged; kept on GitHub |
+| `step-18d-exchange-flow` | **Waiting for review:** item 2a below. Not merged |
+| `step-18c-exchanges`, `step-18b-refund-destinations`, `permission-labels`, `encrypt-queued-messages`, `scrub-error-reports`, `handover-scripts` | Merged; kept on GitHub |
 | `step-10-customers` to `step-18-returns`, `step-10b-social-sign-in`, `step-15b-invoices`, `step-16b-paystack` | Merged; kept on GitHub |
 | `docs-schema-comments`, `fix-token-links`, `fix-payment-holds` | Merged; kept on GitHub |
 | `ci-proof-docs`, `ci-proof-pint`, `ci-proof-stan` | Gone, as intended. They existed only on the old laptop (each broke one CI check on purpose, to prove CI catches it) and were never meant to be kept |
@@ -50,31 +58,12 @@ Before that: `permission-labels` (`f00916a` to `175685b`), then
 Each item is its own branch, starts only when the owner says so, and ends
 with a stop for review (CLAUDE.md section 17).
 
-### a. Step 18c: replacement orders (`step-18c-exchanges`)
+### a. Step 18d: the exchange flow in Returns (`step-18d-exchange-flow`)
 
-The exchange was split in two (the owner's decision). 18c builds the
-replacement order in Orders, Checkout, Promotions and Payments, with no
-Returns endpoints; described in
-[replacement orders](tenant/checkout.md#replacement-orders-exchanges):
-
-- The for-sale rule is `ProductVariant::isForSale()` (Catalog) and the
-  pickup tax address `ShippingMethod::pickupTaxAddress()`, one copy each;
-  recording a payment hold is the public `RecordPaymentHold`.
-- An order comes from a checkout or from the return it replaces
-  (`OrderSource`; `orders.checkout_id` nullable, `replaces_return_id`,
-  exactly one, frozen; one live replacement per return).
-- `PriceWithDiscounts` takes `PriceAllowances` after the promotions, before
-  tax, as discounts from "exchange". An architecture rule lets only it and
-  `QuoteReplacementOrder` use them.
-- `QuoteReplacementOrder` and `PlaceReplacementOrder`; the exchange credit
-  is the payment method `exchange_credit` (never offered; commit and
-  release announce `ExchangeCreditCommitted` and `ExchangeCreditReleased`,
-  for 18d to listen to); core's refund destination `exchange`.
-
-### b. Step 18d: the exchange flow in Returns (its own branch, after 18c is merged)
-
-From CLAUDE.md sections 13 and 17, on top of 18c, with the owner's
-decisions:
+Built on top of 18c's [replacement orders](tenant/checkout.md#replacement-orders-exchanges),
+and described in [Returns](tenant/returns.md#exchanges). Next: the owner's
+review, then a fast-forward merge. The plan, with the owner's decisions,
+as built:
 
 - **Flow:** the buyer or staff ask for a return with resolution `exchange`
   and one replacement variant per returned line (same quantity). Approval
@@ -84,12 +73,15 @@ decisions:
   hash (`PlaceReplacementOrder`); the return moves to the new status
   `awaiting_exchange` (decided, D6).
 - **Settlement:** on `ExchangeCreditCommitted` the original order gets a
-  refund of the credit to destination `exchange` (the lines refund, with a
-  withhold of what a free like-for-like replacement didn't use, reason
-  `exchanged_like_for_like`), and a cheaper replacement's difference goes
-  back through Step 18's saved refund attempt to the customer's chosen
-  destination; the return completes. On `ExchangeCreditReleased` the
-  return goes back to inspected, or approved when the buyer keeps the items.
+  refund of the returned lines to destination `exchange`, withholding
+  what the lines are worth beyond the credit (what goes back as a
+  difference, or what a free like-for-like replacement didn't use), under
+  the key `exchange:{exchange id}`. A cheaper replacement's difference
+  goes back by amount through a saved refund attempt of the return, to
+  the customer's chosen destination; the return completes. On
+  `ExchangeCreditReleased` the return goes back to inspected, or approved
+  when the buyer keeps the items, without new times. A refusal is logged
+  and staff settle again through the return's refund endpoint.
 - **Store's fault (decided, D1):** add a `faulty` reason; `faulty`,
   `damaged`, `wrong_item` and `not_as_described` are the store's fault.
   The buyer's reason is a claim: staff confirm the fault at inspection (or
@@ -102,24 +94,28 @@ decisions:
   returned unit.
 - **Shipping (decided, D3):** free when the store is at fault; otherwise
   the setting `charge_shipping_on_exchanges` (off by default) in
-  `return_settings`. **Note:** CLAUDE.md section 10 now says a setting is
-  created with the store and never read lazily, but the `return_settings`
-  row is still absent until staff first change it (defaults in
-  `config/returns.php`); 18d should create it with the store.
+  `return_settings`. The first commit gives every store its row (a
+  migration for existing stores, store setup for new ones); reading a
+  missing row throws `MissingReturnSettingsException`.
 - **Data:** `returns.resolution` allows `exchange`, `returns.status` allows
-  `awaiting_exchange`, return lines get `replacement_variant_id`, a
-  `return_exchanges` table (one row per confirmation: mode, credit,
-  difference, shipping charged, status), the setting; a new sensitive
+  `awaiting_exchange`, returns get `stores_fault` and
+  `fault_overruled_reason` (backfilled from the reason for returns already
+  inspected or kept), return lines get `replacement_variant_id`, a
+  `return_exchanges` table (one row per confirmation: credit, difference,
+  kept, shipping charged, status, the refund; one live per return), return
+  refund attempts get `refund_amount`, and the setting; a new sensitive
   permission `returns.exchange`, labelled in all 20 languages.
 - **Endpoints:** replacements and resolution (`returns.manage`), the
-  exchange preview (`returns.view`), confirming it (`returns.exchange`,
-  with an `Idempotency-Key`), and the setting on the return settings.
-### c. Steps 19, 20 and 21
+  exchange preview (`returns.view`), confirming it (`returns.exchange` and
+  `payments.refund`, with an `Idempotency-Key`), and the setting on the
+  return settings.
+
+### b. Steps 19, 20 and 21
 
 Storefront, then Messaging (email first, see [Messaging](tenant/messaging.md)),
 then Data tools, as CLAUDE.md section 17 lists them.
 
-### d. The frontend, after core
+### c. The frontend, after core
 
 The frontends come after the core API is done. The frontend repository is
 `Haeyzed/sellora-frontend`.
@@ -131,7 +127,8 @@ The frontends come after the core API is done. The frontend repository is
 | **Audit ignore** GHSA-9vw2-f4vp-x7gf / PKSA-qhjm-rpqc-qkn6 is still in place. It is the same entry as the PHPUnit one below | [composer.json](../composer.json), `config.audit.ignore` |
 | **PHPUnit ignore:** remove it once Pest allows PHPUnit 13.4.4 or later, then run `composer update` for PHPUnit and `composer ci` | The same entry's note in [composer.json](../composer.json) |
 | **Step 20 alerts with no listener:** `OrderRefundedBeyondPaid`, `OrderPaidAfterCancellation`, `OrderPaymentsKeepFailing`, `PaymentHoldKeepsFailing`, `CommittedPaymentRefundFailed`, `PaymentDisputed`, `PaymentNeedsReview`, `PaymentOverpaid`, `PaymentUnresolved`, `PaymentGatewayNeedsReconnecting`, `RefundStillPending`, `RefundSucceededAfterFailing`, `CashCollectionOverdue`, `DeliveryFailed`, `StockRunningLow`, `VariantSoldOut` (16), plus `RefundNeedsReview` and `RefundFailed`, which have a listener but don't reach staff: 18 in all. Until Step 20, staff see none of them | Only here and in earlier review reports |
-| **Return messages for Step 20:** `ReturnRequested`, `ReturnApproved`, `ReturnRejected`, `ReturnReceived`, `ReturnInspected`, `ReturnRefundStarted`, `ReturnCompleted`, `ReturnCancelled`, and from 18b `ReturnRefundDestinationChosen`, `RefundGivenToDestination` and `RefundDestinationFailed` (staff should hear of a definite failure, and the customer that they can choose again) | [Returns](tenant/returns.md) |
+| **Return messages for Step 20:** `ReturnRequested`, `ReturnApproved`, `ReturnRejected`, `ReturnReceived`, `ReturnInspected`, `ReturnRefundStarted`, `ReturnCompleted`, `ReturnCancelled`, and from 18b `ReturnRefundDestinationChosen`, `RefundGivenToDestination` and `RefundDestinationFailed` (staff should hear of a definite failure, and the customer that they can choose again), and from 18d `ReturnExchangeConfirmed` (the buyer's replacement is on its way, or waits for their payment) and `ReturnExchangeReleased` (it expired or was cancelled unpaid) | [Returns](tenant/returns.md) |
+| **An exchange whose settling was refused** (Payments refused the refund to the exchange or the difference after `ExchangeCreditCommitted`) is only logged and sent to the error tracker; the return stays awaiting its exchange until staff settle it again from its refund endpoint. Step 20 should alert staff | [Returns](tenant/returns.md#exchanges) |
 | **The first real refund destination** (`Wallet` store credit or `GiftCards` vouchers): today only a test fixture implements `RefundDestination`, so the contract is proven against a fake. When the first module is built, check its payout is idempotent on our refund ID and that it never pays a test order's refund out as real value | [Returns](tenant/returns.md#where-a-refund-goes) |
 | **Real mixed-refund tests** (part of a refund went back, part failed, across payments) once `Wallet` or `GiftCards` exists; today only a fake gateway produces the mixed case | [Returns](tenant/returns.md), the "Never twice" table |
 | **Split-paid refunds:** which part of a split-paid order goes back first is decided when the first payment module is built. The same open decision covers an exchange whose original order was paid partly with store credit or a voucher (D5 in 18c) | CLAUDE.md section 18, the refund-destination rule |
@@ -146,7 +143,8 @@ The frontends come after the core API is done. The frontend repository is
 | **Telescope stores exception messages** in full, including a database error's SQL and values. It runs only locally (never in production or staging with real data), so it was left out of `scrub-error-reports` | Only here |
 | **Plain-text queued emails** written before `encrypt-queued-messages` is deployed stay readable in `failed_jobs` until the 30-day purge; they are not re-encrypted | [Deployment](deployment.md) |
 | **A saved preferred language for staff and platform admins** (a column on each), for Step 20: today a dashboard's language comes only from `Accept-Language`, so emails and alerts sent outside a request (by a job or the scheduler) have no language to use | Only here (decided in `permission-labels`) |
-| **Native review of the permission labels and group names** before real merchants use them: Yoruba, Hausa, Igbo and Swahili above all, and ideally every non-English language. They were written without a native speaker; the descriptions were too, and so were 18b's refund destination label and its three error messages, and 18c's `exchange` destination label and its five `replacement_*` error messages | `lang/*/permissions.php`, `lang/*/permission_groups.php`, `lang/*/refunds.php` and the `refund_destination_*` and `replacement_*` entries in `lang/*/errors.php` |
+| **Native review of the permission labels and group names** before real merchants use them: Yoruba, Hausa, Igbo and Swahili above all, and ideally every non-English language. They were written without a native speaker; the descriptions were too, and so were 18b's refund destination label and its three error messages, and 18c's `exchange` destination label and its five `replacement_*` error messages, and 18d's `returns.exchange` permission and allowance label, the `faulty` reason, and the `return_fault_reason_required`, `return_replacement_invalid`, `return_replacement_not_available`, `return_is_an_exchange` and `exchange_not_ready` messages | `lang/*/permissions.php`, `lang/*/permission_groups.php`, `lang/*/refunds.php`, `lang/*/returns.php` and the `refund_destination_*`, `replacement_*`, `return_*` and `exchange_not_ready` entries in `lang/*/errors.php` |
+| **Inline `@var` on validated request arrays:** the Returns requests type each validated line with an inline `@var` (from Step 18.5's `ValidatesReturnRequest`, copied by 18d's replacement requests), which CLAUDE.md section 13 rules out. They should get a typed accessor instead, in a change of their own | `app/Tenant/Returns/Http/Requests` |
 | **The pre-commit hook** was tried by hand only on Windows (PowerShell and Git Bash); CI now runs the hook check (`composer ci:hook`) on Linux on every push | [CI workflow](../.github/workflows/ci.yml) |
 
 ## 4. New PC setup (Windows PowerShell)

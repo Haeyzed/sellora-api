@@ -84,9 +84,13 @@ tokens; a token for one never works for another.
    a driver, who picks it up, hands it over with proof (and collects any
    cash on delivery) or reports it failed; the buyer can follow it while it
    is on the way. See [Delivery](tenant/delivery.md).
-6. **Refunds and cancellations.** Staff refund through the original payment
-   method; a refund that reduces a sale gets a credit note. Cancelling an
-   unshipped order releases its stock and promotion uses.
+6. **Returns, refunds and cancellations.** A buyer returns delivered items
+   for a refund, or for an exchange: staff confirm a replacement order,
+   paid with what the returned items were worth, and any difference goes
+   back to the buyer. See [Returns](tenant/returns.md). Staff refund through
+   the original payment method unless the customer chose another
+   destination; a refund that reduces a sale gets a credit note. Cancelling
+   an unshipped order releases its stock and promotion uses.
 7. **Running the platform.** Platform admins manage stores (suspend,
    reactivate, close, restore before purge), plans and per-store feature
    grants, legal documents and the platform team. A closed store's data is
@@ -100,13 +104,10 @@ tokens; a token for one never works for another.
 These are in the approved build order (CLAUDE.md section 17) but don't exist
 yet:
 
-- **Step 18d, Exchanges in Returns:** a return settled with a replacement
-  order. Returns with a refund are built, and so is choosing where a refund
-  goes (Step 18b), though only core's own destination, the original
-  payment, exists until a module adds another ([Returns](tenant/returns.md)).
-  The replacement order itself is built (Step 18c,
-  [replacement orders](tenant/checkout.md#replacement-orders-exchanges));
-  asking for an exchange from a return is not yet.
+- **Refund destinations from modules:** choosing where a refund goes is
+  built (Step 18b), but only core's own destination, the original payment,
+  exists until a module such as `Wallet` adds another
+  ([Returns](tenant/returns.md#where-a-refund-goes)).
 - **Step 19, Storefront:** content pages, menus, banners, SEO, wishlists,
   fetching several products for comparison, related and similar products and
   best sellers.

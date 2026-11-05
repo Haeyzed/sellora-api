@@ -69,7 +69,7 @@ the response says which language was used.
 
 ## Endpoint cURL reference
 
-The following commands cover all 329 operations in the current tenant
+The following commands cover all 333 operations in the current tenant
 Scramble OpenAPI export, including the shared geography endpoints available
 on the store domain. Request bodies include required fields (or one
 representative field when all are optional); values such as IDs, email
@@ -107,6 +107,7 @@ $Payment = 'replace-with-payment'
 $Product = 'replace-with-product'
 $Promotion = 'replace-with-promotion'
 $Provider = 'replace-with-provider'
+$QuoteHash = 'replace-with-quote-hash'
 $Reference = 'replace-with-reference'
 $Refund = 'replace-with-refund'
 $Return = 'replace-with-return'
@@ -2288,8 +2289,10 @@ curl.exe --request POST "${StoreBase}/staff/returns/${Return}/inspect" `
   --header 'Accept: application/json' `
   --header "Authorization: Bearer $StaffToken" `
   --header 'Content-Type: application/json' `
-  --data-raw "{`"lines`":[{`"line`":`"$Line`",`"restocked`":1,`"written_off`":0}]}"
+  --data-raw "{`"lines`":[{`"line`":`"$Line`",`"restocked`":1,`"written_off`":0}],`"stores_fault`":true}"
 ```
+
+`stores_fault` confirms or overrules what the reason claims; overruling needs `fault_overruled_reason`. Approving with `keep_items` takes the same two fields.
 
 **POST** `/staff/returns/{return}/refund` — staff bearer token. Refund a return (needs `payments.refund` too; asking again never refunds twice)
 
@@ -2324,6 +2327,49 @@ Staff never choose for the customer: `note` (required) says how the
 customer asked, and the recording goes in the activity log. A module's
 destination only for an order with a customer account; a guest's return
 always goes back to how they paid.
+
+**PUT** `/staff/returns/{return}/replacements` — staff bearer token. Change an exchange's replacements (`returns.manage`)
+
+```powershell
+curl.exe --request PUT "${StoreBase}/staff/returns/${Return}/replacements" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw "{`"lines`":[{`"line`":`"$Line`",`"replacement`":`"$Variant`"}]}"
+```
+
+**PUT** `/staff/returns/{return}/resolution` — staff bearer token. Change how a return is settled, refund or exchange (`returns.manage`)
+
+```powershell
+curl.exe --request PUT "${StoreBase}/staff/returns/${Return}/resolution" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw '{"resolution":"refund"}'
+```
+
+An exchange needs `lines` with a `replacement` for every line, as above.
+
+**GET** `/staff/returns/{return}/exchange-preview` — staff bearer token. Preview a return's exchange (`returns.view`; `shipping_method` optional)
+
+```powershell
+curl.exe --request GET "${StoreBase}/staff/returns/${Return}/exchange-preview?shipping_method=${Method}" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
+**POST** `/staff/returns/{return}/exchange` — staff bearer token. Confirm a return's exchange as previewed (`returns.exchange` and `payments.refund`)
+
+```powershell
+curl.exe --request POST "${StoreBase}/staff/returns/${Return}/exchange" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken" `
+  --header 'Content-Type: application/json' `
+  --header 'Idempotency-Key: return-exchange-0001' `
+  --data-raw "{`"quote_hash`":`"$QuoteHash`",`"shipping_method`":`"$Method`"}"
+```
+
+`$QuoteHash` is the preview's `quote_hash`. A 409 with `replacement_quote_changed` carries the new preview to confirm instead. Once the exchange is confirmed, `POST /staff/returns/{return}/refund` settles it again if settling didn't finish.
 
 **POST** `/staff/returns/{return}/cancel` — staff bearer token. Cancel a return
 
@@ -2360,7 +2406,7 @@ curl.exe --request PATCH "${StoreBase}/staff/returns/settings" `
   --header 'Accept: application/json' `
   --header "Authorization: Bearer $StaffToken" `
   --header 'Content-Type: application/json' `
-  --data-raw '{"window_days":30,"customer_requests":true,"photos_required":false}'
+  --data-raw '{"window_days":30,"customer_requests":true,"photos_required":false,"charge_shipping_on_exchanges":false}'
 ```
 
 #### Shipment
