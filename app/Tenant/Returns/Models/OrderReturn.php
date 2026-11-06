@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Tenant\Returns\Models;
 
 use App\Shared\Concerns\HasPublicId;
-use App\Shared\Media\PrivateImages;
 use App\Tenant\Inventory\Models\StockLocation;
 use App\Tenant\Orders\Models\Order;
 use App\Tenant\Returns\Enums\ReturnExchangeStatus;
@@ -71,7 +70,7 @@ final class OrderReturn extends Model implements HasMedia
 
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection(ReturnPhotos::COLLECTION)->useDisk(PrivateImages::disk(ReturnPhotos::KIND));
+        $this->addMediaCollection(ReturnPhotos::COLLECTION);
     }
 
     /**

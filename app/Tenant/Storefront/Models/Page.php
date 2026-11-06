@@ -6,7 +6,6 @@ namespace App\Tenant\Storefront\Models;
 
 use App\Shared\Concerns\HasPublicId;
 use App\Shared\Media\Concerns\HasStorefrontImages;
-use App\Shared\Media\StorefrontImage;
 use App\Tenant\Settings\Concerns\HasStoreTranslations;
 use App\Tenant\Storefront\Enums\PageStatus;
 use App\Tenant\Storefront\PageSlug;
@@ -83,7 +82,7 @@ final class Page extends Model implements HasMedia
 
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection(self::IMAGES)->useDisk(StorefrontImage::disk());
+        $this->addMediaCollection(self::IMAGES);
     }
 
     public function isPublished(): bool

@@ -6,7 +6,6 @@ namespace App\Tenant\Catalog\Models;
 
 use App\Shared\Concerns\HasPublicId;
 use App\Shared\Media\Concerns\HasStorefrontImages;
-use App\Shared\Media\StorefrontImage;
 use App\Tenant\Catalog\CatalogSlug;
 use App\Tenant\Catalog\Services\ProductSearchText;
 use App\Tenant\Settings\Concerns\HasStoreTranslations;
@@ -92,7 +91,7 @@ final class Brand extends Model implements AuditableContract, HasMedia
 
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection(self::LOGO)->singleFile()->useDisk(StorefrontImage::disk());
+        $this->addMediaCollection(self::LOGO)->singleFile();
     }
 
     /**

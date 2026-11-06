@@ -6,7 +6,6 @@ namespace App\Tenant\Storefront\Models;
 
 use App\Shared\Concerns\HasPublicId;
 use App\Shared\Media\Concerns\HasStorefrontImages;
-use App\Shared\Media\StorefrontImage;
 use App\Tenant\Settings\Concerns\HasStoreTranslations;
 use App\Tenant\Storefront\Enums\BannerKind;
 use Carbon\CarbonImmutable;
@@ -63,7 +62,7 @@ final class Banner extends Model implements HasMedia
 
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection(self::IMAGE)->singleFile()->useDisk(StorefrontImage::disk());
+        $this->addMediaCollection(self::IMAGE)->singleFile();
     }
 
     /**

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Tenant\Storefront\Models;
 
 use App\Shared\Media\Concerns\HasStorefrontImages;
-use App\Shared\Media\StorefrontImage;
 use App\Tenant\Settings\Concerns\HasStoreTranslations;
 use App\Tenant\Storefront\Enums\PolicyPage;
 use App\Tenant\Storefront\Enums\RobotsDirective;
@@ -86,7 +85,7 @@ final class StorefrontSettings extends Model implements AuditableContract, HasMe
 
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection(self::SHARE_IMAGE)->singleFile()->useDisk(StorefrontImage::disk());
+        $this->addMediaCollection(self::SHARE_IMAGE)->singleFile();
     }
 
     /**

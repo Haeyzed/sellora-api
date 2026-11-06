@@ -32,10 +32,12 @@ use Spatie\MediaLibraryPro\Models\TemporaryUpload;
 return [
 
     /*
-     * The disk on which to store added files and derived images by default. Choose
-     * one or more of the disks you've configured in config/filesystems.php.
+     * The disk a file would go on if its uploader named none. Every uploader names
+     * its own (StorefrontImageUploader, ReturnPhotos, ProofOfDeliveryStore) and no
+     * collection chooses one, so this is only a safety net: private, so a file
+     * whose uploader forgot its disk is never published by accident.
      */
-    'disk_name' => env('MEDIA_DISK', 'public'),
+    'disk_name' => env('MEDIA_DISK', 'local'),
 
     /*
      * The disk on which to store conversions (thumbnails, etc.) and responsive images

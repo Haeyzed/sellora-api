@@ -9,7 +9,6 @@ use App\Tenant\Delivery\Enums\DeliveryFailureReason;
 use App\Tenant\Delivery\Enums\DeliveryResolution;
 use App\Tenant\Delivery\Enums\DeliveryStatus;
 use App\Tenant\Delivery\Enums\ProofOfDeliveryKind;
-use App\Tenant\Delivery\Services\ProofOfDeliveryImages;
 use App\Tenant\Orders\Models\Shipment;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
@@ -68,7 +67,7 @@ final class Delivery extends Model implements HasMedia
     public function registerMediaCollections(): void
     {
         foreach (ProofOfDeliveryKind::cases() as $kind) {
-            $this->addMediaCollection($kind->collection())->singleFile()->useDisk(ProofOfDeliveryImages::disk());
+            $this->addMediaCollection($kind->collection())->singleFile();
         }
     }
 

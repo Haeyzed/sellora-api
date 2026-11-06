@@ -40,7 +40,7 @@
         <!-- Tests never reach cloud storage, whatever .env or the shell says: every disk is local, and no cloud credentials are set (TestCase also swaps any disk that isn't local, and CloudStorageTest checks both). -->
         <env name="FILESYSTEM_DISK" value="local" force="true"/>
         <env name="STOREFRONT_IMAGE_DISK" value="public" force="true"/>
-        <env name="MEDIA_DISK" value="public" force="true"/>
+        <env name="MEDIA_DISK" value="local" force="true"/>
         <env name="CUSTOMER_DATA_EXPORT_DISK" value="local" force="true"/>
         <env name="STORE_EXPORT_DISK" value="store_exports" force="true"/>
         <env name="STORE_EXPORT_AFRICA_DRIVER" value="local" force="true"/>

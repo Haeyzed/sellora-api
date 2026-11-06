@@ -6,7 +6,6 @@ namespace App\Tenant\Catalog\Models;
 
 use App\Shared\Concerns\HasPublicId;
 use App\Shared\Media\Concerns\HasStorefrontImages;
-use App\Shared\Media\StorefrontImage;
 use App\Tenant\Catalog\CatalogSlug;
 use App\Tenant\Settings\Concerns\HasStoreTranslations;
 use Carbon\CarbonImmutable;
@@ -117,7 +116,7 @@ final class Category extends Model implements AuditableContract, HasMedia
 
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection(self::IMAGE)->singleFile()->useDisk(StorefrontImage::disk());
+        $this->addMediaCollection(self::IMAGE)->singleFile();
     }
 
     protected static function newFactory(): CategoryFactory
