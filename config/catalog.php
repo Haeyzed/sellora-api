@@ -40,4 +40,14 @@ return [
         'cache_minutes' => 15,
     ],
 
+    // The storefront's best sellers: the products that sold the most units recently (orders.best_sellers_period_days), from paid orders only.
+    'best_sellers' => [
+        // How many are shown.
+        'max_shown' => 12,
+        // How many candidates are kept per product shown, so enough remain once those that can't be bought right now are left out.
+        'candidates_per_shown' => 4,
+        // How long the list is kept per store and category; prices and availability are always read live.
+        'cache_minutes' => 60,
+    ],
+
 ];

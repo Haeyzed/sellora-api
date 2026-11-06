@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tenant\Catalog\Http\Controllers;
 
 use App\Shared\Http\Controller;
+use App\Tenant\Catalog\Http\Requests\ListBestSellersRequest;
 use App\Tenant\Catalog\Http\Requests\ListSeveralStorefrontProductsRequest;
 use App\Tenant\Catalog\Http\Requests\ListStorefrontProductLinksRequest;
 use App\Tenant\Catalog\Http\Requests\ListStorefrontProductsRequest;
@@ -13,6 +14,7 @@ use App\Tenant\Catalog\Http\Resources\StorefrontProductList;
 use App\Tenant\Catalog\Http\Resources\StorefrontProductResource;
 use App\Tenant\Catalog\Models\Product;
 use App\Tenant\Catalog\Models\ProductLink;
+use App\Tenant\Catalog\Services\BestSellers;
 use App\Tenant\Catalog\Services\SimilarProducts;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
@@ -95,11 +97,9 @@ final class StorefrontProductController extends Controller
     public function links(ListStorefrontProductLinksRequest $request, string $slug): AnonymousResourceCollection
     {
         $product = Product::query()->visibleToCustomers()->where('slug', $slug)->firstOrFail();
-        $linkedIds = ProductLink::query()->where('product_id', $product->id)->where('type', $request->linkType())->orderBy('position')->pluck('linked_product_id')->all();
-        $linked = Product::query()->visibleToCustomers()->whereKey($linkedIds)->with(StorefrontProductResource::relations())->get()->keyBy('id');
-        $inMerchantOrder = array_values(array_filter(array_map(static fn (int $id): ?Product => $linked->get($id), $linkedIds)));
+        $linkedIds = array_values(ProductLink::query()->where('product_id', $product->id)->where('type', $request->linkType())->orderBy('position')->get()->map(static fn (ProductLink $link): int => $link->linked_product_id)->all());
 
-        return StorefrontProductResource::collection($this->storefrontProductList->resources($inMerchantOrder, $request->requestedCurrency()));
+        return StorefrontProductResource::collection($this->storefrontProductList->resources($this->visibleInOrder($linkedIds), $request->requestedCurrency()));
     }
 
     /**
@@ -116,10 +116,40 @@ final class StorefrontProductController extends Controller
     public function similar(ShowStorefrontProductRequest $request, string $slug, SimilarProducts $similarProducts): AnonymousResourceCollection
     {
         $product = Product::query()->visibleToCustomers()->where('slug', $slug)->firstOrFail();
-        $candidateIds = $similarProducts->candidateIdsFor($product);
-        $candidates = Product::query()->visibleToCustomers()->whereKey($candidateIds)->with(StorefrontProductResource::relations())->get()->keyBy('id');
-        $inOrder = array_values(array_filter(array_map(static fn (int $id): ?Product => $candidates->get($id), $candidateIds)));
 
-        return StorefrontProductResource::collection($this->storefrontProductList->buyableNow($inOrder, config()->integer('catalog.similar_products.max_shown'), $request->requestedCurrency()));
+        return StorefrontProductResource::collection($this->storefrontProductList->buyableNow($this->visibleInOrder($similarProducts->candidateIdsFor($product)), config()->integer('catalog.similar_products.max_shown'), $request->requestedCurrency()));
+    }
+
+    /**
+     * List the best sellers.
+     *
+     * The products that sold the most units over the last
+     * orders.best_sellers_period_days (30), most first, store-wide or in one
+     * category (?category=). Units are counted from paid orders, before any
+     * return; test orders and unpaid or cancelled orders never count. Only
+     * products that can be bought now are shown, and no sales figures. Not
+     * paged: at most catalog.best_sellers.max_shown (12). The list may be up to
+     * an hour old; prices and availability are always current.
+     */
+    public function bestSellers(ListBestSellersRequest $request, BestSellers $bestSellers): AnonymousResourceCollection
+    {
+        return StorefrontProductResource::collection($this->storefrontProductList->buyableNow(
+            $this->visibleInOrder($bestSellers->candidateIds($request->category())),
+            config()->integer('catalog.best_sellers.max_shown'),
+            $request->requestedCurrency(),
+        ));
+    }
+
+    /**
+     * The products customers can buy among these IDs, in the order given, ready to show.
+     *
+     * @param  list<int>  $ids
+     * @return list<Product>
+     */
+    private function visibleInOrder(array $ids): array
+    {
+        $products = Product::query()->visibleToCustomers()->whereKey($ids)->with(StorefrontProductResource::relations())->get()->keyBy('id');
+
+        return array_values(array_filter(array_map(static fn (int $id): ?Product => $products->get($id), $ids)));
     }
 }

@@ -17,6 +17,8 @@ use App\Tenant\Inventory\Actions\ReceiveStock;
 use App\Tenant\Inventory\Data\InventorySettingsData;
 use App\Tenant\Inventory\Enums\AdjustmentReason;
 use App\Tenant\Inventory\Models\StockLocation;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Tests\Fixtures\Features\FakeFeatureSource;
 
@@ -304,6 +306,53 @@ function collectJsonKeys(?array $document, array &$keys): void
         if (is_array($value)) {
             collectJsonKeys($value, $keys);
         }
+    }
+}
+
+/**
+ * Products for sale with stock, by slug, in the current store.
+ *
+ * @param  list<string>  $slugs
+ * @return array<string, Product>
+ */
+function bestSellerProducts(array $slugs): array
+{
+    $products = [];
+
+    foreach ($slugs as $slug) {
+        $products[$slug] = storefrontProduct(['en' => $slug], attributes: ['slug' => $slug]);
+        stockOnHandOf($products[$slug]->variants()->sole());
+    }
+
+    return $products;
+}
+
+/**
+ * Writes an order straight into the current store's database, paid in full by default, selling the units given of each product's first variant. Only for counting what sold; real orders are placed with PlaceOrder.
+ *
+ * @param  list<array{0: Product, 1: int}>  $lines  Each product and how many units.
+ * @param  array<string, mixed>  $order  Columns to change on the order, such as payment_status, is_test, status or placed_at.
+ */
+function soldOrder(array $lines, array $order = []): void
+{
+    $now = now();
+    $orderId = DB::table('orders')->insertGetId([
+        'public_id' => strtolower((string) Str::ulid()), 'checkout_id' => strtolower((string) Str::ulid()), 'fulfilment_status' => 'unfulfilled',
+        'contact_email' => 'ada@example.com', 'contact_name' => 'Ada Obi', 'locale' => 'en', 'currency' => 'NGN', 'base_currency' => 'NGN', 'exchange_rate' => '1',
+        'rate_source' => 'base', 'tax_mode' => 'inclusive', 'tax_calculated_by' => 'rate_table', 'tax_country_code' => 'NG', 'subtotal_amount' => 0, 'discount_amount' => 0,
+        'shipping_amount' => 0, 'shipping_discount_amount' => 0, 'tax_amount' => 0, 'total_amount' => 0, 'base_total_amount' => 0,
+        'payment_status' => 'paid', 'paid_at' => $now, 'placed_at' => $now, 'payment_due_at' => $now->copy()->addHour(), 'created_at' => $now, 'updated_at' => $now,
+        ...$order,
+    ]);
+
+    foreach ($lines as $position => [$product, $quantity]) {
+        $variant = $product->variants()->firstOrFail();
+        DB::table('order_lines')->insert([
+            'public_id' => strtolower((string) Str::ulid()), 'order_id' => $orderId, 'position' => $position, 'product_id' => $product->id, 'product_variant_id' => $variant->id,
+            'product_name' => 'Sold', 'sku' => $variant->sku, 'requires_shipping' => true, 'tax_class_name' => 'Standard', 'tax_outcome' => 'no_rate', 'quantity' => $quantity,
+            'currency' => 'NGN', 'unit_price_amount' => 0, 'price_is_fixed' => false, 'subtotal_amount' => 0, 'discount_amount' => 0, 'net_amount' => 0, 'tax_amount' => 0,
+            'total_amount' => 0, 'created_at' => $now,
+        ]);
     }
 }
 

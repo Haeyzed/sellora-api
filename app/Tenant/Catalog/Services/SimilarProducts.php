@@ -57,7 +57,7 @@ final readonly class SimilarProducts
      */
     private function relatedLinks(Product $product): array
     {
-        return array_values(ProductLink::query()->where('product_id', $product->id)->where('type', ProductLinkType::Related)->orderBy('position')->pluck('linked_product_id')->all());
+        return array_values(ProductLink::query()->where('product_id', $product->id)->where('type', ProductLinkType::Related)->orderBy('position')->get()->map(static fn (ProductLink $link): int => $link->linked_product_id)->all());
     }
 
     /**

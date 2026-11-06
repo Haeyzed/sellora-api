@@ -18,6 +18,9 @@ return [
 
     'first_number' => (int) env('ORDERS_FIRST_NUMBER', 1001),
 
+    // How many days back the storefront's best sellers count units sold, by when each order was placed.
+    'best_sellers_period_days' => (int) env('ORDERS_BEST_SELLERS_PERIOD_DAYS', 30),
+
     /*
     |--------------------------------------------------------------------------
     | Payment Deadlines
