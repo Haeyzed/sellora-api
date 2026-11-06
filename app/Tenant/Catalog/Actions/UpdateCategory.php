@@ -76,7 +76,8 @@ final readonly class UpdateCategory
         }
 
         if ($changes->removesDescription) {
-            $category->description = null;
+            // In every language: setting a translated field to null would clear only the current language's text.
+            $category->forgetTranslations('description', asNull: true);
         } elseif ($changes->description !== null) {
             $category->changeTranslations('description', $changes->description);
         }

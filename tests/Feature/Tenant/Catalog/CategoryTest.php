@@ -167,6 +167,15 @@ it('lists one level of the tree, every category, or the trash, a page at a time'
     categoryRequest('GET', '?parent=01J00000000000000000000000')->assertUnprocessable()->assertJsonValidationErrors('parent');
 });
 
+it('removes a category\'s description in every language when it is sent as null', function (): void {
+    useLanguages($this->store, 'en', ['en', 'fr']);
+    $id = categoryRequest('POST', data: ['name' => ['en' => 'Shirts'], 'description' => ['en' => 'Formal.', 'fr' => 'Habillées.']])->assertCreated()->json('data.id');
+
+    categoryRequest('PATCH', "/{$id}", ['description' => null])->assertOk()->assertJsonPath('data.description', null);
+
+    expect($this->store->run(static fn (): mixed => DB::table('categories')->where('public_id', $id)->value('description')))->toBeNull();
+});
+
 it('lets catalog.view look but not change', function (): void {
     $clothing = addCategory('Clothing');
 

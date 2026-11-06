@@ -55,7 +55,8 @@ final readonly class UpdateProduct
         }
 
         if ($changes->removesDescription) {
-            $product->description = null;
+            // In every language: setting a translated field to null would clear only the current language's text.
+            $product->forgetTranslations('description', asNull: true);
         } elseif ($changes->description !== null) {
             $product->changeTranslations('description', $changes->description);
         }

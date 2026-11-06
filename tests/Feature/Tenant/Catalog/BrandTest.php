@@ -73,7 +73,7 @@ it('gives a name without Latin letters a usable slug, and never reuses a slug ou
 });
 
 it('changes only the languages sent, keeps the slug when renamed, and removes the description when it is null', function (): void {
-    $id = brandRequest('POST', data: ['name' => ['en' => 'Ada Fabrics', 'fr' => 'Tissus Ada'], 'description' => ['en' => 'Cloth.']])->json('data.id');
+    $id = brandRequest('POST', data: ['name' => ['en' => 'Ada Fabrics', 'fr' => 'Tissus Ada'], 'description' => ['en' => 'Cloth.', 'fr' => 'Tissu.']])->json('data.id');
 
     brandRequest('PATCH', "/{$id}", ['name' => ['en' => 'Ada Textiles']])
         ->assertOk()
@@ -85,6 +85,8 @@ it('changes only the languages sent, keeps the slug when renamed, and removes th
         ->assertJsonPath('data.name', ['en' => 'Ada Textiles'])
         ->assertJsonPath('data.description', null)
         ->assertJsonPath('data.slug', 'ada-textiles');
+    // Gone in every language, not only the one the request was made in.
+    expect($this->store->run(static fn (): mixed => DB::table('brands')->where('public_id', $id)->value('description')))->toBeNull();
 
     brandRequest('PATCH', "/{$id}", ['name' => ['en' => null]])->assertUnprocessable()->assertJsonValidationErrors('name');
 });

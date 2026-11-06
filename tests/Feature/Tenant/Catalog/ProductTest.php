@@ -219,6 +219,15 @@ it('changes only what is sent, keeps the slug when renamed, and removes the bran
         ->assertJsonPath('data.variants.0.price.amount', 1999);
 });
 
+it('removes a product\'s description in every language when it is sent as null', function (): void {
+    useLanguages($this->store, 'en', ['en', 'fr']);
+    $id = productRequest('POST', data: newProduct(['description' => ['en' => 'Breathable.', 'fr' => 'Respirant.']]))->assertCreated()->json('data.id');
+
+    productRequest('PATCH', "/{$id}", ['description' => null])->assertOk()->assertJsonPath('data.description', null);
+
+    expect($this->store->run(static fn (): mixed => DB::table('products')->where('public_id', $id)->value('description')))->toBeNull();
+});
+
 it('refuses a product over the plan\'s limit, not counting products in the trash', function (): void {
     allowProducts($this->store->getTenantKey(), 1);
 
