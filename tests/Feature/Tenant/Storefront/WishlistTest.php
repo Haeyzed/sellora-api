@@ -126,9 +126,7 @@ it('lets each customer see and remove only their own', function (): void {
     customerRequest('DELETE', "wishlist/{$adaItem}", as: $this->ada, subdomain: 'wish-store')->assertNoContent();
     customerRequest('GET', 'wishlist', as: $this->ada, subdomain: 'wish-store')->assertJsonCount(0, 'data');
 
-    // No token at all (the test client otherwise keeps the last one).
-    $this->withoutToken()->getJson(storeUrl('wish-store', '/api/v1/customer/wishlist'))->assertUnauthorized();
-    tenancy()->end();
+    customerRequest('GET', 'wishlist', subdomain: 'wish-store')->assertUnauthorized();
     $staff = $this->store->run(static fn (): StaffMember => StaffMember::factory()->create());
     $staffToken = staffTokenFor($staff, 'wish-store');
     customerRequest('GET', 'wishlist', as: $staffToken, subdomain: 'wish-store')->assertUnauthorized();

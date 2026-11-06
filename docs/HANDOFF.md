@@ -113,7 +113,6 @@ repository is `Haeyzed/sellora-frontend`.
 | **Translated models use `HasStoreTranslations`, never the package's trait directly:** the shared concern removes a text set to null in every language (the package alone clears only the current one). [a test](../tests/Feature/Tenant/Settings/TranslatedTextRemovalTest.php) walks every model with translated texts and fails on one that skips it | `e3e3915` |
 | **Local `.env` files with `MEDIA_DISK=redis`** (the old `.env.example` value, not a filesystem disk): the media fallback disk is now `local` everywhere else. Each uploader names its own disk, so the value is used only by an uploader that forgot to; set `MEDIA_DISK=local` by hand in each machine's `.env` | `.env.example`, `config/media-library.php` |
 | **Igbo `cart_full` says "car"** ("Ụgbọ ala", a vehicle), not a shopping cart: found while writing `wishlist_full` in 19b, not fixed there. It needs a native speaker's word for a shopping cart, and the other cart messages in Igbo checked the same way | `lang/ig/errors.php` |
-| **`customerRequest` in tests keeps the previous token** when called without one: a test of a signed-out request must call `$this->withoutToken()` first | `tests/Helpers` (found in 19b) |
 | **The pre-commit hook** was tried by hand only on Windows (PowerShell and Git Bash); CI now runs the hook check (`composer ci:hook`) on Linux on every push | [CI workflow](../.github/workflows/ci.yml) |
 
 ## 4. New PC setup (Windows PowerShell)

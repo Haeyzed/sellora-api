@@ -51,7 +51,7 @@ function customerTokenFor(Customer $customer, string $subdomain = 'first-store')
 }
 
 /**
- * Sends a request to a store's customer API, under /api/v1/customer/, with a customer's token or none.
+ * Sends a request to a store's customer API, under /api/v1/customer/, with a customer's token or none: never a token left from an earlier call.
  *
  * @param  array<string, mixed>  $data
  */
@@ -59,7 +59,7 @@ function customerRequest(string $method, string $path, array $data = [], Custome
 {
     forgetSignIns();
     $token = $as instanceof Customer ? customerTokenFor($as, $subdomain) : $as;
-    $request = $token === null ? test() : test()->withToken($token);
+    $request = $token === null ? test()->withoutToken() : test()->withToken($token);
 
     $response = $request->json($method, storeUrl($subdomain, '/api/v1/customer/'.$path), $data);
     tenancy()->end();
@@ -162,7 +162,7 @@ function staffCustomerRequest(string $method, string $path, array $data = [], St
 {
     forgetSignIns();
     $token = $as instanceof StaffMember ? staffTokenFor($as, $subdomain) : $as;
-    $request = $token === null ? test() : test()->withToken($token);
+    $request = $token === null ? test()->withoutToken() : test()->withToken($token);
 
     $response = $request->json($method, storeUrl($subdomain, '/api/v1/staff/customers'.$path), $data);
     tenancy()->end();
@@ -228,7 +228,7 @@ function customerGroupRequest(string $method, string $path, array $data = [], St
 {
     forgetSignIns();
     $token = $as instanceof StaffMember ? staffTokenFor($as, $subdomain) : $as;
-    $request = $token === null ? test() : test()->withToken($token);
+    $request = $token === null ? test()->withoutToken() : test()->withToken($token);
 
     $response = $request->json($method, storeUrl($subdomain, '/api/v1/staff/customer-groups'.$path), $data);
     tenancy()->end();

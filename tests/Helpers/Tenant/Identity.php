@@ -109,7 +109,7 @@ function signInAsStaff(string $subdomain, string $email = 'owner@first-store.tes
 
 function staffApiRequest(string $subdomain, string $method, string $path, array $data = [], ?string $token = null): TestResponse
 {
-    $request = $token === null ? test() : test()->withToken($token);
+    $request = $token === null ? test()->withoutToken() : test()->withToken($token);
     $response = $request->json($method, storeUrl($subdomain, '/api/v1/staff/auth/'.$path), $data);
     tenancy()->end();
     forgetSignIns();
