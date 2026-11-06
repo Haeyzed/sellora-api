@@ -77,12 +77,16 @@ it('needs the title in the store\'s default language, and refuses a slug another
 });
 
 it('changes only what is sent: the languages given, a field removed with null, and the slug only on purpose', function (): void {
-    $page = addStorefrontPage(['title' => ['en' => 'About us', 'fr' => 'À propos'], 'seo_title' => ['en' => 'About']]);
+    $page = addStorefrontPage(['title' => ['en' => 'About us', 'fr' => 'À propos'], 'body' => ['en' => '<p>We weave.</p>', 'fr' => '<p>Nous tissons.</p>'], 'seo_title' => ['en' => 'About']]);
 
-    storefrontStaffRequest('PATCH', "pages/{$page['id']}", ['title' => ['en' => 'Our story', 'fr' => null], 'seo_title' => null], as: $this->owner)->assertOk()
+    storefrontStaffRequest('PATCH', "pages/{$page['id']}", ['title' => ['en' => 'Our story', 'fr' => null], 'body' => null, 'seo_title' => null], as: $this->owner)->assertOk()
         ->assertJsonPath('data.title', ['en' => 'Our story'])
+        ->assertJsonPath('data.body', null)
         ->assertJsonPath('data.seo_title', null)
         ->assertJsonPath('data.slug', 'about-us');
+
+    // Gone in every language, not only the one the request was made in.
+    expect($this->store->run(static fn (): array => (array) DB::table('pages')->where('public_id', $page['id'])->first(['body', 'seo_title'])))->toBe(['body' => null, 'seo_title' => null]);
 
     storefrontStaffRequest('PATCH', "pages/{$page['id']}", ['slug' => 'our-story'], as: $this->owner)->assertOk()->assertJsonPath('data.slug', 'our-story');
 });
