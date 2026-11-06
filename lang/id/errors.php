@@ -87,6 +87,8 @@ return [
     'plan_not_available' => 'Paket ":plan" tidak tersedia.',
     'brand_slug_taken' => 'Merk lain sudah menggunakan slug ini. Pilih yang lain.',
     'page_slug_taken' => 'Halaman lain sudah memakai slug ini. Pilih yang lain.',
+    'menu_key_taken' => 'Menu lain sudah memakai kunci ini. Pilih yang lain.',
+    'menu_link_target_not_found' => 'Tautan ini menuju sesuatu yang tidak dimiliki toko, atau ada di tempat sampah.',
     'brand_restore_conflict' => 'Merek lain sekarang menggunakan siput merek ini. Ubah salah satu siput, lalu pulihkan.',
     'category_slug_taken' => 'Kategori lain sudah menggunakan siput ini. Pilih yang lain.',
     'category_restore_conflict' => 'Kategori lain sekarang menggunakan siput kategori ini. Ubah salah satu siput, lalu pulihkan.',

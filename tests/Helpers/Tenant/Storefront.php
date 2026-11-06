@@ -42,6 +42,41 @@ function addStorefrontPage(array $data = [], bool $publish = false, string $subd
 }
 
 /**
+ * Adds a menu through the staff API as the store's owner (test()->owner), with the links given, and returns it as the API shows it.
+ *
+ * @param  list<array<string, mixed>>  $items  Built with menuLink().
+ * @return array<string, mixed>
+ */
+function addStorefrontMenu(string $key = 'main', array $items = [], string $subdomain = 'front-store'): array
+{
+    $menu = storefrontStaffRequest('POST', 'menus', ['key' => $key, 'name' => ucfirst($key)], as: test()->owner, subdomain: $subdomain)->assertCreated()->json('data');
+
+    if ($items === []) {
+        return $menu;
+    }
+
+    return storefrontStaffRequest('PUT', "menus/{$menu['id']}/items", ['items' => $items], as: test()->owner, subdomain: $subdomain)->assertOk()->json('data');
+}
+
+/**
+ * One menu link as staff send it: to a page, category, brand or product by its public ID, or to an address for type "url".
+ *
+ * @param  array<string, string>|string  $label  By language, or English text.
+ * @param  list<array<string, mixed>>  $children
+ * @return array<string, mixed>
+ */
+function menuLink(array|string $label, string $type, ?string $target = null, ?string $url = null, array $children = []): array
+{
+    return array_filter([
+        'label' => is_string($label) ? ['en' => $label] : $label,
+        'type' => $type,
+        'target' => $target,
+        'url' => $url,
+        'children' => $children,
+    ], static fn (mixed $value): bool => $value !== null && $value !== []);
+}
+
+/**
  * The address the current test store serves an image at, such as one uploaded to a page, for writing into a body.
  */
 function storefrontImageAddress(string $subdomain = 'front-store', string $file = '1/hero.webp'): string

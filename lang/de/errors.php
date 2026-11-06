@@ -87,6 +87,8 @@ return [
     'plan_not_available' => 'Der Plan „:plan“ ist nicht verfügbar.',
     'brand_slug_taken' => 'Eine andere Marke verwendet diese Schnecke bereits. Wählen Sie ein anderes.',
     'page_slug_taken' => 'Eine andere Seite verwendet diese URL-Kennung bereits. Wählen Sie eine andere.',
+    'menu_key_taken' => 'Ein anderes Menü verwendet diesen Schlüssel bereits. Wählen Sie einen anderen.',
+    'menu_link_target_not_found' => 'Dieser Link führt zu etwas, das der Shop nicht hat oder das im Papierkorb liegt.',
     'brand_restore_conflict' => 'Eine andere Marke verwendet jetzt die Schnecke dieser Marke. Tauschen Sie einen der Schnecken aus und stellen Sie ihn dann wieder her.',
     'category_slug_taken' => 'Eine andere Kategorie verwendet diesen Slug bereits. Wählen Sie ein anderes.',
     'category_restore_conflict' => 'Eine andere Kategorie verwendet jetzt den Slug dieser Kategorie. Tauschen Sie einen der Schnecken aus und stellen Sie ihn dann wieder her.',

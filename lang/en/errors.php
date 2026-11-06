@@ -105,6 +105,8 @@ return [
 
     'brand_slug_taken' => 'Another brand already uses this slug. Choose another.',
     'page_slug_taken' => 'Another page already uses this slug. Choose another.',
+    'menu_key_taken' => 'Another menu already uses this key. Choose another.',
+    'menu_link_target_not_found' => 'This link goes to something the store doesn\'t have, or has in the trash.',
     'brand_restore_conflict' => 'Another brand now uses this brand\'s slug. Change one of the slugs, then restore it.',
     'category_slug_taken' => 'Another category already uses this slug. Choose another.',
     'category_restore_conflict' => 'Another category now uses this category\'s slug. Change one of the slugs, then restore it.',

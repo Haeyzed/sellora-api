@@ -87,6 +87,8 @@ return [
     'plan_not_available' => 'Le forfait ":plan" n\'est pas disponible.',
     'brand_slug_taken' => 'Une autre marque utilise déjà ce slug. Choisissez-en un autre.',
     'page_slug_taken' => 'Une autre page utilise déjà cet identifiant d\'URL. Choisissez-en un autre.',
+    'menu_key_taken' => 'Un autre menu utilise déjà cette clé. Choisissez-en une autre.',
+    'menu_link_target_not_found' => 'Ce lien mène à un élément que la boutique n\'a pas ou qui est dans la corbeille.',
     'brand_restore_conflict' => 'Une autre marque utilise désormais le slug de cette marque. Changez l\'un des slugs, puis restaurez-le.',
     'category_slug_taken' => 'Une autre catégorie utilise déjà cette limace. Choisissez-en un autre.',
     'category_restore_conflict' => 'Une autre catégorie utilise désormais le slug de cette catégorie. Changez l\'un des slugs, puis restaurez-le.',

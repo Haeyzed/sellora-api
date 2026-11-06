@@ -69,7 +69,7 @@ the response says which language was used.
 
 ## Endpoint cURL reference
 
-The following commands cover all 351 operations in the current tenant
+The following commands cover all 358 operations in the current tenant
 Scramble OpenAPI export, including the shared geography endpoints available
 on the store domain. Request bodies include required fields (or one
 representative field when all are optional); values such as IDs, email
@@ -99,6 +99,8 @@ $Identity = 'replace-with-identity'
 $Image = 'replace-with-image'
 $Invoice = 'replace-with-invoice'
 $Line = 'replace-with-line'
+$Menu = 'replace-with-menu'
+$MenuKey = 'replace-with-menu-key'
 $Method = 'replace-with-method'
 $Note = 'replace-with-note'
 $Order = 'replace-with-order'
@@ -3221,6 +3223,18 @@ curl.exe --request GET "${StoreBase}/storefront/pages/${Slug}" `
 
 The `body` is cleaned HTML, safe to show as it is.
 
+#### StorefrontMenu
+
+**GET** `/storefront/menus/{key}` — public. Show a menu by its key, such as `main`
+
+```powershell
+curl.exe --request GET "${StoreBase}/storefront/menus/${MenuKey}" `
+  --header 'Accept: application/json' `
+  --header 'Accept-Language: fr'
+```
+
+Only links shoppers may follow are shown; each gives its `type` and the `slug` (or `url`) to build its address from.
+
 #### StorefrontSeo
 
 **GET** `/storefront/seo` — public. Show the storefront's search engine settings
@@ -3368,6 +3382,64 @@ curl.exe --request DELETE "${StoreBase}/staff/storefront/pages/${Page}/images/${
   --header 'Accept: application/json' `
   --header "Authorization: Bearer $StaffToken"
 ```
+
+#### Menu
+
+**GET** `/staff/storefront/menus` — staff bearer token. List menus (`storefront.view`)
+
+```powershell
+curl.exe --request GET "${StoreBase}/staff/storefront/menus" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
+**POST** `/staff/storefront/menus` — staff bearer token. Add a menu with no links (`storefront.manage`)
+
+```powershell
+curl.exe --request POST "${StoreBase}/staff/storefront/menus" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw '{"key":"main","name":"Main menu"}'
+```
+
+**GET** `/staff/storefront/menus/{menu}` — staff bearer token. Show a menu with all its links (`storefront.view`)
+
+```powershell
+curl.exe --request GET "${StoreBase}/staff/storefront/menus/${Menu}" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
+**PATCH** `/staff/storefront/menus/{menu}` — staff bearer token. Rename a menu or change its key (`storefront.manage`)
+
+```powershell
+curl.exe --request PATCH "${StoreBase}/staff/storefront/menus/${Menu}" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw '{"name":"Header"}'
+```
+
+**DELETE** `/staff/storefront/menus/{menu}` — staff bearer token. Delete a menu with its links (`storefront.manage`)
+
+```powershell
+curl.exe --request DELETE "${StoreBase}/staff/storefront/menus/${Menu}" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
+**PUT** `/staff/storefront/menus/{menu}/items` — staff bearer token. Replace a menu's links (`storefront.manage`)
+
+```powershell
+curl.exe --request PUT "${StoreBase}/staff/storefront/menus/${Menu}/items" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw '{"items":[{"label":{"en":"Shop"},"type":"category","target":"replace-with-category","children":[{"label":{"en":"Sale"},"type":"url","url":"/sale"}]}]}'
+```
+
+Send every link, in order: two levels deep, at most 100 in all. Addresses may be https, `mailto:`, `tel:` or a path on the storefront.
 
 #### StoreLogo
 

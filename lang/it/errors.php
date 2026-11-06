@@ -87,6 +87,8 @@ return [
     'plan_not_available' => 'Il piano ":plan" non è disponibile.',
     'brand_slug_taken' => 'Un altro marchio utilizza già questo slug. Scegline un altro.',
     'page_slug_taken' => 'Un\'altra pagina usa già questo slug. Scegline un altro.',
+    'menu_key_taken' => 'Un altro menu usa già questa chiave. Scegline un\'altra.',
+    'menu_link_target_not_found' => 'Questo link porta a qualcosa che il negozio non ha o che si trova nel cestino.',
     'brand_restore_conflict' => 'Un altro marchio ora utilizza lo slug di questo marchio. Cambia uno dei proiettili, quindi ripristinalo.',
     'category_slug_taken' => 'Un\'altra categoria utilizza già questo slug. Scegline un altro.',
     'category_restore_conflict' => 'Un\'altra categoria ora utilizza lo slug di questa categoria. Cambia uno dei proiettili, quindi ripristinalo.',

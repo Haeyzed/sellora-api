@@ -87,6 +87,8 @@ return [
     'plan_not_available' => 'Het abonnement ":plan" is niet beschikbaar.',
     'brand_slug_taken' => 'Een ander merk gebruikt deze slak al. Kies een andere.',
     'page_slug_taken' => 'Een andere pagina gebruikt deze slug al. Kies een andere.',
+    'menu_key_taken' => 'Een ander menu gebruikt deze sleutel al. Kies een andere.',
+    'menu_link_target_not_found' => 'Deze link gaat naar iets wat de winkel niet heeft, of wat in de prullenbak staat.',
     'brand_restore_conflict' => 'Een ander merk gebruikt nu de slak van dit merk. Vervang een van de naaktslakken en herstel deze vervolgens.',
     'category_slug_taken' => 'Een andere categorie maakt al gebruik van deze slak. Kies een andere.',
     'category_restore_conflict' => 'Een andere categorie gebruikt nu de slug van deze categorie. Vervang een van de naaktslakken en herstel deze vervolgens.',

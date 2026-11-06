@@ -6,10 +6,13 @@ use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
 use App\Shared\Http\Middleware\UseDashboardLanguage;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Settings\Http\Middleware\UseStoreLanguage;
+use App\Tenant\Storefront\Http\Controllers\MenuController;
+use App\Tenant\Storefront\Http\Controllers\MenuItemsController;
 use App\Tenant\Storefront\Http\Controllers\PageController;
 use App\Tenant\Storefront\Http\Controllers\PageImageController;
 use App\Tenant\Storefront\Http\Controllers\PageStateController;
 use App\Tenant\Storefront\Http\Controllers\ShareImageController;
+use App\Tenant\Storefront\Http\Controllers\StorefrontMenuController;
 use App\Tenant\Storefront\Http\Controllers\StorefrontPageController;
 use App\Tenant\Storefront\Http\Controllers\StorefrontSeoController;
 use App\Tenant\Storefront\Http\Controllers\StorefrontSettingsController;
@@ -30,6 +33,7 @@ Route::prefix('storefront')
         Route::get('seo', [StorefrontSeoController::class, 'show'])->name('seo.show');
         Route::get('home', [StorefrontPageController::class, 'home'])->name('home');
         Route::get('pages/{slug}', [StorefrontPageController::class, 'show'])->name('pages.show');
+        Route::get('menus/{key}', [StorefrontMenuController::class, 'show'])->name('menus.show');
     });
 
 Route::prefix('staff/storefront')
@@ -52,4 +56,11 @@ Route::prefix('staff/storefront')
         Route::post('pages/{page}/homepage', [PageStateController::class, 'homepage'])->name('pages.homepage');
         Route::post('pages/{page}/images', [PageImageController::class, 'store'])->name('pages.images.store');
         Route::delete('pages/{page}/images/{image}', [PageImageController::class, 'destroy'])->name('pages.images.destroy');
+
+        Route::get('menus', [MenuController::class, 'index'])->name('menus.index');
+        Route::post('menus', [MenuController::class, 'store'])->name('menus.store');
+        Route::get('menus/{menu}', [MenuController::class, 'show'])->name('menus.show');
+        Route::patch('menus/{menu}', [MenuController::class, 'update'])->name('menus.update');
+        Route::delete('menus/{menu}', [MenuController::class, 'destroy'])->name('menus.destroy');
+        Route::put('menus/{menu}/items', [MenuItemsController::class, 'update'])->name('menus.items.update');
     });

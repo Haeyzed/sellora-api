@@ -87,6 +87,8 @@ return [
     'plan_not_available' => '":plan" planı mevcut değil.',
     'brand_slug_taken' => 'Başka bir marka zaten bu sümüklüböcüğü kullanıyor. Başka birini seç.',
     'page_slug_taken' => 'Başka bir sayfa bu kısa adı zaten kullanıyor. Başka bir tane seçin.',
+    'menu_key_taken' => 'Başka bir menü bu anahtarı zaten kullanıyor. Başka bir tane seçin.',
+    'menu_link_target_not_found' => 'Bu bağlantı, mağazada olmayan ya da çöp kutusunda bulunan bir şeye gidiyor.',
     'brand_restore_conflict' => 'Artık başka bir marka bu markanın sümüklüböceklerini kullanıyor. Sümüklü böceklerden birini değiştirin, ardından geri yükleyin.',
     'category_slug_taken' => 'Bu sümüklü böcek zaten başka bir kategoride kullanılıyor. Başka birini seç.',
     'category_restore_conflict' => 'Artık başka bir kategori bu kategorinin sümüklüböceklerini kullanıyor. Sümüklü böceklerden birini değiştirin, ardından geri yükleyin.',
