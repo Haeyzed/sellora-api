@@ -36,6 +36,8 @@ final class StorefrontBrandResource extends JsonResource
             'slug' => $brand->slug,
             'name' => $brand->getTranslation('name', $locale),
             'description' => $description === '' ? null : $description,
+            /** The texts for the page head, for search engines and link previews. */
+            'seo' => SeoTextsFields::forShoppers($brand),
             'logo' => $logo === null ? null : new StorefrontImageResource($logo),
         ];
     }

@@ -8,7 +8,6 @@ use App\Tenant\Catalog\CatalogSlug;
 use App\Tenant\Catalog\Data\BrandData;
 use App\Tenant\Catalog\Models\Brand;
 use App\Tenant\Identity\Concerns\ActsAsStaffMember;
-use App\Tenant\Settings\Concerns\ValidatesStoreTranslations;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -18,7 +17,7 @@ use Illuminate\Validation\Rule;
 final class UpdateBrandRequest extends FormRequest
 {
     use ActsAsStaffMember;
-    use ValidatesStoreTranslations;
+    use ValidatesSeoTexts;
 
     public function authorize(): bool
     {
@@ -33,6 +32,7 @@ final class UpdateBrandRequest extends FormRequest
         $brand = $this->route('brand');
 
         return [
+            ...$this->seoTextRules(),
             /**
              * By language. Only the languages sent change; null removes a language, except the default.
              *
@@ -61,7 +61,7 @@ final class UpdateBrandRequest extends FormRequest
         $description = $this->validated('description');
         $slug = $this->validated('slug');
 
-        return new BrandData(
+        return new BrandData(seo: $this->seoTexts(),
             name: $name,
             description: $description,
             removesDescription: $this->has('description') && $description === null,

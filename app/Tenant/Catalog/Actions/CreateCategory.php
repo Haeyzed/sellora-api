@@ -8,6 +8,7 @@ use App\Tenant\Catalog\Data\CategoryData;
 use App\Tenant\Catalog\Exceptions\CategorySlugTakenException;
 use App\Tenant\Catalog\Exceptions\CategoryTooDeepException;
 use App\Tenant\Catalog\Models\Category;
+use App\Tenant\Catalog\Services\CatalogSeoTexts;
 use App\Tenant\Catalog\Services\CategoryTree;
 use Illuminate\Database\UniqueConstraintViolationException;
 
@@ -18,7 +19,7 @@ use Illuminate\Database\UniqueConstraintViolationException;
  */
 final readonly class CreateCategory
 {
-    public function __construct(private CategoryTree $categoryTree) {}
+    public function __construct(private CategoryTree $categoryTree, private CatalogSeoTexts $catalogSeoTexts) {}
 
     /**
      * @throws CategoryTooDeepException When it would sit deeper than the store allows.
@@ -36,6 +37,8 @@ final readonly class CreateCategory
             if ($categoryData->description !== null) {
                 $category->changeTranslations('description', $categoryData->description);
             }
+
+            $this->catalogSeoTexts->apply($category, $categoryData->seo);
 
             if ($categoryData->slug !== null) {
                 $category->slug = $categoryData->slug;

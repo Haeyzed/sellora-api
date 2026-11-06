@@ -11,6 +11,7 @@ use App\Tenant\Catalog\Exceptions\ProductSlugTakenException;
 use App\Tenant\Catalog\Exceptions\VariantSkuTakenException;
 use App\Tenant\Catalog\Models\Product;
 use App\Tenant\Catalog\Models\ProductVariant;
+use App\Tenant\Catalog\Services\CatalogSeoTexts;
 use App\Tenant\Catalog\Services\ProductCategories;
 use App\Tenant\Catalog\Services\ProductLimit;
 use App\Tenant\Catalog\Services\VariantDetails;
@@ -30,6 +31,7 @@ final readonly class CreateProduct
         private ProductCategories $productCategories,
         private VariantDetails $variantDetails,
         private FindStoreSettings $findStoreSettings,
+        private CatalogSeoTexts $catalogSeoTexts,
     ) {}
 
     /**
@@ -61,6 +63,8 @@ final readonly class CreateProduct
         if ($productData->description !== null) {
             $product->changeTranslations('description', $productData->description);
         }
+
+        $this->catalogSeoTexts->apply($product, $productData->seo);
 
         if ($productData->slug !== null) {
             $product->slug = $productData->slug;

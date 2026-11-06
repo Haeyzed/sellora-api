@@ -19,5 +19,6 @@ final readonly class BrandData
         public ?array $description = null,
         public bool $removesDescription = false,
         public ?string $slug = null,
+        public SeoTexts $seo = new SeoTexts,
     ) {}
 }

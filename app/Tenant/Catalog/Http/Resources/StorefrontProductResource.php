@@ -67,6 +67,8 @@ final class StorefrontProductResource extends JsonResource
             /** In the language asked for, or the store's default. */
             'name' => $product->getTranslation('name', $locale),
             'description' => $description === '' ? null : $description,
+            /** The texts for the page head, for search engines and link previews. */
+            'seo' => SeoTextsFields::forShoppers($product),
             /** Null when it has no brand. */
             'brand' => $brand === null ? null : ['id' => $brand->public_id, 'slug' => $brand->slug, 'name' => $brand->getTranslation('name', $locale)],
             /**

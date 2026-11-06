@@ -38,6 +38,8 @@ final class StorefrontCategoryResource extends JsonResource
             'slug' => $category->slug,
             'name' => $category->getTranslation('name', $locale),
             'description' => $description === '' ? null : $description,
+            /** The texts for the page head, for search engines and link previews. */
+            'seo' => SeoTextsFields::forShoppers($category),
             'image' => $image === null ? null : new StorefrontImageResource($image),
         ];
     }

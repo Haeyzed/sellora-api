@@ -71,6 +71,18 @@ it('answers in the language customers ask for, or the store\'s default', functio
     storefrontRequest('/brands', 'fr')->assertJsonPath('data.0.name', 'Tissus Ada');
 });
 
+it('gives the storefront each product\'s, category\'s and brand\'s search engine texts in the shopper\'s language', function (): void {
+    $this->store->run(static function (): void {
+        $brand = Brand::factory()->create(['name' => ['en' => 'Ada'], 'seo_title' => ['en' => 'Ada fabrics', 'fr' => 'Tissus Ada']]);
+        Category::factory()->create(['name' => ['en' => 'Shirts'], 'seo_description' => ['en' => 'Every shirt.']]);
+        storefrontProduct(['en' => 'Linen shirt'], attributes: ['slug' => 'linen-shirt', 'brand_id' => $brand->id, 'seo_title' => ['en' => 'Linen shirt for summer', 'fr' => 'Chemise d\'été'], 'seo_description' => ['en' => 'Breathable.']]);
+    });
+
+    storefrontRequest('/products/linen-shirt', 'fr')->assertJsonPath('data.seo', ['title' => 'Chemise d\'été', 'description' => 'Breathable.']);
+    storefrontRequest('/brands', 'fr')->assertJsonPath('data.0.seo', ['title' => 'Tissus Ada', 'description' => null]);
+    storefrontRequest('/categories')->assertJsonPath('data.0.seo', ['title' => null, 'description' => 'Every shirt.']);
+});
+
 it('lists categories and brands outside the trash, with no sign-in needed', function (): void {
     $this->store->run(static function (): void {
         $shirts = Category::factory()->create(['name' => ['en' => 'Shirts']]);

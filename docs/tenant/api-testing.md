@@ -69,7 +69,7 @@ the response says which language was used.
 
 ## Endpoint cURL reference
 
-The following commands cover all 367 operations in the current tenant
+The following commands cover all 368 operations in the current tenant
 Scramble OpenAPI export, including the shared geography endpoints available
 on the store domain. Request bodies include required fields (or one
 representative field when all are optional); values such as IDs, email
@@ -3252,6 +3252,17 @@ curl.exe --request GET "${StoreBase}/storefront/banners?position=home_hero" `
 curl.exe --request GET "${StoreBase}/storefront/announcements" `
   --header 'Accept: application/json'
 ```
+
+#### StorefrontSitemap
+
+**GET** `/storefront/sitemap/{type}` — public. List one part of the sitemap: `pages`, `products`, `categories` or `brands` (cursor-paged)
+
+```powershell
+curl.exe --request GET "${StoreBase}/storefront/sitemap/products?per_page=100" `
+  --header 'Accept: application/json'
+```
+
+Each entry gives the `slug` and `updated_at`; the storefront writes the sitemap's XML from them.
 
 #### StorefrontSeo
 

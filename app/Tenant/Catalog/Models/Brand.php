@@ -34,6 +34,8 @@ use Spatie\Sluggable\SlugOptions;
  * @property string $public_id
  * @property array<string, string> $name By language, such as {"en": "Adidas"}; read one language with getTranslation().
  * @property array<string, string>|null $description By language.
+ * @property array<string, string>|null $seo_title By language: the title search engines show.
+ * @property array<string, string>|null $seo_description By language: the description search engines show.
  * @property string $slug Lower-case letters, numbers and single hyphens, such as "adidas".
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
@@ -58,7 +60,7 @@ final class Brand extends Model implements AuditableContract, HasMedia
     /**
      * @var list<string>
      */
-    public array $translatable = ['name', 'description'];
+    public array $translatable = ['name', 'description', 'seo_title', 'seo_description'];
 
     protected $fillable = [
         'name',

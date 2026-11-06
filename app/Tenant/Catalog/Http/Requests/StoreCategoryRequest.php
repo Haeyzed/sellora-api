@@ -8,7 +8,6 @@ use App\Tenant\Catalog\CatalogSlug;
 use App\Tenant\Catalog\Data\CategoryData;
 use App\Tenant\Catalog\Models\Category;
 use App\Tenant\Identity\Concerns\ActsAsStaffMember;
-use App\Tenant\Settings\Concerns\ValidatesStoreTranslations;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -18,7 +17,7 @@ use Illuminate\Validation\Rule;
 final class StoreCategoryRequest extends FormRequest
 {
     use ActsAsStaffMember;
-    use ValidatesStoreTranslations;
+    use ValidatesSeoTexts;
 
     public function authorize(): bool
     {
@@ -31,6 +30,7 @@ final class StoreCategoryRequest extends FormRequest
     public function rules(): array
     {
         return [
+            ...$this->seoTextRules(),
             /**
              * By language, such as {"en": "Shirts", "fr": "Chemises"}; must include the store's default language. Up to 120 characters each.
              *
@@ -59,7 +59,7 @@ final class StoreCategoryRequest extends FormRequest
         $slug = $this->validated('slug');
         $parent = $this->validated('parent');
 
-        return new CategoryData(
+        return new CategoryData(seo: $this->seoTexts(),
             name: $name,
             description: $description,
             slug: is_string($slug) ? $slug : null,

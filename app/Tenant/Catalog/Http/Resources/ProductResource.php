@@ -52,6 +52,8 @@ final class ProductResource extends JsonResource
              * @var array<string, string>|null
              */
             'description' => $description === [] ? null : $description,
+            /** The texts search engines show, when they differ from the name and description. */
+            'seo' => SeoTextsFields::forStaff($product),
             /** Used in the product's storefront address, such as "linen-shirt". */
             'slug' => $product->slug,
             /** The brand's ID; null without a brand. */

@@ -228,6 +228,17 @@ it('removes a product\'s description in every language when it is sent as null',
     expect($this->store->run(static fn (): mixed => DB::table('products')->where('public_id', $id)->value('description')))->toBeNull();
 });
 
+it('keeps a product\'s search engine texts by language, removing one in every language with null', function (): void {
+    useLanguages($this->store, 'en', ['en', 'fr']);
+    $id = productRequest('POST', data: newProduct(['seo_title' => ['en' => 'Linen shirt for summer', 'fr' => 'Chemise en lin'], 'seo_description' => ['en' => 'Breathable linen.']]))
+        ->assertCreated()->assertJsonPath('data.seo', ['title' => ['en' => 'Linen shirt for summer', 'fr' => 'Chemise en lin'], 'description' => ['en' => 'Breathable linen.']])->json('data.id');
+
+    productRequest('PATCH', "/{$id}", ['seo_title' => null, 'seo_description' => ['fr' => 'Lin respirant.']])->assertOk()
+        ->assertJsonPath('data.seo', ['title' => null, 'description' => ['en' => 'Breathable linen.', 'fr' => 'Lin respirant.']]);
+
+    expect($this->store->run(static fn (): mixed => DB::table('products')->where('public_id', $id)->value('seo_title')))->toBeNull();
+});
+
 it('refuses a product over the plan\'s limit, not counting products in the trash', function (): void {
     allowProducts($this->store->getTenantKey(), 1);
 

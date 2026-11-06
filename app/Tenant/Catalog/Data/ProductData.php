@@ -29,5 +29,6 @@ final readonly class ProductData
         public bool $removesBrand = false,
         public ?array $categories = null,
         public ?Category $primaryCategory = null,
+        public SeoTexts $seo = new SeoTexts,
     ) {}
 }

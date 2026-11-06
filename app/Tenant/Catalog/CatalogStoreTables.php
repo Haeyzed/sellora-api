@@ -16,17 +16,17 @@ final class CatalogStoreTables implements ClassifiesStoreTables
     {
         $registry->table(
             'brands',
-            include: ['id', 'public_id', 'name', 'slug', 'description', 'created_at', 'updated_at', 'deleted_at'],
+            include: ['id', 'public_id', 'name', 'slug', 'description', 'seo_title', 'seo_description', 'created_at', 'updated_at', 'deleted_at'],
         );
 
         $registry->table(
             'categories',
-            include: ['id', 'public_id', 'parent_id', 'name', 'slug', 'description', 'position', 'created_at', 'updated_at', 'deleted_at'],
+            include: ['id', 'public_id', 'parent_id', 'name', 'slug', 'description', 'seo_title', 'seo_description', 'position', 'created_at', 'updated_at', 'deleted_at'],
         );
 
         $registry->table(
             'products',
-            include: ['id', 'public_id', 'status', 'name', 'slug', 'description', 'brand_id', 'primary_category_id', 'created_at', 'updated_at', 'deleted_at'],
+            include: ['id', 'public_id', 'status', 'name', 'slug', 'description', 'seo_title', 'seo_description', 'brand_id', 'primary_category_id', 'created_at', 'updated_at', 'deleted_at'],
             exclude: ['search_text' => 'Derived from the names, codes and brand, which are exported themselves.'],
         );
 

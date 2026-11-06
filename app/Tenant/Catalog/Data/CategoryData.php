@@ -25,6 +25,7 @@ final readonly class CategoryData
         public ?string $slug = null,
         public ?Category $parent = null,
         public bool $movesToTopLevel = false,
+        public SeoTexts $seo = new SeoTexts,
     ) {}
 
     public function changesParent(): bool

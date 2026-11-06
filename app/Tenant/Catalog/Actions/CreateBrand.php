@@ -7,6 +7,7 @@ namespace App\Tenant\Catalog\Actions;
 use App\Tenant\Catalog\Data\BrandData;
 use App\Tenant\Catalog\Exceptions\BrandSlugTakenException;
 use App\Tenant\Catalog\Models\Brand;
+use App\Tenant\Catalog\Services\CatalogSeoTexts;
 use Illuminate\Database\UniqueConstraintViolationException;
 
 /**
@@ -16,6 +17,8 @@ use Illuminate\Database\UniqueConstraintViolationException;
  */
 final readonly class CreateBrand
 {
+    public function __construct(private CatalogSeoTexts $catalogSeoTexts) {}
+
     /**
      * @throws BrandSlugTakenException When the chosen slug is used by another brand outside the trash.
      */
@@ -27,6 +30,8 @@ final readonly class CreateBrand
         if ($brandData->description !== null) {
             $brand->changeTranslations('description', $brandData->description);
         }
+
+        $this->catalogSeoTexts->apply($brand, $brandData->seo);
 
         if ($brandData->slug !== null) {
             $brand->slug = $brandData->slug;

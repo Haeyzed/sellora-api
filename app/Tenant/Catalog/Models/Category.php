@@ -36,6 +36,8 @@ use Spatie\Sluggable\SlugOptions;
  * @property int|null $parent_id
  * @property array<string, string> $name By language; read one language with getTranslation().
  * @property array<string, string>|null $description By language.
+ * @property array<string, string>|null $seo_title By language: the title search engines show.
+ * @property array<string, string>|null $seo_description By language: the description search engines show.
  * @property string $slug Lower-case letters, numbers and single hyphens, such as "mens-shirts".
  * @property int $position Its place among its siblings, from 0.
  * @property CarbonImmutable|null $created_at
@@ -63,7 +65,7 @@ final class Category extends Model implements AuditableContract, HasMedia
     /**
      * @var list<string>
      */
-    public array $translatable = ['name', 'description'];
+    public array $translatable = ['name', 'description', 'seo_title', 'seo_description'];
 
     protected $fillable = [
         'name',

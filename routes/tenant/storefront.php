@@ -19,6 +19,7 @@ use App\Tenant\Storefront\Http\Controllers\StorefrontMenuController;
 use App\Tenant\Storefront\Http\Controllers\StorefrontPageController;
 use App\Tenant\Storefront\Http\Controllers\StorefrontSeoController;
 use App\Tenant\Storefront\Http\Controllers\StorefrontSettingsController;
+use App\Tenant\Storefront\Http\Controllers\StorefrontSitemapController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -39,6 +40,7 @@ Route::prefix('storefront')
         Route::get('menus/{key}', [StorefrontMenuController::class, 'show'])->name('menus.show');
         Route::get('banners', [StorefrontBannerController::class, 'index'])->name('banners.index');
         Route::get('announcements', [StorefrontBannerController::class, 'announcements'])->name('announcements.index');
+        Route::get('sitemap/{type}', [StorefrontSitemapController::class, 'show'])->name('sitemap.show');
     });
 
 Route::prefix('staff/storefront')

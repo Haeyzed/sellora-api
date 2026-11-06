@@ -9,6 +9,7 @@ use App\Tenant\Catalog\Exceptions\CategoryLoopException;
 use App\Tenant\Catalog\Exceptions\CategorySlugTakenException;
 use App\Tenant\Catalog\Exceptions\CategoryTooDeepException;
 use App\Tenant\Catalog\Models\Category;
+use App\Tenant\Catalog\Services\CatalogSeoTexts;
 use App\Tenant\Catalog\Services\CategoryTree;
 use Illuminate\Database\UniqueConstraintViolationException;
 
@@ -21,7 +22,7 @@ use Illuminate\Database\UniqueConstraintViolationException;
  */
 final readonly class UpdateCategory
 {
-    public function __construct(private CategoryTree $categoryTree) {}
+    public function __construct(private CategoryTree $categoryTree, private CatalogSeoTexts $catalogSeoTexts) {}
 
     /**
      * @throws CategoryLoopException When it would move under itself or one of its subcategories.
@@ -81,6 +82,8 @@ final readonly class UpdateCategory
         } elseif ($changes->description !== null) {
             $category->changeTranslations('description', $changes->description);
         }
+
+        $this->catalogSeoTexts->apply($category, $changes->seo);
 
         if ($changes->slug !== null) {
             $category->slug = $changes->slug;

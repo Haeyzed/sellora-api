@@ -10,7 +10,6 @@ use App\Tenant\Catalog\Models\Brand;
 use App\Tenant\Catalog\Models\Category;
 use App\Tenant\Catalog\Models\Product;
 use App\Tenant\Identity\Concerns\ActsAsStaffMember;
-use App\Tenant\Settings\Concerns\ValidatesStoreTranslations;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -23,7 +22,7 @@ final class UpdateProductRequest extends FormRequest
 {
     use ActsAsStaffMember;
     use ValidatesProductPlacement;
-    use ValidatesStoreTranslations;
+    use ValidatesSeoTexts;
 
     public function authorize(): bool
     {
@@ -36,6 +35,7 @@ final class UpdateProductRequest extends FormRequest
     public function rules(): array
     {
         return [
+            ...$this->seoTextRules(),
             /**
              * By language. Only the languages sent change; null removes a language, except the default.
              *
@@ -85,7 +85,7 @@ final class UpdateProductRequest extends FormRequest
             $categories = array_values($this->product()->categories()->get()->all());
         }
 
-        return new ProductData(
+        return new ProductData(seo: $this->seoTexts(),
             name: $name,
             description: $description,
             removesDescription: $this->has('description') && $description === null,

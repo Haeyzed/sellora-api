@@ -41,6 +41,8 @@ use Spatie\Sluggable\SlugOptions;
  * @property ProductStatus $status
  * @property array<string, string> $name By language; read one language with getTranslation().
  * @property array<string, string>|null $description By language.
+ * @property array<string, string>|null $seo_title By language: the title search engines show.
+ * @property array<string, string>|null $seo_description By language: the description search engines show.
  * @property string $slug Lower-case letters, numbers and single hyphens, such as "linen-shirt".
  * @property int|null $brand_id
  * @property int|null $primary_category_id Always one of its categories.
@@ -73,7 +75,7 @@ final class Product extends Model implements AuditableContract, HasMedia
     /**
      * @var list<string>
      */
-    public array $translatable = ['name', 'description'];
+    public array $translatable = ['name', 'description', 'seo_title', 'seo_description'];
 
     protected $fillable = [
         'name',

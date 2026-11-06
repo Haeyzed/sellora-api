@@ -43,6 +43,8 @@ final class BrandResource extends JsonResource
              * @var array<string, string>|null
              */
             'description' => $description === [] ? null : $description,
+            /** The texts search engines show, when they differ from the name and description. */
+            'seo' => SeoTextsFields::forStaff($brand),
             /** Null when it has no logo. */
             'logo' => $this->whenLoaded('media', static fn (): ?StorefrontImageResource => ($logo = $brand->getFirstMedia(Brand::LOGO)) === null ? null : new StorefrontImageResource($logo)),
             /** Used in the brand's storefront address, such as "adidas". */

@@ -8,7 +8,6 @@ use App\Tenant\Catalog\CatalogSlug;
 use App\Tenant\Catalog\Data\BrandData;
 use App\Tenant\Catalog\Models\Brand;
 use App\Tenant\Identity\Concerns\ActsAsStaffMember;
-use App\Tenant\Settings\Concerns\ValidatesStoreTranslations;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -18,7 +17,7 @@ use Illuminate\Validation\Rule;
 final class StoreBrandRequest extends FormRequest
 {
     use ActsAsStaffMember;
-    use ValidatesStoreTranslations;
+    use ValidatesSeoTexts;
 
     public function authorize(): bool
     {
@@ -31,6 +30,7 @@ final class StoreBrandRequest extends FormRequest
     public function rules(): array
     {
         return [
+            ...$this->seoTextRules(),
             /**
              * By language, such as {"en": "Adidas", "fr": "Adidas"}; must include the store's default language. Up to 120 characters each.
              *
@@ -56,6 +56,6 @@ final class StoreBrandRequest extends FormRequest
         $description = $this->validated('description');
         $slug = $this->validated('slug');
 
-        return new BrandData(name: $name, description: $description, slug: is_string($slug) ? $slug : null);
+        return new BrandData(seo: $this->seoTexts(), name: $name, description: $description, slug: is_string($slug) ? $slug : null);
     }
 }

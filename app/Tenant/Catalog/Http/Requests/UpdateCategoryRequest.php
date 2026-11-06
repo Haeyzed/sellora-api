@@ -8,7 +8,6 @@ use App\Tenant\Catalog\CatalogSlug;
 use App\Tenant\Catalog\Data\CategoryData;
 use App\Tenant\Catalog\Models\Category;
 use App\Tenant\Identity\Concerns\ActsAsStaffMember;
-use App\Tenant\Settings\Concerns\ValidatesStoreTranslations;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -18,7 +17,7 @@ use Illuminate\Validation\Rule;
 final class UpdateCategoryRequest extends FormRequest
 {
     use ActsAsStaffMember;
-    use ValidatesStoreTranslations;
+    use ValidatesSeoTexts;
 
     public function authorize(): bool
     {
@@ -33,6 +32,7 @@ final class UpdateCategoryRequest extends FormRequest
         $category = $this->route('category');
 
         return [
+            ...$this->seoTextRules(),
             /**
              * By language. Only the languages sent change; null removes a language, except the default.
              *
@@ -64,7 +64,7 @@ final class UpdateCategoryRequest extends FormRequest
         $slug = $this->validated('slug');
         $parent = $this->validated('parent');
 
-        return new CategoryData(
+        return new CategoryData(seo: $this->seoTexts(),
             name: $name,
             description: $description,
             removesDescription: $this->has('description') && $description === null,

@@ -10,7 +10,6 @@ use App\Tenant\Catalog\Data\ProductVariantData;
 use App\Tenant\Catalog\Models\Brand;
 use App\Tenant\Catalog\Models\Product;
 use App\Tenant\Identity\Concerns\ActsAsStaffMember;
-use App\Tenant\Settings\Concerns\ValidatesStoreTranslations;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -23,7 +22,7 @@ final class StoreProductRequest extends FormRequest
 {
     use ActsAsStaffMember;
     use ValidatesProductPlacement;
-    use ValidatesStoreTranslations;
+    use ValidatesSeoTexts;
     use ValidatesVariantDetails;
 
     public function authorize(): bool
@@ -37,6 +36,7 @@ final class StoreProductRequest extends FormRequest
     public function rules(): array
     {
         return [
+            ...$this->seoTextRules(),
             /**
              * By language, such as {"en": "Linen shirt"}; must include the store's default language. Up to 200 characters each.
              *
@@ -96,7 +96,7 @@ final class StoreProductRequest extends FormRequest
         $slug = $this->validated('slug');
         $brand = $this->validated('brand');
 
-        return new ProductData(
+        return new ProductData(seo: $this->seoTexts(),
             name: $name,
             description: $description,
             slug: is_string($slug) ? $slug : null,

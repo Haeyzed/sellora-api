@@ -7,6 +7,7 @@ namespace App\Tenant\Catalog\Actions;
 use App\Tenant\Catalog\Data\ProductData;
 use App\Tenant\Catalog\Exceptions\ProductSlugTakenException;
 use App\Tenant\Catalog\Models\Product;
+use App\Tenant\Catalog\Services\CatalogSeoTexts;
 use App\Tenant\Catalog\Services\ProductCategories;
 use Illuminate\Database\UniqueConstraintViolationException;
 
@@ -18,7 +19,7 @@ use Illuminate\Database\UniqueConstraintViolationException;
  */
 final readonly class UpdateProduct
 {
-    public function __construct(private ProductCategories $productCategories) {}
+    public function __construct(private ProductCategories $productCategories, private CatalogSeoTexts $catalogSeoTexts) {}
 
     /**
      * @throws ProductSlugTakenException When the new slug is used by another product outside the trash.
@@ -60,6 +61,8 @@ final readonly class UpdateProduct
         } elseif ($changes->description !== null) {
             $product->changeTranslations('description', $changes->description);
         }
+
+        $this->catalogSeoTexts->apply($product, $changes->seo);
 
         if ($changes->slug !== null) {
             $product->slug = $changes->slug;

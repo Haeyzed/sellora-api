@@ -45,6 +45,8 @@ final class CategoryResource extends JsonResource
              * @var array<string, string>|null
              */
             'description' => $description === [] ? null : $description,
+            /** The texts search engines show, when they differ from the name and description. */
+            'seo' => SeoTextsFields::forStaff($category),
             /** Null when it has no image. */
             'image' => $this->whenLoaded('media', static fn (): ?StorefrontImageResource => ($image = $category->getFirstMedia(Category::IMAGE)) === null ? null : new StorefrontImageResource($image)),
             /** Used in the category's storefront address, such as "mens-shirts". */

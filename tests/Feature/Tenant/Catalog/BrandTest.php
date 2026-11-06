@@ -91,6 +91,17 @@ it('changes only the languages sent, keeps the slug when renamed, and removes th
     brandRequest('PATCH', "/{$id}", ['name' => ['en' => null]])->assertUnprocessable()->assertJsonValidationErrors('name');
 });
 
+it('keeps a brand\'s search engine texts by language, changing only the languages sent and removing one in every language with null', function (): void {
+    $id = brandRequest('POST', data: ['name' => ['en' => 'Ada'], 'seo_title' => ['en' => 'Ada fabrics', 'fr' => 'Tissus Ada'], 'seo_description' => ['en' => 'Handwoven.']])
+        ->assertCreated()->assertJsonPath('data.seo', ['title' => ['en' => 'Ada fabrics', 'fr' => 'Tissus Ada'], 'description' => ['en' => 'Handwoven.']])->json('data.id');
+
+    brandRequest('PATCH', "/{$id}", ['seo_description' => ['fr' => 'Tissé main.']])->assertOk()->assertJsonPath('data.seo.description', ['en' => 'Handwoven.', 'fr' => 'Tissé main.']);
+    brandRequest('PATCH', "/{$id}", ['seo_title' => null])->assertOk()->assertJsonPath('data.seo.title', null);
+
+    expect($this->store->run(static fn (): mixed => DB::table('brands')->where('public_id', $id)->value('seo_title')))->toBeNull();
+    brandRequest('PATCH', "/{$id}", ['seo_title' => ['en' => str_repeat('a', 201)]])->assertUnprocessable()->assertJsonValidationErrors('seo_title');
+});
+
 it('moves a brand to the trash, where it is kept, freeing its slug, and restores it only while no other brand uses the slug', function (): void {
     $id = brandRequest('POST', data: ['name' => ['en' => 'Ada Fabrics']])->json('data.id');
 

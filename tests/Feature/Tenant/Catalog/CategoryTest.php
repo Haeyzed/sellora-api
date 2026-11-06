@@ -176,6 +176,17 @@ it('removes a category\'s description in every language when it is sent as null'
     expect($this->store->run(static fn (): mixed => DB::table('categories')->where('public_id', $id)->value('description')))->toBeNull();
 });
 
+it('keeps a category\'s search engine texts by language, removing one in every language with null', function (): void {
+    useLanguages($this->store, 'en', ['en', 'fr']);
+    $id = categoryRequest('POST', data: ['name' => ['en' => 'Shirts'], 'seo_title' => ['en' => 'Shirts for men', 'fr' => 'Chemises'], 'seo_description' => ['en' => 'All shirts.']])
+        ->assertCreated()->assertJsonPath('data.seo', ['title' => ['en' => 'Shirts for men', 'fr' => 'Chemises'], 'description' => ['en' => 'All shirts.']])->json('data.id');
+
+    categoryRequest('PATCH', "/{$id}", ['seo_title' => ['en' => 'Men\'s shirts'], 'seo_description' => null])->assertOk()
+        ->assertJsonPath('data.seo', ['title' => ['en' => 'Men\'s shirts', 'fr' => 'Chemises'], 'description' => null]);
+
+    expect($this->store->run(static fn (): mixed => DB::table('categories')->where('public_id', $id)->value('seo_description')))->toBeNull();
+});
+
 it('lets catalog.view look but not change', function (): void {
     $clothing = addCategory('Clothing');
 
