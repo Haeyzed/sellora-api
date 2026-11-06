@@ -99,7 +99,7 @@ Herd serves the HTTP site. In separate terminals from the project root, start
 the queue worker and (when actively changing frontend assets) Vite:
 
 ```powershell
-php artisan queue:listen --queue=payments,default,bulk --tries=1 --timeout=0
+php artisan queue:listen --queue=payments,messages,default,bulk --tries=1 --timeout=0
 ```
 
 ```powershell

@@ -304,7 +304,7 @@ function productionClasses(): array
 }
 
 /**
- * The queued notifications, mailables and listeners among the classes given that aren't encrypted in the queue. A listener is a class in a Listeners folder (CLAUDE.md section 5.2).
+ * The queued notifications, mailables and listeners among the classes given that aren't encrypted in the queue, and any queued class of a Messaging domain (its jobs carry the messages). A listener is a class in a Listeners folder (CLAUDE.md section 5.2).
  *
  * @param  list<class-string>  $classes
  * @return list<class-string>
@@ -320,7 +320,8 @@ function unencryptedQueuedMessages(array $classes): array
 
         $isMessage = $reflection->isSubclassOf(Notification::class)
             || $reflection->isSubclassOf(Mailable::class)
-            || str_contains($class, '\\Listeners\\');
+            || str_contains($class, '\\Listeners\\')
+            || str_contains($class, '\\Messaging\\');
 
         return $isMessage && ! $reflection->implementsInterface(ShouldBeEncrypted::class);
     }));

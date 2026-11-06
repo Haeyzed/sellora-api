@@ -27,11 +27,12 @@ which runs:
 
 Workers must listen on every queue the app uses, or that work never runs:
 `payments` (checks with payment gateways and webhooks, set by
-`PAYMENTS_QUEUE`), `default`, and `bulk` (store exports). Payments come first,
-so money never waits behind bulk work:
+`PAYMENTS_QUEUE`), `messages` (every store message, set by `MESSAGING_QUEUE`),
+`default`, and `bulk` (store exports). Payments come first, so money never
+waits behind messages or bulk work, and messages come before bulk work:
 
 ```sh
-php artisan queue:work --queue=payments,default,bulk
+php artisan queue:work --queue=payments,messages,default,bulk
 ```
 
 A job that fails every try is kept in the central `failed_jobs` table, from

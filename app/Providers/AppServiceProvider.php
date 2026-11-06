@@ -165,6 +165,8 @@ use App\Tenant\Inventory\Models\StockMovement;
 use App\Tenant\Inventory\Models\StockReservation;
 use App\Tenant\Inventory\SettledReservationRetention;
 use App\Tenant\Inventory\StockLedgerReconciliation;
+use App\Tenant\Messaging\EmailChannel;
+use App\Tenant\Messaging\MessageChannels;
 use App\Tenant\Orders\Contracts\OrderAmountHolds;
 use App\Tenant\Orders\Contracts\OrderPaymentAmounts;
 use App\Tenant\Orders\Contracts\PaymentCheckBeforeExpiry;
@@ -363,7 +365,21 @@ final class AppServiceProvider extends ServiceProvider
         // Per request or job: it remembers the formats it has read.
         $this->app->scoped(AddressFormats::class);
         $this->registerDiscountSources();
+        $this->registerMessageChannels();
         $this->scrubFailedJobErrors();
+    }
+
+    /**
+     * The ways a store reaches people: core's email, then each channel an integration registers from its service provider under its feature key.
+     */
+    private function registerMessageChannels(): void
+    {
+        $this->app->singleton(MessageChannels::class, static function (Application $app): MessageChannels {
+            $channels = new MessageChannels($app);
+            $channels->add(EmailChannel::class, null);
+
+            return $channels;
+        });
     }
 
     /**
