@@ -28,4 +28,16 @@ return [
     // How many products a merchant can link to one product as each kind of link: related products, upsells and cross-sells.
     'max_links_per_type' => 20,
 
+    // Similar products shown beside a product: the merchant's related links, then the same category, the same brand and a similar price.
+    'similar_products' => [
+        // How many are shown.
+        'max_shown' => 12,
+        // How many candidates are kept per product shown, so enough remain once those sold out right now are left out.
+        'candidates_per_shown' => 4,
+        // How far a price may be from the product's lowest price, either way, in percent.
+        'price_band_percent' => 25,
+        // How long the list of candidates is kept; prices and availability are always read live.
+        'cache_minutes' => 15,
+    ],
+
 ];

@@ -13,6 +13,7 @@ use App\Tenant\Catalog\Http\Resources\StorefrontProductList;
 use App\Tenant\Catalog\Http\Resources\StorefrontProductResource;
 use App\Tenant\Catalog\Models\Product;
 use App\Tenant\Catalog\Models\ProductLink;
+use App\Tenant\Catalog\Services\SimilarProducts;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 /**
@@ -99,5 +100,26 @@ final class StorefrontProductController extends Controller
         $inMerchantOrder = array_values(array_filter(array_map(static fn (int $id): ?Product => $linked->get($id), $linkedIds)));
 
         return StorefrontProductResource::collection($this->storefrontProductList->resources($inMerchantOrder, $request->requestedCurrency()));
+    }
+
+    /**
+     * List similar products.
+     *
+     * Suggestions to show beside a product, found by its slug: first the
+     * products the merchant linked as related, then others in the same
+     * category, then of the same brand, then at a similar price (within
+     * catalog.similar_products.price_band_percent, 25%, of its lowest price).
+     * Never the product itself, and only products that can be bought now.
+     * Not paged: at most catalog.similar_products.max_shown (12). The list may
+     * be up to a few minutes old; prices and availability are always current.
+     */
+    public function similar(ShowStorefrontProductRequest $request, string $slug, SimilarProducts $similarProducts): AnonymousResourceCollection
+    {
+        $product = Product::query()->visibleToCustomers()->where('slug', $slug)->firstOrFail();
+        $candidateIds = $similarProducts->candidateIdsFor($product);
+        $candidates = Product::query()->visibleToCustomers()->whereKey($candidateIds)->with(StorefrontProductResource::relations())->get()->keyBy('id');
+        $inOrder = array_values(array_filter(array_map(static fn (int $id): ?Product => $candidates->get($id), $candidateIds)));
+
+        return StorefrontProductResource::collection($this->storefrontProductList->buyableNow($inOrder, config()->integer('catalog.similar_products.max_shown'), $request->requestedCurrency()));
     }
 }

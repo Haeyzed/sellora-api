@@ -11,7 +11,11 @@ use App\Tenant\Catalog\Models\Category;
 use App\Tenant\Catalog\Models\Product;
 use App\Tenant\Catalog\Models\ProductVariant;
 use App\Tenant\Identity\Models\StaffMember;
+use App\Tenant\Inventory\Actions\AdjustStock;
+use App\Tenant\Inventory\Actions\ChangeInventorySettings;
 use App\Tenant\Inventory\Actions\ReceiveStock;
+use App\Tenant\Inventory\Data\InventorySettingsData;
+use App\Tenant\Inventory\Enums\AdjustmentReason;
 use App\Tenant\Inventory\Models\StockLocation;
 use Illuminate\Testing\TestResponse;
 use Tests\Fixtures\Features\FakeFeatureSource;
@@ -261,6 +265,15 @@ function stockOnHandOf(ProductVariant $variant, int $onHand = 4321): int
     app(ReceiveStock::class)->handle($variant, StockLocation::query()->sole(), $onHand);
 
     return $onHand;
+}
+
+/**
+ * Makes a variant sold out: its stock is counted, none is left (a recount to zero), and it takes no backorders.
+ */
+function soldOut(ProductVariant $variant): void
+{
+    app(ChangeInventorySettings::class)->handle($variant, new InventorySettingsData(tracksStock: true, allowsBackorder: false));
+    app(AdjustStock::class)->handle($variant, StockLocation::query()->sole(), change: null, count: 0, reason: AdjustmentReason::Recount);
 }
 
 /**

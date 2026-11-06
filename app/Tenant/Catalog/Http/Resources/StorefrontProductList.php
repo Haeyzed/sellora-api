@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tenant\Catalog\Http\Resources;
 
 use App\Tenant\Catalog\Models\Product;
+use App\Tenant\Catalog\Models\ProductVariant;
 use App\Tenant\Inventory\Actions\FindVariantAvailability;
 use App\Tenant\Pricing\Actions\FindExchangeRates;
 use App\Tenant\Pricing\VariantPricer;
@@ -48,5 +49,30 @@ final readonly class StorefrontProductList
         $prices = $this->variantPricer->priceAt($variants, $this->findExchangeRates->forStorefront($requestedCurrency));
 
         return array_map(static fn (Product $product): StorefrontProductResource => new StorefrontProductResource($product, $availability, $prices), $list);
+    }
+
+    /**
+     * Like resources(), for suggestions: only products with a variant that can be bought now, the first $limit of them in the order given.
+     *
+     * @param  iterable<int, Product>  $products
+     * @return list<StorefrontProductResource>
+     */
+    public function buyableNow(iterable $products, int $limit, ?string $requestedCurrency): array
+    {
+        $list = [];
+        $variantIds = [];
+
+        foreach ($products as $product) {
+            $list[] = $product;
+
+            foreach ($product->variants as $variant) {
+                $variantIds[] = $variant->id;
+            }
+        }
+
+        $availability = $this->findVariantAvailability->handle($variantIds);
+        $buyable = array_filter($list, static fn (Product $product): bool => $product->variants->contains(static fn (ProductVariant $variant): bool => $availability[$variant->id] ?? false));
+
+        return $this->resources(array_slice(array_values($buyable), 0, $limit), $requestedCurrency);
     }
 }

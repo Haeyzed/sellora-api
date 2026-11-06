@@ -45,6 +45,7 @@ Route::prefix('catalog')
         Route::get('products', [StorefrontProductController::class, 'index'])->name('products.index');
         Route::get('products/{slug}', [StorefrontProductController::class, 'show'])->name('products.show');
         Route::get('products/{slug}/links', [StorefrontProductController::class, 'links'])->name('products.links.index');
+        Route::get('products/{slug}/similar', [StorefrontProductController::class, 'similar'])->name('products.similar.index');
         Route::get('several-products', [StorefrontProductController::class, 'several'])->name('several-products.index');
         Route::get('categories', [StorefrontCategoryController::class, 'index'])->name('categories.index');
         Route::get('brands', [StorefrontBrandController::class, 'index'])->name('brands.index');
