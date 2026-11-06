@@ -17,8 +17,7 @@ final readonly class CatalogSeoTexts
     public function apply(Product|Category|Brand $model, SeoTexts $seoTexts): void
     {
         foreach ($seoTexts->removes as $field) {
-            // In every language: setting a translated field to null would clear only the current language's text.
-            $model->forgetTranslations($field, asNull: true);
+            $model->setAttribute($field, null);
         }
 
         if ($seoTexts->title !== null) {

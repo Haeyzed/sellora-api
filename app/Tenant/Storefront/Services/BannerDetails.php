@@ -25,8 +25,7 @@ final readonly class BannerDetails
         $removes = $banner->link_url === null ? [...$changes->removes, 'link_label'] : $changes->removes;
 
         foreach (array_unique($removes) as $column) {
-            // In every language: setting a translated field to null would clear only the current language's text.
-            $banner->forgetTranslations($column, asNull: true);
+            $banner->setAttribute($column, null);
         }
     }
 }

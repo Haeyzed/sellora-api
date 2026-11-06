@@ -17,8 +17,7 @@ final readonly class PageTexts
     public function apply(Page $page, PageData $pageData): void
     {
         foreach ($pageData->removes as $field) {
-            // In every language: setting a translated field to null would clear only the current language's text.
-            $page->forgetTranslations($field, asNull: true);
+            $page->setAttribute($field, null);
         }
 
         if ($pageData->title !== null) {

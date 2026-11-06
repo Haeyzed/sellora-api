@@ -30,8 +30,7 @@ final readonly class UpdateBrand
         }
 
         if ($changes->removesDescription) {
-            // In every language: setting a translated field to null would clear only the current language's text.
-            $brand->forgetTranslations('description', asNull: true);
+            $brand->description = null;
         } elseif ($changes->description !== null) {
             $brand->changeTranslations('description', $changes->description);
         }

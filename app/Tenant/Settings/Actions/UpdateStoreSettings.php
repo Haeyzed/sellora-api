@@ -45,7 +45,7 @@ final readonly class UpdateStoreSettings
                 /** @var array<string, string|null> $footer */
                 $settings->changeTranslations('invoice_footer', $footer);
             } elseif ($changesFooter) {
-                $settings->forgetTranslations('invoice_footer', asNull: true);
+                $settings->invoice_footer = null;
             }
 
             if ($settings->isDirty(StoreSettings::PRICING_FIELDS) && $this->pricedRecordsRegistry->anyExist()) {
