@@ -57,6 +57,7 @@ use App\Shared\Tenancy\Contracts\StoreClosure;
 use App\Shared\Tenancy\Contracts\StoreCommittedPaymentRefunds;
 use App\Shared\Tenancy\Contracts\StoreExports;
 use App\Shared\Tenancy\Contracts\StoreInvoiceBalances;
+use App\Shared\Tenancy\Contracts\StoreMailIdentity;
 use App\Shared\Tenancy\Contracts\StoreOwnerAccounts;
 use App\Shared\Tenancy\Contracts\StoreOwnerContact;
 use App\Shared\Tenancy\Contracts\StorePaymentChecks;
@@ -71,6 +72,7 @@ use App\Shared\Tenancy\Contracts\StoreStockReservations;
 use App\Shared\Tenancy\Contracts\StoreTaxDocuments;
 use App\Shared\Tenancy\Contracts\StoreUnpaidOrders;
 use App\Shared\Tenancy\Contracts\StoreUnsettledPaymentHolds;
+use App\Shared\Tenancy\Listeners\SendStoreMailInTheStoreNameWhenMessageSending;
 use App\Shared\Tenancy\StoreSettingsSetups;
 use App\Tenant\Cart\CartStoreTables;
 use App\Tenant\Cart\CustomerCartRetention;
@@ -167,6 +169,10 @@ use App\Tenant\Inventory\SettledReservationRetention;
 use App\Tenant\Inventory\StockLedgerReconciliation;
 use App\Tenant\Messaging\EmailChannel;
 use App\Tenant\Messaging\MessageChannels;
+use App\Tenant\Messaging\MessagingMailIdentity;
+use App\Tenant\Messaging\MessagingSettingsDefaults;
+use App\Tenant\Messaging\MessagingStoreTables;
+use App\Tenant\Messaging\Models\MessagingSettings;
 use App\Tenant\Orders\Contracts\OrderAmountHolds;
 use App\Tenant\Orders\Contracts\OrderPaymentAmounts;
 use App\Tenant\Orders\Contracts\PaymentCheckBeforeExpiry;
@@ -300,6 +306,7 @@ use Illuminate\Contracts\Validation\UncompromisedVerifier;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Client\Factory as HttpFactory;
+use Illuminate\Mail\Events\MessageSending;
 use Illuminate\Queue\Failed\DatabaseUuidFailedJobProvider;
 use Illuminate\Queue\Failed\FailedJobProviderInterface;
 use Illuminate\Routing\Route;
@@ -339,8 +346,9 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(StoreExports::class, PlatformStoreExports::class);
         $this->app->bind(StoreAccountNotifications::class, StaffAccountNotifications::class);
         $this->app->bind(StoreProfile::class, PlatformStoreProfile::class);
+        $this->app->bind(StoreMailIdentity::class, MessagingMailIdentity::class);
         // Every settings row a store needs, created with it: the store-wide ones first, then each core domain's own.
-        $this->app->bind(StoreSettingsSetup::class, static fn (Application $app): StoreSettingsSetups => new StoreSettingsSetups([$app->make(StoreSettingsDefaults::class), $app->make(ReturnSettingsDefaults::class), $app->make(StorefrontSettingsDefaults::class)]));
+        $this->app->bind(StoreSettingsSetup::class, static fn (Application $app): StoreSettingsSetups => new StoreSettingsSetups([$app->make(StoreSettingsDefaults::class), $app->make(ReturnSettingsDefaults::class), $app->make(StorefrontSettingsDefaults::class), $app->make(MessagingSettingsDefaults::class)]));
         $this->app->bind(StorePermissions::class, StaffPermissionSync::class);
         $this->app->bind(StoreStockLedger::class, StockLedgerReconciliation::class);
         $this->app->bind(StoreInvoiceBalances::class, InvoiceBalanceReconciliation::class);
@@ -644,7 +652,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->singleton(StoreExportRegistry::class, static function (Application $app): StoreExportRegistry {
             $registry = new StoreExportRegistry;
 
-            foreach ([SharedStoreTables::class, IdentityStoreTables::class, SettingsStoreTables::class, CustomerStoreTables::class, DeliveryStoreTables::class, CatalogStoreTables::class, InventoryStoreTables::class, PricingStoreTables::class, PromotionStoreTables::class, CartStoreTables::class, CheckoutStoreTables::class, ShippingStoreTables::class, OrderStoreTables::class, PaymentStoreTables::class, ReturnStoreTables::class, StorefrontStoreTables::class] as $storeTables) {
+            foreach ([SharedStoreTables::class, IdentityStoreTables::class, SettingsStoreTables::class, CustomerStoreTables::class, DeliveryStoreTables::class, CatalogStoreTables::class, InventoryStoreTables::class, PricingStoreTables::class, PromotionStoreTables::class, CartStoreTables::class, CheckoutStoreTables::class, ShippingStoreTables::class, OrderStoreTables::class, PaymentStoreTables::class, ReturnStoreTables::class, StorefrontStoreTables::class, MessagingStoreTables::class] as $storeTables) {
                 $app->make($storeTables)->classify($registry);
             }
 
@@ -678,6 +686,7 @@ final class AppServiceProvider extends ServiceProvider
             'return_refund_choice' => ReturnRefundChoice::class,
             'return_settings' => ReturnSettings::class,
             'storefront_settings' => StorefrontSettings::class,
+            'messaging_settings' => MessagingSettings::class,
             'page' => Page::class,
             'banner' => Banner::class,
             'staff_invitation' => StaffInvitation::class,
@@ -841,6 +850,7 @@ final class AppServiceProvider extends ServiceProvider
         Event::listen(OrderAnonymised::class, ForgetReturnsWhenOrderAnonymised::class);
         Event::listen(ShipmentCancelled::class, CancelDeliveriesWhenShipmentCancelled::class);
         Event::listen(StorefrontContentChanged::class, RenewStorefrontCacheWhenContentChanges::class);
+        Event::listen(MessageSending::class, SendStoreMailInTheStoreNameWhenMessageSending::class);
     }
 
     /**

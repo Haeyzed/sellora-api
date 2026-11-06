@@ -69,7 +69,7 @@ the response says which language was used.
 
 ## Endpoint cURL reference
 
-The following commands cover all 379 operations in the current tenant
+The following commands cover all 381 operations in the current tenant
 Scramble OpenAPI export, including the shared geography endpoints available
 on the store domain. Request bodies include required fields (or one
 representative field when all are optional); values such as IDs, email
@@ -1627,6 +1627,26 @@ curl.exe --request PUT "${StoreBase}/customer/account/marketing-consents/${Chann
   --header "Authorization: Bearer $CustomerToken" `
   --header 'Content-Type: application/json' `
   --data-raw '{"granted":true}'
+```
+
+#### MessagingSettings
+
+**GET** `/staff/messaging/settings` — staff bearer token. Show the messaging settings (`settings.view`)
+
+```powershell
+curl.exe --request GET "${StoreBase}/staff/messaging/settings" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
+**PATCH** `/staff/messaging/settings` — staff bearer token. Change the messaging settings (`settings.manage`)
+
+```powershell
+curl.exe --request PATCH "${StoreBase}/staff/messaging/settings" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw '{"sender_name":"Ada Fabrics","reply_to_email":"hello@ada-fabrics.example","has_new_order_alert_emails":true}'
 ```
 
 #### OrderNote
