@@ -43,6 +43,7 @@ Route::prefix('catalog')
     ->group(static function (): void {
         Route::get('products', [StorefrontProductController::class, 'index'])->name('products.index');
         Route::get('products/{slug}', [StorefrontProductController::class, 'show'])->name('products.show');
+        Route::get('several-products', [StorefrontProductController::class, 'several'])->name('several-products.index');
         Route::get('categories', [StorefrontCategoryController::class, 'index'])->name('categories.index');
         Route::get('brands', [StorefrontBrandController::class, 'index'])->name('brands.index');
     });

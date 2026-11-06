@@ -69,7 +69,7 @@ the response says which language was used.
 
 ## Endpoint cURL reference
 
-The following commands cover all 368 operations in the current tenant
+The following commands cover all 369 operations in the current tenant
 Scramble OpenAPI export, including the shared geography endpoints available
 on the store domain. Request bodies include required fields (or one
 representative field when all are optional); values such as IDs, email
@@ -3202,6 +3202,13 @@ curl.exe --request GET "${StoreBase}/catalog/products" `
 
 ```powershell
 curl.exe --request GET "${StoreBase}/catalog/products/${Slug}" `
+  --header 'Accept: application/json'
+```
+
+**GET** `/catalog/several-products` — public. Fetch several products, in the order asked for (comparison, recently viewed)
+
+```powershell
+curl.exe --request GET "${StoreBase}/catalog/several-products?ids[]=${Product}&ids[]=${OtherProduct}" `
   --header 'Accept: application/json'
 ```
 

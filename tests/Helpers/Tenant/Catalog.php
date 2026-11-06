@@ -11,6 +11,8 @@ use App\Tenant\Catalog\Models\Category;
 use App\Tenant\Catalog\Models\Product;
 use App\Tenant\Catalog\Models\ProductVariant;
 use App\Tenant\Identity\Models\StaffMember;
+use App\Tenant\Inventory\Actions\ReceiveStock;
+use App\Tenant\Inventory\Models\StockLocation;
 use Illuminate\Testing\TestResponse;
 use Tests\Fixtures\Features\FakeFeatureSource;
 
@@ -242,6 +244,54 @@ function storefrontProduct(array $name, ProductStatus $status = ProductStatus::A
     }
 
     return $product;
+}
+
+/*
+|--------------------------------------------------------------------------
+| For the storefront's shopping aids (several products, links, similar
+| products, best sellers, the wishlist)
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Gives a variant a distinctive number of units on hand, for proving a response never tells shoppers how many are left.
+ */
+function stockOnHandOf(ProductVariant $variant, int $onHand = 4321): int
+{
+    app(ReceiveStock::class)->handle($variant, StockLocation::query()->sole(), $onHand);
+
+    return $onHand;
+}
+
+/**
+ * Section 14: a shopper's response names no stock field and never contains the number of units on hand.
+ */
+function expectNoStockQuantity(TestResponse $response, int $onHand = 4321): void
+{
+    $keys = [];
+    collectJsonKeys($response->json(), $keys);
+
+    expect(preg_grep('/quantity|on_hand|stock|reserved|units/i', $keys))->toBe([], 'A stock field is shown to shoppers')
+        ->and(preg_match('/(?<![0-9])'.$onHand.'(?![0-9])/', (string) $response->getContent()))->toBe(0, 'The units on hand are shown to shoppers');
+}
+
+/**
+ * Every key anywhere in a decoded JSON document.
+ *
+ * @param  array<array-key, mixed>|null  $document
+ * @param  list<string>  $keys
+ */
+function collectJsonKeys(?array $document, array &$keys): void
+{
+    foreach ($document ?? [] as $key => $value) {
+        if (is_string($key)) {
+            $keys[] = $key;
+        }
+
+        if (is_array($value)) {
+            collectJsonKeys($value, $keys);
+        }
+    }
 }
 
 /*

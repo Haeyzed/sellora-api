@@ -5,14 +5,12 @@ declare(strict_types=1);
 namespace App\Tenant\Catalog\Http\Controllers;
 
 use App\Shared\Http\Controller;
+use App\Tenant\Catalog\Http\Requests\ListSeveralStorefrontProductsRequest;
 use App\Tenant\Catalog\Http\Requests\ListStorefrontProductsRequest;
 use App\Tenant\Catalog\Http\Requests\ShowStorefrontProductRequest;
+use App\Tenant\Catalog\Http\Resources\StorefrontProductList;
 use App\Tenant\Catalog\Http\Resources\StorefrontProductResource;
 use App\Tenant\Catalog\Models\Product;
-use App\Tenant\Inventory\Actions\FindVariantAvailability;
-use App\Tenant\Pricing\Actions\FindExchangeRates;
-use App\Tenant\Pricing\Data\VariantPrice;
-use App\Tenant\Pricing\VariantPricer;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 /**
@@ -27,11 +25,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  */
 final class StorefrontProductController extends Controller
 {
-    public function __construct(
-        private readonly FindVariantAvailability $findVariantAvailability,
-        private readonly FindExchangeRates $findExchangeRates,
-        private readonly VariantPricer $variantPricer,
-    ) {}
+    public function __construct(private readonly StorefrontProductList $storefrontProductList) {}
 
     /**
      * List products.
@@ -48,11 +42,9 @@ final class StorefrontProductController extends Controller
         $request->applyFilters($query);
 
         $page = $query->orderByDesc('id')->cursorPaginate($request->perPage());
+        $resources = $this->storefrontProductList->resources($page->items(), $request->requestedCurrency());
 
-        $availability = $this->findVariantAvailability->handle($this->variantIds($page->items()));
-        $prices = $this->pricesOf($page->items(), $request->requestedCurrency());
-
-        return StorefrontProductResource::collection($page->through(static fn (Product $product): StorefrontProductResource => new StorefrontProductResource($product, $availability, $prices)));
+        return StorefrontProductResource::collection($page->setCollection(collect($resources)));
     }
 
     /**
@@ -66,43 +58,25 @@ final class StorefrontProductController extends Controller
     {
         $product = Product::query()->visibleToCustomers()->where('slug', $slug)->with(StorefrontProductResource::relations())->firstOrFail();
 
-        return new StorefrontProductResource($product, $this->findVariantAvailability->handle($this->variantIds([$product])), $this->pricesOf([$product], $request->requestedCurrency()));
+        return $this->storefrontProductList->resources([$product], $request->requestedCurrency())[0];
     }
 
     /**
-     * What the products' variants cost in the currency asked for, or the store's own: a fixed number of queries for the whole page.
+     * Fetch several products.
      *
-     * @param  array<int, Product>  $products
-     * @return array<int, VariantPrice> By variant ID.
+     * The products with the IDs asked for (?ids[]=...), in that order, for
+     * comparing products and for the shopper's recently viewed list, which
+     * the storefront keeps in the browser: nothing is stored. A product that
+     * doesn't exist, or that customers can't buy, is left out without an
+     * error, so a list kept in a browser never breaks when a product goes.
+     * Not paged: at most catalog.max_products_fetched IDs (50) are asked for.
      */
-    private function pricesOf(array $products, ?string $requestedCurrency): array
+    public function several(ListSeveralStorefrontProductsRequest $request): AnonymousResourceCollection
     {
-        $variants = [];
+        $ids = $request->productIds();
+        $products = Product::query()->visibleToCustomers()->whereIn('public_id', $ids)->with(StorefrontProductResource::relations())->get()->keyBy('public_id');
+        $inOrderAsked = array_values(array_filter(array_map(static fn (string $id): ?Product => $products->get($id), $ids)));
 
-        foreach ($products as $product) {
-            foreach ($product->variants as $variant) {
-                $variants[] = $variant;
-            }
-        }
-
-        return $this->variantPricer->priceAt($variants, $this->findExchangeRates->forStorefront($requestedCurrency));
-    }
-
-    /**
-     * The IDs of the variants shown for these products.
-     *
-     * @param  array<int, Product>  $products
-     * @return list<int>
-     */
-    private function variantIds(array $products): array
-    {
-        $ids = [];
-        foreach ($products as $product) {
-            foreach ($product->variants as $variant) {
-                $ids[] = $variant->id;
-            }
-        }
-
-        return $ids;
+        return StorefrontProductResource::collection($this->storefrontProductList->resources($inOrderAsked, $request->requestedCurrency()));
     }
 }

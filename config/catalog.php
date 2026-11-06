@@ -22,4 +22,7 @@ return [
     // How many variants outside the trash one product can have.
     'max_variants_per_product' => 100,
 
+    // How many products the storefront can fetch by ID at once, for comparing them and for the shopper's recently viewed list.
+    'max_products_fetched' => 50,
+
 ];
