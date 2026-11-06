@@ -54,6 +54,7 @@ use Spatie\Sluggable\SlugOptions;
  * @property-read Collection<int, Category> $categories
  * @property-read Collection<int, ProductVariant> $variants
  * @property-read Collection<int, Attribute> $options
+ * @property-read Collection<int, ProductLink> $links
  */
 final class Product extends Model implements AuditableContract, HasMedia
 {
@@ -164,6 +165,16 @@ final class Product extends Model implements AuditableContract, HasMedia
     public function variants(): HasMany
     {
         return $this->hasMany(ProductVariant::class)->orderBy('position')->orderBy('id');
+    }
+
+    /**
+     * The products a merchant picked to show beside it, every kind, each kind in its order.
+     *
+     * @return HasMany<ProductLink, $this>
+     */
+    public function links(): HasMany
+    {
+        return $this->hasMany(ProductLink::class)->orderBy('type')->orderBy('position');
     }
 
     /**

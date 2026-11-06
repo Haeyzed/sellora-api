@@ -294,6 +294,23 @@ function collectJsonKeys(?array $document, array &$keys): void
     }
 }
 
+/**
+ * A staff request under /api/v1/staff/catalog/products, as the given staff member (none: no token).
+ *
+ * @param  array<string, mixed>  $data
+ */
+function productLinksRequest(string $method, string $path, array $data = [], ?StaffMember $as = null, string $subdomain = 'shop-front'): TestResponse
+{
+    forgetSignIns();
+    $request = $as === null ? test()->withoutToken() : test()->withToken(staffTokenFor($as, $subdomain));
+    $response = $request->json($method, storeUrl($subdomain, '/api/v1/staff/catalog/products/'.ltrim($path, '/')), $data);
+    test()->flushHeaders();
+    tenancy()->end();
+    forgetSignIns();
+
+    return $response;
+}
+
 /*
 |--------------------------------------------------------------------------
 | For StorefrontImagesTest.php

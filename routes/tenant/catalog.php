@@ -13,6 +13,7 @@ use App\Tenant\Catalog\Http\Controllers\CategoryController;
 use App\Tenant\Catalog\Http\Controllers\CategoryImageController;
 use App\Tenant\Catalog\Http\Controllers\ProductController;
 use App\Tenant\Catalog\Http\Controllers\ProductImageController;
+use App\Tenant\Catalog\Http\Controllers\ProductLinksController;
 use App\Tenant\Catalog\Http\Controllers\ProductOptionsController;
 use App\Tenant\Catalog\Http\Controllers\ProductVariantController;
 use App\Tenant\Catalog\Http\Controllers\PublishProductController;
@@ -43,6 +44,7 @@ Route::prefix('catalog')
     ->group(static function (): void {
         Route::get('products', [StorefrontProductController::class, 'index'])->name('products.index');
         Route::get('products/{slug}', [StorefrontProductController::class, 'show'])->name('products.show');
+        Route::get('products/{slug}/links', [StorefrontProductController::class, 'links'])->name('products.links.index');
         Route::get('several-products', [StorefrontProductController::class, 'several'])->name('several-products.index');
         Route::get('categories', [StorefrontCategoryController::class, 'index'])->name('categories.index');
         Route::get('brands', [StorefrontBrandController::class, 'index'])->name('brands.index');
@@ -80,6 +82,8 @@ Route::prefix('staff/catalog')
         Route::post('products/{product}/publish', PublishProductController::class)->name('products.publish');
         Route::post('products/{product}/archive', ArchiveProductController::class)->name('products.archive');
         Route::put('products/{product}/options', ProductOptionsController::class)->name('products.options');
+        Route::get('products/{product}/links', [ProductLinksController::class, 'show'])->name('products.links.show');
+        Route::put('products/{product}/links/{type}', [ProductLinksController::class, 'update'])->name('products.links.update');
         Route::post('products/{product}/images', [ProductImageController::class, 'store'])->name('products.images.store');
         Route::put('products/{product}/images/order', ReorderProductImagesController::class)->name('products.images.order');
         Route::delete('products/{product}/images/{image}', [ProductImageController::class, 'destroy'])->name('products.images.destroy');

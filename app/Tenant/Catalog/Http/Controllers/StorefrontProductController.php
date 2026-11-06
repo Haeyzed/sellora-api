@@ -6,11 +6,13 @@ namespace App\Tenant\Catalog\Http\Controllers;
 
 use App\Shared\Http\Controller;
 use App\Tenant\Catalog\Http\Requests\ListSeveralStorefrontProductsRequest;
+use App\Tenant\Catalog\Http\Requests\ListStorefrontProductLinksRequest;
 use App\Tenant\Catalog\Http\Requests\ListStorefrontProductsRequest;
 use App\Tenant\Catalog\Http\Requests\ShowStorefrontProductRequest;
 use App\Tenant\Catalog\Http\Resources\StorefrontProductList;
 use App\Tenant\Catalog\Http\Resources\StorefrontProductResource;
 use App\Tenant\Catalog\Models\Product;
+use App\Tenant\Catalog\Models\ProductLink;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 /**
@@ -78,5 +80,24 @@ final class StorefrontProductController extends Controller
         $inOrderAsked = array_values(array_filter(array_map(static fn (string $id): ?Product => $products->get($id), $ids)));
 
         return StorefrontProductResource::collection($this->storefrontProductList->resources($inOrderAsked, $request->requestedCurrency()));
+    }
+
+    /**
+     * List a product's links.
+     *
+     * The products the merchant picked to show beside this one, of one kind
+     * (?type=related, upsell or cross_sell), in the merchant's order. Only
+     * products customers can buy are shown. The product itself is found by
+     * its slug; one customers can't buy is not found. Not paged: a product
+     * has at most catalog.max_links_per_type links of each kind (20).
+     */
+    public function links(ListStorefrontProductLinksRequest $request, string $slug): AnonymousResourceCollection
+    {
+        $product = Product::query()->visibleToCustomers()->where('slug', $slug)->firstOrFail();
+        $linkedIds = ProductLink::query()->where('product_id', $product->id)->where('type', $request->linkType())->orderBy('position')->pluck('linked_product_id')->all();
+        $linked = Product::query()->visibleToCustomers()->whereKey($linkedIds)->with(StorefrontProductResource::relations())->get()->keyBy('id');
+        $inMerchantOrder = array_values(array_filter(array_map(static fn (int $id): ?Product => $linked->get($id), $linkedIds)));
+
+        return StorefrontProductResource::collection($this->storefrontProductList->resources($inMerchantOrder, $request->requestedCurrency()));
     }
 }

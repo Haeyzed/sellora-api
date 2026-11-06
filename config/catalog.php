@@ -25,4 +25,7 @@ return [
     // How many products the storefront can fetch by ID at once, for comparing them and for the shopper's recently viewed list.
     'max_products_fetched' => 50,
 
+    // How many products a merchant can link to one product as each kind of link: related products, upsells and cross-sells.
+    'max_links_per_type' => 20,
+
 ];

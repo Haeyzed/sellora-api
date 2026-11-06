@@ -32,6 +32,8 @@ final class CatalogStoreTables implements ClassifiesStoreTables
 
         $registry->table('category_product', include: ['category_id', 'product_id']);
 
+        $registry->table('product_links', include: ['id', 'product_id', 'type', 'linked_product_id', 'position', 'created_at', 'updated_at']);
+
         $registry->table(
             'product_variants',
             include: [

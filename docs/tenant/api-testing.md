@@ -69,7 +69,7 @@ the response says which language was used.
 
 ## Endpoint cURL reference
 
-The following commands cover all 369 operations in the current tenant
+The following commands cover all 372 operations in the current tenant
 Scramble OpenAPI export, including the shared geography endpoints available
 on the store domain. Request bodies include required fields (or one
 representative field when all are optional); values such as IDs, email
@@ -1931,6 +1931,26 @@ curl.exe --request DELETE "${StoreBase}/staff/catalog/products/${Product}/images
   --header "Authorization: Bearer $StaffToken"
 ```
 
+#### ProductLinks
+
+**GET** `/staff/catalog/products/{product}/links` — staff bearer token. Show a product's links (related, upsell, cross-sell)
+
+```powershell
+curl.exe --request GET "${StoreBase}/staff/catalog/products/${Product}/links" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
+**PUT** `/staff/catalog/products/{product}/links/{type}` — staff bearer token. Replace a product's links of one kind (`related`, `upsell` or `cross_sell`), in order
+
+```powershell
+curl.exe --request PUT "${StoreBase}/staff/catalog/products/${Product}/links/related" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw '{"product_ids":["replace-with-value"]}'
+```
+
 #### ProductOptions
 
 **PUT** `/staff/catalog/products/{product}/options` — staff bearer token. Set a product's options
@@ -3202,6 +3222,13 @@ curl.exe --request GET "${StoreBase}/catalog/products" `
 
 ```powershell
 curl.exe --request GET "${StoreBase}/catalog/products/${Slug}" `
+  --header 'Accept: application/json'
+```
+
+**GET** `/catalog/products/{slug}/links` — public. List a product's links of one kind that shoppers can buy
+
+```powershell
+curl.exe --request GET "${StoreBase}/catalog/products/${Slug}/links?type=cross_sell" `
   --header 'Accept: application/json'
 ```
 
