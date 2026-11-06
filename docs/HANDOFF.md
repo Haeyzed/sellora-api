@@ -1,7 +1,7 @@
 # Handover
 
 **Date:** 6 November 2026.
-**Describes:** `main` at `c7ab09b`, and the branch `step-19-storefront`
+**Describes:** `main` at `607b9c3`, and the branch `step-19b-shopping-aids`
 started from it.
 
 This is for continuing the work on a new PC: for the project owner, and for
@@ -15,33 +15,30 @@ disagrees with `git log`, GitHub or CLAUDE.md, they win.
 
 ## 1. Where things stand
 
-**`main`** is at `c7ab09b` ("Record the remaining inline @var and the
-stores_fault backfill"). CI passed on it: run 42117370250, all three jobs
-(Pest on PostgreSQL 18 and Redis; Pint, Larastan and composer audit;
-Scramble).
+**`main`** is at `607b9c3` ("Link the translated-text test in the handover
+instead of naming it"). CI passed on it.
 
-**What was finished last:** Step 18d, `step-18d-exchange-flow` (the exchange
-flow in Returns, `c15b9ea` to `c7ab09b`), merged into `main` by
-fast-forward. Its plan and decisions are in [Returns](tenant/returns.md#exchanges).
+**What was finished last:** Step 19a, `step-19-storefront` (the
+storefront's content: pages, menus, banners, search engine settings and the
+sitemap, with the three review fixes), merged into `main` by fast-forward.
+One of its pushed commits, `8b30972` (handover docs), fails CI on its own:
+the docs test refused a test's name in backticks; `607b9c3` fixed it.
 
-**In progress:** Step 19a, `step-19-storefront` (the storefront's content),
-built and waiting for the owner's review (item 2a):
+**In progress:** Step 19b, `step-19b-shopping-aids`, built and waiting for
+the owner's review (item 2a):
 
 | Commit | What |
 |---|---|
-| `06837f2` | The Storefront domain: its settings row (created with the store), `storefront.view` and `storefront.manage`, search engine settings and the share image |
-| `911fa60` | Pages, with their HTML cleaned when saved and served (`symfony/html-sanitizer` 8.1, approved), the homepage and the policy pages |
-| `6a26af4` | Menus, two levels deep, showing shoppers only links they may follow |
-| `ccd5dc6` | A page's text sent as null removed in every language, not only the request's |
-| `2b6d3f0` | Banners and announcements, shown within their times |
-| `eab54d2` | The same removal fix for catalog descriptions (on `main` since Step 7) |
-| `3e8b3d7` | Search engine texts on products, categories and brands, and the sitemap |
-| (docs) | [Storefront](tenant/storefront.md), the documentation home and this handover |
-| `263348a` | Review fix: the uploaders alone choose a file's disk (no `useDisk` on collections), and the media fallback disk is private |
-| `e3e3915` | Review fix: a translated text set to null is removed in every language by the shared `HasStoreTranslations`, for every model |
-| `0641a22` | Review fix: "slug" no longer translated as the animal (German "Schnecke" and ten other languages) |
+| `1df9fcc` | Fetch several storefront products by ID (comparison, recently viewed) |
+| `e662a78` | Product links (related, upsell, cross-sell), managed by staff and read by shoppers |
+| `a2e8e5a` | Similar products, worked out from links, category, brand and price |
+| `a5c5133` | Best sellers, units from paid non-test orders over 30 days |
+| `4f894d0` | The wishlist, with merge at sign-in and move to cart |
+| `3aa5028` | A test that every language has every English message |
+| (docs) | [Storefront](tenant/storefront.md#shopping-aids), the documentation home and this handover |
 
-Before 18d: Step 18c (`step-18c-exchanges`), Step 18b
+Before 19a: Step 18d (`step-18d-exchange-flow`), Step 18c
+(`step-18c-exchanges`), Step 18b
 (`step-18b-refund-destinations`), `permission-labels`,
 `encrypt-queued-messages` and `scrub-error-reports`.
 
@@ -49,8 +46,8 @@ Before 18d: Step 18c (`step-18c-exchanges`), Step 18b
 
 | Branch | State |
 |---|---|
-| `step-19-storefront` | **Waiting for review:** item 2a below. Not merged |
-| `step-18d-exchange-flow`, `step-18c-exchanges`, `step-18b-refund-destinations`, `permission-labels`, `encrypt-queued-messages`, `scrub-error-reports`, `handover-scripts` | Merged; kept on GitHub |
+| `step-19b-shopping-aids` | **Waiting for review:** item 2a below. Not merged |
+| `step-19-storefront`, `step-18d-exchange-flow`, `step-18c-exchanges`, `step-18b-refund-destinations`, `permission-labels`, `encrypt-queued-messages`, `scrub-error-reports`, `handover-scripts` | Merged; kept on GitHub |
 | `step-10-customers` to `step-18-returns`, `step-10b-social-sign-in`, `step-15b-invoices`, `step-16b-paystack` | Merged; kept on GitHub |
 | `docs-schema-comments`, `fix-token-links`, `fix-payment-holds` | Merged; kept on GitHub |
 | `ci-proof-docs`, `ci-proof-pint`, `ci-proof-stan` | Gone, as intended. They existed only on the old laptop (each broke one CI check on purpose, to prove CI catches it) and were never meant to be kept |
@@ -62,40 +59,26 @@ Before 18d: Step 18c (`step-18c-exchanges`), Step 18b
 Each item is its own branch, starts only when the owner says so, and ends
 with a stop for review (CLAUDE.md section 17).
 
-### a. Step 19a: the storefront's content (`step-19-storefront`)
+### a. Step 19b: shopping aids (`step-19b-shopping-aids`)
 
-Described in [Storefront](tenant/storefront.md). Next: the owner's review,
-then a fast-forward merge. The owner's decisions, as built:
+Described in [Storefront](tenant/storefront.md#shopping-aids). Next: the
+owner's review, then a fast-forward merge. As decided: the wishlist holds a
+product with an optional variant, at most 500, under a lock per customer,
+in the privacy export and erased; best sellers count gross units over 30
+days; no response shows a stock quantity.
 
-- **HTML sanitising:** `symfony/html-sanitizer` 8.1 (MIT), cleaning page
-  bodies when saved and again when served (the served result cached per
-  store). Links: https, relative paths, `mailto:` and `tel:` only (the
-  same rule as menu links). Images: only from the store's own media host.
-- **Page sections:** left out of the first version.
-- **Changed from the plan:** only page bodies are cached. Settings, menus
-  and banners are read live, because the cache keeps classes out
-  (`serializable_classes` off) and those reads are a few indexed queries.
-
-### b. Step 19b: shopping aids (`step-19b-shopping-aids`)
-
-Starts after 19a is merged. Decided: the wishlist holds a product with an
-optional variant; best sellers count gross units over 30 days (paid,
-non-test orders, cached per store). Also the fetch-several-products
-endpoint (comparison, recently viewed), merchant-picked product links and
-similar products (CLAUDE.md section 13.1).
-
-### c. Steps 20 and 21
+### b. Steps 20 and 21
 
 Messaging (email first, see [Messaging](tenant/messaging.md)), then Data
 tools, as CLAUDE.md section 17 lists them.
 
-### d. Cleanup: the remaining inline `@var` (after Step 21, before the frontend)
+### c. Cleanup: the remaining inline `@var` (after Step 21, before the frontend)
 
 One branch of its own removing the 91 inline `@var` listed in the
 follow-ups below, domain by domain, each read by its real type (as Returns
 does with `ReadsReturnLines`). No behaviour changes.
 
-### e. The frontend, after core
+### d. The frontend, after core
 
 The frontends come after the core API and the cleanup. The frontend
 repository is `Haeyzed/sellora-frontend`.
@@ -123,12 +106,14 @@ repository is `Haeyzed/sellora-frontend`.
 | **Telescope stores exception messages** in full, including a database error's SQL and values. It runs only locally (never in production or staging with real data), so it was left out of `scrub-error-reports` | Only here |
 | **Plain-text queued emails** written before `encrypt-queued-messages` is deployed stay readable in `failed_jobs` until the 30-day purge; they are not re-encrypted | [Deployment](deployment.md) |
 | **A saved preferred language for staff and platform admins** (a column on each), for Step 20: today a dashboard's language comes only from `Accept-Language`, so emails and alerts sent outside a request (by a job or the scheduler) have no language to use | Only here (decided in `permission-labels`) |
-| **Native review of the permission labels and group names** before real merchants use them: Yoruba, Hausa, Igbo and Swahili above all, and ideally every non-English language. They were written without a native speaker; the descriptions were too, and so were 18b's refund destination label and its three error messages, and 18c's `exchange` destination label and its five `replacement_*` error messages, and 18d's `returns.exchange` permission and allowance label, the `faulty` reason, and the `return_fault_reason_required`, `return_replacement_invalid`, `return_replacement_not_available`, `return_is_an_exchange` and `exchange_not_ready` messages, and 19a's `storefront.view` and `storefront.manage` labels and the `page_slug_taken`, `menu_key_taken`, `menu_link_target_not_found` and `banner_has_no_image` messages, and the slug messages rewritten in the 19a review (`*_slug_taken`, `*_restore_conflict`) | `lang/*/permissions.php`, `lang/*/permission_groups.php`, `lang/*/refunds.php`, `lang/*/returns.php` and the `refund_destination_*`, `replacement_*`, `return_*` and `exchange_not_ready` entries in `lang/*/errors.php` |
-| **Inline `@var` outside Returns:** CLAUDE.md section 13 rules them out; Returns has none since `8b24cf7` (its requests read lines through `ReadsReturnLines`). 91 remain on variables: 69 in `app/` and `integrations/` (most in Catalog's and other domains' form requests, then Orders, Payments, Shared), 22 in `tests/`. They are removed in one cleanup branch after Step 21, before the frontend (item 2d). The `@var` above array keys in API resources (88) document response fields for Scramble and are not inline type casts | Found with `git grep -nE '/\*\* @var [^*]+ \$[A-Za-z_]+ \*/'` |
+| **Native review of the permission labels and group names** before real merchants use them: Yoruba, Hausa, Igbo and Swahili above all, and ideally every non-English language. They were written without a native speaker; the descriptions were too, and so were 18b's refund destination label and its three error messages, and 18c's `exchange` destination label and its five `replacement_*` error messages, and 18d's `returns.exchange` permission and allowance label, the `faulty` reason, and the `return_fault_reason_required`, `return_replacement_invalid`, `return_replacement_not_available`, `return_is_an_exchange` and `exchange_not_ready` messages, and 19a's `storefront.view` and `storefront.manage` labels and the `page_slug_taken`, `menu_key_taken`, `menu_link_target_not_found` and `banner_has_no_image` messages, and the slug messages rewritten in the 19a review (`*_slug_taken`, `*_restore_conflict`), and 19b's `wishlist_full` message | `lang/*/permissions.php`, `lang/*/permission_groups.php`, `lang/*/refunds.php`, `lang/*/returns.php` and the `refund_destination_*`, `replacement_*`, `return_*` and `exchange_not_ready` entries in `lang/*/errors.php` |
+| **Inline `@var` outside Returns:** CLAUDE.md section 13 rules them out; Returns has none since `8b24cf7` (its requests read lines through `ReadsReturnLines`). 91 remain on variables: 69 in `app/` and `integrations/` (most in Catalog's and other domains' form requests, then Orders, Payments, Shared), 22 in `tests/`. They are removed in one cleanup branch after Step 21, before the frontend (item 2c). The `@var` above array keys in API resources (88) document response fields for Scramble and are not inline type casts | Found with `git grep -nE '/\*\* @var [^*]+ \$[A-Za-z_]+ \*/'` |
 | **The `stores_fault` backfill** (18d) set the fault from the buyer's claim for returns already inspected or kept. That was acceptable only because no live store data exists yet; on live data, a backfill like this must leave the fault unconfirmed for staff | The 18d exchanges migration |
 | **Storefront images and custom domains:** page bodies keep images only from the store's media host (`StorefrontMediaHost`: the store's domain on a local disk, the disk's address such as a CDN otherwise). When custom domains arrive (Phase C) and images are served on the store's own domain, every domain of the store must be allowed, or images in bodies saved on one domain are removed when served on another | [Storefront](tenant/storefront.md#page-bodies-are-cleaned-html) |
 | **Translated models use `HasStoreTranslations`, never the package's trait directly:** the shared concern removes a text set to null in every language (the package alone clears only the current one). [a test](../tests/Feature/Tenant/Settings/TranslatedTextRemovalTest.php) walks every model with translated texts and fails on one that skips it | `e3e3915` |
 | **Local `.env` files with `MEDIA_DISK=redis`** (the old `.env.example` value, not a filesystem disk): the media fallback disk is now `local` everywhere else. Each uploader names its own disk, so the value is used only by an uploader that forgot to; set `MEDIA_DISK=local` by hand in each machine's `.env` | `.env.example`, `config/media-library.php` |
+| **Igbo `cart_full` says "car"** ("Ụgbọ ala", a vehicle), not a shopping cart: found while writing `wishlist_full` in 19b, not fixed there. It needs a native speaker's word for a shopping cart, and the other cart messages in Igbo checked the same way | `lang/ig/errors.php` |
+| **`customerRequest` in tests keeps the previous token** when called without one: a test of a signed-out request must call `$this->withoutToken()` first | `tests/Helpers` (found in 19b) |
 | **The pre-commit hook** was tried by hand only on Windows (PowerShell and Git Bash); CI now runs the hook check (`composer ci:hook`) on Linux on every push | [CI workflow](../.github/workflows/ci.yml) |
 
 ## 4. New PC setup (Windows PowerShell)

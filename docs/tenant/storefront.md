@@ -119,11 +119,66 @@ and kept in UTC.
 
 Every storefront table is classified column by column for the store
 export, and the share image, pages' images and banners' images are in it.
-Nothing in Storefront is personal data.
+The only personal data in Storefront is the wishlist (below).
+
+## Shopping aids
+
+Built in Step 19b. None of them ever shows a stock quantity: a product or
+item says only whether it can be bought now (in stock, not counted, or open
+to backorders). Lists of products show only what customers can buy
+(published and priced), in the order described, with prices in the
+currency asked for (`?currency=`).
+
+| What | Endpoint | Rules |
+|---|---|---|
+| Several products | `GET catalog/several-products?ids[]=...` | At most `catalog.max_products_fetched` (50) product IDs, answered in the order sent, repeats once. For comparison and recently viewed: the storefront keeps the list in the browser and the API stores nothing |
+| Product links | `GET catalog/products/{slug}/links?type=related` (`upsell`, `cross_sell`) | Picked by staff, in their order. A link to a product customers can't buy is left out, never shown |
+| Similar products | `GET catalog/products/{slug}/similar` | Worked out when asked, never stored: the product's related links first, then the same category, then the same brand, then a price within 25% either way, newest first in each, never the product itself. At most 12, cached per product for 15 minutes (config `catalog.similar_products`) |
+| Best sellers | `GET catalog/best-sellers` (optional `?category=`) | Units sold over the last 30 days (`orders.best_sellers_period_days`), counting only paid, non-test, uncancelled orders (refunded ones still count: units, not money). At most 12, cached per store and category for an hour (config `catalog.best_sellers`) |
+
+**Product links** are managed by staff on the product:
+`GET staff/catalog/products/{product}/links` (`catalog.view`) shows all
+three kinds, and `PUT staff/catalog/products/{product}/links/{type}`
+(`catalog.manage`) replaces one kind with `product_ids` in the order given
+(at most `catalog.max_links_per_type`, 20; an empty list removes them all).
+A product never links to itself, the same product never twice in one
+kind, and only products outside the trash.
+
+### Wishlist
+
+A signed-in customer's own list of what they want to buy later, under
+`/api/v1/customer/wishlist` (`auth:customer`). It is not a cart: no
+quantity, price or stock is held and nothing is reserved.
+
+- **Saving** (`POST wishlist`) takes a product customers can buy, out of
+  stock included, and optionally one of its variants. Saving what is
+  already saved changes nothing (200); a new item is 201.
+- **At most `storefront.wishlist_max_items` (500)**, refused with
+  `wishlist_full`. Saves for one customer take a lock per customer, so two
+  saves at the same moment can never pass the limit; saving what is
+  already there still works when full.
+- **Listing** (`GET wishlist`) is newest first, by cursor. An item that
+  stopped being sold stays, with `is_for_sale` false and no price, until
+  the customer removes it (`DELETE wishlist/{item}`). With no variant
+  chosen, the price is the lowest of its variants' (`price_is_from`).
+- **A guest's list** is kept by the storefront in the browser and sent at
+  sign-in (`POST wishlist/merges`, at most the limit). Repeats and what is
+  already saved are skipped, and what can no longer be bought is dropped.
+  It is all or nothing: if the new items would not fit, nothing is saved
+  and the answer is `wishlist_full`.
+- **Move to cart** (`POST wishlist/{item}/cart`, with `quantity`, and
+  `variant_id` for an item saved without one) goes through the cart's own
+  rules (for sale, not sold out, the cart's limits). The item leaves the
+  wishlist only once it is in the cart, so a refusal keeps it saved.
+- Each customer sees and changes only their own; another customer's item
+  is not found (404).
+- **Privacy:** the wishlist is in the customer's data export (`wishlist`)
+  and deleted when they are erased.
+
+Back-in-stock and price-drop alerts for wishlist items belong to the
+`Engagement` module, not core.
 
 ## Not here yet
 
-Step 19b adds the shopping aids: the wishlist, fetching several products
-for comparison and recently viewed, merchant-picked product links, similar
-products and best sellers. Page sections (blocks a page is built from)
-were left out of the first version.
+Page sections (blocks a page is built from) were left out of the first
+version.

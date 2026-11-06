@@ -110,11 +110,12 @@ yet:
   built (Step 18b), but only core's own destination, the original payment,
   exists until a module such as `Wallet` adds another
   ([Returns](tenant/returns.md#where-a-refund-goes)).
-- **Step 19b, Storefront shopping aids:** wishlists, fetching several
-  products for comparison and recently viewed, related and similar products
-  and best sellers. The storefront's content (pages, menus, banners, search
-  engine settings and the sitemap) is built: see
-  [Storefront](tenant/storefront.md).
+- **Step 19b, Storefront shopping aids:** built on its branch and waiting
+  for review: wishlists, fetching several products for comparison and
+  recently viewed, product links, similar products and best sellers
+  ([Storefront](tenant/storefront.md#shopping-aids)). The storefront's
+  content (pages, menus, banners, search engine settings and the sitemap)
+  is merged.
 - **Step 20, Messaging:** one place for messages, email first
   ([Messaging](tenant/messaging.md)). Today each domain sends its own emails.
 - **Step 21, Data tools:** import and export, bulk actions and dashboard
