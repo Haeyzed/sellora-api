@@ -104,6 +104,7 @@ return [
     'plan_not_available' => 'The ":plan" plan is not available.',
 
     'brand_slug_taken' => 'Another brand already uses this slug. Choose another.',
+    'page_slug_taken' => 'Another page already uses this slug. Choose another.',
     'brand_restore_conflict' => 'Another brand now uses this brand\'s slug. Change one of the slugs, then restore it.',
     'category_slug_taken' => 'Another category already uses this slug. Choose another.',
     'category_restore_conflict' => 'Another category now uses this category\'s slug. Change one of the slugs, then restore it.',

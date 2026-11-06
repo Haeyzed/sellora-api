@@ -86,6 +86,7 @@ return [
     'subscription_already_exists' => 'Bu mağazanın zaten bir aboneliği var. Bunun yerine planını değiştirin.',
     'plan_not_available' => '":plan" planı mevcut değil.',
     'brand_slug_taken' => 'Başka bir marka zaten bu sümüklüböcüğü kullanıyor. Başka birini seç.',
+    'page_slug_taken' => 'Başka bir sayfa bu kısa adı zaten kullanıyor. Başka bir tane seçin.',
     'brand_restore_conflict' => 'Artık başka bir marka bu markanın sümüklüböceklerini kullanıyor. Sümüklü böceklerden birini değiştirin, ardından geri yükleyin.',
     'category_slug_taken' => 'Bu sümüklü böcek zaten başka bir kategoride kullanılıyor. Başka birini seç.',
     'category_restore_conflict' => 'Artık başka bir kategori bu kategorinin sümüklüböceklerini kullanıyor. Sümüklü böceklerden birini değiştirin, ardından geri yükleyin.',

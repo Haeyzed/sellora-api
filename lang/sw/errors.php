@@ -86,6 +86,7 @@ return [
     'subscription_already_exists' => 'Duka hili tayari lina usajili. Badilisha mpango wake badala yake.',
     'plan_not_available' => 'Mpango wa ":plan" haupatikani.',
     'brand_slug_taken' => 'Chapa nyingine tayari inatumia koa hii. Chagua nyingine.',
+    'page_slug_taken' => 'Ukurasa mwingine tayari unatumia kitambulisho hiki cha anwani. Chagua kingine.',
     'brand_restore_conflict' => 'Chapa nyingine sasa inatumia koa ya chapa hii. Badilisha moja ya slugs, kisha uirejeshe.',
     'category_slug_taken' => 'Aina nyingine tayari inatumia koa hii. Chagua nyingine.',
     'category_restore_conflict' => 'Aina nyingine sasa inatumia koa ya aina hii. Badilisha moja ya slugs, kisha uirejeshe.',

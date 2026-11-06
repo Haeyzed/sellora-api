@@ -86,6 +86,7 @@ return [
     'subscription_already_exists' => '이 상점에는 이미 구독이 있습니다. 대신 계획을 변경하세요.',
     'plan_not_available' => '":plan" 계획을 사용할 수 없습니다.',
     'brand_slug_taken' => '다른 브랜드에서는 이미 이 슬러그를 사용하고 있습니다. 다른 것을 선택하세요.',
+    'page_slug_taken' => '다른 페이지가 이미 이 슬러그를 사용하고 있습니다. 다른 것을 선택하세요.',
     'brand_restore_conflict' => '이제 다른 브랜드에서 이 브랜드의 슬러그를 사용하고 있습니다. 슬러그 중 하나를 변경한 다음 복원하세요.',
     'category_slug_taken' => '다른 카테고리에서는 이미 이 슬러그를 사용하고 있습니다. 다른 것을 선택하세요.',
     'category_restore_conflict' => '이제 다른 카테고리가 이 카테고리의 슬러그를 사용합니다. 슬러그 중 하나를 변경한 다음 복원하세요.',

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tenant\Storefront\Http\Resources;
 
 use App\Shared\Media\Http\Resources\StorefrontImageResource;
+use App\Tenant\Storefront\Models\Page;
 use App\Tenant\Storefront\Models\StorefrontSettings;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -43,6 +44,17 @@ final class StorefrontSettingsResource extends JsonResource
             'robots' => $settings->robots->value,
             /** The image social sites show when a page is shared; null when there is none. */
             'share_image' => $shareImage === null ? null : new StorefrontImageResource($shareImage),
+            /**
+             * The page serving each policy ("privacy", "terms", "refunds", "shipping"): its ID, slug and status, and whether it is in the trash; null where none is chosen. Shoppers see only a published page outside the trash.
+             *
+             * @var array<string, array{id: string, slug: string, status: string, trashed: bool}|null>
+             */
+            'policy_pages' => array_map(static fn (?Page $page): ?array => $page === null ? null : [
+                'id' => $page->public_id,
+                'slug' => $page->slug,
+                'status' => $page->status->value,
+                'trashed' => $page->trashed(),
+            ], $settings->policyPages()),
             'updated_at' => $settings->updated_at?->toIso8601String(),
         ];
     }

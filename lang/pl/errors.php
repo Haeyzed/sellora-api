@@ -86,6 +86,7 @@ return [
     'subscription_already_exists' => 'Ten sklep ma już subskrypcję. Zamiast tego zmień plan.',
     'plan_not_available' => 'Plan „:plan” nie jest dostępny.',
     'brand_slug_taken' => 'Inna marka już używa tego ślimaka. Wybierz inny.',
+    'page_slug_taken' => 'Inna strona używa już tego identyfikatora adresu. Wybierz inny.',
     'brand_restore_conflict' => 'Inna marka używa teraz ślimaka tej marki. Zmień jeden ze ślimaków, a następnie przywróć go.',
     'category_slug_taken' => 'Inna kategoria już używa tego ślimaka. Wybierz inny.',
     'category_restore_conflict' => 'Inna kategoria używa teraz ślimaka tej kategorii. Zmień jeden ze ślimaków, a następnie przywróć go.',

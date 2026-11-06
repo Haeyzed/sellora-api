@@ -86,6 +86,7 @@ return [
     'subscription_already_exists' => 'Wannan kantin yana da biyan kuɗi. Canza tsarin sa maimakon.',
     'plan_not_available' => 'Babu shirin ":plan"',
     'brand_slug_taken' => 'Wani alama ya riga ya yi amfani da wannan slug. Zabi wani.',
+    'page_slug_taken' => 'Wani shafi yana amfani da wannan alamar adireshi tuni. Zaɓi wani.',
     'brand_restore_conflict' => 'Wani alama yanzu yana amfani da slug na wannan alamar. Canja ɗaya daga cikin slugs, sannan mayar da shi.',
     'category_slug_taken' => 'Wani rukuni ya riga ya yi amfani da wannan slug. Zabi wani.',
     'category_restore_conflict' => 'Wani rukunin yanzu yana amfani da slug na wannan rukunin. Canja ɗaya daga cikin slugs, sannan mayar da shi.',

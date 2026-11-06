@@ -69,7 +69,7 @@ the response says which language was used.
 
 ## Endpoint cURL reference
 
-The following commands cover all 338 operations in the current tenant
+The following commands cover all 351 operations in the current tenant
 Scramble OpenAPI export, including the shared geography endpoints available
 on the store domain. Request bodies include required fields (or one
 representative field when all are optional); values such as IDs, email
@@ -103,6 +103,7 @@ $Method = 'replace-with-method'
 $Note = 'replace-with-note'
 $Order = 'replace-with-order'
 $OwnershipTransfer = 'replace-with-ownership-transfer'
+$Page = 'replace-with-page'
 $Payment = 'replace-with-payment'
 $Product = 'replace-with-product'
 $Promotion = 'replace-with-promotion'
@@ -3201,6 +3202,25 @@ curl.exe --request GET "${StoreBase}/catalog/products/${Slug}" `
   --header 'Accept: application/json'
 ```
 
+#### StorefrontPage
+
+**GET** `/storefront/home` — public. Show the homepage (once published)
+
+```powershell
+curl.exe --request GET "${StoreBase}/storefront/home" `
+  --header 'Accept: application/json' `
+  --header 'Accept-Language: fr'
+```
+
+**GET** `/storefront/pages/{slug}` — public. Show a published page
+
+```powershell
+curl.exe --request GET "${StoreBase}/storefront/pages/${Slug}" `
+  --header 'Accept: application/json'
+```
+
+The `body` is cleaned HTML, safe to show as it is.
+
 #### StorefrontSeo
 
 **GET** `/storefront/seo` — public. Show the storefront's search engine settings
@@ -3244,6 +3264,107 @@ curl.exe --request POST "${StoreBase}/staff/storefront/settings/share-image" `
 
 ```powershell
 curl.exe --request DELETE "${StoreBase}/staff/storefront/settings/share-image" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
+The settings also choose the pages serving the store's policies: send `"policy_pages":{"privacy":"$Page","terms":null}` (only the policies sent change).
+
+#### Page
+
+**GET** `/staff/storefront/pages` — staff bearer token. List pages (`storefront.view`; drafts included)
+
+```powershell
+curl.exe --request GET "${StoreBase}/staff/storefront/pages?status=draft" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
+**POST** `/staff/storefront/pages` — staff bearer token. Add a page as a draft (`storefront.manage`)
+
+```powershell
+curl.exe --request POST "${StoreBase}/staff/storefront/pages" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw '{"title":{"en":"About us"},"body":{"en":"<p>We weave.</p>"}}'
+```
+
+The body keeps only text formatting, headings, lists, quotes, tables, links (https, relative paths, `mailto:`, `tel:`) and the store's own images; everything else is removed before it is saved.
+
+**GET** `/staff/storefront/pages/{page}` — staff bearer token. Show a page (`storefront.view`; also in the trash)
+
+```powershell
+curl.exe --request GET "${StoreBase}/staff/storefront/pages/${Page}" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
+**PATCH** `/staff/storefront/pages/{page}` — staff bearer token. Change a page (`storefront.manage`)
+
+```powershell
+curl.exe --request PATCH "${StoreBase}/staff/storefront/pages/${Page}" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw '{"title":{"fr":"À propos"},"seo_description":{"en":"Who we are"}}'
+```
+
+**DELETE** `/staff/storefront/pages/{page}` — staff bearer token. Move a page to the trash (`storefront.manage`)
+
+```powershell
+curl.exe --request DELETE "${StoreBase}/staff/storefront/pages/${Page}" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
+**POST** `/staff/storefront/pages/{page}/restore` — staff bearer token. Restore a page from the trash (`storefront.manage`)
+
+```powershell
+curl.exe --request POST "${StoreBase}/staff/storefront/pages/${Page}/restore" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
+**POST** `/staff/storefront/pages/{page}/publish` — staff bearer token. Publish a page (`storefront.manage`)
+
+```powershell
+curl.exe --request POST "${StoreBase}/staff/storefront/pages/${Page}/publish" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
+**POST** `/staff/storefront/pages/{page}/unpublish` — staff bearer token. Unpublish a page (`storefront.manage`)
+
+```powershell
+curl.exe --request POST "${StoreBase}/staff/storefront/pages/${Page}/unpublish" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
+**POST** `/staff/storefront/pages/{page}/homepage` — staff bearer token. Make a page the homepage (`storefront.manage`)
+
+```powershell
+curl.exe --request POST "${StoreBase}/staff/storefront/pages/${Page}/homepage" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
+**POST** `/staff/storefront/pages/{page}/images` — staff bearer token. Upload an image for a page's body (`storefront.manage`; multipart)
+
+```powershell
+curl.exe --request POST "${StoreBase}/staff/storefront/pages/${Page}/images" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken" `
+  --form 'image=@hero.jpg'
+```
+
+Put the returned `url` in the body's `<img src>`: a page shows only the store's own images.
+
+**DELETE** `/staff/storefront/pages/{page}/images/{image}` — staff bearer token. Remove an image of a page (`storefront.manage`)
+
+```powershell
+curl.exe --request DELETE "${StoreBase}/staff/storefront/pages/${Page}/images/${Image}" `
   --header 'Accept: application/json' `
   --header "Authorization: Bearer $StaffToken"
 ```

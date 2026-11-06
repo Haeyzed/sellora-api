@@ -99,6 +99,7 @@ it('shows shoppers the settings in their language, with the store\'s name and th
         'description' => 'Tissus faits main',
         'robots' => 'noindex, nofollow',
         'share_image' => null,
+        'policy_pages' => ['privacy' => null, 'terms' => null, 'refunds' => null, 'shipping' => null],
     ]]);
     // A language the store doesn't publish in falls back to its default.
     shopperRequest('seo', 'de')->assertOk()->assertJsonPath('data.description', 'Handmade fabrics');

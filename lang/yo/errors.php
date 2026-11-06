@@ -86,6 +86,7 @@ return [
     'subscription_already_exists' => 'Ile itaja yii ti ni ṣiṣe alabapin tẹlẹ. Yi awọn oniwe-ètò dipo.',
     'plan_not_available' => 'Eto ":plan" ko si.',
     'brand_slug_taken' => 'Aami ami miiran ti lo slug yii tẹlẹ. Yan omiran.',
+    'page_slug_taken' => 'Ojú-ìwé mìíràn ti ń lo àmì àdírẹ́sì yìí. Yan òmíràn.',
     'brand_restore_conflict' => 'Aami ami iyasọtọ miiran lo slug brand yii. Yi ọkan ninu awọn slugs pada, lẹhinna mu pada.',
     'category_slug_taken' => 'Ẹka miiran ti lo slug yii tẹlẹ. Yan omiran.',
     'category_restore_conflict' => 'Ẹka miiran ti nlo slug ẹka yii bayi. Yi ọkan ninu awọn slugs pada, lẹhinna mu pada.',

@@ -86,6 +86,7 @@ return [
     'subscription_already_exists' => 'Esta tienda ya tiene una suscripción. En su lugar, cambie su plan.',
     'plan_not_available' => 'El plan ":plan" no está disponible.',
     'brand_slug_taken' => 'Otra marca ya utiliza esta babosa. Elige otro.',
+    'page_slug_taken' => 'Otra página ya usa este identificador de URL. Elige otro.',
     'brand_restore_conflict' => 'Otra marca utiliza ahora la babosa de esta marca. Cambia una de las babosas y luego restáurala.',
     'category_slug_taken' => 'Otra categoría ya utiliza esta babosa. Elige otro.',
     'category_restore_conflict' => 'Otra categoría ahora usa el slug de esta categoría. Cambia una de las babosas y luego restáurala.',

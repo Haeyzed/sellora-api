@@ -86,6 +86,7 @@ return [
     'subscription_already_exists' => 'Ụlọ ahịa a enweelarị ndebanye aha. Gbanwee atụmatụ ya kama.',
     'plan_not_available' => 'Atụmatụ ":plan" adịghị.',
     'brand_slug_taken' => 'Akara ọzọ ejirila slug a. Họrọ ọzọ.',
+    'page_slug_taken' => 'Peeji ọzọ na-eji slug a ugbu a. Họrọ ọzọ.',
     'brand_restore_conflict' => 'Akara ọzọ na-eji slug ika a ugbu a. Gbanwee otu n\'ime slugs, wee weghachi ya.',
     'category_slug_taken' => 'Otu ọzọ ejirila slug a. Họrọ ọzọ.',
     'category_restore_conflict' => 'Otu ọzọ na-eji slug nke otu a ugbu a. Gbanwee otu n\'ime slugs, wee weghachi ya.',

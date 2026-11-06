@@ -86,6 +86,7 @@ return [
     'subscription_already_exists' => 'Dieser Shop hat bereits ein Abonnement. Ändern Sie stattdessen seinen Plan.',
     'plan_not_available' => 'Der Plan „:plan“ ist nicht verfügbar.',
     'brand_slug_taken' => 'Eine andere Marke verwendet diese Schnecke bereits. Wählen Sie ein anderes.',
+    'page_slug_taken' => 'Eine andere Seite verwendet diese URL-Kennung bereits. Wählen Sie eine andere.',
     'brand_restore_conflict' => 'Eine andere Marke verwendet jetzt die Schnecke dieser Marke. Tauschen Sie einen der Schnecken aus und stellen Sie ihn dann wieder her.',
     'category_slug_taken' => 'Eine andere Kategorie verwendet diesen Slug bereits. Wählen Sie ein anderes.',
     'category_restore_conflict' => 'Eine andere Kategorie verwendet jetzt den Slug dieser Kategorie. Tauschen Sie einen der Schnecken aus und stellen Sie ihn dann wieder her.',

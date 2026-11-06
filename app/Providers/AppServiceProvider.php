@@ -278,6 +278,9 @@ use App\Tenant\Shipping\ShippingCarrierRegistry;
 use App\Tenant\Shipping\ShippingPricedRecords;
 use App\Tenant\Shipping\ShippingStoreTables;
 use App\Tenant\Storefront\Enums\StorefrontPermission;
+use App\Tenant\Storefront\Events\StorefrontContentChanged;
+use App\Tenant\Storefront\Listeners\RenewStorefrontCacheWhenContentChanges;
+use App\Tenant\Storefront\Models\Page;
 use App\Tenant\Storefront\Models\StorefrontSettings;
 use App\Tenant\Storefront\StorefrontSettingsDefaults;
 use App\Tenant\Storefront\StorefrontStoreFiles;
@@ -656,6 +659,7 @@ final class AppServiceProvider extends ServiceProvider
             'return_refund_choice' => ReturnRefundChoice::class,
             'return_settings' => ReturnSettings::class,
             'storefront_settings' => StorefrontSettings::class,
+            'page' => Page::class,
             'staff_invitation' => StaffInvitation::class,
             'role' => Role::class,
             'store' => Tenant::class,
@@ -816,6 +820,7 @@ final class AppServiceProvider extends ServiceProvider
         Event::listen(OrderAnonymised::class, ForgetRecipientsWhenOrderAnonymised::class);
         Event::listen(OrderAnonymised::class, ForgetReturnsWhenOrderAnonymised::class);
         Event::listen(ShipmentCancelled::class, CancelDeliveriesWhenShipmentCancelled::class);
+        Event::listen(StorefrontContentChanged::class, RenewStorefrontCacheWhenContentChanges::class);
     }
 
     /**

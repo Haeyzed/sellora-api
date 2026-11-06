@@ -86,6 +86,7 @@ return [
     'subscription_already_exists' => 'Questo negozio ha già un abbonamento. Cambia invece il suo piano.',
     'plan_not_available' => 'Il piano ":plan" non è disponibile.',
     'brand_slug_taken' => 'Un altro marchio utilizza già questo slug. Scegline un altro.',
+    'page_slug_taken' => 'Un\'altra pagina usa già questo slug. Scegline un altro.',
     'brand_restore_conflict' => 'Un altro marchio ora utilizza lo slug di questo marchio. Cambia uno dei proiettili, quindi ripristinalo.',
     'category_slug_taken' => 'Un\'altra categoria utilizza già questo slug. Scegline un altro.',
     'category_restore_conflict' => 'Un\'altra categoria ora utilizza lo slug di questa categoria. Cambia uno dei proiettili, quindi ripristinalo.',

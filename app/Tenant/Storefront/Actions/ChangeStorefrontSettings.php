@@ -5,13 +5,15 @@ declare(strict_types=1);
 namespace App\Tenant\Storefront\Actions;
 
 use App\Tenant\Storefront\Data\StorefrontSettingsChanges;
+use App\Tenant\Storefront\Enums\PolicyPage;
 use App\Tenant\Storefront\Events\StorefrontContentChanged;
 use App\Tenant\Storefront\Exceptions\MissingStorefrontSettingsException;
+use App\Tenant\Storefront\Models\Page;
 use App\Tenant\Storefront\Models\StorefrontSettings;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Changes how the storefront presents itself to search engines: its title pattern, its default description and whether search engines may list it. What is left out stays as it is.
+ * Changes how the storefront presents itself to search engines (its title pattern, its default description and whether search engines may list it) and which pages serve its policies. What is left out stays as it is.
  *
  * The row is changed under its lock, so two changes at once both land, one
  * after the other. It always exists: it is created with the store.
@@ -38,6 +40,10 @@ final readonly class ChangeStorefrontSettings
 
             if ($changes->robots !== null) {
                 $settings->robots = $changes->robots;
+            }
+
+            foreach ($changes->policyPages as $policy => $pageId) {
+                $settings->setAttribute(PolicyPage::from($policy)->column(), $pageId === null ? null : Page::query()->where('public_id', $pageId)->value('id'));
             }
 
             $settings->save();

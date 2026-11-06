@@ -86,6 +86,7 @@ return [
     'subscription_already_exists' => 'Toko ini sudah berlangganan. Ubah rencananya.',
     'plan_not_available' => 'Paket ":plan" tidak tersedia.',
     'brand_slug_taken' => 'Merk lain sudah menggunakan slug ini. Pilih yang lain.',
+    'page_slug_taken' => 'Halaman lain sudah memakai slug ini. Pilih yang lain.',
     'brand_restore_conflict' => 'Merek lain sekarang menggunakan siput merek ini. Ubah salah satu siput, lalu pulihkan.',
     'category_slug_taken' => 'Kategori lain sudah menggunakan siput ini. Pilih yang lain.',
     'category_restore_conflict' => 'Kategori lain sekarang menggunakan siput kategori ini. Ubah salah satu siput, lalu pulihkan.',

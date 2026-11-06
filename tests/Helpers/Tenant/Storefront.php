@@ -17,6 +17,39 @@ use Tests\Fixtures\Features\FakeFeatureSource;
 */
 
 /**
+ * Caches in Redis, as production does, so the storefront's cache lasts from one request to the next and the tenancy package's per-store tags are really used. The array cache the other tests use starts empty every time a store's context starts, so it would hide both.
+ */
+function useRedisCache(): void
+{
+    config(['cache.default' => 'redis']);
+}
+
+/**
+ * Adds a page through the staff API as the store's owner (test()->owner), published when asked, and returns it as the API shows it.
+ *
+ * @param  array<string, mixed>  $data
+ * @return array<string, mixed>
+ */
+function addStorefrontPage(array $data = [], bool $publish = false, string $subdomain = 'front-store'): array
+{
+    $page = storefrontStaffRequest('POST', 'pages', [...['title' => ['en' => 'About us']], ...$data], as: test()->owner, subdomain: $subdomain)->assertCreated()->json('data');
+
+    if ($publish) {
+        $page = storefrontStaffRequest('POST', "pages/{$page['id']}/publish", as: test()->owner, subdomain: $subdomain)->assertOk()->json('data');
+    }
+
+    return $page;
+}
+
+/**
+ * The address the current test store serves an image at, such as one uploaded to a page, for writing into a body.
+ */
+function storefrontImageAddress(string $subdomain = 'front-store', string $file = '1/hero.webp'): string
+{
+    return storeUrl($subdomain, '/tenancy/assets/'.$file);
+}
+
+/**
  * A store for the storefront tests, with room for its images, and its owner. Sets test()->store; needs test()->featureSource.
  *
  * @return array{store: Tenant, owner: StaffMember}

@@ -86,6 +86,7 @@ return [
     'subscription_already_exists' => '该商店已有订阅。相反，改变计划。',
     'plan_not_available' => '“:plan”计划不可用。',
     'brand_slug_taken' => '另一个品牌已经在使用这种蛞蝓。选择另一个。',
+    'page_slug_taken' => '另一个页面已在使用此网址标识。请换一个。',
     'brand_restore_conflict' => '另一个品牌现在使用该品牌的蛞蝓。更改其中一个段头，然后将其恢复。',
     'category_slug_taken' => '另一个类别已经使用了这个 slug。选择另一个。',
     'category_restore_conflict' => '另一个类别现在使用该类别的 slug。更改其中一个段头，然后将其恢复。',

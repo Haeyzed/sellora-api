@@ -13,11 +13,13 @@ final readonly class StorefrontSettingsChanges
 {
     /**
      * @param  array<string, string|null>|null  $seoDescription  By language; a language set to null loses its text.
+     * @param  array<string, string|null>  $policyPages  The page (public ID) to serve each policy sent, by PolicyPage value; null for none.
      */
     public function __construct(
         public ?string $seoTitlePattern = null,
         public ?array $seoDescription = null,
         public bool $removesSeoDescription = false,
         public ?RobotsDirective $robots = null,
+        public array $policyPages = [],
     ) {}
 }

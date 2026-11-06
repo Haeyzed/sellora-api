@@ -86,6 +86,7 @@ return [
     'subscription_already_exists' => 'Esta loja já possui uma assinatura. Em vez disso, mude seu plano.',
     'plan_not_available' => 'O plano ":plan" não está disponível.',
     'brand_slug_taken' => 'Outra marca já utiliza esse slug. Escolha outro.',
+    'page_slug_taken' => 'Outra página já usa este identificador de URL. Escolha outro.',
     'brand_restore_conflict' => 'Outra marca agora usa o slug desta marca. Altere um dos slugs e restaure-o.',
     'category_slug_taken' => 'Outra categoria já utiliza esse slug. Escolha outro.',
     'category_restore_conflict' => 'Outra categoria agora usa o slug desta categoria. Altere um dos slugs e restaure-o.',

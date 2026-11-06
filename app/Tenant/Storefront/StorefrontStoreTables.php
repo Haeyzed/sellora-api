@@ -14,6 +14,12 @@ final class StorefrontStoreTables implements ClassifiesStoreTables
 {
     public function classify(StoreExportRegistry $registry): void
     {
-        $registry->table('storefront_settings', include: ['id', 'seo_title_pattern', 'seo_description', 'robots', 'created_at', 'updated_at']);
+        $registry->table('storefront_settings', include: [
+            'id', 'seo_title_pattern', 'seo_description', 'robots', 'privacy_page_id', 'terms_page_id', 'refunds_page_id', 'shipping_page_id', 'created_at', 'updated_at',
+        ]);
+
+        $registry->table('pages', include: [
+            'id', 'public_id', 'title', 'slug', 'body', 'seo_title', 'seo_description', 'status', 'published_at', 'is_homepage', 'created_at', 'updated_at', 'deleted_at',
+        ]);
     }
 }

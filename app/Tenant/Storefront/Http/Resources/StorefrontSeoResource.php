@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tenant\Storefront\Http\Resources;
 
 use App\Shared\Media\Http\Resources\StorefrontImageResource;
+use App\Tenant\Storefront\Models\Page;
 use App\Tenant\Storefront\Models\StorefrontSettings;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -41,6 +42,15 @@ final class StorefrontSeoResource extends JsonResource
             'robots' => $settings->robots->metaContent(),
             /** The image social sites show when a page is shared; null when there is none. */
             'share_image' => $shareImage === null ? null : new StorefrontImageResource($shareImage),
+            /**
+             * The page serving each policy ("privacy", "terms", "refunds", "shipping"), with its slug and title; null while none is published.
+             *
+             * @var array<string, array{slug: string, title: string}|null>
+             */
+            'policy_pages' => array_map(static fn (?Page $page): ?array => $page === null || $page->trashed() || ! $page->isPublished() ? null : [
+                'slug' => $page->slug,
+                'title' => $page->getTranslation('title', app()->getLocale()),
+            ], $settings->policyPages()),
         ];
     }
 }
