@@ -7,7 +7,8 @@ declare(strict_types=1);
  * :app, filled from config('app.name') where they are built, so a rebrand
  * needs no translation change. And a translated message keeps exactly the
  * placeholders of its English original, or a value goes missing or shows
- * as a raw ":name" in that language.
+ * as a raw ":name" in that language. Every language has every English
+ * message and nothing more, or a shopper silently gets English instead.
  */
 
 it('finds the brand in no translation, in any language or script', function (): void {
@@ -18,6 +19,12 @@ it('finds the brand in no translation, in any language or script', function (): 
 
 it('keeps every translation\'s placeholders the same as its English original', function (): void {
     $mismatches = translationPlaceholderMismatches(dirname(__DIR__, 2).'/lang');
+
+    expect($mismatches)->toBe([], implode("\n", $mismatches));
+});
+
+it('has every English message in every language, and nothing English lacks', function (): void {
+    $mismatches = translationKeyMismatches(dirname(__DIR__, 2).'/lang');
 
     expect($mismatches)->toBe([], implode("\n", $mismatches));
 });

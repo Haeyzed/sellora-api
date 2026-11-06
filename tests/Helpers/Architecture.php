@@ -177,6 +177,41 @@ function translationPlaceholders(string $message): array
 }
 
 /**
+ * Every English message missing from another language, and every message another language has that English lacks, as "missing|extra locale/file.php key".
+ *
+ * @return list<string>
+ */
+function translationKeyMismatches(string $langPath): array
+{
+    $mismatches = [];
+
+    foreach (glob($langPath.'/en/*.php') ?: [] as $englishFile) {
+        $english = translationMessages($englishFile);
+
+        foreach (glob($langPath.'/*', GLOB_ONLYDIR) ?: [] as $folder) {
+            $locale = basename($folder);
+            $file = $folder.'/'.basename($englishFile);
+
+            if ($locale === 'en') {
+                continue;
+            }
+
+            $translated = is_file($file) ? translationMessages($file) : [];
+
+            foreach (array_keys(array_diff_key($english, $translated)) as $key) {
+                $mismatches[] = "missing {$locale}/".basename($englishFile)." {$key}";
+            }
+
+            foreach (array_keys(array_diff_key($translated, $english)) as $key) {
+                $mismatches[] = "extra {$locale}/".basename($englishFile)." {$key}";
+            }
+        }
+    }
+
+    return $mismatches;
+}
+
+/**
  * Every language file under the lang folder naming the brand, as "locale/file.php key".
  *
  * @return list<string>
