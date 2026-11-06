@@ -143,6 +143,7 @@ return [
     'variant_not_available' => '该商品目前不出售。',
     'variant_out_of_stock' => '该商品缺货。',
     'cart_full' => '一辆购物车最多可容纳 :limit 个不同的物品。删除一个以添加另一个。',
+    'wishlist_full' => '心愿单最多可保存 :limit 件商品。请删除一件后再保存其他商品。',
     'cart_line_quantity_too_high' => '您的购物车中最多可以有 :limit 件商品。',
     'cart_changed' => '您的购物车在其他地方发生了更改，例如在另一个选项卡中。再看一遍，然后做出改变。',
     'cart_version_required' => '在 If-Match 标头中发送购物车的版本（其 ETag）。',

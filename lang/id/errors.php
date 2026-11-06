@@ -143,6 +143,7 @@ return [
     'variant_not_available' => 'Item ini tidak untuk dijual saat ini.',
     'variant_out_of_stock' => 'Stok barang ini habis.',
     'cart_full' => 'Sebuah keranjang dapat menampung hingga :limit item yang berbeda. Hapus satu untuk menambahkan yang lain.',
+    'wishlist_full' => 'Daftar keinginan dapat menampung hingga :limit item. Hapus satu untuk menyimpan yang lain.',
     'cart_line_quantity_too_high' => 'Anda dapat memiliki hingga :limit satu item di keranjang Anda.',
     'cart_changed' => 'Keranjang Anda berubah di tempat lain, misalnya di tab lain. Lihatlah lagi, lalu lakukan perubahan.',
     'cart_version_required' => 'Kirim versi keranjang (ETag-nya) di header If-Match.',

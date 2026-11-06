@@ -8,7 +8,7 @@ use App\Shared\Privacy\Contracts\ClassifiesStoreTables;
 use App\Shared\Privacy\StoreExportRegistry;
 
 /**
- * How the storefront's content and settings appear in a store export. Nothing in them is a secret or personal data.
+ * How the storefront's content, settings and customers' wishlists appear in a store export. Nothing here is a secret; wishlists are customers' personal data, exported like the rest of the store's.
  */
 final class StorefrontStoreTables implements ClassifiesStoreTables
 {
@@ -32,6 +32,10 @@ final class StorefrontStoreTables implements ClassifiesStoreTables
 
         $registry->table('banners', include: [
             'id', 'public_id', 'kind', 'position', 'title', 'body', 'link_url', 'link_label', 'text_color', 'background_color', 'starts_at', 'ends_at', 'is_active', 'sort_order', 'created_at', 'updated_at',
+        ]);
+
+        $registry->table('wishlist_items', include: [
+            'id', 'public_id', 'customer_id', 'product_id', 'product_variant_id', 'created_at',
         ]);
     }
 }

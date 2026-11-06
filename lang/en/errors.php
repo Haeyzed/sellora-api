@@ -161,6 +161,7 @@ return [
     'variant_not_available' => 'This item isn\'t for sale right now.',
     'variant_out_of_stock' => 'This item is out of stock.',
     'cart_full' => 'A cart can hold up to :limit different items. Remove one to add another.',
+    'wishlist_full' => 'A wishlist can hold up to :limit items. Remove one to save another.',
     'cart_line_quantity_too_high' => 'You can have up to :limit of one item in your cart.',
     'cart_changed' => 'Your cart changed somewhere else, for example in another tab. Look at it again, then make your change.',
     'cart_version_required' => 'Send the cart\'s version (its ETag) in an If-Match header.',

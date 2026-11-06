@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tenant\Catalog\Http\Requests;
 
+use App\Tenant\Pricing\Concerns\AsksForCurrency;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**

@@ -143,6 +143,7 @@ return [
     'variant_not_available' => 'Bu ürün şu anda satılık değil.',
     'variant_out_of_stock' => 'Bu ürün stokta yok.',
     'cart_full' => 'Bir sepete en fazla :limit farklı ürün sığabilir. Başka bir tane eklemek için birini kaldırın.',
+    'wishlist_full' => 'Bir istek listesi en fazla :limit ürün içerebilir. Başka birini kaydetmek için birini kaldırın.',
     'cart_line_quantity_too_high' => 'Sepetinizde en fazla :limit ürün bulunabilir.',
     'cart_changed' => 'Sepetiniz başka bir yerde, örneğin başka bir sekmede değişti. Tekrar bakın ve değişikliğinizi yapın.',
     'cart_version_required' => 'Sepetin sürümünü (ETag\'ini) bir If-Match başlığında gönderin.',

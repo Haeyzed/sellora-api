@@ -143,6 +143,7 @@ return [
     'variant_not_available' => 'Wannan abun ba na siyarwa bane a yanzu.',
     'variant_out_of_stock' => 'Wannan abu ya kare.',
     'cart_full' => 'Katin zai iya ɗaukar abubuwa daban-daban har zuwa :limit. Cire ɗaya don ƙara wani.',
+    'wishlist_full' => 'Jerin abubuwan da ake so zai iya ɗaukar abubuwa har zuwa :limit. Cire ɗaya don adana wani.',
     'cart_line_quantity_too_high' => 'Kuna iya samun har zuwa :limit abu ɗaya a cikin keken ku.',
     'cart_changed' => 'Keron ku ya canza wani wuri dabam, misali a wani shafin. Kalle shi kuma, sannan ku canza canjin ku.',
     'cart_version_required' => 'Aika sigar cart ɗin (ETag ɗin sa) a cikin taken Idan-Match.',

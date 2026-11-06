@@ -69,7 +69,7 @@ the response says which language was used.
 
 ## Endpoint cURL reference
 
-The following commands cover all 374 operations in the current tenant
+The following commands cover all 379 operations in the current tenant
 Scramble OpenAPI export, including the shared geography endpoints available
 on the store domain. Request bodies include required fields (or one
 representative field when all are optional); values such as IDs, email
@@ -3990,6 +3990,58 @@ curl.exe --request POST "${StoreBase}/staff/inventory/variants/${Variant}/receip
   --header "Authorization: Bearer $StaffToken" `
   --header 'Content-Type: application/json' `
   --data-raw '{"quantity":1}'
+```
+
+#### Wishlist
+
+**GET** `/customer/wishlist` — customer bearer token. List my wishlist
+
+```powershell
+curl.exe --request GET "${StoreBase}/customer/wishlist" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $CustomerToken"
+```
+
+**POST** `/customer/wishlist` — customer bearer token. Save a product, or one of its variants
+
+```powershell
+curl.exe --request POST "${StoreBase}/customer/wishlist" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $CustomerToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw '{"product_id":"replace-with-value","variant_id":null}'
+```
+
+**DELETE** `/customer/wishlist/{item}` — customer bearer token. Remove an item
+
+```powershell
+curl.exe --request DELETE "${StoreBase}/customer/wishlist/${Item}" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $CustomerToken"
+```
+
+#### WishlistCart
+
+**POST** `/customer/wishlist/{item}/cart` — customer bearer token. Move an item to my cart
+
+```powershell
+curl.exe --request POST "${StoreBase}/customer/wishlist/${Item}/cart" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $CustomerToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw '{"variant_id":"replace-with-value","quantity":1}'
+```
+
+#### WishlistMerge
+
+**POST** `/customer/wishlist/merges` — customer bearer token. Merge my guest wishlist after signing in
+
+```powershell
+curl.exe --request POST "${StoreBase}/customer/wishlist/merges" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $CustomerToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw '{"items":[{"product_id":"replace-with-value","variant_id":null}]}'
 ```
 
 ## Tenant asset delivery route

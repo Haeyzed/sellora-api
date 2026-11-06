@@ -143,6 +143,7 @@ return [
     'variant_not_available' => 'A naghị ere ihe a ugbu a.',
     'variant_out_of_stock' => 'Ihe a agwụla.',
     'cart_full' => 'Ụgbọ ala nwere ike ijide ihe ruru :limit dị iche iche. Wepu otu ka ịtinye ọzọ.',
+    'wishlist_full' => 'Ndepụta ihe ịchọrọ nwere ike ijide ihe ruru :limit. Wepu otu ka ịchekwa ọzọ.',
     'cart_line_quantity_too_high' => 'Ị nwere ike ịnwe ihe ruru :limit otu ihe n\'ime ụgbọ ala gị.',
     'cart_changed' => 'Ụgbọala gị gbanwere ebe ọzọ, dịka ọmụmaatụ na taabụ ọzọ. Lelee ya ọzọ, mee mgbanwe gị.',
     'cart_version_required' => 'Zipu ụdị ụgbọ ibu ahụ (ETag ya) na nkụnye eji isi mee Ọ bụrụ-Match.',

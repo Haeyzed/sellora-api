@@ -143,6 +143,7 @@ return [
     'variant_not_available' => 'Dieser Artikel steht derzeit nicht zum Verkauf.',
     'variant_out_of_stock' => 'Dieser Artikel ist nicht vorrätig.',
     'cart_full' => 'Ein Warenkorb kann bis zu :limit verschiedene Artikel enthalten. Entfernen Sie eines, um ein weiteres hinzuzufügen.',
+    'wishlist_full' => 'Eine Wunschliste kann bis zu :limit Artikel enthalten. Entfernen Sie einen, um einen weiteren zu speichern.',
     'cart_line_quantity_too_high' => 'Sie können bis zu :limit eines Artikels in Ihrem Warenkorb haben.',
     'cart_changed' => 'Ihr Warenkorb hat sich an anderer Stelle geändert, beispielsweise in einem anderen Tab. Schauen Sie es sich noch einmal an und nehmen Sie dann Ihre Änderung vor.',
     'cart_version_required' => 'Senden Sie die Version des Warenkorbs (sein ETag) in einem If-Match-Header.',

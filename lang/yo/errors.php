@@ -143,6 +143,7 @@ return [
     'variant_not_available' => 'Nkan yii kii ṣe fun tita ni bayi.',
     'variant_out_of_stock' => 'Nkan yii ko si ni ọja.',
     'cart_full' => 'Kekere kan le gbe to :limit oriṣiriṣi awọn ohun kan. Yọ ọkan kuro lati fi omiran kun.',
+    'wishlist_full' => 'Àkójọ ohun tí o fẹ́ lè ní tó :limit ohun kan. Yọ ọ̀kan kúrò láti fi òmíràn pamọ́.',
     'cart_line_quantity_too_high' => 'O le ni to :limit ti ohun kan ninu kẹkẹ rẹ.',
     'cart_changed' => 'Kẹkẹkẹ rẹ yipada ni ibomiiran, fun apẹẹrẹ ni taabu miiran. Wo lẹẹkansi, lẹhinna ṣe iyipada rẹ.',
     'cart_version_required' => 'Firanṣẹ ẹya fun rira (ETag rẹ) ni akọsori If-baramu kan.',

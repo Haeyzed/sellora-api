@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
 use App\Shared\Http\Middleware\UseDashboardLanguage;
+use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Settings\Http\Middleware\UseStoreLanguage;
 use App\Tenant\Storefront\Http\Controllers\BannerController;
@@ -20,6 +21,9 @@ use App\Tenant\Storefront\Http\Controllers\StorefrontPageController;
 use App\Tenant\Storefront\Http\Controllers\StorefrontSeoController;
 use App\Tenant\Storefront\Http\Controllers\StorefrontSettingsController;
 use App\Tenant\Storefront\Http\Controllers\StorefrontSitemapController;
+use App\Tenant\Storefront\Http\Controllers\WishlistCartController;
+use App\Tenant\Storefront\Http\Controllers\WishlistController;
+use App\Tenant\Storefront\Http\Controllers\WishlistMergeController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -27,7 +31,8 @@ use Illuminate\Support\Facades\Route;
 | /api/v1/staff/storefront with the storefront.view and storefront.manage
 | permissions. Shoppers read what is published under /api/v1/storefront:
 | open to anyone, rate-limited per visitor, cached per store, in the store
-| language the client asks for (Accept-Language).
+| language the client asks for (Accept-Language). Signed-in customers keep
+| their own wishlist under /api/v1/customer/wishlist.
 */
 
 Route::prefix('storefront')
@@ -41,6 +46,17 @@ Route::prefix('storefront')
         Route::get('banners', [StorefrontBannerController::class, 'index'])->name('banners.index');
         Route::get('announcements', [StorefrontBannerController::class, 'announcements'])->name('announcements.index');
         Route::get('sitemap/{type}', [StorefrontSitemapController::class, 'show'])->name('sitemap.show');
+    });
+
+Route::prefix('customer/wishlist')
+    ->name('customer.wishlist.')
+    ->middleware(['auth:'.Customer::GUARD, 'throttle:api', UseStoreLanguage::class])
+    ->group(static function (): void {
+        Route::get('/', [WishlistController::class, 'index'])->name('index');
+        Route::post('/', [WishlistController::class, 'store'])->name('store');
+        Route::post('merges', WishlistMergeController::class)->name('merges.store');
+        Route::delete('{item}', [WishlistController::class, 'destroy'])->name('destroy');
+        Route::post('{item}/cart', WishlistCartController::class)->name('cart.store');
     });
 
 Route::prefix('staff/storefront')

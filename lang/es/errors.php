@@ -143,6 +143,7 @@ return [
     'variant_not_available' => 'Este artículo no está a la venta en este momento.',
     'variant_out_of_stock' => 'Este artículo está agotado.',
     'cart_full' => 'Un carrito puede contener hasta :limit artículos diferentes. Elimina uno para agregar otro.',
+    'wishlist_full' => 'Una lista de deseos puede contener hasta :limit artículos. Elimina uno para guardar otro.',
     'cart_line_quantity_too_high' => 'Puedes tener hasta :limit de un artículo en tu carrito.',
     'cart_changed' => 'Tu carrito cambió en otro lugar, por ejemplo en otra pestaña. Míralo de nuevo y luego haz el cambio.',
     'cart_version_required' => 'Envíe la versión del carrito (su ETag) en un encabezado If-Match.',

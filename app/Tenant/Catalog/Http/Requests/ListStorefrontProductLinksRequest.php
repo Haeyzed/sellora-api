@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tenant\Catalog\Http\Requests;
 
 use App\Tenant\Catalog\Enums\ProductLinkType;
+use App\Tenant\Pricing\Concerns\AsksForCurrency;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 

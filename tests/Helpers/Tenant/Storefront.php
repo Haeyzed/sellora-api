@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Landlord\Tenancy\Models\Tenant;
 use App\Shared\Auth\Models\Role;
+use App\Tenant\Catalog\Models\Product;
 use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Models\StaffMember;
 use Illuminate\Testing\TestResponse;
@@ -171,4 +172,20 @@ function shopperRequest(string $path, ?string $acceptLanguage = null, string $su
     tenancy()->end();
 
     return $response;
+}
+
+/*
+|--------------------------------------------------------------------------
+| For WishlistTest.php
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * What a shopper sends to save a product, or the product's variant at that position (load the product's variants first).
+ *
+ * @return array{product_id: string, variant_id: string|null}
+ */
+function wishlistEntryFor(Product $product, ?int $variantPosition = null): array
+{
+    return ['product_id' => $product->public_id, 'variant_id' => $variantPosition === null ? null : $product->variants[$variantPosition]->public_id];
 }

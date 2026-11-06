@@ -143,6 +143,7 @@ return [
     'variant_not_available' => 'Bidhaa hii haiuzwi kwa sasa.',
     'variant_out_of_stock' => 'Bidhaa hii haipo.',
     'cart_full' => 'Rukwama inaweza kubeba hadi vipengee :limit tofauti. Ondoa moja ili kuongeza nyingine.',
+    'wishlist_full' => 'Orodha ya matamanio inaweza kuwa na hadi vipengee :limit. Ondoa kimoja ili kuhifadhi kingine.',
     'cart_line_quantity_too_high' => 'Unaweza kuwa na hadi :limit ya bidhaa moja kwenye rukwama yako.',
     'cart_changed' => 'Rukwama yako ilibadilika mahali pengine, kwa mfano katika kichupo kingine. Iangalie tena, kisha ufanye mabadiliko yako.',
     'cart_version_required' => 'Tuma toleo la rukwama ( ETag yake) katika kichwa cha If-Match.',

@@ -31,4 +31,7 @@ return [
     'banners_per_position' => 10,
     'announcements_shown' => 3,
 
+    // The most items one customer's wishlist holds, even when saves arrive at once; also the most a guest's list may bring in at sign-in.
+    'wishlist_max_items' => 500,
+
 ];

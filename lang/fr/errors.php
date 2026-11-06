@@ -143,6 +143,7 @@ return [
     'variant_not_available' => 'Cet article n\'est pas à vendre pour le moment.',
     'variant_out_of_stock' => 'Cet article est en rupture de stock.',
     'cart_full' => 'Un panier peut contenir jusqu\'à :limit articles différents. Supprimez-en un pour en ajouter un autre.',
+    'wishlist_full' => 'Une liste de souhaits peut contenir jusqu\'à :limit articles. Supprimez-en un pour en enregistrer un autre.',
     'cart_line_quantity_too_high' => 'Vous pouvez avoir jusqu\'à :limit d\'un article dans votre panier.',
     'cart_changed' => 'Votre panier a changé ailleurs, par exemple dans un autre onglet. Regardez-le à nouveau, puis effectuez votre modification.',
     'cart_version_required' => 'Envoyez la version du panier (son ETag) dans un en-tête If-Match.',

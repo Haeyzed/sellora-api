@@ -143,6 +143,7 @@ return [
     'variant_not_available' => 'この商品は現在販売されていません。',
     'variant_out_of_stock' => 'この商品は在庫切れです。',
     'cart_full' => 'カートには最大 :limit 個の異なるアイテムを入れることができます。 1 つを削除して別のものを追加します。',
+    'wishlist_full' => 'ほしい物リストには最大 :limit 件まで保存できます。別の商品を保存するには 1 件削除してください。',
     'cart_line_quantity_too_high' => 'カートには最大 :limit 個のアイテムを入れることができます。',
     'cart_changed' => 'カートは別のタブなど、別の場所に変更されました。もう一度見て、変更を加えてください。',
     'cart_version_required' => 'If-Match ヘッダーでカートのバージョン (ETag) を送信します。',

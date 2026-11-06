@@ -283,6 +283,7 @@ use App\Tenant\Storefront\Listeners\RenewStorefrontCacheWhenContentChanges;
 use App\Tenant\Storefront\Models\Banner;
 use App\Tenant\Storefront\Models\Page;
 use App\Tenant\Storefront\Models\StorefrontSettings;
+use App\Tenant\Storefront\Privacy\WishlistData;
 use App\Tenant\Storefront\StorefrontSettingsDefaults;
 use App\Tenant\Storefront\StorefrontStoreFiles;
 use App\Tenant\Storefront\StorefrontStoreTables;
@@ -553,6 +554,7 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(CustomerDataSubject::TYPE, 'data_exports', CustomerDataExportData::class);
             $registry->register(CustomerDataSubject::TYPE, 'promotion_uses', PromotionUseData::class);
             $registry->register(CustomerDataSubject::TYPE, 'cart', CustomerCartData::class);
+            $registry->register(CustomerDataSubject::TYPE, 'wishlist', WishlistData::class);
             $registry->register(CustomerDataSubject::TYPE, 'checkouts', CheckoutData::class);
             $registry->register(CustomerDataSubject::TYPE, 'orders', CustomerOrderData::class);
             $registry->register(CustomerDataSubject::TYPE, 'returns', CustomerReturnData::class);

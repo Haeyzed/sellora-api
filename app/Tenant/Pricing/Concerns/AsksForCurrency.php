@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Tenant\Catalog\Http\Requests;
+namespace App\Tenant\Pricing\Concerns;
 
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * The currency a storefront request asks prices in.
+ * The currency a storefront request asks prices in, for any domain that shows shoppers prices (section 6: a public concern).
  *
  * @mixin FormRequest
  */

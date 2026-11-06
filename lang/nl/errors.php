@@ -143,6 +143,7 @@ return [
     'variant_not_available' => 'Dit artikel is momenteel niet te koop.',
     'variant_out_of_stock' => 'Dit artikel is niet op voorraad.',
     'cart_full' => 'Een winkelwagentje kan maximaal :limit verschillende artikelen bevatten. Verwijder er één om een ​​andere toe te voegen.',
+    'wishlist_full' => 'Een verlanglijst kan maximaal :limit artikelen bevatten. Verwijder er een om een ander op te slaan.',
     'cart_line_quantity_too_high' => 'U kunt maximaal :limit van één artikel in uw winkelwagen hebben.',
     'cart_changed' => 'Uw winkelwagen is ergens anders gewijzigd, bijvoorbeeld in een ander tabblad. Bekijk het nog eens en breng dan uw wijziging aan.',
     'cart_version_required' => 'Stuur de versie van de winkelwagen (de ETag) in een If-Match-header.',

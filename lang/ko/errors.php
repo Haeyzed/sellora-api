@@ -143,6 +143,7 @@ return [
     'variant_not_available' => '이 품목은 현재 판매되지 않습니다.',
     'variant_out_of_stock' => '이 상품은 품절되었습니다.',
     'cart_full' => '카트에는 최대 :limit개의 다양한 품목을 담을 수 있습니다. 다른 하나를 추가하려면 하나를 제거하세요.',
+    'wishlist_full' => '위시리스트에는 최대 :limit개까지 담을 수 있습니다. 다른 상품을 저장하려면 하나를 삭제하세요.',
     'cart_line_quantity_too_high' => '장바구니에는 한 품목을 최대 :limit개까지 담을 수 있습니다.',
     'cart_changed' => '장바구니가 다른 탭 등 다른 곳에서 변경되었습니다. 다시 살펴보고 변경해 보세요.',
     'cart_version_required' => 'If-Match 헤더에 장바구니 버전(ETag)을 보냅니다.',

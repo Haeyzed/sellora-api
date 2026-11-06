@@ -8,6 +8,7 @@ use App\Shared\Http\CursorListRequest;
 use App\Tenant\Catalog\Models\Brand;
 use App\Tenant\Catalog\Models\Category;
 use App\Tenant\Catalog\Models\Product;
+use App\Tenant\Pricing\Concerns\AsksForCurrency;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\Rule;
 
