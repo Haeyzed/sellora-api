@@ -89,6 +89,7 @@ return [
     'page_slug_taken' => '另一个页面已在使用此网址标识。请换一个。',
     'menu_key_taken' => '另一个菜单已在使用此键。请换一个。',
     'menu_link_target_not_found' => '此链接指向商店没有的内容，或已在回收站中的内容。',
+    'banner_has_no_image' => '公告仅包含文字，没有图片。',
     'brand_restore_conflict' => '另一个品牌现在使用该品牌的蛞蝓。更改其中一个段头，然后将其恢复。',
     'category_slug_taken' => '另一个类别已经使用了这个 slug。选择另一个。',
     'category_restore_conflict' => '另一个类别现在使用该类别的 slug。更改其中一个段头，然后将其恢复。',

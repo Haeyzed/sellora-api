@@ -89,6 +89,7 @@ return [
     'page_slug_taken' => 'Peeji ọzọ na-eji slug a ugbu a. Họrọ ọzọ.',
     'menu_key_taken' => 'Menu ọzọ na-eji igodo a ugbu a. Họrọ ọzọ.',
     'menu_link_target_not_found' => 'Njikọ a na-aga n\'ihe ụlọ ahịa enweghị, ma ọ bụ nke dị n\'ime ihe mkpofu.',
+    'banner_has_no_image' => 'Ọkwa bụ naanị ederede, enweghị foto.',
     'brand_restore_conflict' => 'Akara ọzọ na-eji slug ika a ugbu a. Gbanwee otu n\'ime slugs, wee weghachi ya.',
     'category_slug_taken' => 'Otu ọzọ ejirila slug a. Họrọ ọzọ.',
     'category_restore_conflict' => 'Otu ọzọ na-eji slug nke otu a ugbu a. Gbanwee otu n\'ime slugs, wee weghachi ya.',

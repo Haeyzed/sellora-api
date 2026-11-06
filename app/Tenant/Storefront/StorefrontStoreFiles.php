@@ -7,11 +7,12 @@ namespace App\Tenant\Storefront;
 use App\Shared\Media\StoredFiles;
 use App\Shared\Privacy\Contracts\StoreExportFileSource;
 use App\Shared\Privacy\ExportedFile;
+use App\Tenant\Storefront\Models\Banner;
 use App\Tenant\Storefront\Models\Page;
 use App\Tenant\Storefront\Models\StorefrontSettings;
 
 /**
- * The storefront's images (the share image and pages' images) in a store export, as uploaded.
+ * The storefront's images (the share image, pages' images and banners' images) in a store export, as uploaded.
  */
 final class StorefrontStoreFiles implements StoreExportFileSource
 {
@@ -20,6 +21,6 @@ final class StorefrontStoreFiles implements StoreExportFileSource
      */
     public function files(): iterable
     {
-        return StoredFiles::of([(new StorefrontSettings)->getMorphClass(), (new Page)->getMorphClass()], 'storefront');
+        return StoredFiles::of([(new StorefrontSettings)->getMorphClass(), (new Page)->getMorphClass(), (new Banner)->getMorphClass()], 'storefront');
     }
 }

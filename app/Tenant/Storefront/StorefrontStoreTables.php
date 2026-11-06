@@ -29,5 +29,9 @@ final class StorefrontStoreTables implements ClassifiesStoreTables
         $registry->table('menu_items', include: [
             'id', 'menu_id', 'parent_id', 'label', 'page_id', 'category_id', 'brand_id', 'product_id', 'url', 'opens_in_new_tab', 'position', 'created_at', 'updated_at',
         ]);
+
+        $registry->table('banners', include: [
+            'id', 'public_id', 'kind', 'position', 'title', 'body', 'link_url', 'link_label', 'text_color', 'background_color', 'starts_at', 'ends_at', 'is_active', 'sort_order', 'created_at', 'updated_at',
+        ]);
     }
 }

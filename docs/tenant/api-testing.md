@@ -69,7 +69,7 @@ the response says which language was used.
 
 ## Endpoint cURL reference
 
-The following commands cover all 358 operations in the current tenant
+The following commands cover all 367 operations in the current tenant
 Scramble OpenAPI export, including the shared geography endpoints available
 on the store domain. Request bodies include required fields (or one
 representative field when all are optional); values such as IDs, email
@@ -82,6 +82,7 @@ forms. Business-state checks may impose additional requirements.
 ```powershell
 $Address = 'replace-with-address'
 $Attribute = 'replace-with-attribute'
+$Banner = 'replace-with-banner'
 $Brand = 'replace-with-brand'
 $Category = 'replace-with-category'
 $Channel = 'replace-with-channel'
@@ -3235,6 +3236,23 @@ curl.exe --request GET "${StoreBase}/storefront/menus/${MenuKey}" `
 
 Only links shoppers may follow are shown; each gives its `type` and the `slug` (or `url`) to build its address from.
 
+#### StorefrontBanner
+
+**GET** `/storefront/banners` — public. List the image banners shown now in one place
+
+```powershell
+curl.exe --request GET "${StoreBase}/storefront/banners?position=home_hero" `
+  --header 'Accept: application/json' `
+  --header 'Accept-Language: fr'
+```
+
+**GET** `/storefront/announcements` — public. List the announcements shown now (at most 3)
+
+```powershell
+curl.exe --request GET "${StoreBase}/storefront/announcements" `
+  --header 'Accept: application/json'
+```
+
 #### StorefrontSeo
 
 **GET** `/storefront/seo` — public. Show the storefront's search engine settings
@@ -3440,6 +3458,71 @@ curl.exe --request PUT "${StoreBase}/staff/storefront/menus/${Menu}/items" `
 ```
 
 Send every link, in order: two levels deep, at most 100 in all. Addresses may be https, `mailto:`, `tel:` or a path on the storefront.
+
+#### Banner
+
+**GET** `/staff/storefront/banners` — staff bearer token. List banners (`storefront.view`; switched off and scheduled ones included)
+
+```powershell
+curl.exe --request GET "${StoreBase}/staff/storefront/banners?kind=image&position=home_hero" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
+**POST** `/staff/storefront/banners` — staff bearer token. Add an image banner or an announcement (`storefront.manage`)
+
+```powershell
+curl.exe --request POST "${StoreBase}/staff/storefront/banners" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw '{"kind":"image","position":"home_hero","title":{"en":"Summer sale"},"link_url":"/sale","link_label":{"en":"Shop now"},"starts_at":"2026-12-01T09:00"}'
+```
+
+Times without an offset are read in the store's timezone. An image banner is shown once its image is uploaded; send `"kind":"announcement"` (no `position`) for the bar along the top.
+
+**GET** `/staff/storefront/banners/{banner}` — staff bearer token. Show a banner (`storefront.view`)
+
+```powershell
+curl.exe --request GET "${StoreBase}/staff/storefront/banners/${Banner}" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
+**PATCH** `/staff/storefront/banners/{banner}` — staff bearer token. Change a banner (`storefront.manage`)
+
+```powershell
+curl.exe --request PATCH "${StoreBase}/staff/storefront/banners/${Banner}" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw '{"is_active":false}'
+```
+
+**DELETE** `/staff/storefront/banners/{banner}` — staff bearer token. Delete a banner with its image (`storefront.manage`)
+
+```powershell
+curl.exe --request DELETE "${StoreBase}/staff/storefront/banners/${Banner}" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
+
+**POST** `/staff/storefront/banners/{banner}/image` — staff bearer token. Set an image banner's image (`storefront.manage`; multipart)
+
+```powershell
+curl.exe --request POST "${StoreBase}/staff/storefront/banners/${Banner}/image" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken" `
+  --form 'image=@banner.jpg'
+```
+
+**DELETE** `/staff/storefront/banners/{banner}/image` — staff bearer token. Remove a banner's image (`storefront.manage`)
+
+```powershell
+curl.exe --request DELETE "${StoreBase}/staff/storefront/banners/${Banner}/image" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken"
+```
 
 #### StoreLogo
 

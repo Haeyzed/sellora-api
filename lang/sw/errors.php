@@ -89,6 +89,7 @@ return [
     'page_slug_taken' => 'Ukurasa mwingine tayari unatumia kitambulisho hiki cha anwani. Chagua kingine.',
     'menu_key_taken' => 'Menyu nyingine tayari inatumia ufunguo huu. Chagua mwingine.',
     'menu_link_target_not_found' => 'Kiungo hiki kinaelekea kitu ambacho duka halina, au kilicho kwenye taka.',
+    'banner_has_no_image' => 'Matangazo ni maandishi tu na hayana picha.',
     'brand_restore_conflict' => 'Chapa nyingine sasa inatumia koa ya chapa hii. Badilisha moja ya slugs, kisha uirejeshe.',
     'category_slug_taken' => 'Aina nyingine tayari inatumia koa hii. Chagua nyingine.',
     'category_restore_conflict' => 'Aina nyingine sasa inatumia koa ya aina hii. Badilisha moja ya slugs, kisha uirejeshe.',

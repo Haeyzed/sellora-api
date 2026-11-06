@@ -77,6 +77,24 @@ function menuLink(array|string $label, string $type, ?string $target = null, ?st
 }
 
 /**
+ * Adds a banner through the staff API as the store's owner (test()->owner), with an image when asked, and returns it as the API shows it. An image banner in "home_hero" unless told otherwise.
+ *
+ * @param  array<string, mixed>  $data
+ * @return array<string, mixed>
+ */
+function addStorefrontBanner(array $data = [], bool $withImage = false, string $subdomain = 'front-store'): array
+{
+    $defaults = ($data['kind'] ?? 'image') === 'image' ? ['kind' => 'image', 'position' => 'home_hero'] : [];
+    $banner = storefrontStaffRequest('POST', 'banners', [...$defaults, 'title' => ['en' => 'Summer sale'], ...$data], as: test()->owner, subdomain: $subdomain)->assertCreated()->json('data');
+
+    if ($withImage) {
+        $banner = storefrontStaffRequest('POST', "banners/{$banner['id']}/image", ['image' => Illuminate\Http\UploadedFile::fake()->image('banner.jpg', 1600, 600)], as: test()->owner, subdomain: $subdomain)->assertOk()->json('data');
+    }
+
+    return $banner;
+}
+
+/**
  * The address the current test store serves an image at, such as one uploaded to a page, for writing into a body.
  */
 function storefrontImageAddress(string $subdomain = 'front-store', string $file = '1/hero.webp'): string

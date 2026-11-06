@@ -89,6 +89,7 @@ return [
     'page_slug_taken' => 'Eine andere Seite verwendet diese URL-Kennung bereits. Wählen Sie eine andere.',
     'menu_key_taken' => 'Ein anderes Menü verwendet diesen Schlüssel bereits. Wählen Sie einen anderen.',
     'menu_link_target_not_found' => 'Dieser Link führt zu etwas, das der Shop nicht hat oder das im Papierkorb liegt.',
+    'banner_has_no_image' => 'Ankündigungen bestehen nur aus Text und haben kein Bild.',
     'brand_restore_conflict' => 'Eine andere Marke verwendet jetzt die Schnecke dieser Marke. Tauschen Sie einen der Schnecken aus und stellen Sie ihn dann wieder her.',
     'category_slug_taken' => 'Eine andere Kategorie verwendet diesen Slug bereits. Wählen Sie ein anderes.',
     'category_restore_conflict' => 'Eine andere Kategorie verwendet jetzt den Slug dieser Kategorie. Tauschen Sie einen der Schnecken aus und stellen Sie ihn dann wieder her.',

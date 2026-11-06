@@ -6,12 +6,15 @@ use App\Shared\Auth\Http\Middleware\EnsureTwoFactorWhenRequired;
 use App\Shared\Http\Middleware\UseDashboardLanguage;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Settings\Http\Middleware\UseStoreLanguage;
+use App\Tenant\Storefront\Http\Controllers\BannerController;
+use App\Tenant\Storefront\Http\Controllers\BannerImageController;
 use App\Tenant\Storefront\Http\Controllers\MenuController;
 use App\Tenant\Storefront\Http\Controllers\MenuItemsController;
 use App\Tenant\Storefront\Http\Controllers\PageController;
 use App\Tenant\Storefront\Http\Controllers\PageImageController;
 use App\Tenant\Storefront\Http\Controllers\PageStateController;
 use App\Tenant\Storefront\Http\Controllers\ShareImageController;
+use App\Tenant\Storefront\Http\Controllers\StorefrontBannerController;
 use App\Tenant\Storefront\Http\Controllers\StorefrontMenuController;
 use App\Tenant\Storefront\Http\Controllers\StorefrontPageController;
 use App\Tenant\Storefront\Http\Controllers\StorefrontSeoController;
@@ -34,6 +37,8 @@ Route::prefix('storefront')
         Route::get('home', [StorefrontPageController::class, 'home'])->name('home');
         Route::get('pages/{slug}', [StorefrontPageController::class, 'show'])->name('pages.show');
         Route::get('menus/{key}', [StorefrontMenuController::class, 'show'])->name('menus.show');
+        Route::get('banners', [StorefrontBannerController::class, 'index'])->name('banners.index');
+        Route::get('announcements', [StorefrontBannerController::class, 'announcements'])->name('announcements.index');
     });
 
 Route::prefix('staff/storefront')
@@ -63,4 +68,12 @@ Route::prefix('staff/storefront')
         Route::patch('menus/{menu}', [MenuController::class, 'update'])->name('menus.update');
         Route::delete('menus/{menu}', [MenuController::class, 'destroy'])->name('menus.destroy');
         Route::put('menus/{menu}/items', [MenuItemsController::class, 'update'])->name('menus.items.update');
+
+        Route::get('banners', [BannerController::class, 'index'])->name('banners.index');
+        Route::post('banners', [BannerController::class, 'store'])->name('banners.store');
+        Route::get('banners/{banner}', [BannerController::class, 'show'])->name('banners.show');
+        Route::patch('banners/{banner}', [BannerController::class, 'update'])->name('banners.update');
+        Route::delete('banners/{banner}', [BannerController::class, 'destroy'])->name('banners.destroy');
+        Route::post('banners/{banner}/image', [BannerImageController::class, 'store'])->name('banners.image.store');
+        Route::delete('banners/{banner}/image', [BannerImageController::class, 'destroy'])->name('banners.image.destroy');
     });

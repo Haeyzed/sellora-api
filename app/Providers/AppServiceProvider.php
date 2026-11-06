@@ -280,6 +280,7 @@ use App\Tenant\Shipping\ShippingStoreTables;
 use App\Tenant\Storefront\Enums\StorefrontPermission;
 use App\Tenant\Storefront\Events\StorefrontContentChanged;
 use App\Tenant\Storefront\Listeners\RenewStorefrontCacheWhenContentChanges;
+use App\Tenant\Storefront\Models\Banner;
 use App\Tenant\Storefront\Models\Page;
 use App\Tenant\Storefront\Models\StorefrontSettings;
 use App\Tenant\Storefront\StorefrontSettingsDefaults;
@@ -660,6 +661,7 @@ final class AppServiceProvider extends ServiceProvider
             'return_settings' => ReturnSettings::class,
             'storefront_settings' => StorefrontSettings::class,
             'page' => Page::class,
+            'banner' => Banner::class,
             'staff_invitation' => StaffInvitation::class,
             'role' => Role::class,
             'store' => Tenant::class,

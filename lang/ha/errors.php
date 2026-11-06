@@ -89,6 +89,7 @@ return [
     'page_slug_taken' => 'Wani shafi yana amfani da wannan alamar adireshi tuni. Zaɓi wani.',
     'menu_key_taken' => 'Wani menu yana amfani da wannan maɓalli tuni. Zaɓi wani.',
     'menu_link_target_not_found' => 'Wannan hanyar haɗi tana kai wa abin da shagon ba shi da shi, ko yake cikin kwandon shara.',
+    'banner_has_no_image' => 'Sanarwa rubutu ne kawai, babu hoto.',
     'brand_restore_conflict' => 'Wani alama yanzu yana amfani da slug na wannan alamar. Canja ɗaya daga cikin slugs, sannan mayar da shi.',
     'category_slug_taken' => 'Wani rukuni ya riga ya yi amfani da wannan slug. Zabi wani.',
     'category_restore_conflict' => 'Wani rukunin yanzu yana amfani da slug na wannan rukunin. Canja ɗaya daga cikin slugs, sannan mayar da shi.',

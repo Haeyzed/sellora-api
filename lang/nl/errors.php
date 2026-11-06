@@ -89,6 +89,7 @@ return [
     'page_slug_taken' => 'Een andere pagina gebruikt deze slug al. Kies een andere.',
     'menu_key_taken' => 'Een ander menu gebruikt deze sleutel al. Kies een andere.',
     'menu_link_target_not_found' => 'Deze link gaat naar iets wat de winkel niet heeft, of wat in de prullenbak staat.',
+    'banner_has_no_image' => 'Aankondigingen bestaan alleen uit tekst en hebben geen afbeelding.',
     'brand_restore_conflict' => 'Een ander merk gebruikt nu de slak van dit merk. Vervang een van de naaktslakken en herstel deze vervolgens.',
     'category_slug_taken' => 'Een andere categorie maakt al gebruik van deze slak. Kies een andere.',
     'category_restore_conflict' => 'Een andere categorie gebruikt nu de slug van deze categorie. Vervang een van de naaktslakken en herstel deze vervolgens.',

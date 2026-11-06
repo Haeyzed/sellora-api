@@ -89,6 +89,7 @@ return [
     'page_slug_taken' => 'Ojú-ìwé mìíràn ti ń lo àmì àdírẹ́sì yìí. Yan òmíràn.',
     'menu_key_taken' => 'Mẹ́nù mìíràn ti ń lo kọ́kọ́rọ́ yìí. Yan òmíràn.',
     'menu_link_target_not_found' => 'Ìjápọ̀ yìí ń lọ sí ohun tí ilé ìtajà kò ní, tàbí tí ó wà nínú àpò ìdọ̀tí.',
+    'banner_has_no_image' => 'Ìkéde jẹ́ ọ̀rọ̀ nìkan, kò ní àwòrán.',
     'brand_restore_conflict' => 'Aami ami iyasọtọ miiran lo slug brand yii. Yi ọkan ninu awọn slugs pada, lẹhinna mu pada.',
     'category_slug_taken' => 'Ẹka miiran ti lo slug yii tẹlẹ. Yan omiran.',
     'category_restore_conflict' => 'Ẹka miiran ti nlo slug ẹka yii bayi. Yi ọkan ninu awọn slugs pada, lẹhinna mu pada.',

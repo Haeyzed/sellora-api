@@ -89,6 +89,7 @@ return [
     'page_slug_taken' => 'Une autre page utilise déjà cet identifiant d\'URL. Choisissez-en un autre.',
     'menu_key_taken' => 'Un autre menu utilise déjà cette clé. Choisissez-en une autre.',
     'menu_link_target_not_found' => 'Ce lien mène à un élément que la boutique n\'a pas ou qui est dans la corbeille.',
+    'banner_has_no_image' => 'Les annonces sont uniquement du texte et n\'ont pas d\'image.',
     'brand_restore_conflict' => 'Une autre marque utilise désormais le slug de cette marque. Changez l\'un des slugs, puis restaurez-le.',
     'category_slug_taken' => 'Une autre catégorie utilise déjà cette limace. Choisissez-en un autre.',
     'category_restore_conflict' => 'Une autre catégorie utilise désormais le slug de cette catégorie. Changez l\'un des slugs, puis restaurez-le.',
