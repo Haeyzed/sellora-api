@@ -1,7 +1,7 @@
 # Handover
 
-**Date:** 5 November 2026.
-**Describes:** `main` at `3b19453`, and the branch `step-18d-exchange-flow`
+**Date:** 6 November 2026.
+**Describes:** `main` at `c7ab09b`, and the branch `step-19-storefront`
 started from it.
 
 This is for continuing the work on a new PC: for the project owner, and for
@@ -15,40 +15,39 @@ disagrees with `git log`, GitHub or CLAUDE.md, they win.
 
 ## 1. Where things stand
 
-**`main`** is at `3b19453` ("Price lines with their delivery in one
-Shipping action"). CI passed on it: run 42079725707, all three jobs (Pest
-on PostgreSQL 18 and Redis; Pint, Larastan and composer audit; Scramble).
+**`main`** is at `c7ab09b` ("Record the remaining inline @var and the
+stores_fault backfill"). CI passed on it: run 42117370250, all three jobs
+(Pest on PostgreSQL 18 and Redis; Pint, Larastan and composer audit;
+Scramble).
 
-**What was finished last:** Step 18c, `step-18c-exchanges` (replacement
-orders), merged into `main` by fast-forward: `b300d53` (a core domain's own
-settings table, in CLAUDE.md), `355d6d1`, `ffd4c4d`, `a28aa84`, `2c19d1a`,
-`4de9df4` (docs) and `3b19453` (one `PriceBasketWithShipping` action for
-the cart and the replacement quote).
+**What was finished last:** Step 18d, `step-18d-exchange-flow` (the exchange
+flow in Returns, `c15b9ea` to `c7ab09b`), merged into `main` by
+fast-forward. Its plan and decisions are in [Returns](tenant/returns.md#exchanges).
 
-**In progress:** Step 18d, `step-18d-exchange-flow`, built and waiting for
-the owner's review (item 2a):
+**In progress:** Step 19a, `step-19-storefront` (the storefront's content),
+built and waiting for the owner's review (item 2a):
 
 | Commit | What |
 |---|---|
-| `c15b9ea` | Every store's `return_settings` row, created by a migration and at store setup; a missing row fails loudly |
-| `edca505` | Exchanges in the returns data, and confirming the store's fault (D1) |
-| `fc3f426` | Asking for an exchange, choosing its replacements, changing the resolution |
-| `7df1fbb` | Previewing and confirming an exchange, with the `returns.exchange` permission (D2, D3, D6) |
-| `b2df871` | Settling the exchange once its replacement is paid, or sending the return back when it isn't |
-| `b73ec21` | Docs: this handover, Returns, API testing and the README |
-| `8b24cf7` | Return lines read by their real types, without inline `@var` |
-| (docs) | This handover's follow-ups after the review |
+| `06837f2` | The Storefront domain: its settings row (created with the store), `storefront.view` and `storefront.manage`, search engine settings and the share image |
+| `911fa60` | Pages, with their HTML cleaned when saved and served (`symfony/html-sanitizer` 8.1, approved), the homepage and the policy pages |
+| `6a26af4` | Menus, two levels deep, showing shoppers only links they may follow |
+| `ccd5dc6` | A page's text sent as null removed in every language, not only the request's |
+| `2b6d3f0` | Banners and announcements, shown within their times |
+| `eab54d2` | The same removal fix for catalog descriptions (on `main` since Step 7) |
+| `3e8b3d7` | Search engine texts on products, categories and brands, and the sitemap |
+| (docs) | [Storefront](tenant/storefront.md), the documentation home and this handover |
 
-Before 18c: Step 18b (`step-18b-refund-destinations`, `cbf42a5` to
-`1d0e037`), `permission-labels`, `encrypt-queued-messages` and
-`scrub-error-reports`.
+Before 18d: Step 18c (`step-18c-exchanges`), Step 18b
+(`step-18b-refund-destinations`), `permission-labels`,
+`encrypt-queued-messages` and `scrub-error-reports`.
 
 **Branches:**
 
 | Branch | State |
 |---|---|
-| `step-18d-exchange-flow` | **Waiting for review:** item 2a below. Not merged |
-| `step-18c-exchanges`, `step-18b-refund-destinations`, `permission-labels`, `encrypt-queued-messages`, `scrub-error-reports`, `handover-scripts` | Merged; kept on GitHub |
+| `step-19-storefront` | **Waiting for review:** item 2a below. Not merged |
+| `step-18d-exchange-flow`, `step-18c-exchanges`, `step-18b-refund-destinations`, `permission-labels`, `encrypt-queued-messages`, `scrub-error-reports`, `handover-scripts` | Merged; kept on GitHub |
 | `step-10-customers` to `step-18-returns`, `step-10b-social-sign-in`, `step-15b-invoices`, `step-16b-paystack` | Merged; kept on GitHub |
 | `docs-schema-comments`, `fix-token-links`, `fix-payment-holds` | Merged; kept on GitHub |
 | `ci-proof-docs`, `ci-proof-pint`, `ci-proof-stan` | Gone, as intended. They existed only on the old laptop (each broke one CI check on purpose, to prove CI catches it) and were never meant to be kept |
@@ -60,67 +59,43 @@ Before 18c: Step 18b (`step-18b-refund-destinations`, `cbf42a5` to
 Each item is its own branch, starts only when the owner says so, and ends
 with a stop for review (CLAUDE.md section 17).
 
-### a. Step 18d: the exchange flow in Returns (`step-18d-exchange-flow`)
+### a. Step 19a: the storefront's content (`step-19-storefront`)
 
-Built on top of 18c's [replacement orders](tenant/checkout.md#replacement-orders-exchanges),
-and described in [Returns](tenant/returns.md#exchanges). Next: the owner's
-review, then a fast-forward merge. The plan, with the owner's decisions,
-as built:
+Described in [Storefront](tenant/storefront.md). Next: the owner's review,
+then a fast-forward merge. The owner's decisions, as built:
 
-- **Flow:** the buyer or staff ask for a return with resolution `exchange`
-  and one replacement variant per returned line (same quantity). Approval
-  checks the replacements can be bought but holds no stock. After
-  inspection (or approval when the buyer keeps the items), staff preview
-  the exchange (`QuoteReplacementOrder`) and confirm it with the preview's
-  hash (`PlaceReplacementOrder`); the return moves to the new status
-  `awaiting_exchange` (decided, D6).
-- **Settlement:** on `ExchangeCreditCommitted` the original order gets a
-  refund of the returned lines to destination `exchange`, withholding
-  what the lines are worth beyond the credit (what goes back as a
-  difference, or what a free like-for-like replacement didn't use), under
-  the key `exchange:{exchange id}`. A cheaper replacement's difference
-  goes back by amount through a saved refund attempt of the return, to
-  the customer's chosen destination; the return completes. On
-  `ExchangeCreditReleased` the return goes back to inspected, or approved
-  when the buyer keeps the items, without new times. A refusal is logged
-  and staff settle again through the return's refund endpoint.
-- **Store's fault (decided, D1):** add a `faulty` reason; `faulty`,
-  `damaged`, `wrong_item` and `not_as_described` are the store's fault.
-  The buyer's reason is a claim: staff confirm the fault at inspection (or
-  at approval when the buyer keeps the items), and overruling it needs a
-  recorded reason. Only a confirmed fault gives free like-for-like and free
-  shipping.
-- **Like-for-like (decided, D2):** the same product, and the replacement's
-  price today equals the returned variant's price today; when the returned
-  variant has no price today, compare with what the buyer paid for the
-  returned unit.
-- **Shipping (decided, D3):** free when the store is at fault; otherwise
-  the setting `charge_shipping_on_exchanges` (off by default) in
-  `return_settings`. The first commit gives every store its row (a
-  migration for existing stores, store setup for new ones); reading a
-  missing row throws `MissingReturnSettingsException`.
-- **Data:** `returns.resolution` allows `exchange`, `returns.status` allows
-  `awaiting_exchange`, returns get `stores_fault` and
-  `fault_overruled_reason` (backfilled from the reason for returns already
-  inspected or kept), return lines get `replacement_variant_id`, a
-  `return_exchanges` table (one row per confirmation: credit, difference,
-  kept, shipping charged, status, the refund; one live per return), return
-  refund attempts get `refund_amount`, and the setting; a new sensitive
-  permission `returns.exchange`, labelled in all 20 languages.
-- **Endpoints:** replacements and resolution (`returns.manage`), the
-  exchange preview (`returns.view`), confirming it (`returns.exchange` and
-  `payments.refund`, with an `Idempotency-Key`), and the setting on the
-  return settings.
+- **HTML sanitising:** `symfony/html-sanitizer` 8.1 (MIT), cleaning page
+  bodies when saved and again when served (the served result cached per
+  store). Links: https, relative paths, `mailto:` and `tel:` only (the
+  same rule as menu links). Images: only from the store's own media host.
+- **Page sections:** left out of the first version.
+- **Changed from the plan:** only page bodies are cached. Settings, menus
+  and banners are read live, because the cache keeps classes out
+  (`serializable_classes` off) and those reads are a few indexed queries.
 
-### b. Steps 19, 20 and 21
+### b. Step 19b: shopping aids (`step-19b-shopping-aids`)
 
-Storefront, then Messaging (email first, see [Messaging](tenant/messaging.md)),
-then Data tools, as CLAUDE.md section 17 lists them.
+Starts after 19a is merged. Decided: the wishlist holds a product with an
+optional variant; best sellers count gross units over 30 days (paid,
+non-test orders, cached per store). Also the fetch-several-products
+endpoint (comparison, recently viewed), merchant-picked product links and
+similar products (CLAUDE.md section 13.1).
 
-### c. The frontend, after core
+### c. Steps 20 and 21
 
-The frontends come after the core API is done. The frontend repository is
-`Haeyzed/sellora-frontend`.
+Messaging (email first, see [Messaging](tenant/messaging.md)), then Data
+tools, as CLAUDE.md section 17 lists them.
+
+### d. Cleanup: the remaining inline `@var` (after Step 21, before the frontend)
+
+One branch of its own removing the 91 inline `@var` listed in the
+follow-ups below, domain by domain, each read by its real type (as Returns
+does with `ReadsReturnLines`). No behaviour changes.
+
+### e. The frontend, after core
+
+The frontends come after the core API and the cleanup. The frontend
+repository is `Haeyzed/sellora-frontend`.
 
 ## 3. Open follow-ups
 
@@ -145,9 +120,13 @@ The frontends come after the core API is done. The frontend repository is
 | **Telescope stores exception messages** in full, including a database error's SQL and values. It runs only locally (never in production or staging with real data), so it was left out of `scrub-error-reports` | Only here |
 | **Plain-text queued emails** written before `encrypt-queued-messages` is deployed stay readable in `failed_jobs` until the 30-day purge; they are not re-encrypted | [Deployment](deployment.md) |
 | **A saved preferred language for staff and platform admins** (a column on each), for Step 20: today a dashboard's language comes only from `Accept-Language`, so emails and alerts sent outside a request (by a job or the scheduler) have no language to use | Only here (decided in `permission-labels`) |
-| **Native review of the permission labels and group names** before real merchants use them: Yoruba, Hausa, Igbo and Swahili above all, and ideally every non-English language. They were written without a native speaker; the descriptions were too, and so were 18b's refund destination label and its three error messages, and 18c's `exchange` destination label and its five `replacement_*` error messages, and 18d's `returns.exchange` permission and allowance label, the `faulty` reason, and the `return_fault_reason_required`, `return_replacement_invalid`, `return_replacement_not_available`, `return_is_an_exchange` and `exchange_not_ready` messages | `lang/*/permissions.php`, `lang/*/permission_groups.php`, `lang/*/refunds.php`, `lang/*/returns.php` and the `refund_destination_*`, `replacement_*`, `return_*` and `exchange_not_ready` entries in `lang/*/errors.php` |
-| **Inline `@var` outside Returns:** CLAUDE.md section 13 rules them out; Returns has none since `8b24cf7` (its requests read lines through `ReadsReturnLines`). 91 remain on variables: 69 in `app/` and `integrations/` (most in Catalog's and other domains' form requests, then Orders, Payments, Shared), 22 in `tests/`. Each domain's are fixed in a change of their own. The `@var` above array keys in API resources (88) document response fields for Scramble and are not inline type casts | Found with `git grep -nE '/\*\* @var [^*]+ \$[A-Za-z_]+ \*/'` |
+| **Native review of the permission labels and group names** before real merchants use them: Yoruba, Hausa, Igbo and Swahili above all, and ideally every non-English language. They were written without a native speaker; the descriptions were too, and so were 18b's refund destination label and its three error messages, and 18c's `exchange` destination label and its five `replacement_*` error messages, and 18d's `returns.exchange` permission and allowance label, the `faulty` reason, and the `return_fault_reason_required`, `return_replacement_invalid`, `return_replacement_not_available`, `return_is_an_exchange` and `exchange_not_ready` messages, and 19a's `storefront.view` and `storefront.manage` labels and the `page_slug_taken`, `menu_key_taken`, `menu_link_target_not_found` and `banner_has_no_image` messages | `lang/*/permissions.php`, `lang/*/permission_groups.php`, `lang/*/refunds.php`, `lang/*/returns.php` and the `refund_destination_*`, `replacement_*`, `return_*` and `exchange_not_ready` entries in `lang/*/errors.php` |
+| **Inline `@var` outside Returns:** CLAUDE.md section 13 rules them out; Returns has none since `8b24cf7` (its requests read lines through `ReadsReturnLines`). 91 remain on variables: 69 in `app/` and `integrations/` (most in Catalog's and other domains' form requests, then Orders, Payments, Shared), 22 in `tests/`. They are removed in one cleanup branch after Step 21, before the frontend (item 2d). The `@var` above array keys in API resources (88) document response fields for Scramble and are not inline type casts | Found with `git grep -nE '/\*\* @var [^*]+ \$[A-Za-z_]+ \*/'` |
 | **The `stores_fault` backfill** (18d) set the fault from the buyer's claim for returns already inspected or kept. That was acceptable only because no live store data exists yet; on live data, a backfill like this must leave the fault unconfirmed for staff | The 18d exchanges migration |
+| **Storefront images and custom domains:** page bodies keep images only from the store's media host (`StorefrontMediaHost`: the store's domain on a local disk, the disk's address such as a CDN otherwise). When custom domains arrive (Phase C) and images are served on the store's own domain, every domain of the store must be allowed, or images in bodies saved on one domain are removed when served on another | [Storefront](tenant/storefront.md#page-bodies-are-cleaned-html) |
+| **Removing a translated field:** setting a translatable attribute to null clears only the current language (`spatie/laravel-translatable`), so `{"en": ..., "fr": ...}` keeps its French text. 19a fixed it for pages, banners, the new search engine texts and catalog descriptions (`forgetTranslations($field, asNull: true)`); any new removal of a translated field must do the same, with a test written in two languages | `ccd5dc6`, `eab54d2` |
+| **German "Schnecke" for slug:** `lang/de/errors.php` translates "slug" as "Schnecke" (a snail) in `brand_slug_taken`, `brand_restore_conflict` and `category_restore_conflict`; the newer messages say "URL-Kennung". Fix with the native review | `lang/de/errors.php` |
+| **`useDisk` on media collections is redundant:** `StorefrontImageUploader` always picks `StorefrontImage::disk()`, so a model's `useDisk(...)` changes nothing (a probe breaking it in 19a was not caught, and could not be). Keep it as documentation or remove it in the cleanup branch | `app/Shared/Media/StorefrontImageUploader.php` |
 | **The pre-commit hook** was tried by hand only on Windows (PowerShell and Git Bash); CI now runs the hook check (`composer ci:hook`) on Linux on every push | [CI workflow](../.github/workflows/ci.yml) |
 
 ## 4. New PC setup (Windows PowerShell)

@@ -70,7 +70,9 @@ tokens; a token for one never works for another.
 2. **The merchant sets up.** Store settings (currency, languages, tax mode,
    guest checkout), the team, products and variants, stock, prices and tax
    rates, extra currencies, promotions, shipping zones and methods, and
-   payment methods: bank transfer, cash on delivery or Paystack.
+   payment methods: bank transfer, cash on delivery or Paystack. They write
+   the storefront's own pages, menus, banners and search engine texts
+   ([Storefront](tenant/storefront.md)).
 3. **A shopper buys.** They browse, fill a cart, and check out. Checkout
    shows a quote that holds for a short time; confirming it reserves the stock
    and promotion uses and creates the order, which keeps a copy of everything
@@ -108,9 +110,11 @@ yet:
   built (Step 18b), but only core's own destination, the original payment,
   exists until a module such as `Wallet` adds another
   ([Returns](tenant/returns.md#where-a-refund-goes)).
-- **Step 19, Storefront:** content pages, menus, banners, SEO, wishlists,
-  fetching several products for comparison, related and similar products and
-  best sellers.
+- **Step 19b, Storefront shopping aids:** wishlists, fetching several
+  products for comparison and recently viewed, related and similar products
+  and best sellers. The storefront's content (pages, menus, banners, search
+  engine settings and the sitemap) is built: see
+  [Storefront](tenant/storefront.md).
 - **Step 20, Messaging:** one place for messages, email first
   ([Messaging](tenant/messaging.md)). Today each domain sends its own emails.
 - **Step 21, Data tools:** import and export, bulk actions and dashboard

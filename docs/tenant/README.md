@@ -92,6 +92,7 @@ For the action-by-action end-to-end map, read
 - [Returns](returns.md)
 - [Settings](settings.md)
 - [Shipping](shipping.md)
+- [Storefront](storefront.md)
 
 For local requests to this store's domain, use the
 [tenant API testing guide](api-testing.md). The
