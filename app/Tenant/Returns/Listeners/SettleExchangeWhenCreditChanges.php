@@ -9,6 +9,7 @@ use App\Tenant\Checkout\Events\ExchangeCreditCommitted;
 use App\Tenant\Checkout\Events\ExchangeCreditReleased;
 use App\Tenant\Returns\Actions\SettleExchange;
 use App\Tenant\Returns\Enums\ReturnExchangeStatus;
+use App\Tenant\Returns\Events\ExchangeSettlementRefused;
 use App\Tenant\Returns\Models\ReturnExchange;
 use Illuminate\Contracts\Events\ShouldHandleEventsAfterCommit;
 use Illuminate\Support\Facades\Log;
@@ -19,7 +20,8 @@ use Illuminate\Support\Facades\Log;
  * Runs after Checkout commits the credit, in transactions of its own, so the
  * return is locked before the order. A refusal from Payments never undoes
  * the credit, which is final: it is logged (public IDs only), the error
- * tracker is told, and staff settle it again from the return.
+ * tracker is told, ExchangeSettlementRefused alerts staff, and staff settle
+ * it again from the return.
  */
 final readonly class SettleExchangeWhenCreditChanges implements ShouldHandleEventsAfterCommit
 {
@@ -44,6 +46,7 @@ final readonly class SettleExchangeWhenCreditChanges implements ShouldHandleEven
         } catch (DomainException $exception) {
             report($exception);
             Log::warning('An exchange\'s replacement was paid, but settling its return failed; staff settle it again from the return.', ['exchange' => $exchange->public_id, 'reason' => $exception->errorCode()]);
+            ExchangeSettlementRefused::dispatch($exchange, $exception->errorCode());
         }
     }
 }

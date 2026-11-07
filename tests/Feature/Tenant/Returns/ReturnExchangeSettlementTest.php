@@ -6,6 +6,8 @@ use App\Shared\Features\Contracts\FeatureSource;
 use App\Shared\Money\Money;
 use App\Tenant\Catalog\Models\ProductVariant;
 use App\Tenant\Checkout\Events\ExchangeCreditCommitted;
+use App\Tenant\Checkout\Models\CheckoutPaymentHold;
+use App\Tenant\Checkout\PaymentMethods\ExchangeCreditPaymentMethod;
 use App\Tenant\Customers\Models\Customer;
 use App\Tenant\Orders\Actions\CancelOrder;
 use App\Tenant\Orders\Enums\CancellationReason;
@@ -19,6 +21,7 @@ use App\Tenant\Payments\Exceptions\RefundDestinationRefusedException;
 use App\Tenant\Payments\Models\Refund;
 use App\Tenant\Returns\Actions\SettleExchange;
 use App\Tenant\Returns\Enums\ReturnReason;
+use App\Tenant\Returns\Events\ExchangeSettlementRefused;
 use App\Tenant\Returns\Events\ReturnExchangeReleased;
 use App\Tenant\Returns\Events\ReturnInspected;
 use App\Tenant\Returns\Models\OrderReturn;
@@ -208,4 +211,20 @@ it('settles nothing while the replacement isn\'t paid', function (): void {
     refundReturnAs($return, $this->owner)->assertConflict();
 
     expect($this->store->run(static fn (): array => [Refund::query()->count(), ReturnExchange::query()->sole()->status->value]))->toBe([0, 'pending']);
+});
+
+it('announces a settlement it was refused, for staff to be alerted, and leaves the exchange to be settled again', function (): void {
+    $return = inspectedExchange($this, $this->store->run(static fn (): ProductVariant => cartVariant(12000, stock: 5)), ReturnReason::DoesNotFit);
+    confirmExchangeAs($return, $this->owner, $this->method)->assertOk();
+    Event::fake([ExchangeSettlementRefused::class]);
+
+    // The credit announced before the dearer replacement is paid: settling it is refused.
+    $this->store->run(static function (): void {
+        $hold = CheckoutPaymentHold::query()->where('order_id', ReturnExchange::query()->sole()->order_id)->where('method', ExchangeCreditPaymentMethod::KEY)->sole();
+        ExchangeCreditCommitted::dispatch($hold);
+    });
+
+    $exchangeId = $this->store->run(static fn (): string => ReturnExchange::query()->sole()->public_id);
+    Event::assertDispatched(ExchangeSettlementRefused::class, static fn (ExchangeSettlementRefused $event): bool => $event->exchange->public_id === $exchangeId && $event->reason === 'return_transition_not_allowed');
+    expect($this->store->run(static fn (): string => ReturnExchange::query()->sole()->status->value))->toBe('pending');
 });
