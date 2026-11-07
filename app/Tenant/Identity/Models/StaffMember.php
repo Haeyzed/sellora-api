@@ -13,6 +13,7 @@ use App\Tenant\Identity\Enums\StaffRole;
 use App\Tenant\Identity\Jobs\SyncStoreOwnerContact;
 use Carbon\CarbonImmutable;
 use Database\Factories\Tenant\StaffMemberFactory;
+use Illuminate\Contracts\Translation\HasLocalePreference;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User;
 use Illuminate\Notifications\Notifiable;
@@ -34,6 +35,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string $email
  * @property string $password
  * @property bool $is_active
+ * @property string|null $locale The language they chose, such as "fr". The store writes to them in it outside a request; null for the store's default language.
  * @property CarbonImmutable|null $last_signed_in_at
  * @property string|null $two_factor_secret
  * @property list<string>|null $two_factor_recovery_codes
@@ -42,7 +44,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  */
-final class StaffMember extends User implements AuditableContract, HasApiTokensContract, TwoFactorAuthenticatable
+final class StaffMember extends User implements AuditableContract, HasApiTokensContract, HasLocalePreference, TwoFactorAuthenticatable
 {
     use Auditable;
     use HasApiTokens;
@@ -79,6 +81,14 @@ final class StaffMember extends User implements AuditableContract, HasApiTokensC
      * @var list<string>
      */
     protected $auditEvents = [];
+
+    /**
+     * The language they chose for what is sent to them; null until they choose one, so a message sent during a request keeps the request's language.
+     */
+    public function preferredLocale(): ?string
+    {
+        return $this->locale;
+    }
 
     /**
      * Emails a link into the store dashboard to choose a new password.

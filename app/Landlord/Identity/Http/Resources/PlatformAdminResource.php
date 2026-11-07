@@ -22,7 +22,7 @@ final class PlatformAdminResource extends JsonResource
     }
 
     /**
-     * @return array{id: string, name: string, email: string, roles: list<string>, permissions: list<string>, last_signed_in_at: string|null, two_factor_enabled: bool}
+     * @return array{id: string, name: string, email: string, roles: list<string>, permissions: list<string>, last_signed_in_at: string|null, two_factor_enabled: bool, locale: string|null}
      */
     public function toArray(Request $request): array
     {
@@ -37,6 +37,8 @@ final class PlatformAdminResource extends JsonResource
             'last_signed_in_at' => $this->resource->last_signed_in_at?->toIso8601String(),
             /** Whether sign-in asks for a code from an authenticator app. */
             'two_factor_enabled' => $this->resource->hasTwoFactorEnabled(),
+            /** The language they chose for what is sent to them, such as "fr"; null for the default. */
+            'locale' => $this->resource->locale,
         ];
     }
 }

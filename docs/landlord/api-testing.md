@@ -85,7 +85,7 @@ registration OpenAPI page for the exact fields and current validation rules.
 
 ## Endpoint cURL reference
 
-The commands below cover all 55 platform operations and all 12 registration
+The commands below cover all 56 platform operations and all 12 registration
 and shared-geography operations in the current Scramble OpenAPI exports.
 The route list also accepts `PATCH` for the legal-document update route; that
 alternative is included below even though Scramble exports its `PUT` form.
@@ -302,6 +302,18 @@ curl.exe --request PUT "${PlatformBase}/auth/password" `
   --header "Authorization: Bearer $PlatformToken" `
   --header 'Content-Type: application/json' `
   --data-raw '{"current_password":"replace-with-value","password":"replace-with-value","password_confirmation":"replace-with-value"}'
+```
+
+#### PreferredLanguage
+
+**PUT** `/auth/language` — platform bearer token. Choose my language (for platform alerts sent outside a request)
+
+```powershell
+curl.exe --request PUT "${PlatformBase}/auth/language" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $PlatformToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw '{"locale":"fr"}'
 ```
 
 #### PasswordReset

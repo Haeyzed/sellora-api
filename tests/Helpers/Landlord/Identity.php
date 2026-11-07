@@ -112,7 +112,7 @@ function platformTeamMember(string $name, ?string $roleName = null): PlatformAdm
 function platformTeam(string $method, string $path, array $data = [], ?PlatformAdmin $as = null): TestResponse
 {
     forgetSignIns();
-    $request = test();
+    $request = test()->withoutToken();
 
     if ($as !== null) {
         $request = $request->withToken(app(AccessTokenIssuer::class)->issue($as, PlatformAdmin::GUARD, 'test')->plainTextToken);

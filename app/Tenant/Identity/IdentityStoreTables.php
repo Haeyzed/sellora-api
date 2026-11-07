@@ -16,7 +16,7 @@ final class IdentityStoreTables implements ClassifiesStoreTables
     {
         $registry->table(
             'staff_members',
-            include: ['id', 'public_id', 'name', 'email', 'is_active', 'last_signed_in_at', 'two_factor_confirmed_at', 'created_at', 'updated_at'],
+            include: ['id', 'public_id', 'name', 'email', 'is_active', 'locale', 'last_signed_in_at', 'two_factor_confirmed_at', 'created_at', 'updated_at'],
             exclude: [
                 'password' => 'Password hash, a secret.',
                 'two_factor_secret' => 'Two-factor authentication secret.',

@@ -6,6 +6,7 @@ use App\Shared\Auth\Http\Controllers\AccessTokenController;
 use App\Shared\Auth\Http\Controllers\PasswordController;
 use App\Shared\Auth\Http\Controllers\PasswordResetController;
 use App\Shared\Auth\Http\Controllers\PasswordResetLinkController;
+use App\Shared\Auth\Http\Controllers\PreferredLanguageController;
 use App\Shared\Auth\Http\Controllers\RecoveryCodeController;
 use App\Shared\Auth\Http\Controllers\TwoFactorConfirmationController;
 use App\Shared\Auth\Http\Controllers\TwoFactorController;
@@ -53,6 +54,7 @@ Route::prefix('staff/auth')->name('staff.auth.')->middleware(UseDashboardLanguag
         Route::middleware(EnsureTwoFactorWhenRequired::class)->group(static function (): void {
             Route::put('tokens/current', [AccessTokenController::class, 'update'])->name('tokens.update');
             Route::put('password', [PasswordController::class, 'update'])->name('password.update');
+            Route::put('language', [PreferredLanguageController::class, 'update'])->name('language.update');
             Route::delete('two-factor', [TwoFactorController::class, 'destroy'])->name('two-factor.destroy');
             Route::post('two-factor/recovery-codes', RecoveryCodeController::class)->name('two-factor.recovery-codes.store');
         });

@@ -67,7 +67,7 @@ final readonly class UseDashboardLanguage
      *
      * @return list<string>
      */
-    private static function availableLocales(): array
+    public static function availableLocales(): array
     {
         return array_map(static fn (string $folder): string => strtolower(basename($folder)), glob(lang_path('*'), GLOB_ONLYDIR) ?: []);
     }

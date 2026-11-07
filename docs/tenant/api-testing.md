@@ -69,7 +69,7 @@ the response says which language was used.
 
 ## Endpoint cURL reference
 
-The following commands cover all 381 operations in the current tenant
+The following commands cover all 382 operations in the current tenant
 Scramble OpenAPI export, including the shared geography endpoints available
 on the store domain. Request bodies include required fields (or one
 representative field when all are optional); values such as IDs, email
@@ -1735,6 +1735,18 @@ curl.exe --request PUT "${StoreBase}/staff/auth/password" `
   --header "Authorization: Bearer $StaffToken" `
   --header 'Content-Type: application/json' `
   --data-raw '{"current_password":"replace-with-value","password":"replace-with-value","password_confirmation":"replace-with-value"}'
+```
+
+#### PreferredLanguage
+
+**PUT** `/staff/auth/language` — staff bearer token. Choose my language (for alerts sent outside a request)
+
+```powershell
+curl.exe --request PUT "${StoreBase}/staff/auth/language" `
+  --header 'Accept: application/json' `
+  --header "Authorization: Bearer $StaffToken" `
+  --header 'Content-Type: application/json' `
+  --data-raw '{"locale":"fr"}'
 ```
 
 #### PasswordReset
