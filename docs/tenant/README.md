@@ -66,7 +66,9 @@ flowchart LR
 7. [Delivery](delivery.md) runs the store's own drivers: staff give a
    shipment to a driver, who picks it up and hands it over with proof (and
    any cash on delivery), and the buyer can follow it while it is on the way.
-   [Messaging](messaging.md) is not yet a central tenant domain.
+   [Messaging](messaging.md) alerts staff when something needs them (a new
+   order, a failed refund, stock running low); messages to the buyer come
+   in Step 20b.
 8. [Returns](returns.md) lets the buyer send delivered units back: staff
    approve, receive and inspect them, Inventory puts them back on the shelf
    or writes them off, and Payments refunds the buyer.

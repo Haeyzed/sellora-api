@@ -95,9 +95,10 @@ detail.
 - [Settings](settings.md) supplies store-wide defaults used by other
   workflows, such as the base currency, tax mode, guest-checkout policy and
   business identity on documents.
-- [Messaging](messaging.md) is not yet implemented as a tenant domain.
-  Emails or other notifications currently belong to the feature that
-  triggers them; this map does not imply a central messaging workflow.
+- [Messaging](messaging.md) sends store messages through channels (email
+  first) on their own queue, within a per-store limit, and alerts staff when
+  an event needs them. Customer emails still belong to the feature that
+  triggers them until Step 20b moves them to Messaging.
 
 ## Domain guides
 

@@ -1,7 +1,7 @@
 # Handover
 
-**Date:** 6 November 2026.
-**Describes:** `main` at `607b9c3`, and the branch `step-19b-shopping-aids`
+**Date:** 7 November 2026.
+**Describes:** `main` at `fa73c62`, and the branch `step-20-messaging`
 started from it.
 
 This is for continuing the work on a new PC: for the project owner, and for
@@ -15,29 +15,30 @@ disagrees with `git log`, GitHub or CLAUDE.md, they win.
 
 ## 1. Where things stand
 
-**`main`** is at `607b9c3` ("Link the translated-text test in the handover
-instead of naming it"). CI passed on it.
+**`main`** is at `fa73c62` ("Start every test request helper without a
+leftover token"). CI passed on it.
 
-**What was finished last:** Step 19a, `step-19-storefront` (the
-storefront's content: pages, menus, banners, search engine settings and the
-sitemap, with the three review fixes), merged into `main` by fast-forward.
-One of its pushed commits, `8b30972` (handover docs), fails CI on its own:
-the docs test refused a test's name in backticks; `607b9c3` fixed it.
+**What was finished last:** Step 19b, `step-19b-shopping-aids` (wishlists,
+fetching several products, product links, similar products and best
+sellers, plus the review fix to the test request helpers), merged into
+`main` by fast-forward.
 
-**In progress:** Step 19b, `step-19b-shopping-aids`, built and waiting for
-the owner's review (item 2a):
+**In progress:** Step 20a, `step-20-messaging`, built and waiting for the
+owner's review (item 2a). Step 20 was split into 20a (foundation and
+alerts), 20b (customer messages) and 20c.
 
 | Commit | What |
 |---|---|
-| `1df9fcc` | Fetch several storefront products by ID (comparison, recently viewed) |
-| `e662a78` | Product links (related, upsell, cross-sell), managed by staff and read by shoppers |
-| `a2e8e5a` | Similar products, worked out from links, category, brand and price |
-| `a5c5133` | Best sellers, units from paid non-test orders over 30 days |
-| `4f894d0` | The wishlist, with merge at sign-in and move to cart |
-| `3aa5028` | A test that every language has every English message |
-| (docs) | [Storefront](tenant/storefront.md#shopping-aids), the documentation home and this handover |
+| `44c2b30` | Message channels (email first) on their own `messages` queue, within a per-store sending limit that delays, never drops |
+| `7913703` | Messaging settings; every store email sent in the store's name |
+| `f499d1b` | A saved preferred language for staff and platform admins |
+| `c0c68d8` | `ExchangeSettlementRefused`, so staff can be told |
+| `10fb0a4` | Staff alerts: 21 kinds, repeat limits, the hourly email cap money alerts ignore, the alert list |
+| `52f5aa1` | Platform alerts: rates not refreshed, store setup failed, stock and invoice checks |
+| (docs) | [Messaging](tenant/messaging.md), [Platform identity](landlord/identity.md#platform-alerts), the documentation home and this handover |
 
-Before 19a: Step 18d (`step-18d-exchange-flow`), Step 18c
+Before 19b: Step 19a (`step-19-storefront`), Step 18d
+(`step-18d-exchange-flow`), Step 18c
 (`step-18c-exchanges`), Step 18b
 (`step-18b-refund-destinations`), `permission-labels`,
 `encrypt-queued-messages` and `scrub-error-reports`.
@@ -46,8 +47,8 @@ Before 19a: Step 18d (`step-18d-exchange-flow`), Step 18c
 
 | Branch | State |
 |---|---|
-| `step-19b-shopping-aids` | **Waiting for review:** item 2a below. Not merged |
-| `step-19-storefront`, `step-18d-exchange-flow`, `step-18c-exchanges`, `step-18b-refund-destinations`, `permission-labels`, `encrypt-queued-messages`, `scrub-error-reports`, `handover-scripts` | Merged; kept on GitHub |
+| `step-20-messaging` | **Waiting for review:** item 2a below. Not merged |
+| `step-19b-shopping-aids`, `step-19-storefront`, `step-18d-exchange-flow`, `step-18c-exchanges`, `step-18b-refund-destinations`, `permission-labels`, `encrypt-queued-messages`, `scrub-error-reports`, `handover-scripts` | Merged; kept on GitHub |
 | `step-10-customers` to `step-18-returns`, `step-10b-social-sign-in`, `step-15b-invoices`, `step-16b-paystack` | Merged; kept on GitHub |
 | `docs-schema-comments`, `fix-token-links`, `fix-payment-holds` | Merged; kept on GitHub |
 | `ci-proof-docs`, `ci-proof-pint`, `ci-proof-stan` | Gone, as intended. They existed only on the old laptop (each broke one CI check on purpose, to prove CI catches it) and were never meant to be kept |
@@ -59,18 +60,37 @@ Before 19a: Step 18d (`step-18d-exchange-flow`), Step 18c
 Each item is its own branch, starts only when the owner says so, and ends
 with a stop for review (CLAUDE.md section 17).
 
-### a. Step 19b: shopping aids (`step-19b-shopping-aids`)
+### a. Step 20a: messaging foundation and alerts (`step-20-messaging`)
 
-Described in [Storefront](tenant/storefront.md#shopping-aids). Next: the
-owner's review, then a fast-forward merge. As decided: the wishlist holds a
-product with an optional variant, at most 500, under a lock per customer,
-in the privacy export and erased; best sellers count gross units over 30
-days; no response shows a stock quantity.
+Described in [Messaging](tenant/messaging.md). Next: the owner's review,
+then a fast-forward merge. As decided: the alert list shows each staff
+member only the kinds whose permission they hold (D1); the new-order alert
+needs `orders.fulfil`, is always listed and is emailed while
+`has_new_order_alert_emails` is on (D2); no merchant-edited wording (D3);
+no muting in 20a (D5). **When muting is built, money and payment alerts can
+never be muted.** The hourly email cap never applies to money and payment
+alerts, and the sending limit delays messages, never drops them.
 
-### b. Steps 20 and 21
+Changed from the plan: the alert list is at `staff/messaging/alerts` (the
+plan said `staff/alerts`), beside the messaging settings. Platform alerts
+have no `platform_alerts` table: no list endpoint was planned, so their
+once-a-day limit is claimed in the cache instead (a cleared cache can send
+one twice in a day).
 
-Messaging (email first, see [Messaging](tenant/messaging.md)), then Data
-tools, as CLAUDE.md section 17 lists them.
+### b. Steps 20b, 20c and 21
+
+**20b, customer messages:** order, payment, shipping, delivery and return
+emails moved to Messaging (the return messages listed in the follow-ups);
+`OrderPaid` waits for the invoice for at most a time set in config, then is
+sent without the attachment and the invoice can be fetched as usual, with
+both paths tested; the email footer in the sender settings; a platform
+alert when a store export fails (to `stores.export` holders, besides the
+person who asked); double opt-in for marketing consent, on by default for
+some countries at sign-up only, from `config/geography.php` (D4). **20c**
+as planned. Then Data tools, as CLAUDE.md section 17 lists them.
+
+A platform alert when a store purge fails waits until purging is switched
+on in production (CLAUDE.md section 9.1).
 
 ### c. Cleanup: the remaining inline `@var` (after Step 21, before the frontend)
 
@@ -89,9 +109,7 @@ repository is `Haeyzed/sellora-frontend`.
 |---|---|
 | **Audit ignore** GHSA-9vw2-f4vp-x7gf / PKSA-qhjm-rpqc-qkn6 is still in place. It is the same entry as the PHPUnit one below | [composer.json](../composer.json), `config.audit.ignore` |
 | **PHPUnit ignore:** remove it once Pest allows PHPUnit 13.4.4 or later, then run `composer update` for PHPUnit and `composer ci` | The same entry's note in [composer.json](../composer.json) |
-| **Step 20 alerts with no listener:** `OrderRefundedBeyondPaid`, `OrderPaidAfterCancellation`, `OrderPaymentsKeepFailing`, `PaymentHoldKeepsFailing`, `CommittedPaymentRefundFailed`, `PaymentDisputed`, `PaymentNeedsReview`, `PaymentOverpaid`, `PaymentUnresolved`, `PaymentGatewayNeedsReconnecting`, `RefundStillPending`, `RefundSucceededAfterFailing`, `CashCollectionOverdue`, `DeliveryFailed`, `StockRunningLow`, `VariantSoldOut` (16), plus `RefundNeedsReview` and `RefundFailed`, which have a listener but don't reach staff: 18 in all. Until Step 20, staff see none of them | Only here and in earlier review reports |
-| **Return messages for Step 20:** `ReturnRequested`, `ReturnApproved`, `ReturnRejected`, `ReturnReceived`, `ReturnInspected`, `ReturnRefundStarted`, `ReturnCompleted`, `ReturnCancelled`, and from 18b `ReturnRefundDestinationChosen`, `RefundGivenToDestination` and `RefundDestinationFailed` (staff should hear of a definite failure, and the customer that they can choose again), and from 18d `ReturnExchangeConfirmed` (the buyer's replacement is on its way, or waits for their payment) and `ReturnExchangeReleased` (it expired or was cancelled unpaid) | [Returns](tenant/returns.md) |
-| **An exchange whose settling was refused** (Payments refused the refund to the exchange or the difference after `ExchangeCreditCommitted`) is only logged and sent to the error tracker; the return stays awaiting its exchange until staff settle it again from its refund endpoint. Step 20 should alert staff | [Returns](tenant/returns.md#exchanges) |
+| **Return messages for Step 20b** (`ReturnRequested` from a customer already alerts staff in 20a): `ReturnRequested`, `ReturnApproved`, `ReturnRejected`, `ReturnReceived`, `ReturnInspected`, `ReturnRefundStarted`, `ReturnCompleted`, `ReturnCancelled`, and from 18b `ReturnRefundDestinationChosen`, `RefundGivenToDestination` and `RefundDestinationFailed` (staff should hear of a definite failure, and the customer that they can choose again), and from 18d `ReturnExchangeConfirmed` (the buyer's replacement is on its way, or waits for their payment) and `ReturnExchangeReleased` (it expired or was cancelled unpaid) | [Returns](tenant/returns.md) |
 | **The first real refund destination** (`Wallet` store credit or `GiftCards` vouchers): today only a test fixture implements `RefundDestination`, so the contract is proven against a fake. When the first module is built, check its payout is idempotent on our refund ID and that it never pays a test order's refund out as real value | [Returns](tenant/returns.md#where-a-refund-goes) |
 | **Real mixed-refund tests** (part of a refund went back, part failed, across payments) once `Wallet` or `GiftCards` exists; today only a fake gateway produces the mixed case | [Returns](tenant/returns.md), the "Never twice" table |
 | **Split-paid refunds:** which part of a split-paid order goes back first is decided when the first payment module is built. The same open decision covers an exchange whose original order was paid partly with store credit or a voucher (D5 in 18c) | CLAUDE.md section 18, the refund-destination rule |
@@ -105,8 +123,7 @@ repository is `Haeyzed/sellora-frontend`.
 | **Other errors that can quote personal data:** errors are scrubbed only when they are, or were caused by, a database error. Others pass with their message, for example a mail error quoting the recipient's address, which also lands in `failed_jobs.exception` (encryption covers the job's data, not its error). Each needs its own handling in `ErrorScrubber`, one kind of error at a time | Only here (found in `scrub-error-reports`) |
 | **Telescope stores exception messages** in full, including a database error's SQL and values. It runs only locally (never in production or staging with real data), so it was left out of `scrub-error-reports` | Only here |
 | **Plain-text queued emails** written before `encrypt-queued-messages` is deployed stay readable in `failed_jobs` until the 30-day purge; they are not re-encrypted | [Deployment](deployment.md) |
-| **A saved preferred language for staff and platform admins** (a column on each), for Step 20: today a dashboard's language comes only from `Accept-Language`, so emails and alerts sent outside a request (by a job or the scheduler) have no language to use | Only here (decided in `permission-labels`) |
-| **Native review of the permission labels and group names** before real merchants use them: Yoruba, Hausa, Igbo and Swahili above all, and ideally every non-English language. They were written without a native speaker; the descriptions were too, and so were 18b's refund destination label and its three error messages, and 18c's `exchange` destination label and its five `replacement_*` error messages, and 18d's `returns.exchange` permission and allowance label, the `faulty` reason, and the `return_fault_reason_required`, `return_replacement_invalid`, `return_replacement_not_available`, `return_is_an_exchange` and `exchange_not_ready` messages, and 19a's `storefront.view` and `storefront.manage` labels and the `page_slug_taken`, `menu_key_taken`, `menu_link_target_not_found` and `banner_has_no_image` messages, and the slug messages rewritten in the 19a review (`*_slug_taken`, `*_restore_conflict`), and 19b's `wishlist_full` message | `lang/*/permissions.php`, `lang/*/permission_groups.php`, `lang/*/refunds.php`, `lang/*/returns.php` and the `refund_destination_*`, `replacement_*`, `return_*` and `exchange_not_ready` entries in `lang/*/errors.php` |
+| **Native review of the permission labels and group names** before real merchants use them: Yoruba, Hausa, Igbo and Swahili above all, and ideally every non-English language. They were written without a native speaker; the descriptions were too, and so were 18b's refund destination label and its three error messages, and 18c's `exchange` destination label and its five `replacement_*` error messages, and 18d's `returns.exchange` permission and allowance label, the `faulty` reason, and the `return_fault_reason_required`, `return_replacement_invalid`, `return_replacement_not_available`, `return_is_an_exchange` and `exchange_not_ready` messages, and 19a's `storefront.view` and `storefront.manage` labels and the `page_slug_taken`, `menu_key_taken`, `menu_link_target_not_found` and `banner_has_no_image` messages, and the slug messages rewritten in the 19a review (`*_slug_taken`, `*_restore_conflict`), and 19b's `wishlist_full` message, and 20a's staff and platform alert texts | `lang/*/permissions.php`, `lang/*/permission_groups.php`, `lang/*/refunds.php`, `lang/*/returns.php`, `lang/*/staff_alerts.php`, `lang/*/platform_alerts.php` and the `refund_destination_*`, `replacement_*`, `return_*` and `exchange_not_ready` entries in `lang/*/errors.php` |
 | **Inline `@var` outside Returns:** CLAUDE.md section 13 rules them out; Returns has none since `8b24cf7` (its requests read lines through `ReadsReturnLines`). 91 remain on variables: 69 in `app/` and `integrations/` (most in Catalog's and other domains' form requests, then Orders, Payments, Shared), 22 in `tests/`. They are removed in one cleanup branch after Step 21, before the frontend (item 2c). The `@var` above array keys in API resources (88) document response fields for Scramble and are not inline type casts | Found with `git grep -nE '/\*\* @var [^*]+ \$[A-Za-z_]+ \*/'` |
 | **The `stores_fault` backfill** (18d) set the fault from the buyer's claim for returns already inspected or kept. That was acceptable only because no live store data exists yet; on live data, a backfill like this must leave the fault unconfirmed for staff | The 18d exchanges migration |
 | **Storefront images and custom domains:** page bodies keep images only from the store's media host (`StorefrontMediaHost`: the store's domain on a local disk, the disk's address such as a CDN otherwise). When custom domains arrive (Phase C) and images are served on the store's own domain, every domain of the store must be allowed, or images in bodies saved on one domain are removed when served on another | [Storefront](tenant/storefront.md#page-bodies-are-cleaned-html) |

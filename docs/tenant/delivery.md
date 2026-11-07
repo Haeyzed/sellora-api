@@ -265,5 +265,8 @@ through its `ShipmentDrivers` contract, whether a driver has a shipment
 before staff ship or deliver it. Locks go driver, then delivery, then order,
 then shipment, then payment, then the storage limit's advisory lock for
 proof of delivery; a location point only locks its delivery, for share.
-Delivery events for Messaging come with Step 20. See
+A failed delivery alerts staff holding `delivery.manage`, and cash not
+recorded after delivery alerts those holding `delivery.cash.manage`
+([Messaging](messaging.md#staff-alerts)); the buyer's delivery messages come
+in Step 20b. See
 [Sellora business flows](business-flows.md) for the whole fulfilment path.

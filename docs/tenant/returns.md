@@ -306,7 +306,9 @@ to inspected, or approved when the buyer keeps the items, with its earlier
 times, ready for another exchange or a refund.
 
 If Payments refuses the refund or the difference, the credit stays final;
-the refusal is logged and sent to the error tracker. Staff settle again
+the refusal is logged, sent to the error tracker, and announced as
+`ExchangeSettlementRefused`, which alerts staff holding `returns.exchange`
+([Messaging](messaging.md#staff-alerts)). Staff settle again
 from the return's refund endpoint, which on a return awaiting its exchange
 settles it (an exchange not yet settled) or gives the difference again (one
 whose last attempt definitely failed, after the customer may choose again).
@@ -413,5 +415,6 @@ attempt Payments made a refund for), `ReturnCompleted`, `ReturnCancelled`
 `ReturnRefundDestinationChosen`, `ReturnExchangeConfirmed` (the return
 awaits its replacement) and `ReturnExchangeReleased` (the replacement
 expired or was cancelled unpaid, and the return went back), each once it is
-saved, for Messaging (Step 20). Payments announces `RefundGivenToDestination` and
+saved, for Messaging: a customer's `ReturnRequested` alerts staff (Step
+20a), and the buyer's messages come in Step 20b. Payments announces `RefundGivenToDestination` and
 `RefundDestinationFailed` for refunds to a module's destination.
