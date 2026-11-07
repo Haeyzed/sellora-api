@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Landlord\Tenancy\Console;
 
 use App\Landlord\Tenancy\Enums\TenantStatus;
+use App\Landlord\Tenancy\Events\InvoicesDoNotMatchSales;
 use App\Landlord\Tenancy\Models\Tenant;
 use App\Shared\Tenancy\Contracts\StoreInvoiceBalances;
 use App\Shared\Tenancy\Enums\InvoiceTaxProblem;
@@ -59,7 +60,11 @@ final class ReconcileInvoiceBalancesCommand extends Command
 
             if ($mismatches === []) {
                 $this->components->twoColumnDetail("Store {$tenant->id}", 'invoices match the sale money kept');
+
+                continue;
             }
+
+            InvoicesDoNotMatchSales::dispatch($tenant, count($mismatches));
         }
 
         return $problems > 0 ? self::FAILURE : self::SUCCESS;

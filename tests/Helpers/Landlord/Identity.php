@@ -138,3 +138,29 @@ function lastPlatformInvitationToken(string $email): string
 
     return $tokens === [] ? throw new RuntimeException("No invitation was sent to {$email}.") : end($tokens);
 }
+
+/*
+|--------------------------------------------------------------------------
+| For PlatformAlertsTest.php
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Every platform alert emailed so far (Notification::fake()), by recipient, as [address, language, subject, message], each written in its email's language (English when they saved none).
+ *
+ * @return list<array{0: string, 1: string, 2: string, 3: string}>
+ */
+function platformAlertEmailsSent(): array
+{
+    $sent = [];
+
+    foreach (Notification::sentNotifications()[PlatformAdmin::class] ?? [] as $byNotification) {
+        foreach ($byNotification[App\Landlord\Identity\PlatformAlertNotification::class] ?? [] as $record) {
+            $locale = is_string($record['locale']) ? $record['locale'] : 'en';
+            $mail = writtenIn($locale, static fn () => $record['notification']->toMail($record['notifiable']));
+            $sent[] = [(string) $record['notifiable']->email, $locale, (string) $mail->subject, (string) $mail->introLines[0]];
+        }
+    }
+
+    return $sent;
+}

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Landlord\Tenancy\Jobs;
 
 use App\Landlord\Tenancy\Enums\TenantStatus;
+use App\Landlord\Tenancy\Events\StoreSetupFailed;
 use App\Landlord\Tenancy\Models\StoreRegistration;
 use App\Landlord\Tenancy\Models\Tenant;
 use App\Landlord\Tenancy\Services\DatabaseServerPlacement;
@@ -126,5 +127,6 @@ final class ProvisionStore implements ShouldBeUnique, ShouldQueue
             ->event('store_provisioning_failed')
             ->withProperties(['error' => $exception === null ? null : $exception::class])
             ->log("Setting up the store {$tenant->name} failed");
+        StoreSetupFailed::dispatch($tenant);
     }
 }

@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Landlord\Identity\Enums\PlatformRole;
+use App\Landlord\Identity\Listeners\AlertPlatformAdminsWhenAttentionIsNeeded;
 use App\Landlord\Identity\Models\PlatformAdmin;
 use App\Landlord\Identity\Models\PlatformAdminInvitation;
+use App\Landlord\Identity\Services\PlatformAlertFromEvent;
 use App\Landlord\Integrations\CentralWebhookEndpoints;
 use App\Landlord\Legal\Models\LegalDocument;
 use App\Landlord\Plans\Models\Plan;
@@ -856,6 +858,7 @@ final class AppServiceProvider extends ServiceProvider
         Event::listen(StorefrontContentChanged::class, RenewStorefrontCacheWhenContentChanges::class);
         Event::listen(MessageSending::class, SendStoreMailInTheStoreNameWhenMessageSending::class);
         Event::listen(StaffAlertFromEvent::EVENTS, AlertStaffWhenAttentionIsNeeded::class);
+        Event::listen(PlatformAlertFromEvent::EVENTS, AlertPlatformAdminsWhenAttentionIsNeeded::class);
     }
 
     /**

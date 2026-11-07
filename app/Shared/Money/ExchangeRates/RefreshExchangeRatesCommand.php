@@ -6,6 +6,7 @@ namespace App\Shared\Money\ExchangeRates;
 
 use App\Shared\Money\Decimal;
 use App\Shared\Money\ExchangeRates\Contracts\ExchangeRateSource;
+use App\Shared\Money\ExchangeRates\Events\ExchangeRatesOverdue;
 use App\Shared\Money\ExchangeRates\Exceptions\ExchangeRateSourceUnavailableException;
 use App\Shared\Money\ExchangeRates\Models\ExchangeRate;
 use Carbon\CarbonImmutable;
@@ -87,5 +88,6 @@ final class RefreshExchangeRatesCommand extends Command
         Log::error('Exchange rates have not been fetched for over '.$alertAfterHours.' hours; presentment currencies are withdrawn after '.config()->integer('exchange_rates.stale_after_hours').' hours.', [
             'last_fetched_at' => $lastFetchedAt?->toIso8601String(),
         ]);
+        ExchangeRatesOverdue::dispatch($lastFetchedAt, $alertAfterHours, config()->integer('exchange_rates.stale_after_hours'));
     }
 }

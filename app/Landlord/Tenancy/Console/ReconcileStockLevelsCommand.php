@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Landlord\Tenancy\Console;
 
 use App\Landlord\Tenancy\Enums\TenantStatus;
+use App\Landlord\Tenancy\Events\StockLevelsDoNotMatchLedger;
 use App\Landlord\Tenancy\Models\Tenant;
 use App\Shared\Exceptions\ErrorScrubber;
 use App\Shared\Tenancy\Contracts\StoreStockLedger;
@@ -53,7 +54,11 @@ final class ReconcileStockLevelsCommand extends Command
 
             if ($mismatches === []) {
                 $this->components->twoColumnDetail("Store {$tenant->id}", 'matches its ledger');
+
+                continue;
             }
+
+            StockLevelsDoNotMatchLedger::dispatch($tenant, count($mismatches));
         }
 
         return $problems > 0 ? self::FAILURE : self::SUCCESS;
