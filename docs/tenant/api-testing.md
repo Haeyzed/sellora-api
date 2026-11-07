@@ -69,7 +69,7 @@ the response says which language was used.
 
 ## Endpoint cURL reference
 
-The following commands cover all 382 operations in the current tenant
+The following commands cover all 383 operations in the current tenant
 Scramble OpenAPI export, including the shared geography endpoints available
 on the store domain. Request bodies include required fields (or one
 representative field when all are optional); values such as IDs, email
@@ -1627,6 +1627,17 @@ curl.exe --request PUT "${StoreBase}/customer/account/marketing-consents/${Chann
   --header "Authorization: Bearer $CustomerToken" `
   --header 'Content-Type: application/json' `
   --data-raw '{"granted":true}'
+```
+
+#### StaffAlert
+
+**GET** `/staff/messaging/alerts` — staff bearer token. List my alerts (only for the permissions I hold; cursor)
+
+```powershell
+curl.exe --request GET "${StoreBase}/staff/messaging/alerts?kind=refund_failed&per_page=25" `
+  --header 'Accept: application/json' `
+  --header 'Accept-Language: fr' `
+  --header "Authorization: Bearer $StaffToken"
 ```
 
 #### MessagingSettings

@@ -36,4 +36,15 @@ return [
         'retry_for_hours' => (int) env('MESSAGING_RETRY_FOR_HOURS', 24),
     ],
 
+    'staff_alerts' => [
+        /*
+         * How many alerts a store emails its staff an hour; the rest are
+         * only in their alert list, with one "alerts waiting" email each.
+         * Money alerts (payments, refunds, holds, disputes, overpayments,
+         * cash collection, exchange settlement) are always emailed and
+         * never count towards it.
+         */
+        'emails_per_hour' => (int) env('MESSAGING_STAFF_ALERT_EMAILS_PER_HOUR', 30),
+    ],
+
 ];

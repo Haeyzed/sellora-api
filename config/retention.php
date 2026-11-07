@@ -68,6 +68,8 @@ return [
         'payment_webhook_events' => (int) env('RETENTION_PAYMENT_WEBHOOK_EVENTS_DAYS', 180),
         // Queued jobs that failed every try, from every store; each keeps the job's data, which can name a buyer.
         'failed_jobs' => (int) env('RETENTION_FAILED_JOBS_DAYS', 30),
+        // Staff alerts, from when they were raised; what they were about keeps its own history.
+        'staff_alerts' => (int) env('RETENTION_STAFF_ALERTS_DAYS', 180),
     ],
 
     /*

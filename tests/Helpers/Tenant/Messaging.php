@@ -8,8 +8,14 @@ use App\Shared\Features\FeatureDefinition;
 use App\Shared\Features\FeatureKind;
 use App\Shared\Features\FeatureRegistry;
 use App\Shared\Features\Features;
+use App\Shared\Money\Money;
+use App\Tenant\Checkout\Models\CheckoutPaymentHold;
 use App\Tenant\Identity\Models\StaffMember;
 use App\Tenant\Messaging\MessageChannels;
+use App\Tenant\Orders\Models\Order;
+use App\Tenant\Payments\Models\Payment;
+use App\Tenant\Payments\Models\PaymentRefund;
+use App\Tenant\Payments\Models\Refund;
 use Illuminate\Mail\Transport\ArrayTransport;
 use Illuminate\Testing\TestResponse;
 use Symfony\Component\Mailer\SentMessage;
@@ -129,4 +135,68 @@ function sentEmail(SentMessage $sent): Email
     }
 
     return $email;
+}
+
+/**
+ * Order #1042 (public ID "order-1") for 2,500 naira, built in memory, for what staff alerts are about.
+ */
+function alertOrder(): Order
+{
+    return (new Order)->forceFill(['public_id' => 'order-1', 'number' => 1042, 'is_test' => false, 'total' => Money::ofMinor(250000, 'NGN')]);
+}
+
+/**
+ * A 2,500 naira payment (public ID "payment-1") for order #1042, built in memory.
+ */
+function alertPayment(): Payment
+{
+    return (new Payment)->forceFill(['public_id' => 'payment-1', 'amount' => Money::ofMinor(250000, 'NGN')])->setRelation('order', alertOrder());
+}
+
+/**
+ * A 30 naira part of a refund (public ID "payment-refund-1") of order #1042, built in memory.
+ */
+function alertPaymentRefund(): PaymentRefund
+{
+    return (new PaymentRefund)->forceFill(['public_id' => 'payment-refund-1', 'amount' => Money::ofMinor(3000, 'NGN')])
+        ->setRelation('refund', (new Refund)->setRelation('order', alertOrder()));
+}
+
+/**
+ * A 10 naira gift card hold (public ID "hold-1") for order #1042, built in memory.
+ */
+function alertHold(): CheckoutPaymentHold
+{
+    return (new CheckoutPaymentHold)->forceFill(['public_id' => 'hold-1', 'method' => 'gift_card', 'amount' => Money::ofMinor(1000, 'NGN')])->setRelation('order', alertOrder());
+}
+
+/**
+ * Every store message emailed so far (Notification::fake()), in the order sent, as [address, language, subject], each subject written in its email's language inside test()->store.
+ *
+ * @return list<array{0: string, 1: string, 2: string}>
+ */
+function alertEmailsSent(): array
+{
+    $fake = Illuminate\Support\Facades\Notification::getFacadeRoot();
+
+    if (! $fake instanceof Illuminate\Support\Testing\Fakes\NotificationFake) {
+        throw new LogicException('Fake notifications first (Notification::fake()).');
+    }
+
+    $sent = [];
+
+    foreach ($fake->sentNotifications()[Illuminate\Notifications\AnonymousNotifiable::class] ?? [] as $byNotification) {
+        foreach ($byNotification[App\Tenant\Messaging\MessageEmailNotification::class] ?? [] as $record) {
+            $sent[] = $record;
+        }
+    }
+
+    return test()->store->run(static fn (): array => array_map(static function (array $record): array {
+        $notifiable = $record['notifiable'];
+        $route = $notifiable->routeNotificationFor('mail');
+        $address = is_array($route) ? (string) array_key_first($route) : (string) $route;
+        $locale = (string) $record['locale'];
+
+        return [$address, $locale, (string) writtenIn($locale, static fn () => $record['notification']->toMail($notifiable))->subject];
+    }, $sent));
 }

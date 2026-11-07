@@ -168,11 +168,14 @@ use App\Tenant\Inventory\Models\StockReservation;
 use App\Tenant\Inventory\SettledReservationRetention;
 use App\Tenant\Inventory\StockLedgerReconciliation;
 use App\Tenant\Messaging\EmailChannel;
+use App\Tenant\Messaging\Listeners\AlertStaffWhenAttentionIsNeeded;
 use App\Tenant\Messaging\MessageChannels;
 use App\Tenant\Messaging\MessagingMailIdentity;
 use App\Tenant\Messaging\MessagingSettingsDefaults;
 use App\Tenant\Messaging\MessagingStoreTables;
 use App\Tenant\Messaging\Models\MessagingSettings;
+use App\Tenant\Messaging\Services\StaffAlertFromEvent;
+use App\Tenant\Messaging\StaffAlertRetention;
 use App\Tenant\Orders\Contracts\OrderAmountHolds;
 use App\Tenant\Orders\Contracts\OrderPaymentAmounts;
 use App\Tenant\Orders\Contracts\PaymentCheckBeforeExpiry;
@@ -645,6 +648,7 @@ final class AppServiceProvider extends ServiceProvider
             $registry->register(PaymentWebhookPayloadRetention::class);
             $registry->register(PaymentWebhookEventRetention::class);
             $registry->register(FailedJobRetention::class);
+            $registry->register(StaffAlertRetention::class);
 
             return $registry;
         });
@@ -851,6 +855,7 @@ final class AppServiceProvider extends ServiceProvider
         Event::listen(ShipmentCancelled::class, CancelDeliveriesWhenShipmentCancelled::class);
         Event::listen(StorefrontContentChanged::class, RenewStorefrontCacheWhenContentChanges::class);
         Event::listen(MessageSending::class, SendStoreMailInTheStoreNameWhenMessageSending::class);
+        Event::listen(StaffAlertFromEvent::EVENTS, AlertStaffWhenAttentionIsNeeded::class);
     }
 
     /**
